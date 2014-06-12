@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2012-12-12 08:05-0500\n"
+"POT-Creation-Date: 2014-06-13 12:58-0400\n"
 "PO-Revision-Date: 2010-08-30 02:31+0900\n"
 "Last-Translator: Changwoo Ryu <cwryu@debian.org>\n"
 "Language-Team: Korean <debian-l10n-korean@lists.debian.org>\n"
@@ -151,8 +151,8 @@ msgid "  Version table:"
 msgstr "  버전 테이블:"
 
 #: cmdline/apt-cache.cc:1679 cmdline/apt-cdrom.cc:199 cmdline/apt-config.cc:75
-#: cmdline/apt-extracttemplates.cc:227 ftparchive/apt-ftparchive.cc:590
-#: cmdline/apt-get.cc:3264 cmdline/apt-internal-solver.cc:32
+#: cmdline/apt-extracttemplates.cc:227 ftparchive/apt-ftparchive.cc:591
+#: cmdline/apt-get.cc:3279 cmdline/apt-internal-solver.cc:32
 #: cmdline/apt-mark.cc:267 cmdline/apt-sortpkgs.cc:147
 #, c-format
 msgid "%s %s for %s compiled on %s %s\n"
@@ -319,31 +319,31 @@ msgstr "%s에 쓸 수 없습니다"
 msgid "Cannot get debconf version. Is debconf installed?"
 msgstr "debconf 버전을 알 수 없습니다. debconf가 설치되었습니까?"
 
-#: ftparchive/apt-ftparchive.cc:171 ftparchive/apt-ftparchive.cc:348
+#: ftparchive/apt-ftparchive.cc:171 ftparchive/apt-ftparchive.cc:349
 msgid "Package extension list is too long"
 msgstr "패키지 확장 목록이 너무 깁니다"
 
 #: ftparchive/apt-ftparchive.cc:173 ftparchive/apt-ftparchive.cc:190
-#: ftparchive/apt-ftparchive.cc:213 ftparchive/apt-ftparchive.cc:263
-#: ftparchive/apt-ftparchive.cc:277 ftparchive/apt-ftparchive.cc:299
+#: ftparchive/apt-ftparchive.cc:213 ftparchive/apt-ftparchive.cc:264
+#: ftparchive/apt-ftparchive.cc:278 ftparchive/apt-ftparchive.cc:300
 #, c-format
 msgid "Error processing directory %s"
 msgstr "%s 디렉터리를 처리하는데 오류가 발생했습니다"
 
-#: ftparchive/apt-ftparchive.cc:261
+#: ftparchive/apt-ftparchive.cc:262
 msgid "Source extension list is too long"
 msgstr "소스 확장 목록이 너무 깁니다"
 
-#: ftparchive/apt-ftparchive.cc:378
+#: ftparchive/apt-ftparchive.cc:379
 msgid "Error writing header to contents file"
 msgstr "컨텐츠 파일에 헤더를 쓰는데 오류가 발생했습니다"
 
-#: ftparchive/apt-ftparchive.cc:408
+#: ftparchive/apt-ftparchive.cc:409
 #, c-format
 msgid "Error processing contents %s"
 msgstr "%s 컨텐츠를 처리하는데 오류가 발생했습니다"
 
-#: ftparchive/apt-ftparchive.cc:596
+#: ftparchive/apt-ftparchive.cc:597
 msgid ""
 "Usage: apt-ftparchive [options] command\n"
 "Commands: packages binarypath [overridefile [pathprefix]]\n"
@@ -424,11 +424,11 @@ msgstr ""
 "  -c=?  이 설정 파일을 읽습니다\n"
 "  -o=?  임의의 옵션을 설정합니다"
 
-#: ftparchive/apt-ftparchive.cc:802
+#: ftparchive/apt-ftparchive.cc:803
 msgid "No selections matched"
 msgstr "맞는 패키지가 없습니다"
 
-#: ftparchive/apt-ftparchive.cc:880
+#: ftparchive/apt-ftparchive.cc:881
 #, c-format
 msgid "Some files are missing in the package file group `%s'"
 msgstr "`%s' 패키지 파일 그룹에 몇몇 파일이 빠졌습니다"
@@ -537,22 +537,22 @@ msgstr " DeLink 한계값 %s바이트에 도달했습니다.\n"
 msgid "Archive had no package field"
 msgstr "아카이브에 패키지 필드가 없습니다"
 
-#: ftparchive/writer.cc:409 ftparchive/writer.cc:711
+#: ftparchive/writer.cc:409 ftparchive/writer.cc:714
 #, c-format
 msgid "  %s has no override entry\n"
 msgstr "  %s에는 override 항목이 없습니다\n"
 
-#: ftparchive/writer.cc:477 ftparchive/writer.cc:827
+#: ftparchive/writer.cc:477 ftparchive/writer.cc:858
 #, c-format
 msgid "  %s maintainer is %s not %s\n"
 msgstr "  %s 관리자가 %s입니다 (%s 아님)\n"
 
-#: ftparchive/writer.cc:721
+#: ftparchive/writer.cc:724
 #, c-format
 msgid "  %s has no source override entry\n"
 msgstr "  %s에는 source override 항목이 없습니다\n"
 
-#: ftparchive/writer.cc:725
+#: ftparchive/writer.cc:728
 #, c-format
 msgid "  %s has no binary override entry either\n"
 msgstr "  %s에는 binary override 항목이 없습니다\n"
@@ -822,7 +822,7 @@ msgstr "%s 패키지를 다시 설치하는 건 불가능합니다. 다운로드
 msgid "%s is already the newest version.\n"
 msgstr "%s 패키지는 이미 최신 버전입니다.\n"
 
-#: cmdline/apt-get.cc:834 cmdline/apt-get.cc:2114 cmdline/apt-mark.cc:62
+#: cmdline/apt-get.cc:834 cmdline/apt-get.cc:2121 cmdline/apt-mark.cc:62
 #, c-format
 msgid "%s set to manually installed.\n"
 msgstr "%s 패키지 수동설치로 지정합니다.\n"
@@ -871,39 +871,39 @@ msgstr ""
 msgid "Unmet dependencies. Try using -f."
 msgstr "의존성이 맞지 않습니다. -f 옵션을 사용해 보십시오."
 
-#: cmdline/apt-get.cc:1028
+#: cmdline/apt-get.cc:1011
 msgid "WARNING: The following packages cannot be authenticated!"
 msgstr "경고: 다음 패키지를 인증할 수 없습니다!"
 
-#: cmdline/apt-get.cc:1032
+#: cmdline/apt-get.cc:1015
 msgid "Authentication warning overridden.\n"
 msgstr "인증 경고를 무시합니다.\n"
 
-#: cmdline/apt-get.cc:1039
-msgid "Install these packages without verification [y/N]? "
-msgstr "확인하지 않고 패키지를 설치하시겠습니까 [y/N]? "
-
-#: cmdline/apt-get.cc:1041
+#: cmdline/apt-get.cc:1020 cmdline/apt-get.cc:1027
 msgid "Some packages could not be authenticated"
 msgstr "인증할 수 없는 패키지가 있습니다"
 
-#: cmdline/apt-get.cc:1050 cmdline/apt-get.cc:1211
+#: cmdline/apt-get.cc:1025
+msgid "Install these packages without verification [y/N]? "
+msgstr "확인하지 않고 패키지를 설치하시겠습니까 [y/N]? "
+
+#: cmdline/apt-get.cc:1036 cmdline/apt-get.cc:1218
 msgid "There are problems and -y was used without --force-yes"
 msgstr "문제가 발생했고 -y 옵션이 --force-yes 옵션 없이 사용되었습니다"
 
-#: cmdline/apt-get.cc:1091
+#: cmdline/apt-get.cc:1098
 msgid "Internal error, InstallPackages was called with broken packages!"
 msgstr "내부 오류. 망가진 패키지에서 InstallPackages를 호출했습니다!"
 
-#: cmdline/apt-get.cc:1100
+#: cmdline/apt-get.cc:1107
 msgid "Packages need to be removed but remove is disabled."
 msgstr "패키지를 제거해야 하지만 제거가 금지되어 있습니다."
 
-#: cmdline/apt-get.cc:1111
+#: cmdline/apt-get.cc:1118
 msgid "Internal error, Ordering didn't finish"
 msgstr "내부 오류. 순서변경작업이 끝나지 않았습니다"
 
-#: cmdline/apt-get.cc:1149
+#: cmdline/apt-get.cc:1156
 msgid "How odd.. The sizes didn't match, email apt@packages.debian.org"
 msgstr ""
 "이상하게도 크기가 서로 다릅니다. apt@packages.debian.org로 이메일을 보내주십"
@@ -911,55 +911,55 @@ msgstr ""
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement strings, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1156
+#: cmdline/apt-get.cc:1163
 #, c-format
 msgid "Need to get %sB/%sB of archives.\n"
 msgstr "%s바이트/%s바이트 아카이브를 받아야 합니다.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1161
+#: cmdline/apt-get.cc:1168
 #, c-format
 msgid "Need to get %sB of archives.\n"
 msgstr "%s바이트 아카이브를 받아야 합니다.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1168
+#: cmdline/apt-get.cc:1175
 #, c-format
 msgid "After this operation, %sB of additional disk space will be used.\n"
 msgstr "이 작업 후 %s바이트의 디스크 공간을 더 사용하게 됩니다.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1173
+#: cmdline/apt-get.cc:1180
 #, c-format
 msgid "After this operation, %sB disk space will be freed.\n"
 msgstr "이 작업 후 %s바이트의 디스크 공간이 비워집니다.\n"
 
-#: cmdline/apt-get.cc:1188 cmdline/apt-get.cc:1191 cmdline/apt-get.cc:2534
-#: cmdline/apt-get.cc:2537
+#: cmdline/apt-get.cc:1195 cmdline/apt-get.cc:1198 cmdline/apt-get.cc:2549
+#: cmdline/apt-get.cc:2552
 #, c-format
 msgid "Couldn't determine free space in %s"
 msgstr "%s의 여유 공간의 크기를 파악할 수 없습니다"
 
-#: cmdline/apt-get.cc:1201
+#: cmdline/apt-get.cc:1208
 #, c-format
 msgid "You don't have enough free space in %s."
 msgstr "%s 안에 충분한 여유 공간이 없습니다."
 
-#: cmdline/apt-get.cc:1217 cmdline/apt-get.cc:1237
+#: cmdline/apt-get.cc:1224 cmdline/apt-get.cc:1244
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr ""
 "사소한 작업만 가능하도록(Trivial Only) 지정되었지만 이 작업은 사소한 작업이 "
 "아닙니다."
 
 # 입력을 받아야 한다.  한글 입력을 못 할 수 있으므로 원문 그대로 사용.
-#: cmdline/apt-get.cc:1219
+#: cmdline/apt-get.cc:1226
 msgid "Yes, do as I say!"
 msgstr "Yes, do as I say!"
 
-#: cmdline/apt-get.cc:1221
+#: cmdline/apt-get.cc:1228
 #, c-format
 msgid ""
 "You are about to do something potentially harmful.\n"
@@ -970,28 +970,28 @@ msgstr ""
 "계속하시려면 다음 문구를 입력하십시오: '%s'\n"
 " ?] "
 
-#: cmdline/apt-get.cc:1227 cmdline/apt-get.cc:1246
+#: cmdline/apt-get.cc:1234 cmdline/apt-get.cc:1253
 msgid "Abort."
 msgstr "중단."
 
-#: cmdline/apt-get.cc:1242
+#: cmdline/apt-get.cc:1249
 msgid "Do you want to continue [Y/n]? "
 msgstr "계속 하시겠습니까 [Y/n]? "
 
-#: cmdline/apt-get.cc:1314 cmdline/apt-get.cc:2599 apt-pkg/algorithms.cc:1491
+#: cmdline/apt-get.cc:1321 cmdline/apt-get.cc:2614 apt-pkg/algorithms.cc:1491
 #, c-format
 msgid "Failed to fetch %s  %s\n"
 msgstr "%s 파일을 받는데 실패했습니다  %s\n"
 
-#: cmdline/apt-get.cc:1332
+#: cmdline/apt-get.cc:1339
 msgid "Some files failed to download"
 msgstr "일부 파일을 받는데 실패했습니다"
 
-#: cmdline/apt-get.cc:1333 cmdline/apt-get.cc:2611
+#: cmdline/apt-get.cc:1340 cmdline/apt-get.cc:2626
 msgid "Download complete and in download only mode"
 msgstr "다운로드를 마쳤고 다운로드 전용 모드입니다"
 
-#: cmdline/apt-get.cc:1339
+#: cmdline/apt-get.cc:1346
 msgid ""
 "Unable to fetch some archives, maybe run apt-get update or try with --fix-"
 "missing?"
@@ -999,19 +999,19 @@ msgstr ""
 "아카이브를 받을 수 없습니다. 아마도 apt-get update를 실행해야 하거나 --fix-"
 "missing 옵션을 줘서 실행해야 할 것입니다."
 
-#: cmdline/apt-get.cc:1343
+#: cmdline/apt-get.cc:1350
 msgid "--fix-missing and media swapping is not currently supported"
 msgstr "--fix-missing 옵션과 동시에 미디어 바꾸기는 현재 지원하지 않습니다"
 
-#: cmdline/apt-get.cc:1348
+#: cmdline/apt-get.cc:1355
 msgid "Unable to correct missing packages."
 msgstr "빠진 패키지를 바로잡을 수 없습니다."
 
-#: cmdline/apt-get.cc:1349
+#: cmdline/apt-get.cc:1356
 msgid "Aborting install."
 msgstr "설치를 중단합니다."
 
-#: cmdline/apt-get.cc:1377
+#: cmdline/apt-get.cc:1384
 msgid ""
 "The following package disappeared from your system as\n"
 "all files have been overwritten by other packages:"
@@ -1022,35 +1022,35 @@ msgstr[0] ""
 "다음 패키지는 패키지의 파일을 모두 다른 패키지가\n"
 "덮어썼기 때문에 사라졌습니다:"
 
-#: cmdline/apt-get.cc:1381
+#: cmdline/apt-get.cc:1388
 msgid "Note: This is done automatic and on purpose by dpkg."
 msgstr "주의: dpkg에서 자동으로 의도적으로 수행했습니다."
 
-#: cmdline/apt-get.cc:1519
+#: cmdline/apt-get.cc:1526
 #, c-format
 msgid "Ignore unavailable target release '%s' of package '%s'"
 msgstr "'%2$s' 패키지의 '%1$s' 대상 릴리스는 없으므로 무시합니다."
 
-#: cmdline/apt-get.cc:1551
+#: cmdline/apt-get.cc:1558
 #, c-format
 msgid "Picking '%s' as source package instead of '%s'\n"
 msgstr "소스 패키지로 '%s'을(를) '%s' 대신 선택합니다\n"
 
 #. if (VerTag.empty() == false && Last == 0)
-#: cmdline/apt-get.cc:1589
+#: cmdline/apt-get.cc:1596
 #, c-format
 msgid "Ignore unavailable version '%s' of package '%s'"
 msgstr "'%2$s' 패키지의 '%1$s' 버전은 없으므로 무시합니다."
 
-#: cmdline/apt-get.cc:1605
+#: cmdline/apt-get.cc:1612
 msgid "The update command takes no arguments"
 msgstr "update 명령은 인수를 받지 않습니다"
 
-#: cmdline/apt-get.cc:1668
+#: cmdline/apt-get.cc:1675
 msgid "We are not supposed to delete stuff, can't start AutoRemover"
 msgstr "삭제를 할 수 없으므로 AutoRemover를 실행하지 못합니다"
 
-#: cmdline/apt-get.cc:1772
+#: cmdline/apt-get.cc:1779
 msgid ""
 "Hmm, seems like the AutoRemover destroyed something which really\n"
 "shouldn't happen. Please file a bug report against apt."
@@ -1068,15 +1068,15 @@ msgstr ""
 #. "that package should be filed.") << endl;
 #. }
 #.
-#: cmdline/apt-get.cc:1775 cmdline/apt-get.cc:1944
+#: cmdline/apt-get.cc:1782 cmdline/apt-get.cc:1951
 msgid "The following information may help to resolve the situation:"
 msgstr "이 상황을 해결하는데 다음 정보가 도움이 될 수도 있습니다:"
 
-#: cmdline/apt-get.cc:1779
+#: cmdline/apt-get.cc:1786
 msgid "Internal Error, AutoRemover broke stuff"
 msgstr "내부 오류, 문제 해결 프로그램이 무언가를 망가뜨렸습니다"
 
-#: cmdline/apt-get.cc:1786
+#: cmdline/apt-get.cc:1793
 msgid ""
 "The following package was automatically installed and is no longer required:"
 msgid_plural ""
@@ -1084,27 +1084,27 @@ msgid_plural ""
 "required:"
 msgstr[0] "다음 패키지가 자동으로 설치되었지만 더 이상 필요하지 않습니다:"
 
-#: cmdline/apt-get.cc:1790
+#: cmdline/apt-get.cc:1797
 #, c-format
 msgid "%lu package was automatically installed and is no longer required.\n"
 msgid_plural ""
 "%lu packages were automatically installed and are no longer required.\n"
 msgstr[0] "패키지 %lu개가 자동으로 설치되었지만 더 이상 필요하지 않습니다.\n"
 
-#: cmdline/apt-get.cc:1792
+#: cmdline/apt-get.cc:1799
 msgid "Use 'apt-get autoremove' to remove them."
 msgstr "이들을 지우려면 'apt-get autoremove'를 사용하십시오."
 
-#: cmdline/apt-get.cc:1811
+#: cmdline/apt-get.cc:1818
 msgid "Internal error, AllUpgrade broke stuff"
 msgstr "내부 오류, AllUpgrade 프로그램이 무언가를 망가뜨렸습니다"
 
-#: cmdline/apt-get.cc:1910
+#: cmdline/apt-get.cc:1917
 msgid "You might want to run 'apt-get -f install' to correct these:"
 msgstr "다음을 바로잡으려면 'apt-get -f install'을 실행해 보십시오:"
 
 # FIXME: specify a solution?  무슨 솔루션?
-#: cmdline/apt-get.cc:1914
+#: cmdline/apt-get.cc:1921
 msgid ""
 "Unmet dependencies. Try 'apt-get -f install' with no packages (or specify a "
 "solution)."
@@ -1112,7 +1112,7 @@ msgstr ""
 "의존성이 맞지 않습니다. 패키지 없이 'apt-get -f install'을 시도해 보십시오 "
 "(아니면 해결 방법을 지정하십시오)."
 
-#: cmdline/apt-get.cc:1929
+#: cmdline/apt-get.cc:1936
 msgid ""
 "Some packages could not be installed. This may mean that you have\n"
 "requested an impossible situation or if you are using the unstable\n"
@@ -1123,73 +1123,73 @@ msgstr ""
 "불안정 배포판을 사용해서 일부 필요한 패키지를 아직 만들지 않았거나,\n"
 "아직 Incoming에서 나오지 않은 경우일 수도 있습니다."
 
-#: cmdline/apt-get.cc:1950
+#: cmdline/apt-get.cc:1957
 msgid "Broken packages"
 msgstr "망가진 패키지"
 
-#: cmdline/apt-get.cc:1976
+#: cmdline/apt-get.cc:1983
 msgid "The following extra packages will be installed:"
 msgstr "다음 패키지를 더 설치할 것입니다:"
 
-#: cmdline/apt-get.cc:2066
+#: cmdline/apt-get.cc:2073
 msgid "Suggested packages:"
 msgstr "제안하는 패키지:"
 
-#: cmdline/apt-get.cc:2067
+#: cmdline/apt-get.cc:2074
 msgid "Recommended packages:"
 msgstr "추천하는 패키지:"
 
-#: cmdline/apt-get.cc:2109
+#: cmdline/apt-get.cc:2116
 #, c-format
 msgid "Couldn't find package %s"
 msgstr "%s 패키지를 찾을 수 없습니다"
 
-#: cmdline/apt-get.cc:2116 cmdline/apt-mark.cc:64
+#: cmdline/apt-get.cc:2123 cmdline/apt-mark.cc:64
 #, c-format
 msgid "%s set to automatically installed.\n"
 msgstr "%s 패키지는 수동설치로 지정합니다.\n"
 
-#: cmdline/apt-get.cc:2124 cmdline/apt-mark.cc:108
+#: cmdline/apt-get.cc:2131 cmdline/apt-mark.cc:108
 msgid ""
 "This command is deprecated. Please use 'apt-mark auto' and 'apt-mark manual' "
 "instead."
 msgstr ""
 
-#: cmdline/apt-get.cc:2140
+#: cmdline/apt-get.cc:2147
 msgid "Calculating upgrade... "
 msgstr "업그레이드를 계산하는 중입니다... "
 
-#: cmdline/apt-get.cc:2143 methods/ftp.cc:712 methods/connect.cc:115
+#: cmdline/apt-get.cc:2150 methods/ftp.cc:712 methods/connect.cc:115
 msgid "Failed"
 msgstr "실패"
 
-#: cmdline/apt-get.cc:2148
+#: cmdline/apt-get.cc:2155
 msgid "Done"
 msgstr "완료"
 
-#: cmdline/apt-get.cc:2215 cmdline/apt-get.cc:2223
+#: cmdline/apt-get.cc:2222 cmdline/apt-get.cc:2230
 msgid "Internal error, problem resolver broke stuff"
 msgstr "내부 오류, 문제 해결 프로그램이 무언가를 망가뜨렸습니다"
 
-#: cmdline/apt-get.cc:2251 cmdline/apt-get.cc:2287
+#: cmdline/apt-get.cc:2258 cmdline/apt-get.cc:2294
 msgid "Unable to lock the download directory"
 msgstr "다운로드 디렉터리를 잠글 수 없습니다"
 
-#: cmdline/apt-get.cc:2338
+#: cmdline/apt-get.cc:2345
 #, c-format
 msgid "Downloading %s %s"
 msgstr ""
 
-#: cmdline/apt-get.cc:2396
+#: cmdline/apt-get.cc:2403
 msgid "Must specify at least one package to fetch source for"
 msgstr "해당되는 소스 패키지를 가져올 패키지를 최소한 하나 지정해야 합니다"
 
-#: cmdline/apt-get.cc:2436 cmdline/apt-get.cc:2748
+#: cmdline/apt-get.cc:2444 cmdline/apt-get.cc:2763
 #, c-format
 msgid "Unable to find a source package for %s"
 msgstr "%s의 소스 패키지를 찾을 수 없습니다"
 
-#: cmdline/apt-get.cc:2453
+#: cmdline/apt-get.cc:2464
 #, c-format
 msgid ""
 "NOTICE: '%s' packaging is maintained in the '%s' version control system at:\n"
@@ -1198,7 +1198,7 @@ msgstr ""
 "알림: '%s' 패키징은 다음 '%s' 버전 컨트롤 시스템에서 관리합니다:\n"
 "%s\n"
 
-#: cmdline/apt-get.cc:2458
+#: cmdline/apt-get.cc:2469
 #, fuzzy, c-format
 msgid ""
 "Please use:\n"
@@ -1209,85 +1209,85 @@ msgstr ""
 "다음과 같이 하십시오:\n"
 "bzr get %s\n"
 
-#: cmdline/apt-get.cc:2511
+#: cmdline/apt-get.cc:2522
 #, c-format
 msgid "Skipping already downloaded file '%s'\n"
 msgstr "이미 다운로드 받은 파일 '%s'은(는) 다시 받지 않고 건너 뜁니다.\n"
 
-#: cmdline/apt-get.cc:2548
+#: cmdline/apt-get.cc:2563
 #, c-format
 msgid "You don't have enough free space in %s"
 msgstr "%s에 충분한 공간이 없습니다"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement strings, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2557
+#: cmdline/apt-get.cc:2572
 #, c-format
 msgid "Need to get %sB/%sB of source archives.\n"
 msgstr "소스 아카이브를 %s바이트/%s바이트 받아야 합니다.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2562
+#: cmdline/apt-get.cc:2577
 #, c-format
 msgid "Need to get %sB of source archives.\n"
 msgstr "소스 아카이브를 %s바이트 받아야 합니다.\n"
 
-#: cmdline/apt-get.cc:2568
+#: cmdline/apt-get.cc:2583
 #, c-format
 msgid "Fetch source %s\n"
 msgstr "%s 소스를 가져옵니다\n"
 
-#: cmdline/apt-get.cc:2606
+#: cmdline/apt-get.cc:2621
 msgid "Failed to fetch some archives."
 msgstr "일부 아카이브를 가져오는데 실패했습니다."
 
-#: cmdline/apt-get.cc:2637
+#: cmdline/apt-get.cc:2652
 #, c-format
 msgid "Skipping unpack of already unpacked source in %s\n"
 msgstr "%s에 이미 풀려 있는 소스의 압축을 풀지 않고 건너 뜁니다.\n"
 
-#: cmdline/apt-get.cc:2649
+#: cmdline/apt-get.cc:2664
 #, c-format
 msgid "Unpack command '%s' failed.\n"
 msgstr "압축 풀기 명령 '%s' 실패.\n"
 
-#: cmdline/apt-get.cc:2650
+#: cmdline/apt-get.cc:2665
 #, c-format
 msgid "Check if the 'dpkg-dev' package is installed.\n"
 msgstr "'dpkg-dev' 패키지가 설치되었는지를 확인하십시오.\n"
 
-#: cmdline/apt-get.cc:2672
+#: cmdline/apt-get.cc:2687
 #, c-format
 msgid "Build command '%s' failed.\n"
 msgstr "빌드 명령 '%s' 실패.\n"
 
-#: cmdline/apt-get.cc:2692
+#: cmdline/apt-get.cc:2707
 msgid "Child process failed"
 msgstr "하위 프로세스가 실패했습니다"
 
-#: cmdline/apt-get.cc:2711
+#: cmdline/apt-get.cc:2726
 msgid "Must specify at least one package to check builddeps for"
 msgstr "해당되는 빌드 의존성을 검사할 패키지를 최소한 하나 지정해야 합니다"
 
-#: cmdline/apt-get.cc:2736
+#: cmdline/apt-get.cc:2751
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
 
-#: cmdline/apt-get.cc:2753
+#: cmdline/apt-get.cc:2768
 #, c-format
 msgid "Unable to get build-dependency information for %s"
 msgstr "%s의 빌드 의존성 정보를 가져올 수 없습니다"
 
-#: cmdline/apt-get.cc:2773
+#: cmdline/apt-get.cc:2788
 #, c-format
 msgid "%s has no build depends.\n"
 msgstr "%s 패키지에 빌드 의존성이 없습니다.\n"
 
-#: cmdline/apt-get.cc:2909
+#: cmdline/apt-get.cc:2924
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s can't be satisfied because %s is not allowed on '%s' "
@@ -1296,7 +1296,7 @@ msgstr ""
 "%2$s에 대한 %1$s 의존성을 만족시킬 수 없습니다. %3$s 패키지를 찾을 수 없습니"
 "다"
 
-#: cmdline/apt-get.cc:2930
+#: cmdline/apt-get.cc:2945
 #, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because the package %s cannot be "
@@ -1305,14 +1305,14 @@ msgstr ""
 "%2$s에 대한 %1$s 의존성을 만족시킬 수 없습니다. %3$s 패키지를 찾을 수 없습니"
 "다"
 
-#: cmdline/apt-get.cc:2953
+#: cmdline/apt-get.cc:2968
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: Installed package %s is too new"
 msgstr ""
 "%2$s에 대한 %1$s 의존성을 만족시키는데 실패했습니다: 설치한 %3$s 패키지가 너"
 "무 최근 버전입니다"
 
-#: cmdline/apt-get.cc:2992
+#: cmdline/apt-get.cc:3007
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because candidate version of "
@@ -1321,7 +1321,7 @@ msgstr ""
 "%2$s에 대한 %1$s 의존성을 만족시킬 수 없습니다. %3$s 패키지의 사용 가능한 버"
 "전 중에서는 이 버전 요구사항을 만족시킬 수 없습니다"
 
-#: cmdline/apt-get.cc:2998
+#: cmdline/apt-get.cc:3013
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because package %s has no candidate "
@@ -1330,30 +1330,30 @@ msgstr ""
 "%2$s에 대한 %1$s 의존성을 만족시킬 수 없습니다. %3$s 패키지를 찾을 수 없습니"
 "다"
 
-#: cmdline/apt-get.cc:3021
+#: cmdline/apt-get.cc:3036
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: %s"
 msgstr "%2$s에 대한 %1$s 의존성을 만족시키는데 실패했습니다: %3$s"
 
-#: cmdline/apt-get.cc:3037
+#: cmdline/apt-get.cc:3052
 #, c-format
 msgid "Build-dependencies for %s could not be satisfied."
 msgstr "%s의 빌드 의존성을 만족시키지 못했습니다."
 
-#: cmdline/apt-get.cc:3042
+#: cmdline/apt-get.cc:3057
 msgid "Failed to process build dependencies"
 msgstr "빌드 의존성을 처리하는데 실패했습니다"
 
-#: cmdline/apt-get.cc:3135 cmdline/apt-get.cc:3147
+#: cmdline/apt-get.cc:3150 cmdline/apt-get.cc:3162
 #, fuzzy, c-format
 msgid "Changelog for %s (%s)"
 msgstr "%s(%s)에 연결하는 중입니다"
 
-#: cmdline/apt-get.cc:3269
+#: cmdline/apt-get.cc:3284
 msgid "Supported modules:"
 msgstr "지원하는 모듈:"
 
-#: cmdline/apt-get.cc:3310
+#: cmdline/apt-get.cc:3325
 #, fuzzy
 msgid ""
 "Usage: apt-get [options] command\n"
@@ -1441,7 +1441,7 @@ msgstr ""
 "apt.conf(5) 매뉴얼 페이지를 보십시오.\n"
 "                       이 APT는 Super Cow Powers로 무장했습니다.\n"
 
-#: cmdline/apt-get.cc:3475
+#: cmdline/apt-get.cc:3490
 msgid ""
 "NOTE: This is only a simulation!\n"
 "      apt-get needs root privileges for real execution.\n"
@@ -2882,7 +2882,7 @@ msgstr "설치 방법 드라이버 %s을(를) 찾을 수 없습니다."
 msgid "Method %s did not start correctly"
 msgstr "설치 방법 %s이(가) 올바르게 시작하지 않았습니다"
 
-#: apt-pkg/acquire-worker.cc:425
+#: apt-pkg/acquire-worker.cc:432
 #, c-format
 msgid "Please insert the disc labeled: '%s' in the drive '%s' and press enter."
 msgstr ""

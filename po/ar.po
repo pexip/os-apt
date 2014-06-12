@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt_po\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2012-12-12 08:05-0500\n"
+"POT-Creation-Date: 2014-06-13 12:58-0400\n"
 "PO-Revision-Date: 2006-10-20 21:28+0300\n"
 "Last-Translator: Ossama M. Khayat <okhayat@yahoo.com>\n"
 "Language-Team: Arabic <support@arabeyes.org>\n"
@@ -159,8 +159,8 @@ msgid "  Version table:"
 msgstr " جدول النسخ:"
 
 #: cmdline/apt-cache.cc:1679 cmdline/apt-cdrom.cc:199 cmdline/apt-config.cc:75
-#: cmdline/apt-extracttemplates.cc:227 ftparchive/apt-ftparchive.cc:590
-#: cmdline/apt-get.cc:3264 cmdline/apt-internal-solver.cc:32
+#: cmdline/apt-extracttemplates.cc:227 ftparchive/apt-ftparchive.cc:591
+#: cmdline/apt-get.cc:3279 cmdline/apt-internal-solver.cc:32
 #: cmdline/apt-mark.cc:267 cmdline/apt-sortpkgs.cc:147
 #, fuzzy, c-format
 msgid "%s %s for %s compiled on %s %s\n"
@@ -269,31 +269,31 @@ msgstr "تعذرت الكتابة إلى %s"
 msgid "Cannot get debconf version. Is debconf installed?"
 msgstr "تعذر الحصول على نسخة debconf. هل هي مثبتة؟"
 
-#: ftparchive/apt-ftparchive.cc:171 ftparchive/apt-ftparchive.cc:348
+#: ftparchive/apt-ftparchive.cc:171 ftparchive/apt-ftparchive.cc:349
 msgid "Package extension list is too long"
 msgstr "قائمة توسيعات الحزمة طويلة جداً"
 
 #: ftparchive/apt-ftparchive.cc:173 ftparchive/apt-ftparchive.cc:190
-#: ftparchive/apt-ftparchive.cc:213 ftparchive/apt-ftparchive.cc:263
-#: ftparchive/apt-ftparchive.cc:277 ftparchive/apt-ftparchive.cc:299
+#: ftparchive/apt-ftparchive.cc:213 ftparchive/apt-ftparchive.cc:264
+#: ftparchive/apt-ftparchive.cc:278 ftparchive/apt-ftparchive.cc:300
 #, c-format
 msgid "Error processing directory %s"
 msgstr "خطأ في معالجة الدليل %s"
 
-#: ftparchive/apt-ftparchive.cc:261
+#: ftparchive/apt-ftparchive.cc:262
 msgid "Source extension list is too long"
 msgstr "قائمة توسيعات المصدر طويلة جداً"
 
-#: ftparchive/apt-ftparchive.cc:378
+#: ftparchive/apt-ftparchive.cc:379
 msgid "Error writing header to contents file"
 msgstr "خطأ في كتابة الترويسة إلى ملف المحتويات"
 
-#: ftparchive/apt-ftparchive.cc:408
+#: ftparchive/apt-ftparchive.cc:409
 #, c-format
 msgid "Error processing contents %s"
 msgstr "خطأ في معالجة المحتويات %s"
 
-#: ftparchive/apt-ftparchive.cc:596
+#: ftparchive/apt-ftparchive.cc:597
 msgid ""
 "Usage: apt-ftparchive [options] command\n"
 "Commands: packages binarypath [overridefile [pathprefix]]\n"
@@ -335,11 +335,11 @@ msgid ""
 "  -o=?  Set an arbitrary configuration option"
 msgstr ""
 
-#: ftparchive/apt-ftparchive.cc:802
+#: ftparchive/apt-ftparchive.cc:803
 msgid "No selections matched"
 msgstr "لم تُطابق أية تحديدات"
 
-#: ftparchive/apt-ftparchive.cc:880
+#: ftparchive/apt-ftparchive.cc:881
 #, c-format
 msgid "Some files are missing in the package file group `%s'"
 msgstr "بعض الملفات مفقودة في مجموعة ملف الحزمة `%s'"
@@ -444,22 +444,22 @@ msgstr ""
 msgid "Archive had no package field"
 msgstr ""
 
-#: ftparchive/writer.cc:409 ftparchive/writer.cc:711
+#: ftparchive/writer.cc:409 ftparchive/writer.cc:714
 #, c-format
 msgid "  %s has no override entry\n"
 msgstr ""
 
-#: ftparchive/writer.cc:477 ftparchive/writer.cc:827
+#: ftparchive/writer.cc:477 ftparchive/writer.cc:858
 #, c-format
 msgid "  %s maintainer is %s not %s\n"
 msgstr ""
 
-#: ftparchive/writer.cc:721
+#: ftparchive/writer.cc:724
 #, c-format
 msgid "  %s has no source override entry\n"
 msgstr ""
 
-#: ftparchive/writer.cc:725
+#: ftparchive/writer.cc:728
 #, c-format
 msgid "  %s has no binary override entry either\n"
 msgstr ""
@@ -725,7 +725,7 @@ msgstr "إعادة تثبيت  %s غير ممكنة، حيث أنّه لا يم�
 msgid "%s is already the newest version.\n"
 msgstr "%s هي النسخة الأحدث.\n"
 
-#: cmdline/apt-get.cc:834 cmdline/apt-get.cc:2114 cmdline/apt-mark.cc:62
+#: cmdline/apt-get.cc:834 cmdline/apt-get.cc:2121 cmdline/apt-mark.cc:62
 #, fuzzy, c-format
 msgid "%s set to manually installed.\n"
 msgstr "إلا أنه سيتم تثبيت %s"
@@ -773,90 +773,90 @@ msgstr "قد ترغب بتنفيذ الأمر 'apt-get -f install' لتصحيح 
 msgid "Unmet dependencies. Try using -f."
 msgstr "مُعتمدات غير مستوفاة. حاول استخدام -f."
 
-#: cmdline/apt-get.cc:1028
+#: cmdline/apt-get.cc:1011
 msgid "WARNING: The following packages cannot be authenticated!"
 msgstr "تحذير: تعذرت المصادقة على الحزم التالية!"
 
-#: cmdline/apt-get.cc:1032
+#: cmdline/apt-get.cc:1015
 msgid "Authentication warning overridden.\n"
 msgstr "تم غض النظر عن تحذير المصادقة.\n"
 
-#: cmdline/apt-get.cc:1039
-msgid "Install these packages without verification [y/N]? "
-msgstr "تثبيت هذه الحزم دون التحقق منها [y/N]؟ "
-
-#: cmdline/apt-get.cc:1041
+#: cmdline/apt-get.cc:1020 cmdline/apt-get.cc:1027
 msgid "Some packages could not be authenticated"
 msgstr "تعذرت المصادقة على بعض الحزم"
 
-#: cmdline/apt-get.cc:1050 cmdline/apt-get.cc:1211
+#: cmdline/apt-get.cc:1025
+msgid "Install these packages without verification [y/N]? "
+msgstr "تثبيت هذه الحزم دون التحقق منها [y/N]؟ "
+
+#: cmdline/apt-get.cc:1036 cmdline/apt-get.cc:1218
 msgid "There are problems and -y was used without --force-yes"
 msgstr "هناك مشاكل وتم استخدام -y دون --force-yes"
 
-#: cmdline/apt-get.cc:1091
+#: cmdline/apt-get.cc:1098
 msgid "Internal error, InstallPackages was called with broken packages!"
 msgstr "خطأ داخلي، تم طلب InstallPackages مع وجود حزم معطوبة!"
 
-#: cmdline/apt-get.cc:1100
+#: cmdline/apt-get.cc:1107
 msgid "Packages need to be removed but remove is disabled."
 msgstr "حزم بحاجة للإزالة لكن الإزالة مُعطّلة."
 
-#: cmdline/apt-get.cc:1111
+#: cmdline/apt-get.cc:1118
 msgid "Internal error, Ordering didn't finish"
 msgstr "خطأ داخلي، لم تنته عملية الترتيب"
 
-#: cmdline/apt-get.cc:1149
+#: cmdline/apt-get.cc:1156
 msgid "How odd.. The sizes didn't match, email apt@packages.debian.org"
 msgstr "يا للغرابة.. لم تتطابق الأحجام، الرجاء مراسلة apt@packages.debian.org"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement strings, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1156
+#: cmdline/apt-get.cc:1163
 #, c-format
 msgid "Need to get %sB/%sB of archives.\n"
 msgstr "بحاجة إلى جلب %sب/%sب من الأرشيف.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1161
+#: cmdline/apt-get.cc:1168
 #, c-format
 msgid "Need to get %sB of archives.\n"
 msgstr "بحاجة إلى جلب %sب من الأرشيف.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1168
+#: cmdline/apt-get.cc:1175
 #, fuzzy, c-format
 msgid "After this operation, %sB of additional disk space will be used.\n"
 msgstr "بعد الاستخراج %sب من المساحة الإضافيّة سيتمّ استخدامها.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1173
+#: cmdline/apt-get.cc:1180
 #, fuzzy, c-format
 msgid "After this operation, %sB disk space will be freed.\n"
 msgstr "بعد الاستخراج %sب من المساحة ستفرّغ.\n"
 
-#: cmdline/apt-get.cc:1188 cmdline/apt-get.cc:1191 cmdline/apt-get.cc:2534
-#: cmdline/apt-get.cc:2537
+#: cmdline/apt-get.cc:1195 cmdline/apt-get.cc:1198 cmdline/apt-get.cc:2549
+#: cmdline/apt-get.cc:2552
 #, c-format
 msgid "Couldn't determine free space in %s"
 msgstr "تعذر حساب المساحة الحرة في %s"
 
-#: cmdline/apt-get.cc:1201
+#: cmdline/apt-get.cc:1208
 #, c-format
 msgid "You don't have enough free space in %s."
 msgstr "ليس هناك مساحة كافية في %s."
 
-#: cmdline/apt-get.cc:1217 cmdline/apt-get.cc:1237
+#: cmdline/apt-get.cc:1224 cmdline/apt-get.cc:1244
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr ""
 
-#: cmdline/apt-get.cc:1219
+#: cmdline/apt-get.cc:1226
 msgid "Yes, do as I say!"
 msgstr "نعم، افعل ما أقوله!"
 
-#: cmdline/apt-get.cc:1221
+#: cmdline/apt-get.cc:1228
 #, c-format
 msgid ""
 "You are about to do something potentially harmful.\n"
@@ -867,28 +867,28 @@ msgstr ""
 "كي تستمر اكتب العبارة '%s'\n"
 " ؟] "
 
-#: cmdline/apt-get.cc:1227 cmdline/apt-get.cc:1246
+#: cmdline/apt-get.cc:1234 cmdline/apt-get.cc:1253
 msgid "Abort."
 msgstr "إجهاض."
 
-#: cmdline/apt-get.cc:1242
+#: cmdline/apt-get.cc:1249
 msgid "Do you want to continue [Y/n]? "
 msgstr "هل تريد الاستمرار [Y/n]؟"
 
-#: cmdline/apt-get.cc:1314 cmdline/apt-get.cc:2599 apt-pkg/algorithms.cc:1491
+#: cmdline/apt-get.cc:1321 cmdline/apt-get.cc:2614 apt-pkg/algorithms.cc:1491
 #, c-format
 msgid "Failed to fetch %s  %s\n"
 msgstr "فشل إحضار %s  %s\n"
 
-#: cmdline/apt-get.cc:1332
+#: cmdline/apt-get.cc:1339
 msgid "Some files failed to download"
 msgstr "فشل تنزيل بعض الملفات"
 
-#: cmdline/apt-get.cc:1333 cmdline/apt-get.cc:2611
+#: cmdline/apt-get.cc:1340 cmdline/apt-get.cc:2626
 msgid "Download complete and in download only mode"
 msgstr "اكتمل التنزيل وفي وضع التنزيل فقط"
 
-#: cmdline/apt-get.cc:1339
+#: cmdline/apt-get.cc:1346
 msgid ""
 "Unable to fetch some archives, maybe run apt-get update or try with --fix-"
 "missing?"
@@ -896,19 +896,19 @@ msgstr ""
 "تعذر إحضار بعض الأرشيف، ربما يمكنك محاولة تنفيذ apt-get update أو إضافة --"
 "fix-missing؟"
 
-#: cmdline/apt-get.cc:1343
+#: cmdline/apt-get.cc:1350
 msgid "--fix-missing and media swapping is not currently supported"
 msgstr "--fix-missing وتبديل الأوساط غير مدعومة حالياً"
 
-#: cmdline/apt-get.cc:1348
+#: cmdline/apt-get.cc:1355
 msgid "Unable to correct missing packages."
 msgstr "تعذر تصحيح الحزم المفقودة."
 
-#: cmdline/apt-get.cc:1349
+#: cmdline/apt-get.cc:1356
 msgid "Aborting install."
 msgstr "إجهاض التثبيت."
 
-#: cmdline/apt-get.cc:1377
+#: cmdline/apt-get.cc:1384
 msgid ""
 "The following package disappeared from your system as\n"
 "all files have been overwritten by other packages:"
@@ -918,35 +918,35 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: cmdline/apt-get.cc:1381
+#: cmdline/apt-get.cc:1388
 msgid "Note: This is done automatic and on purpose by dpkg."
 msgstr ""
 
-#: cmdline/apt-get.cc:1519
+#: cmdline/apt-get.cc:1526
 #, c-format
 msgid "Ignore unavailable target release '%s' of package '%s'"
 msgstr ""
 
-#: cmdline/apt-get.cc:1551
+#: cmdline/apt-get.cc:1558
 #, c-format
 msgid "Picking '%s' as source package instead of '%s'\n"
 msgstr ""
 
 #. if (VerTag.empty() == false && Last == 0)
-#: cmdline/apt-get.cc:1589
+#: cmdline/apt-get.cc:1596
 #, c-format
 msgid "Ignore unavailable version '%s' of package '%s'"
 msgstr ""
 
-#: cmdline/apt-get.cc:1605
+#: cmdline/apt-get.cc:1612
 msgid "The update command takes no arguments"
 msgstr "لا يقبل الأمر update أية مُعطيات"
 
-#: cmdline/apt-get.cc:1668
+#: cmdline/apt-get.cc:1675
 msgid "We are not supposed to delete stuff, can't start AutoRemover"
 msgstr ""
 
-#: cmdline/apt-get.cc:1772
+#: cmdline/apt-get.cc:1779
 msgid ""
 "Hmm, seems like the AutoRemover destroyed something which really\n"
 "shouldn't happen. Please file a bug report against apt."
@@ -962,16 +962,16 @@ msgstr ""
 #. "that package should be filed.") << endl;
 #. }
 #.
-#: cmdline/apt-get.cc:1775 cmdline/apt-get.cc:1944
+#: cmdline/apt-get.cc:1782 cmdline/apt-get.cc:1951
 msgid "The following information may help to resolve the situation:"
 msgstr "قد تساعد المعلومات التالية في حل المشكلة:"
 
-#: cmdline/apt-get.cc:1779
+#: cmdline/apt-get.cc:1786
 #, fuzzy
 msgid "Internal Error, AutoRemover broke stuff"
 msgstr "خطأ داخلي، عطب AllUpgrade بعض الأشياء"
 
-#: cmdline/apt-get.cc:1786
+#: cmdline/apt-get.cc:1793
 #, fuzzy
 msgid ""
 "The following package was automatically installed and is no longer required:"
@@ -981,7 +981,7 @@ msgid_plural ""
 msgstr[0] "سيتم تثبيت الحزم الجديدة التالية:"
 msgstr[1] "سيتم تثبيت الحزم الجديدة التالية:"
 
-#: cmdline/apt-get.cc:1790
+#: cmdline/apt-get.cc:1797
 #, fuzzy, c-format
 msgid "%lu package was automatically installed and is no longer required.\n"
 msgid_plural ""
@@ -989,26 +989,26 @@ msgid_plural ""
 msgstr[0] "سيتم تثبيت الحزم الجديدة التالية:"
 msgstr[1] "سيتم تثبيت الحزم الجديدة التالية:"
 
-#: cmdline/apt-get.cc:1792
+#: cmdline/apt-get.cc:1799
 msgid "Use 'apt-get autoremove' to remove them."
 msgstr ""
 
-#: cmdline/apt-get.cc:1811
+#: cmdline/apt-get.cc:1818
 msgid "Internal error, AllUpgrade broke stuff"
 msgstr "خطأ داخلي، عطب AllUpgrade بعض الأشياء"
 
-#: cmdline/apt-get.cc:1910
+#: cmdline/apt-get.cc:1917
 msgid "You might want to run 'apt-get -f install' to correct these:"
 msgstr "قد ترغب بتشغيل 'apt-get -f install' لتصحيح هذه:"
 
-#: cmdline/apt-get.cc:1914
+#: cmdline/apt-get.cc:1921
 msgid ""
 "Unmet dependencies. Try 'apt-get -f install' with no packages (or specify a "
 "solution)."
 msgstr ""
 "مُعتمدات غير مستوفاة. جرب 'apt-get -f install' بدون أسماء حزم (أو حدّد حلاً)."
 
-#: cmdline/apt-get.cc:1929
+#: cmdline/apt-get.cc:1936
 msgid ""
 "Some packages could not be installed. This may mean that you have\n"
 "requested an impossible situation or if you are using the unstable\n"
@@ -1016,80 +1016,80 @@ msgid ""
 "or been moved out of Incoming."
 msgstr ""
 
-#: cmdline/apt-get.cc:1950
+#: cmdline/apt-get.cc:1957
 msgid "Broken packages"
 msgstr "حزم معطوبة"
 
-#: cmdline/apt-get.cc:1976
+#: cmdline/apt-get.cc:1983
 msgid "The following extra packages will be installed:"
 msgstr "سيتم تثبيت الحزم الإضافيّة التالية:"
 
-#: cmdline/apt-get.cc:2066
+#: cmdline/apt-get.cc:2073
 msgid "Suggested packages:"
 msgstr "الحزم المقترحة:"
 
-#: cmdline/apt-get.cc:2067
+#: cmdline/apt-get.cc:2074
 msgid "Recommended packages:"
 msgstr "الحزم المستحسنة:"
 
-#: cmdline/apt-get.cc:2109
+#: cmdline/apt-get.cc:2116
 #, c-format
 msgid "Couldn't find package %s"
 msgstr "تعذر العثور على الحزمة %s"
 
-#: cmdline/apt-get.cc:2116 cmdline/apt-mark.cc:64
+#: cmdline/apt-get.cc:2123 cmdline/apt-mark.cc:64
 #, fuzzy, c-format
 msgid "%s set to automatically installed.\n"
 msgstr "إلا أنه سيتم تثبيت %s"
 
-#: cmdline/apt-get.cc:2124 cmdline/apt-mark.cc:108
+#: cmdline/apt-get.cc:2131 cmdline/apt-mark.cc:108
 msgid ""
 "This command is deprecated. Please use 'apt-mark auto' and 'apt-mark manual' "
 "instead."
 msgstr ""
 
-#: cmdline/apt-get.cc:2140
+#: cmdline/apt-get.cc:2147
 msgid "Calculating upgrade... "
 msgstr "حساب الترقية..."
 
-#: cmdline/apt-get.cc:2143 methods/ftp.cc:712 methods/connect.cc:115
+#: cmdline/apt-get.cc:2150 methods/ftp.cc:712 methods/connect.cc:115
 msgid "Failed"
 msgstr "فشل"
 
-#: cmdline/apt-get.cc:2148
+#: cmdline/apt-get.cc:2155
 msgid "Done"
 msgstr "تمّ"
 
-#: cmdline/apt-get.cc:2215 cmdline/apt-get.cc:2223
+#: cmdline/apt-get.cc:2222 cmdline/apt-get.cc:2230
 msgid "Internal error, problem resolver broke stuff"
 msgstr ""
 
-#: cmdline/apt-get.cc:2251 cmdline/apt-get.cc:2287
+#: cmdline/apt-get.cc:2258 cmdline/apt-get.cc:2294
 msgid "Unable to lock the download directory"
 msgstr "تعذر قَفْل دليل التنزيل"
 
-#: cmdline/apt-get.cc:2338
+#: cmdline/apt-get.cc:2345
 #, c-format
 msgid "Downloading %s %s"
 msgstr ""
 
-#: cmdline/apt-get.cc:2396
+#: cmdline/apt-get.cc:2403
 msgid "Must specify at least one package to fetch source for"
 msgstr "يجب تحديد حزمة واحدة على الأقل لجلب مصدرها"
 
-#: cmdline/apt-get.cc:2436 cmdline/apt-get.cc:2748
+#: cmdline/apt-get.cc:2444 cmdline/apt-get.cc:2763
 #, c-format
 msgid "Unable to find a source package for %s"
 msgstr "تعذر العثور على مصدر الحزمة %s"
 
-#: cmdline/apt-get.cc:2453
+#: cmdline/apt-get.cc:2464
 #, c-format
 msgid ""
 "NOTICE: '%s' packaging is maintained in the '%s' version control system at:\n"
 "%s\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2458
+#: cmdline/apt-get.cc:2469
 #, c-format
 msgid ""
 "Please use:\n"
@@ -1097,141 +1097,141 @@ msgid ""
 "to retrieve the latest (possibly unreleased) updates to the package.\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2511
+#: cmdline/apt-get.cc:2522
 #, c-format
 msgid "Skipping already downloaded file '%s'\n"
 msgstr "تخطي الملف '%s' المنزل مسبقاً\n"
 
-#: cmdline/apt-get.cc:2548
+#: cmdline/apt-get.cc:2563
 #, c-format
 msgid "You don't have enough free space in %s"
 msgstr "ليس هناك مساحة كافية في %s"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement strings, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2557
+#: cmdline/apt-get.cc:2572
 #, c-format
 msgid "Need to get %sB/%sB of source archives.\n"
 msgstr "يجب جلب %sب/%sب من الأرشيفات المصدرية.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2562
+#: cmdline/apt-get.cc:2577
 #, c-format
 msgid "Need to get %sB of source archives.\n"
 msgstr "يجب جلب %sب من الأرشيفات المصدريّة.\n"
 
-#: cmdline/apt-get.cc:2568
+#: cmdline/apt-get.cc:2583
 #, c-format
 msgid "Fetch source %s\n"
 msgstr "إحضار المصدر %s\n"
 
-#: cmdline/apt-get.cc:2606
+#: cmdline/apt-get.cc:2621
 msgid "Failed to fetch some archives."
 msgstr "فشل إحضار بعض الأرشيفات."
 
-#: cmdline/apt-get.cc:2637
+#: cmdline/apt-get.cc:2652
 #, c-format
 msgid "Skipping unpack of already unpacked source in %s\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2649
+#: cmdline/apt-get.cc:2664
 #, c-format
 msgid "Unpack command '%s' failed.\n"
 msgstr "أمر فك الحزمة '%s' فشل.\n"
 
-#: cmdline/apt-get.cc:2650
+#: cmdline/apt-get.cc:2665
 #, c-format
 msgid "Check if the 'dpkg-dev' package is installed.\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2672
+#: cmdline/apt-get.cc:2687
 #, c-format
 msgid "Build command '%s' failed.\n"
 msgstr "أمر البناء '%s' فشل.\n"
 
-#: cmdline/apt-get.cc:2692
+#: cmdline/apt-get.cc:2707
 msgid "Child process failed"
 msgstr ""
 
-#: cmdline/apt-get.cc:2711
+#: cmdline/apt-get.cc:2726
 msgid "Must specify at least one package to check builddeps for"
 msgstr ""
 
-#: cmdline/apt-get.cc:2736
+#: cmdline/apt-get.cc:2751
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
 
-#: cmdline/apt-get.cc:2753
+#: cmdline/apt-get.cc:2768
 #, c-format
 msgid "Unable to get build-dependency information for %s"
 msgstr ""
 
-#: cmdline/apt-get.cc:2773
+#: cmdline/apt-get.cc:2788
 #, c-format
 msgid "%s has no build depends.\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2909
+#: cmdline/apt-get.cc:2924
 #, c-format
 msgid ""
 "%s dependency for %s can't be satisfied because %s is not allowed on '%s' "
 "packages"
 msgstr ""
 
-#: cmdline/apt-get.cc:2930
+#: cmdline/apt-get.cc:2945
 #, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because the package %s cannot be "
 "found"
 msgstr ""
 
-#: cmdline/apt-get.cc:2953
+#: cmdline/apt-get.cc:2968
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: Installed package %s is too new"
 msgstr ""
 
-#: cmdline/apt-get.cc:2992
+#: cmdline/apt-get.cc:3007
 #, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because candidate version of "
 "package %s can't satisfy version requirements"
 msgstr ""
 
-#: cmdline/apt-get.cc:2998
+#: cmdline/apt-get.cc:3013
 #, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because package %s has no candidate "
 "version"
 msgstr ""
 
-#: cmdline/apt-get.cc:3021
+#: cmdline/apt-get.cc:3036
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: %s"
 msgstr ""
 
-#: cmdline/apt-get.cc:3037
+#: cmdline/apt-get.cc:3052
 #, c-format
 msgid "Build-dependencies for %s could not be satisfied."
 msgstr ""
 
-#: cmdline/apt-get.cc:3042
+#: cmdline/apt-get.cc:3057
 msgid "Failed to process build dependencies"
 msgstr ""
 
-#: cmdline/apt-get.cc:3135 cmdline/apt-get.cc:3147
+#: cmdline/apt-get.cc:3150 cmdline/apt-get.cc:3162
 #, fuzzy, c-format
 msgid "Changelog for %s (%s)"
 msgstr "الاتصال بـ%s (%s)"
 
-#: cmdline/apt-get.cc:3269
+#: cmdline/apt-get.cc:3284
 msgid "Supported modules:"
 msgstr "الوحدات المدعومة:"
 
-#: cmdline/apt-get.cc:3310
+#: cmdline/apt-get.cc:3325
 msgid ""
 "Usage: apt-get [options] command\n"
 "       apt-get [options] install|remove pkg1 [pkg2 ...]\n"
@@ -1277,7 +1277,7 @@ msgid ""
 "                       This APT has Super Cow Powers.\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:3475
+#: cmdline/apt-get.cc:3490
 msgid ""
 "NOTE: This is only a simulation!\n"
 "      apt-get needs root privileges for real execution.\n"
@@ -2689,7 +2689,7 @@ msgstr ""
 msgid "Method %s did not start correctly"
 msgstr ""
 
-#: apt-pkg/acquire-worker.cc:425
+#: apt-pkg/acquire-worker.cc:432
 #, c-format
 msgid "Please insert the disc labeled: '%s' in the drive '%s' and press enter."
 msgstr "الرجاء إدخال القرص المُسمّى  '%s' في السوّاقة '%s' وضغط مفتاح الإدخال."

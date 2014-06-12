@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ro\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2012-12-12 08:05-0500\n"
+"POT-Creation-Date: 2014-06-13 12:58-0400\n"
 "PO-Revision-Date: 2008-11-15 02:21+0200\n"
 "Last-Translator: Eddy Petrișor <eddy.petrisor@gmail.com>\n"
 "Language-Team: Romanian <debian-l10n-romanian@lists.debian.org>\n"
@@ -158,8 +158,8 @@ msgid "  Version table:"
 msgstr "  Tabela de versiuni:"
 
 #: cmdline/apt-cache.cc:1679 cmdline/apt-cdrom.cc:199 cmdline/apt-config.cc:75
-#: cmdline/apt-extracttemplates.cc:227 ftparchive/apt-ftparchive.cc:590
-#: cmdline/apt-get.cc:3264 cmdline/apt-internal-solver.cc:32
+#: cmdline/apt-extracttemplates.cc:227 ftparchive/apt-ftparchive.cc:591
+#: cmdline/apt-get.cc:3279 cmdline/apt-internal-solver.cc:32
 #: cmdline/apt-mark.cc:267 cmdline/apt-sortpkgs.cc:147
 #, c-format
 msgid "%s %s for %s compiled on %s %s\n"
@@ -327,31 +327,31 @@ msgstr "Nu s-a putut scrie în %s"
 msgid "Cannot get debconf version. Is debconf installed?"
 msgstr "Nu s-a putut citi versiunea debconf. Este instalat debconf?"
 
-#: ftparchive/apt-ftparchive.cc:171 ftparchive/apt-ftparchive.cc:348
+#: ftparchive/apt-ftparchive.cc:171 ftparchive/apt-ftparchive.cc:349
 msgid "Package extension list is too long"
 msgstr "Lista de extensii pentru pachet este prea lungă"
 
 #: ftparchive/apt-ftparchive.cc:173 ftparchive/apt-ftparchive.cc:190
-#: ftparchive/apt-ftparchive.cc:213 ftparchive/apt-ftparchive.cc:263
-#: ftparchive/apt-ftparchive.cc:277 ftparchive/apt-ftparchive.cc:299
+#: ftparchive/apt-ftparchive.cc:213 ftparchive/apt-ftparchive.cc:264
+#: ftparchive/apt-ftparchive.cc:278 ftparchive/apt-ftparchive.cc:300
 #, c-format
 msgid "Error processing directory %s"
 msgstr "Eroare la prelucrarea directorului %s"
 
-#: ftparchive/apt-ftparchive.cc:261
+#: ftparchive/apt-ftparchive.cc:262
 msgid "Source extension list is too long"
 msgstr "Lista de extensii pentru sursă este prea lungă"
 
-#: ftparchive/apt-ftparchive.cc:378
+#: ftparchive/apt-ftparchive.cc:379
 msgid "Error writing header to contents file"
 msgstr "Eroare la scrierea antetului în fișierul index"
 
-#: ftparchive/apt-ftparchive.cc:408
+#: ftparchive/apt-ftparchive.cc:409
 #, c-format
 msgid "Error processing contents %s"
 msgstr "Eroare la prelucrarea conținutului %s"
 
-#: ftparchive/apt-ftparchive.cc:596
+#: ftparchive/apt-ftparchive.cc:597
 msgid ""
 "Usage: apt-ftparchive [options] command\n"
 "Commands: packages binarypath [overridefile [pathprefix]]\n"
@@ -439,11 +439,11 @@ msgstr ""
 "  -c=? Citește acest fișier de configurare\n"
 "  -o=? Ajustează o opțiune de configurare arbitrară"
 
-#: ftparchive/apt-ftparchive.cc:802
+#: ftparchive/apt-ftparchive.cc:803
 msgid "No selections matched"
 msgstr "Nu s-a potrivit nici o selecție"
 
-#: ftparchive/apt-ftparchive.cc:880
+#: ftparchive/apt-ftparchive.cc:881
 #, c-format
 msgid "Some files are missing in the package file group `%s'"
 msgstr "Unele fișiere lipsesc din grupul fișierului pachet '%s'"
@@ -551,22 +551,22 @@ msgstr " Limita de %sB a dezlegării a fost atinsă.\n"
 msgid "Archive had no package field"
 msgstr "Arhiva nu are câmp de pachet"
 
-#: ftparchive/writer.cc:409 ftparchive/writer.cc:711
+#: ftparchive/writer.cc:409 ftparchive/writer.cc:714
 #, c-format
 msgid "  %s has no override entry\n"
 msgstr "  %s nu are intrare de înlocuire\n"
 
-#: ftparchive/writer.cc:477 ftparchive/writer.cc:827
+#: ftparchive/writer.cc:477 ftparchive/writer.cc:858
 #, c-format
 msgid "  %s maintainer is %s not %s\n"
 msgstr "  %s responsabil este %s nu %s\n"
 
-#: ftparchive/writer.cc:721
+#: ftparchive/writer.cc:724
 #, c-format
 msgid "  %s has no source override entry\n"
 msgstr "  %s nu are nici o intrare sursă de înlocuire\n"
 
-#: ftparchive/writer.cc:725
+#: ftparchive/writer.cc:728
 #, c-format
 msgid "  %s has no binary override entry either\n"
 msgstr "  %s nu are nici intrare binară de înlocuire\n"
@@ -836,7 +836,7 @@ msgstr "Reinstalarea lui %s nu este posibilă, nu poate fi descărcat.\n"
 msgid "%s is already the newest version.\n"
 msgstr "%s este deja la cea mai nouă versiune.\n"
 
-#: cmdline/apt-get.cc:834 cmdline/apt-get.cc:2114 cmdline/apt-mark.cc:62
+#: cmdline/apt-get.cc:834 cmdline/apt-get.cc:2121 cmdline/apt-mark.cc:62
 #, c-format
 msgid "%s set to manually installed.\n"
 msgstr "%s este marcat ca fiind instalat manual.\n"
@@ -884,92 +884,92 @@ msgstr "Ați putea să porniți 'apt-get -f install' pentru a corecta acestea."
 msgid "Unmet dependencies. Try using -f."
 msgstr "Dependențe neîndeplinite. Încercați să folosiți -f."
 
-#: cmdline/apt-get.cc:1028
+#: cmdline/apt-get.cc:1011
 msgid "WARNING: The following packages cannot be authenticated!"
 msgstr "AVERTISMENT: Următoarele pachete nu pot fi autentificate!"
 
-#: cmdline/apt-get.cc:1032
+#: cmdline/apt-get.cc:1015
 msgid "Authentication warning overridden.\n"
 msgstr "Avertisment de autentificare înlocuit.\n"
 
-#: cmdline/apt-get.cc:1039
-msgid "Install these packages without verification [y/N]? "
-msgstr "Instalați aceste pachete fără verificare [y/N]? "
-
-#: cmdline/apt-get.cc:1041
+#: cmdline/apt-get.cc:1020 cmdline/apt-get.cc:1027
 msgid "Some packages could not be authenticated"
 msgstr "Unele pachete n-au putut fi autentificate"
 
-#: cmdline/apt-get.cc:1050 cmdline/apt-get.cc:1211
+#: cmdline/apt-get.cc:1025
+msgid "Install these packages without verification [y/N]? "
+msgstr "Instalați aceste pachete fără verificare [y/N]? "
+
+#: cmdline/apt-get.cc:1036 cmdline/apt-get.cc:1218
 msgid "There are problems and -y was used without --force-yes"
 msgstr "Sunt unele probleme și -y a fost folosit fără --force-yes"
 
-#: cmdline/apt-get.cc:1091
+#: cmdline/apt-get.cc:1098
 msgid "Internal error, InstallPackages was called with broken packages!"
 msgstr "Eroare internă, InstallPackages a fost apelat cu pachete deteriorate!"
 
-#: cmdline/apt-get.cc:1100
+#: cmdline/apt-get.cc:1107
 msgid "Packages need to be removed but remove is disabled."
 msgstr "Pachete trebuiesc șterse dar ștergerea este dezactivată."
 
-#: cmdline/apt-get.cc:1111
+#: cmdline/apt-get.cc:1118
 msgid "Internal error, Ordering didn't finish"
 msgstr "Eroare internă, Ordering nu s-a terminat"
 
-#: cmdline/apt-get.cc:1149
+#: cmdline/apt-get.cc:1156
 msgid "How odd.. The sizes didn't match, email apt@packages.debian.org"
 msgstr ""
 "Ce ciudat.. Dimensiunile nu se potrivesc, scrieți la apt@packages.debian.org"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement strings, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1156
+#: cmdline/apt-get.cc:1163
 #, c-format
 msgid "Need to get %sB/%sB of archives.\n"
 msgstr "Este nevoie să descărcați %sB/%sB de arhive.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1161
+#: cmdline/apt-get.cc:1168
 #, c-format
 msgid "Need to get %sB of archives.\n"
 msgstr "Este nevoie să descărcați %sB de arhive.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1168
+#: cmdline/apt-get.cc:1175
 #, c-format
 msgid "After this operation, %sB of additional disk space will be used.\n"
 msgstr "După această operație vor fi folosiți din disc încă %sB.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1173
+#: cmdline/apt-get.cc:1180
 #, c-format
 msgid "After this operation, %sB disk space will be freed.\n"
 msgstr "După această operație se vor elibera %sB din spațiul ocupat pe disc.\n"
 
-#: cmdline/apt-get.cc:1188 cmdline/apt-get.cc:1191 cmdline/apt-get.cc:2534
-#: cmdline/apt-get.cc:2537
+#: cmdline/apt-get.cc:1195 cmdline/apt-get.cc:1198 cmdline/apt-get.cc:2549
+#: cmdline/apt-get.cc:2552
 #, c-format
 msgid "Couldn't determine free space in %s"
 msgstr "N-am putut determina spațiul disponibil în %s"
 
-#: cmdline/apt-get.cc:1201
+#: cmdline/apt-get.cc:1208
 #, c-format
 msgid "You don't have enough free space in %s."
 msgstr "Nu aveți suficient spațiu în %s."
 
-#: cmdline/apt-get.cc:1217 cmdline/apt-get.cc:1237
+#: cmdline/apt-get.cc:1224 cmdline/apt-get.cc:1244
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr ""
 "A fost specificat 'doar neimportant' dar nu este o operațiune neimportantă."
 
-#: cmdline/apt-get.cc:1219
+#: cmdline/apt-get.cc:1226
 msgid "Yes, do as I say!"
 msgstr "Da, fă cum îți spun!"
 
-#: cmdline/apt-get.cc:1221
+#: cmdline/apt-get.cc:1228
 #, c-format
 msgid ""
 "You are about to do something potentially harmful.\n"
@@ -980,28 +980,28 @@ msgstr ""
 "Pentru a continua tastați fraza '%s'\n"
 " ?] "
 
-#: cmdline/apt-get.cc:1227 cmdline/apt-get.cc:1246
+#: cmdline/apt-get.cc:1234 cmdline/apt-get.cc:1253
 msgid "Abort."
 msgstr "Renunțare."
 
-#: cmdline/apt-get.cc:1242
+#: cmdline/apt-get.cc:1249
 msgid "Do you want to continue [Y/n]? "
 msgstr "Vreți să continuați [Y/n]? "
 
-#: cmdline/apt-get.cc:1314 cmdline/apt-get.cc:2599 apt-pkg/algorithms.cc:1491
+#: cmdline/apt-get.cc:1321 cmdline/apt-get.cc:2614 apt-pkg/algorithms.cc:1491
 #, c-format
 msgid "Failed to fetch %s  %s\n"
 msgstr "Eșec la aducerea lui %s  %s\n"
 
-#: cmdline/apt-get.cc:1332
+#: cmdline/apt-get.cc:1339
 msgid "Some files failed to download"
 msgstr "Descărcarea unor fișiere a eșuat"
 
-#: cmdline/apt-get.cc:1333 cmdline/apt-get.cc:2611
+#: cmdline/apt-get.cc:1340 cmdline/apt-get.cc:2626
 msgid "Download complete and in download only mode"
 msgstr "Descărcare completă și în modul doar descărcare"
 
-#: cmdline/apt-get.cc:1339
+#: cmdline/apt-get.cc:1346
 msgid ""
 "Unable to fetch some archives, maybe run apt-get update or try with --fix-"
 "missing?"
@@ -1009,19 +1009,19 @@ msgstr ""
 "Nu s-au putut aduce unele arhive, poate ar fi o idee bună să rulați 'apt-get "
 "update' sau încercați cu --fix-missing?"
 
-#: cmdline/apt-get.cc:1343
+#: cmdline/apt-get.cc:1350
 msgid "--fix-missing and media swapping is not currently supported"
 msgstr "--fix-missing și schimbul de mediu nu este deocamdată suportat"
 
-#: cmdline/apt-get.cc:1348
+#: cmdline/apt-get.cc:1355
 msgid "Unable to correct missing packages."
 msgstr "Nu pot corecta pachetele lipsă."
 
-#: cmdline/apt-get.cc:1349
+#: cmdline/apt-get.cc:1356
 msgid "Aborting install."
 msgstr "Abandonez instalarea."
 
-#: cmdline/apt-get.cc:1377
+#: cmdline/apt-get.cc:1384
 msgid ""
 "The following package disappeared from your system as\n"
 "all files have been overwritten by other packages:"
@@ -1032,36 +1032,36 @@ msgstr[0] ""
 msgstr[1] ""
 msgstr[2] ""
 
-#: cmdline/apt-get.cc:1381
+#: cmdline/apt-get.cc:1388
 msgid "Note: This is done automatic and on purpose by dpkg."
 msgstr ""
 
-#: cmdline/apt-get.cc:1519
+#: cmdline/apt-get.cc:1526
 #, c-format
 msgid "Ignore unavailable target release '%s' of package '%s'"
 msgstr ""
 
-#: cmdline/apt-get.cc:1551
+#: cmdline/apt-get.cc:1558
 #, fuzzy, c-format
 msgid "Picking '%s' as source package instead of '%s'\n"
 msgstr "Nu pot determina starea listei surse de pachete %s"
 
 #. if (VerTag.empty() == false && Last == 0)
-#: cmdline/apt-get.cc:1589
+#: cmdline/apt-get.cc:1596
 #, c-format
 msgid "Ignore unavailable version '%s' of package '%s'"
 msgstr ""
 
-#: cmdline/apt-get.cc:1605
+#: cmdline/apt-get.cc:1612
 msgid "The update command takes no arguments"
 msgstr "Comanda de actualizare nu are argumente"
 
 # XXX: orice sugestie este bine-venită
-#: cmdline/apt-get.cc:1668
+#: cmdline/apt-get.cc:1675
 msgid "We are not supposed to delete stuff, can't start AutoRemover"
 msgstr "Nu este voie să se șteargă lucruri, nu se poate porni AutoRemover"
 
-#: cmdline/apt-get.cc:1772
+#: cmdline/apt-get.cc:1779
 msgid ""
 "Hmm, seems like the AutoRemover destroyed something which really\n"
 "shouldn't happen. Please file a bug report against apt."
@@ -1080,15 +1080,15 @@ msgstr ""
 #. "that package should be filed.") << endl;
 #. }
 #.
-#: cmdline/apt-get.cc:1775 cmdline/apt-get.cc:1944
+#: cmdline/apt-get.cc:1782 cmdline/apt-get.cc:1951
 msgid "The following information may help to resolve the situation:"
 msgstr "Următoarele informații ar putea să vă ajute la rezolvarea situației:"
 
-#: cmdline/apt-get.cc:1779
+#: cmdline/apt-get.cc:1786
 msgid "Internal Error, AutoRemover broke stuff"
 msgstr "Eroare internă, AutoRemover a deteriorat diverse chestiuni"
 
-#: cmdline/apt-get.cc:1786
+#: cmdline/apt-get.cc:1793
 #, fuzzy
 msgid ""
 "The following package was automatically installed and is no longer required:"
@@ -1102,7 +1102,7 @@ msgstr[1] ""
 msgstr[2] ""
 "Următoarele pachete au fost instalate automat și nu mai sunt necesare:"
 
-#: cmdline/apt-get.cc:1790
+#: cmdline/apt-get.cc:1797
 #, fuzzy, c-format
 msgid "%lu package was automatically installed and is no longer required.\n"
 msgid_plural ""
@@ -1114,19 +1114,19 @@ msgstr[1] ""
 msgstr[2] ""
 "Următoarele pachete au fost instalate automat și nu mai sunt necesare:"
 
-#: cmdline/apt-get.cc:1792
+#: cmdline/apt-get.cc:1799
 msgid "Use 'apt-get autoremove' to remove them."
 msgstr "Folosiți 'apt-get autoremove' pentru a le șterge."
 
-#: cmdline/apt-get.cc:1811
+#: cmdline/apt-get.cc:1818
 msgid "Internal error, AllUpgrade broke stuff"
 msgstr "Eroare internă, înnoire totală a defectat diverse chestiuni"
 
-#: cmdline/apt-get.cc:1910
+#: cmdline/apt-get.cc:1917
 msgid "You might want to run 'apt-get -f install' to correct these:"
 msgstr "Ați putea porni 'apt-get -f install' pentru a corecta acestea:"
 
-#: cmdline/apt-get.cc:1914
+#: cmdline/apt-get.cc:1921
 msgid ""
 "Unmet dependencies. Try 'apt-get -f install' with no packages (or specify a "
 "solution)."
@@ -1134,7 +1134,7 @@ msgstr ""
 "Dependențe neîndeplinite. Încercați 'apt-get -f install' fără nici un pachet "
 "(sau oferiți o altă soluție)."
 
-#: cmdline/apt-get.cc:1929
+#: cmdline/apt-get.cc:1936
 msgid ""
 "Some packages could not be installed. This may mean that you have\n"
 "requested an impossible situation or if you are using the unstable\n"
@@ -1147,81 +1147,81 @@ msgstr ""
 "pachete\n"
 "cerute n-au fost create încă sau au fost mutate din Incoming."
 
-#: cmdline/apt-get.cc:1950
+#: cmdline/apt-get.cc:1957
 msgid "Broken packages"
 msgstr "Pachete deteriorate"
 
-#: cmdline/apt-get.cc:1976
+#: cmdline/apt-get.cc:1983
 msgid "The following extra packages will be installed:"
 msgstr "Următoarele extra pachete vor fi instalate:"
 
-#: cmdline/apt-get.cc:2066
+#: cmdline/apt-get.cc:2073
 msgid "Suggested packages:"
 msgstr "Pachete sugerate:"
 
-#: cmdline/apt-get.cc:2067
+#: cmdline/apt-get.cc:2074
 msgid "Recommended packages:"
 msgstr "Pachete recomandate:"
 
-#: cmdline/apt-get.cc:2109
+#: cmdline/apt-get.cc:2116
 #, c-format
 msgid "Couldn't find package %s"
 msgstr "Nu pot găsi pachetul %s"
 
-#: cmdline/apt-get.cc:2116 cmdline/apt-mark.cc:64
+#: cmdline/apt-get.cc:2123 cmdline/apt-mark.cc:64
 #, fuzzy, c-format
 msgid "%s set to automatically installed.\n"
 msgstr "%s este marcat ca fiind instalat manual.\n"
 
-#: cmdline/apt-get.cc:2124 cmdline/apt-mark.cc:108
+#: cmdline/apt-get.cc:2131 cmdline/apt-mark.cc:108
 msgid ""
 "This command is deprecated. Please use 'apt-mark auto' and 'apt-mark manual' "
 "instead."
 msgstr ""
 
-#: cmdline/apt-get.cc:2140
+#: cmdline/apt-get.cc:2147
 msgid "Calculating upgrade... "
 msgstr "Calculez înnoirea... "
 
-#: cmdline/apt-get.cc:2143 methods/ftp.cc:712 methods/connect.cc:115
+#: cmdline/apt-get.cc:2150 methods/ftp.cc:712 methods/connect.cc:115
 msgid "Failed"
 msgstr "Eșec"
 
-#: cmdline/apt-get.cc:2148
+#: cmdline/apt-get.cc:2155
 msgid "Done"
 msgstr "Terminat"
 
-#: cmdline/apt-get.cc:2215 cmdline/apt-get.cc:2223
+#: cmdline/apt-get.cc:2222 cmdline/apt-get.cc:2230
 msgid "Internal error, problem resolver broke stuff"
 msgstr ""
 "Eroare internă, rezolvatorul de probleme a deteriorat diverse chestiuni"
 
-#: cmdline/apt-get.cc:2251 cmdline/apt-get.cc:2287
+#: cmdline/apt-get.cc:2258 cmdline/apt-get.cc:2294
 msgid "Unable to lock the download directory"
 msgstr "Nu s-a putut bloca directorul de descărcare"
 
-#: cmdline/apt-get.cc:2338
+#: cmdline/apt-get.cc:2345
 #, c-format
 msgid "Downloading %s %s"
 msgstr ""
 
-#: cmdline/apt-get.cc:2396
+#: cmdline/apt-get.cc:2403
 msgid "Must specify at least one package to fetch source for"
 msgstr "Trebuie specificat cel puțin un pachet pentru a-i aduce sursa"
 
-#: cmdline/apt-get.cc:2436 cmdline/apt-get.cc:2748
+#: cmdline/apt-get.cc:2444 cmdline/apt-get.cc:2763
 #, c-format
 msgid "Unable to find a source package for %s"
 msgstr "Nu s-a putut găsi o sursă pachet pentru %s"
 
-#: cmdline/apt-get.cc:2453
+#: cmdline/apt-get.cc:2464
 #, c-format
 msgid ""
 "NOTICE: '%s' packaging is maintained in the '%s' version control system at:\n"
 "%s\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2458
+#: cmdline/apt-get.cc:2469
 #, c-format
 msgid ""
 "Please use:\n"
@@ -1229,87 +1229,87 @@ msgid ""
 "to retrieve the latest (possibly unreleased) updates to the package.\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2511
+#: cmdline/apt-get.cc:2522
 #, c-format
 msgid "Skipping already downloaded file '%s'\n"
 msgstr "Sar peste fișierul deja descărcat '%s'\n"
 
-#: cmdline/apt-get.cc:2548
+#: cmdline/apt-get.cc:2563
 #, c-format
 msgid "You don't have enough free space in %s"
 msgstr "Nu aveți suficient spațiu în %s"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement strings, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2557
+#: cmdline/apt-get.cc:2572
 #, c-format
 msgid "Need to get %sB/%sB of source archives.\n"
 msgstr "Este nevoie să descărcați %sB/%sB din arhivele surselor.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2562
+#: cmdline/apt-get.cc:2577
 #, c-format
 msgid "Need to get %sB of source archives.\n"
 msgstr "Este nevoie să descărcați %sB din arhivele surselor.\n"
 
-#: cmdline/apt-get.cc:2568
+#: cmdline/apt-get.cc:2583
 #, c-format
 msgid "Fetch source %s\n"
 msgstr "Aducere sursa %s\n"
 
-#: cmdline/apt-get.cc:2606
+#: cmdline/apt-get.cc:2621
 msgid "Failed to fetch some archives."
 msgstr "Eșec la aducerea unor arhive."
 
-#: cmdline/apt-get.cc:2637
+#: cmdline/apt-get.cc:2652
 #, c-format
 msgid "Skipping unpack of already unpacked source in %s\n"
 msgstr "Sar peste despachetarea sursei deja despachetate în %s\n"
 
-#: cmdline/apt-get.cc:2649
+#: cmdline/apt-get.cc:2664
 #, c-format
 msgid "Unpack command '%s' failed.\n"
 msgstr "Comanda de despachetare '%s' eșuată.\n"
 
-#: cmdline/apt-get.cc:2650
+#: cmdline/apt-get.cc:2665
 #, c-format
 msgid "Check if the 'dpkg-dev' package is installed.\n"
 msgstr "Verificați dacă pachetul 'dpkg-dev' este instalat.\n"
 
-#: cmdline/apt-get.cc:2672
+#: cmdline/apt-get.cc:2687
 #, c-format
 msgid "Build command '%s' failed.\n"
 msgstr "Comanda de construire '%s' eșuată.\n"
 
-#: cmdline/apt-get.cc:2692
+#: cmdline/apt-get.cc:2707
 msgid "Child process failed"
 msgstr "Procesul copil a eșuat"
 
-#: cmdline/apt-get.cc:2711
+#: cmdline/apt-get.cc:2726
 msgid "Must specify at least one package to check builddeps for"
 msgstr ""
 "Trebuie specificat cel puțin un pachet pentru a-i verifica dependențele "
 "înglobate"
 
-#: cmdline/apt-get.cc:2736
+#: cmdline/apt-get.cc:2751
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
 
-#: cmdline/apt-get.cc:2753
+#: cmdline/apt-get.cc:2768
 #, c-format
 msgid "Unable to get build-dependency information for %s"
 msgstr "Nu pot prelua informațiile despre dependențele înglobate ale lui %s"
 
-#: cmdline/apt-get.cc:2773
+#: cmdline/apt-get.cc:2788
 #, c-format
 msgid "%s has no build depends.\n"
 msgstr "%s nu are dependențe înglobate.\n"
 
-#: cmdline/apt-get.cc:2909
+#: cmdline/apt-get.cc:2924
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s can't be satisfied because %s is not allowed on '%s' "
@@ -1318,7 +1318,7 @@ msgstr ""
 "Dependența lui %s de %s nu poate fi satisfăcută deoarece pachetul %s nu "
 "poate fi găsit"
 
-#: cmdline/apt-get.cc:2930
+#: cmdline/apt-get.cc:2945
 #, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because the package %s cannot be "
@@ -1327,14 +1327,14 @@ msgstr ""
 "Dependența lui %s de %s nu poate fi satisfăcută deoarece pachetul %s nu "
 "poate fi găsit"
 
-#: cmdline/apt-get.cc:2953
+#: cmdline/apt-get.cc:2968
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: Installed package %s is too new"
 msgstr ""
 "Eșec la satisfacerea dependenței %s pentru %s: Pachetul instalat %s este "
 "prea nou"
 
-#: cmdline/apt-get.cc:2992
+#: cmdline/apt-get.cc:3007
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because candidate version of "
@@ -1343,7 +1343,7 @@ msgstr ""
 "Dependența lui %s de %s nu poate fi satisfăcută deoarece nici o versiune "
 "disponibilă a pachetului %s nu poate satisface versiunile cerute"
 
-#: cmdline/apt-get.cc:2998
+#: cmdline/apt-get.cc:3013
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because package %s has no candidate "
@@ -1352,30 +1352,30 @@ msgstr ""
 "Dependența lui %s de %s nu poate fi satisfăcută deoarece pachetul %s nu "
 "poate fi găsit"
 
-#: cmdline/apt-get.cc:3021
+#: cmdline/apt-get.cc:3036
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: %s"
 msgstr "Eșec la satisfacerea dependenței %s pentru %s: %s"
 
-#: cmdline/apt-get.cc:3037
+#: cmdline/apt-get.cc:3052
 #, c-format
 msgid "Build-dependencies for %s could not be satisfied."
 msgstr "Dependențele înglobate pentru %s nu pot fi satisfăcute."
 
-#: cmdline/apt-get.cc:3042
+#: cmdline/apt-get.cc:3057
 msgid "Failed to process build dependencies"
 msgstr "Eșec la prelucrarea dependențelor de compilare"
 
-#: cmdline/apt-get.cc:3135 cmdline/apt-get.cc:3147
+#: cmdline/apt-get.cc:3150 cmdline/apt-get.cc:3162
 #, fuzzy, c-format
 msgid "Changelog for %s (%s)"
 msgstr "Conectare la %s (%s)"
 
-#: cmdline/apt-get.cc:3269
+#: cmdline/apt-get.cc:3284
 msgid "Supported modules:"
 msgstr "Module suportate:"
 
-#: cmdline/apt-get.cc:3310
+#: cmdline/apt-get.cc:3325
 #, fuzzy
 msgid ""
 "Usage: apt-get [options] command\n"
@@ -1464,7 +1464,7 @@ msgstr ""
 "pentru mai multe informații și opțiuni.\n"
 "                       Acest APT are puterile unei Super Vaci.\n"
 
-#: cmdline/apt-get.cc:3475
+#: cmdline/apt-get.cc:3490
 msgid ""
 "NOTE: This is only a simulation!\n"
 "      apt-get needs root privileges for real execution.\n"
@@ -2923,7 +2923,7 @@ msgstr "Metoda driver %s nu poate fi găsită."
 msgid "Method %s did not start correctly"
 msgstr "Metoda %s nu s-a lansat corect"
 
-#: apt-pkg/acquire-worker.cc:425
+#: apt-pkg/acquire-worker.cc:432
 #, c-format
 msgid "Please insert the disc labeled: '%s' in the drive '%s' and press enter."
 msgstr ""
