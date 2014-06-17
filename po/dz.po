@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt_po.pot\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2012-12-12 08:05-0500\n"
+"POT-Creation-Date: 2014-06-13 12:58-0400\n"
 "PO-Revision-Date: 2006-09-19 09:49+0530\n"
 "Last-Translator: Kinley Tshering <gasepkuenden2k3@hotmail.com>\n"
 "Language-Team: Dzongkha <pgeyleg@dit.gov.bt>\n"
@@ -160,8 +160,8 @@ msgid "  Version table:"
 msgstr "ཐོན་རིམ་ཐིག་ཁྲམ།:"
 
 #: cmdline/apt-cache.cc:1679 cmdline/apt-cdrom.cc:199 cmdline/apt-config.cc:75
-#: cmdline/apt-extracttemplates.cc:227 ftparchive/apt-ftparchive.cc:590
-#: cmdline/apt-get.cc:3264 cmdline/apt-internal-solver.cc:32
+#: cmdline/apt-extracttemplates.cc:227 ftparchive/apt-ftparchive.cc:591
+#: cmdline/apt-get.cc:3279 cmdline/apt-internal-solver.cc:32
 #: cmdline/apt-mark.cc:267 cmdline/apt-sortpkgs.cc:147
 #, fuzzy, c-format
 msgid "%s %s for %s compiled on %s %s\n"
@@ -330,31 +330,31 @@ msgstr " %sལུ་འབྲི་མ་ཚུགས།"
 msgid "Cannot get debconf version. Is debconf installed?"
 msgstr "debconf ་་འཐོན་རིམ་འདི་ལེན་མ་ཚུགས། debconf འདི་གཞི་བཙུགས་འབད་ཡི་ག་?"
 
-#: ftparchive/apt-ftparchive.cc:171 ftparchive/apt-ftparchive.cc:348
+#: ftparchive/apt-ftparchive.cc:171 ftparchive/apt-ftparchive.cc:349
 msgid "Package extension list is too long"
 msgstr "ཐུམ་སྒྲིལ་རྒྱ་བསྐྱེད་ཐོག་ཡིག་འདི་གནམ་མེད་ས་མེད་རིངམ་འདུག"
 
 #: ftparchive/apt-ftparchive.cc:173 ftparchive/apt-ftparchive.cc:190
-#: ftparchive/apt-ftparchive.cc:213 ftparchive/apt-ftparchive.cc:263
-#: ftparchive/apt-ftparchive.cc:277 ftparchive/apt-ftparchive.cc:299
+#: ftparchive/apt-ftparchive.cc:213 ftparchive/apt-ftparchive.cc:264
+#: ftparchive/apt-ftparchive.cc:278 ftparchive/apt-ftparchive.cc:300
 #, c-format
 msgid "Error processing directory %s"
 msgstr "སྣོད་ཐོ་%s་ལས་སྦྱོར་འབདཝ་ད་འཛོལ་བ་འཐོན་ཡི།"
 
-#: ftparchive/apt-ftparchive.cc:261
+#: ftparchive/apt-ftparchive.cc:262
 msgid "Source extension list is too long"
 msgstr "འབྱུང་ཁུངས་རྒྱ་བསྐྱེད་ཀྱི་ཐོག་ཡིག་འདི་གནམ་མེད་ས་མེད་རིང་པས།"
 
-#: ftparchive/apt-ftparchive.cc:378
+#: ftparchive/apt-ftparchive.cc:379
 msgid "Error writing header to contents file"
 msgstr "ནང་དོན་ཡིག་སྣོད་ལུ་མགོ་ཡིག་འཛོལ་བ་འབྲི་ནིའི་མགོ་ཡིག"
 
-#: ftparchive/apt-ftparchive.cc:408
+#: ftparchive/apt-ftparchive.cc:409
 #, c-format
 msgid "Error processing contents %s"
 msgstr "%sའཛོལ་བ་ལས་སྦྱོར་འབད་ནིའི་ནང་དོན།"
 
-#: ftparchive/apt-ftparchive.cc:596
+#: ftparchive/apt-ftparchive.cc:597
 msgid ""
 "Usage: apt-ftparchive [options] command\n"
 "Commands: packages binarypath [overridefile [pathprefix]]\n"
@@ -438,11 +438,11 @@ msgstr ""
 "  -c=?  འ་ནི་རིམ་སྒྲིག་ཡིག་སྣོད་འདི་ལྷག\n"
 "  -o=?  མཐུན་སྒྲིག་རིམ་སྒྲིག་གི་གདམ་ཁ་ཅིག་གཞི་སྒྲིག་འབད།"
 
-#: ftparchive/apt-ftparchive.cc:802
+#: ftparchive/apt-ftparchive.cc:803
 msgid "No selections matched"
 msgstr "སེལ་འཐུ་ཚུ་མཐུན་སྒྲིག་མིན་འདུག"
 
-#: ftparchive/apt-ftparchive.cc:880
+#: ftparchive/apt-ftparchive.cc:881
 #, c-format
 msgid "Some files are missing in the package file group `%s'"
 msgstr "ཡིག་སྣོད་ལ་ལུ་ཅིག་ཐུམ་སྒྲིལ་ཡིག་སྣོད་སྡེ་ཚན་`%s'ནང་བརླག་སྟོར་ཞུགས་ནུག"
@@ -550,22 +550,22 @@ msgstr "%sB་ཧེང་བཀལ་བཀྲམ་ནིའི་འབྲེ
 msgid "Archive had no package field"
 msgstr "ཡིག་མཛོད་ལུ་ཐུམ་སྒྲིལ་ཅི་ཡང་འཐུས་ཤོར་མ་བྱུང་།"
 
-#: ftparchive/writer.cc:409 ftparchive/writer.cc:711
+#: ftparchive/writer.cc:409 ftparchive/writer.cc:714
 #, c-format
 msgid "  %s has no override entry\n"
 msgstr "  %sལུ་ཟུར་བཞག་ཐོ་བཀོད་མེད།\n"
 
-#: ftparchive/writer.cc:477 ftparchive/writer.cc:827
+#: ftparchive/writer.cc:477 ftparchive/writer.cc:858
 #, c-format
 msgid "  %s maintainer is %s not %s\n"
 msgstr "  %s ་རྒྱུན་སྐྱོང་པ་འདི་  %s ཨིན་   %s མེན།\n"
 
-#: ftparchive/writer.cc:721
+#: ftparchive/writer.cc:724
 #, c-format
 msgid "  %s has no source override entry\n"
 msgstr "  %s ལུ་འབྱུང་ཁུངས་མེདཔ་གཏང་ནིའི་ཐོ་བཀོད་འདི་མེད།\n"
 
-#: ftparchive/writer.cc:725
+#: ftparchive/writer.cc:728
 #, c-format
 msgid "  %s has no binary override entry either\n"
 msgstr "  %sལུ་ཟུང་ལྡན་མེདཔ་གཏང་ནིའི་་ཐོ་བཀོད་གང་རུང་ཡང་མིན་འདུག།\n"
@@ -839,7 +839,7 @@ msgstr "%s ་ལོག་གཞི་བཙུགས་འབད་ནི་འ
 msgid "%s is already the newest version.\n"
 msgstr "%s ་འདི་ཧེ་མ་ལས་རང་འཐོན་རིམ་གསར་ཤོས་ཅིག་ཨིན།\n"
 
-#: cmdline/apt-get.cc:834 cmdline/apt-get.cc:2114 cmdline/apt-mark.cc:62
+#: cmdline/apt-get.cc:834 cmdline/apt-get.cc:2121 cmdline/apt-mark.cc:62
 #, fuzzy, c-format
 msgid "%s set to manually installed.\n"
 msgstr "འདི་འབདཝ་ད་%sའདི་གཞི་བཙུགས་འབད་ནི་ཨིན།"
@@ -887,41 +887,41 @@ msgstr "འ་ནི་འདི་ཚུ་ནོར་བཅོས་འབད
 msgid "Unmet dependencies. Try using -f."
 msgstr "མ་ཚང་པའི་རྟེན་འབྲེལ་ཚུ། -f ལག་ལེན་འཐབ་སྟེ་འབད་རྩོལ་བསྐྱེད།"
 
-#: cmdline/apt-get.cc:1028
+#: cmdline/apt-get.cc:1011
 msgid "WARNING: The following packages cannot be authenticated!"
 msgstr "ཉེན་བརྡ:འོག་གི་ཐུམ་སྒྲིལ་འདི་ཚུ་བདེན་བཤད་འབད་མི་བཏུབ་པས།"
 
-#: cmdline/apt-get.cc:1032
+#: cmdline/apt-get.cc:1015
 msgid "Authentication warning overridden.\n"
 msgstr "བདེན་བཤད་ཉེན་བརྡ་འདི་ཟུར་འབད་ཡོད།\n"
 
-#: cmdline/apt-get.cc:1039
-msgid "Install these packages without verification [y/N]? "
-msgstr "བདེན་སྦྱོར་མ་འབད་བར་འ་ནི་ཐུམ་སྒྲིལ་འདི་ཚུ་གཞི་བཙུགས་འབད་ནི་ཨིན་ན་[y/N]? "
-
-#: cmdline/apt-get.cc:1041
+#: cmdline/apt-get.cc:1020 cmdline/apt-get.cc:1027
 msgid "Some packages could not be authenticated"
 msgstr "ཐུམ་སྒྲིལ་ལ་ལུ་ཅིག་བདེན་བཤད་འབད་མ་ཚུགས།"
 
-#: cmdline/apt-get.cc:1050 cmdline/apt-get.cc:1211
+#: cmdline/apt-get.cc:1025
+msgid "Install these packages without verification [y/N]? "
+msgstr "བདེན་སྦྱོར་མ་འབད་བར་འ་ནི་ཐུམ་སྒྲིལ་འདི་ཚུ་གཞི་བཙུགས་འབད་ནི་ཨིན་ན་[y/N]? "
+
+#: cmdline/apt-get.cc:1036 cmdline/apt-get.cc:1218
 msgid "There are problems and -y was used without --force-yes"
 msgstr "དཀའ་ངལ་ཚུ་ཡོདཔ་ལས་-y ་འདི་ --force-yes་མེདཐོག་ལས་ལག་ལེན་འཐབ་སྟེ་ཡོད།"
 
-#: cmdline/apt-get.cc:1091
+#: cmdline/apt-get.cc:1098
 msgid "Internal error, InstallPackages was called with broken packages!"
 msgstr ""
 "ནང་འཁོད་ཀྱི་འཛོལ་བ་  གཞི་བཙུགས་ཐུམ་སྒྲིལ་ཚུ་ ཆད་པ་ཡོད་པའི་ཐུམ་སྒྲིལ་ཚུ་དང་གཅིག་ཁར་བོད་བརྡ་འབད་འདི་"
 "ཡོད!"
 
-#: cmdline/apt-get.cc:1100
+#: cmdline/apt-get.cc:1107
 msgid "Packages need to be removed but remove is disabled."
 msgstr "ཐུམ་སྒྲིལ་ཚུ་རྩ་བསྐྲད་བཏང་དགོཔ་འདུག་འདི་འབདགཝ་ད་རྩ་བསྐྲད་གཏང་ནི་འདི་ལྕོགས་མིན་ཐལ་ཏེ་འདུག"
 
-#: cmdline/apt-get.cc:1111
+#: cmdline/apt-get.cc:1118
 msgid "Internal error, Ordering didn't finish"
 msgstr "ནང་འཁོད་འཛོལ་བ་  གོ་རིམ་བཟོ་ནི་ཚུ་མཇུག་མ་བསྡུ་བས།"
 
-#: cmdline/apt-get.cc:1149
+#: cmdline/apt-get.cc:1156
 msgid "How odd.. The sizes didn't match, email apt@packages.debian.org"
 msgstr ""
 "ག་ཅི་གི་ཡ་མཚན་ཆེ་མི་ཆེ་  ཚད་འདི་གིས་ email apt@packages.debian.org་ལུ་མཐུན་སྒྲིག་མི་འབད་"
@@ -929,52 +929,52 @@ msgstr ""
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement strings, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1156
+#: cmdline/apt-get.cc:1163
 #, c-format
 msgid "Need to get %sB/%sB of archives.\n"
 msgstr "%sBལེན་ནི་ལུ་དགོཔ་པས། ཡིག་མཛོད་ཚི་གི་%sB་\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1161
+#: cmdline/apt-get.cc:1168
 #, c-format
 msgid "Need to get %sB of archives.\n"
 msgstr "ཡིག་མཛོད་ཀྱི་%sB་འདི་ལེན་དགོ་པས།\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1168
+#: cmdline/apt-get.cc:1175
 #, fuzzy, c-format
 msgid "After this operation, %sB of additional disk space will be used.\n"
 msgstr "ཁ་སྐོང་གི་%sB་འདི་བཤུབ་པའི་ཤུལ་ལས་ཌིཀསི་གི་བར་སྟོང་དེ་ལག་ལེན་འཐབ་འོང་།\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:1173
+#: cmdline/apt-get.cc:1180
 #, fuzzy, c-format
 msgid "After this operation, %sB disk space will be freed.\n"
 msgstr "%sB་འདི་ཤུབ་པའི་ཤུལ་ལས་ཀྱི་བར་སྟོང་དེ་དལཝ་སྦེ་ལུས་འོང་།\n"
 
-#: cmdline/apt-get.cc:1188 cmdline/apt-get.cc:1191 cmdline/apt-get.cc:2534
-#: cmdline/apt-get.cc:2537
+#: cmdline/apt-get.cc:1195 cmdline/apt-get.cc:1198 cmdline/apt-get.cc:2549
+#: cmdline/apt-get.cc:2552
 #, c-format
 msgid "Couldn't determine free space in %s"
 msgstr "%s་ནང་བར་སྟོང་"
 
-#: cmdline/apt-get.cc:1201
+#: cmdline/apt-get.cc:1208
 #, c-format
 msgid "You don't have enough free space in %s."
 msgstr "%s ནང་ཁྱོད་ལུ་བར་སྟོང་དལཝ་ལངམ་སྦེ་མིན་འདུག"
 
-#: cmdline/apt-get.cc:1217 cmdline/apt-get.cc:1237
+#: cmdline/apt-get.cc:1224 cmdline/apt-get.cc:1244
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr "གལ་ཆུང་རྐྱངམ་ཅིག་ཁསལ་བཀོད་འབད་ནུག་ འདི་འབདཝ་ད་འ་ནི་འདི་གལ་ཆུང་གི་བཀོལ་སྤྱོད་མེན།"
 
-#: cmdline/apt-get.cc:1219
+#: cmdline/apt-get.cc:1226
 msgid "Yes, do as I say!"
 msgstr "ཨིན་ ང་གིས་སླབ་དོ་བཟུམ་སྦེ་རང་འབད!"
 
-#: cmdline/apt-get.cc:1221
+#: cmdline/apt-get.cc:1228
 #, c-format
 msgid ""
 "You are about to do something potentially harmful.\n"
@@ -985,28 +985,28 @@ msgstr ""
 "འཕྲོ་མཐུད་འབད་ནིའི་དོན་ལུ་'%s'ཚིག་ཚན་ནང་ལུ་ཡིག་དཔར་རྐྱབས།\n"
 " ?] "
 
-#: cmdline/apt-get.cc:1227 cmdline/apt-get.cc:1246
+#: cmdline/apt-get.cc:1234 cmdline/apt-get.cc:1253
 msgid "Abort."
 msgstr "བར་བཤོལ་འབད།"
 
-#: cmdline/apt-get.cc:1242
+#: cmdline/apt-get.cc:1249
 msgid "Do you want to continue [Y/n]? "
 msgstr "ཁྱོན་ཀྱི་འཕྲོ་མཐུད་ནི་འབད་ནི་ཨིན་ན་[Y/n]?"
 
-#: cmdline/apt-get.cc:1314 cmdline/apt-get.cc:2599 apt-pkg/algorithms.cc:1491
+#: cmdline/apt-get.cc:1321 cmdline/apt-get.cc:2614 apt-pkg/algorithms.cc:1491
 #, c-format
 msgid "Failed to fetch %s  %s\n"
 msgstr "%s  %s་ ལེན་ནི་ལུ་འཐུས་ཤོར་བྱུང་ཡོད།\n"
 
-#: cmdline/apt-get.cc:1332
+#: cmdline/apt-get.cc:1339
 msgid "Some files failed to download"
 msgstr "ཡིག་སྣོད་ལ་ལུ་ཅིག་ཕབ་ལེན་འབད་ནི་ལུ་འཐུས་ཤོར་བྱུང་ཡོད།"
 
-#: cmdline/apt-get.cc:1333 cmdline/apt-get.cc:2611
+#: cmdline/apt-get.cc:1340 cmdline/apt-get.cc:2626
 msgid "Download complete and in download only mode"
 msgstr "ཕབ་ལེན་ཐབས་ལམ་རྐྱངམ་གཅིག་ནང་མཇུག་བསྡུཝ་སྦེ་རང་ཕབ་ལེན་འབད།"
 
-#: cmdline/apt-get.cc:1339
+#: cmdline/apt-get.cc:1346
 msgid ""
 "Unable to fetch some archives, maybe run apt-get update or try with --fix-"
 "missing?"
@@ -1014,19 +1014,19 @@ msgstr ""
 "ཡིག་མཛོད་ལ་ལུ་ཅིག་ལེན་མི་ཚུགས་པས་  apt-get་དུས་མཐུན་བཟོ་ནི་གཡོག་བཀོལ་ནི་ཨིན་ན་ཡང་ན་--fix-"
 "missing་དང་གཅིག་ཁར་འབད་རྩོལ་བསྐྱེད་ནི་ཨིན་ན་?"
 
-#: cmdline/apt-get.cc:1343
+#: cmdline/apt-get.cc:1350
 msgid "--fix-missing and media swapping is not currently supported"
 msgstr "--fix-missing་དང་བརྡ་ལམ་བརྗེ་སོར་འབད་ནི་འདི་ད་ལྟོ་ལས་རང་རྒྱབ་སྐྱོར་མི་འབད་བས།"
 
-#: cmdline/apt-get.cc:1348
+#: cmdline/apt-get.cc:1355
 msgid "Unable to correct missing packages."
 msgstr "བརླག་སྟོར་ཞུགས་ཡོད་པའི་ཐུམ་སྒྲིལ་ཚུ་ནོར་བཅོས་འབད་མི་ཚུགས་པས།"
 
-#: cmdline/apt-get.cc:1349
+#: cmdline/apt-get.cc:1356
 msgid "Aborting install."
 msgstr "གཞི་བཙུགས་བར་བཤོལ་འབད་དོ།"
 
-#: cmdline/apt-get.cc:1377
+#: cmdline/apt-get.cc:1384
 msgid ""
 "The following package disappeared from your system as\n"
 "all files have been overwritten by other packages:"
@@ -1036,35 +1036,35 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: cmdline/apt-get.cc:1381
+#: cmdline/apt-get.cc:1388
 msgid "Note: This is done automatic and on purpose by dpkg."
 msgstr ""
 
-#: cmdline/apt-get.cc:1519
+#: cmdline/apt-get.cc:1526
 #, c-format
 msgid "Ignore unavailable target release '%s' of package '%s'"
 msgstr ""
 
-#: cmdline/apt-get.cc:1551
+#: cmdline/apt-get.cc:1558
 #, fuzzy, c-format
 msgid "Picking '%s' as source package instead of '%s'\n"
 msgstr "འབྱུང་ཁུངས་ཐུམ་སྒྲིལ་གྱི་ཐོ་ཡིག་%s་དེ་ངོ་བཤུས་འབད་མ་ཚུགས།"
 
 #. if (VerTag.empty() == false && Last == 0)
-#: cmdline/apt-get.cc:1589
+#: cmdline/apt-get.cc:1596
 #, c-format
 msgid "Ignore unavailable version '%s' of package '%s'"
 msgstr ""
 
-#: cmdline/apt-get.cc:1605
+#: cmdline/apt-get.cc:1612
 msgid "The update command takes no arguments"
 msgstr "དུས་མཐུན་བཟོ་བའི་བརྡ་བཀོད་འདི་གིས་སྒྲུབ་རྟགས་ཚུ་མི་འབག་འབད།"
 
-#: cmdline/apt-get.cc:1668
+#: cmdline/apt-get.cc:1675
 msgid "We are not supposed to delete stuff, can't start AutoRemover"
 msgstr ""
 
-#: cmdline/apt-get.cc:1772
+#: cmdline/apt-get.cc:1779
 msgid ""
 "Hmm, seems like the AutoRemover destroyed something which really\n"
 "shouldn't happen. Please file a bug report against apt."
@@ -1080,16 +1080,16 @@ msgstr ""
 #. "that package should be filed.") << endl;
 #. }
 #.
-#: cmdline/apt-get.cc:1775 cmdline/apt-get.cc:1944
+#: cmdline/apt-get.cc:1782 cmdline/apt-get.cc:1951
 msgid "The following information may help to resolve the situation:"
 msgstr "འོག་གི་བརྡ་དོན་དེ་གིས་དུས་སྐབས་འདི་མོས་མཐུན་བཟོ་ནི་ལུ་གྲོགས་རམ་འབད་འོང་:"
 
-#: cmdline/apt-get.cc:1779
+#: cmdline/apt-get.cc:1786
 #, fuzzy
 msgid "Internal Error, AutoRemover broke stuff"
 msgstr "ནང་འཁོད་འཛོལ་བ་ དཀའ་ངལ་མོས་མཐུན་འབད་མི་ཅ་ཆས་ཚུ་མེདཔ་ཐལ་ཡོད།"
 
-#: cmdline/apt-get.cc:1786
+#: cmdline/apt-get.cc:1793
 #, fuzzy
 msgid ""
 "The following package was automatically installed and is no longer required:"
@@ -1099,7 +1099,7 @@ msgid_plural ""
 msgstr[0] "འོག་གི་ཐུམ་སྒྲིས་གསརཔ་འདི་ཚུ་ཁཞི་བཙུགས་འབད་འོང་:"
 msgstr[1] "འོག་གི་ཐུམ་སྒྲིས་གསརཔ་འདི་ཚུ་ཁཞི་བཙུགས་འབད་འོང་:"
 
-#: cmdline/apt-get.cc:1790
+#: cmdline/apt-get.cc:1797
 #, fuzzy, c-format
 msgid "%lu package was automatically installed and is no longer required.\n"
 msgid_plural ""
@@ -1107,19 +1107,19 @@ msgid_plural ""
 msgstr[0] "འོག་གི་ཐུམ་སྒྲིས་གསརཔ་འདི་ཚུ་ཁཞི་བཙུགས་འབད་འོང་:"
 msgstr[1] "འོག་གི་ཐུམ་སྒྲིས་གསརཔ་འདི་ཚུ་ཁཞི་བཙུགས་འབད་འོང་:"
 
-#: cmdline/apt-get.cc:1792
+#: cmdline/apt-get.cc:1799
 msgid "Use 'apt-get autoremove' to remove them."
 msgstr ""
 
-#: cmdline/apt-get.cc:1811
+#: cmdline/apt-get.cc:1818
 msgid "Internal error, AllUpgrade broke stuff"
 msgstr "ནང་འགོད་འཛོལ་བ་  ཡར་བསྐྱེད་ཀྱི་ཅ་ཆས་ཆ་མཉམ་མེདཔ་ཐལ་ཡོད།"
 
-#: cmdline/apt-get.cc:1910
+#: cmdline/apt-get.cc:1917
 msgid "You might want to run 'apt-get -f install' to correct these:"
 msgstr "འདི་ཚུ་ནོར་བཅོས་འབད་ནིའི་དོན་ལུ་ཁྱོད་ཀྱི་'apt-get -f install'དེ་གཡོག་བཀོལ་དགོཔ་འོང་:"
 
-#: cmdline/apt-get.cc:1914
+#: cmdline/apt-get.cc:1921
 msgid ""
 "Unmet dependencies. Try 'apt-get -f install' with no packages (or specify a "
 "solution)."
@@ -1127,7 +1127,7 @@ msgstr ""
 "མ་ཚང་བའི་རྟེན་འབྲེལ་  ཐུས་སྒྲིལ་མེད་མི་ཚུ་དང་གཅིག་ཁར་ 'apt-get -f install'དེ་འབཐ་རྩོལ་བསྐྱེདཔ།"
 "(ཡང་ན་ཐབས་ཤེས་ཅིག་གསལ་བཀོད་འབད།)"
 
-#: cmdline/apt-get.cc:1929
+#: cmdline/apt-get.cc:1936
 msgid ""
 "Some packages could not be installed. This may mean that you have\n"
 "requested an impossible situation or if you are using the unstable\n"
@@ -1138,80 +1138,80 @@ msgstr ""
 "འབད་འབདཝ་འོང་ནི་མས་ ཡང་ན་ད་ལྟོ་ཡང་གསར་བསྐྲུན་མ་འབད་བར་ཡོད་པའི་ཐུམ་སྒྲིལ་ལ་ལུ་ཅིག་ཡང་ན་ནང་"
 "འབྱོར་གྱི་ཕྱི་ཁར་རྩ་བསྐྲད་བཏང་ཡོད་པའི་རྩ་བརྟན་མེད་པའི་བགོ་འགྲེམ་ཚུ་ལག་ལེན་འཐབ་དོ་ཡོདཔ་འོང་ནི་ཨིན་པས།"
 
-#: cmdline/apt-get.cc:1950
+#: cmdline/apt-get.cc:1957
 msgid "Broken packages"
 msgstr "ཆད་པ་ཡོད་པའི་ཐུམ་སྒྲིལ་ཚུ།"
 
-#: cmdline/apt-get.cc:1976
+#: cmdline/apt-get.cc:1983
 msgid "The following extra packages will be installed:"
 msgstr "འོག་གི་ཐུམ་སྒྲིལ་ཐེབས་ཚུ་གཞི་བཙུགས་འབད་འོང་:"
 
-#: cmdline/apt-get.cc:2066
+#: cmdline/apt-get.cc:2073
 msgid "Suggested packages:"
 msgstr "བསམ་འཆར་བཀོད་ཡོད་པའི་ཐུམ་སྒྲིལ་ཚུ:"
 
-#: cmdline/apt-get.cc:2067
+#: cmdline/apt-get.cc:2074
 msgid "Recommended packages:"
 msgstr "འོས་སྦྱོར་འབད་ཡོད་པའི་ཐུམ་སྒྲིལ་ཚུ:"
 
-#: cmdline/apt-get.cc:2109
+#: cmdline/apt-get.cc:2116
 #, c-format
 msgid "Couldn't find package %s"
 msgstr "%s་ཐུམ་སྒྲིལ་འཚོལ་མ་ཐོབ།"
 
-#: cmdline/apt-get.cc:2116 cmdline/apt-mark.cc:64
+#: cmdline/apt-get.cc:2123 cmdline/apt-mark.cc:64
 #, fuzzy, c-format
 msgid "%s set to automatically installed.\n"
 msgstr "འདི་འབདཝ་ད་%sའདི་གཞི་བཙུགས་འབད་ནི་ཨིན།"
 
-#: cmdline/apt-get.cc:2124 cmdline/apt-mark.cc:108
+#: cmdline/apt-get.cc:2131 cmdline/apt-mark.cc:108
 msgid ""
 "This command is deprecated. Please use 'apt-mark auto' and 'apt-mark manual' "
 "instead."
 msgstr ""
 
-#: cmdline/apt-get.cc:2140
+#: cmdline/apt-get.cc:2147
 msgid "Calculating upgrade... "
 msgstr "ཡར་བསྐྱེད་རྩིས་བཏོན་དོ་... "
 
-#: cmdline/apt-get.cc:2143 methods/ftp.cc:712 methods/connect.cc:115
+#: cmdline/apt-get.cc:2150 methods/ftp.cc:712 methods/connect.cc:115
 msgid "Failed"
 msgstr "འཐུས་ཤོར་བྱུང་ཡོད།"
 
-#: cmdline/apt-get.cc:2148
+#: cmdline/apt-get.cc:2155
 msgid "Done"
 msgstr "འབད་ཚར་ཡི།"
 
-#: cmdline/apt-get.cc:2215 cmdline/apt-get.cc:2223
+#: cmdline/apt-get.cc:2222 cmdline/apt-get.cc:2230
 msgid "Internal error, problem resolver broke stuff"
 msgstr "ནང་འཁོད་འཛོལ་བ་ དཀའ་ངལ་མོས་མཐུན་འབད་མི་ཅ་ཆས་ཚུ་མེདཔ་ཐལ་ཡོད།"
 
-#: cmdline/apt-get.cc:2251 cmdline/apt-get.cc:2287
+#: cmdline/apt-get.cc:2258 cmdline/apt-get.cc:2294
 msgid "Unable to lock the download directory"
 msgstr "ཕབ་ལེན་འབད་ནིའི་སྣོད་ཡིག་འདི་ལྡེ་མིག་རྐྱབས་མ་ཚུགས་པས།"
 
-#: cmdline/apt-get.cc:2338
+#: cmdline/apt-get.cc:2345
 #, c-format
 msgid "Downloading %s %s"
 msgstr ""
 
-#: cmdline/apt-get.cc:2396
+#: cmdline/apt-get.cc:2403
 msgid "Must specify at least one package to fetch source for"
 msgstr "གི་དོན་ལུ་འབྱུང་ཁུངས་ལེན་ནི་ལུ་ཉུང་མཐའ་རང་ཐུམ་སྒྲིལ་གཅིག་ལེན་དགོ"
 
-#: cmdline/apt-get.cc:2436 cmdline/apt-get.cc:2748
+#: cmdline/apt-get.cc:2444 cmdline/apt-get.cc:2763
 #, c-format
 msgid "Unable to find a source package for %s"
 msgstr "%s་གི་དོན་ལུ་འབྱུང་ཁུངས་ཐུམ་སྒྲིལ་ཅིག་འཚོལ་མ་འཐོབ"
 
-#: cmdline/apt-get.cc:2453
+#: cmdline/apt-get.cc:2464
 #, c-format
 msgid ""
 "NOTICE: '%s' packaging is maintained in the '%s' version control system at:\n"
 "%s\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2458
+#: cmdline/apt-get.cc:2469
 #, c-format
 msgid ""
 "Please use:\n"
@@ -1219,106 +1219,106 @@ msgid ""
 "to retrieve the latest (possibly unreleased) updates to the package.\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2511
+#: cmdline/apt-get.cc:2522
 #, c-format
 msgid "Skipping already downloaded file '%s'\n"
 msgstr "གོམ་འགྱོ་གིས་ཧེ་མ་ལས་རང་'%s'་ཡིག་སྣོད་དེ་ཕབ་ལེན་འབད་ནུག\n"
 
-#: cmdline/apt-get.cc:2548
+#: cmdline/apt-get.cc:2563
 #, c-format
 msgid "You don't have enough free space in %s"
 msgstr " %s་ནང་ཁྱོད་ལུ་བར་སྟོང་ཚུ་ལངམ་སྦེ་མིན་འདུག་"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement strings, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2557
+#: cmdline/apt-get.cc:2572
 #, c-format
 msgid "Need to get %sB/%sB of source archives.\n"
 msgstr "%sB་ལེན་དགོཔ་འདུག་  འབྱུང་ཁུངས་ཡིག་མཛོད་ཀྱི་%sB།\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2562
+#: cmdline/apt-get.cc:2577
 #, c-format
 msgid "Need to get %sB of source archives.\n"
 msgstr "འབྱུང་ཁུངས་ཡིག་མཛོད་ཚུ་ཀྱི་%sB་ལེན་དགོ་པསས།\n"
 
-#: cmdline/apt-get.cc:2568
+#: cmdline/apt-get.cc:2583
 #, c-format
 msgid "Fetch source %s\n"
 msgstr "%s་འབྱུང་ཁུངས་ལེན།\n"
 
-#: cmdline/apt-get.cc:2606
+#: cmdline/apt-get.cc:2621
 msgid "Failed to fetch some archives."
 msgstr "ཡིག་མཛོད་ལ་ལུ་ཅིག་ལེན་ནི་ལུ་འཐུས་ཤོར་བྱུང་ཡོད།"
 
-#: cmdline/apt-get.cc:2637
+#: cmdline/apt-get.cc:2652
 #, c-format
 msgid "Skipping unpack of already unpacked source in %s\n"
 msgstr "%s་ནང་ཧེ་མ་ལས་སྦུང་ཚན་བཟོ་བཤོལ་ཨིན་མའི་སྦུང་ཚན་བཟོ་བཤོལ་གོམ་འགྱོ་འབད་དོ།\n"
 
-#: cmdline/apt-get.cc:2649
+#: cmdline/apt-get.cc:2664
 #, c-format
 msgid "Unpack command '%s' failed.\n"
 msgstr "'%s'སྦུང་ཚན་བཟོ་བཤོལ་འཐུས་ཤོར་བྱུང་ཡོད།\n"
 
-#: cmdline/apt-get.cc:2650
+#: cmdline/apt-get.cc:2665
 #, c-format
 msgid "Check if the 'dpkg-dev' package is installed.\n"
 msgstr "'dpkg-dev'་ཐུམ་སྒྲིལ་དེ་གཞི་བཙུགས་འབད་ཡོད་པ་ཅིན་ཨེབ་གཏང་འབད།\n"
 
-#: cmdline/apt-get.cc:2672
+#: cmdline/apt-get.cc:2687
 #, c-format
 msgid "Build command '%s' failed.\n"
 msgstr "'%s'་བཟོ་བརྩིགས་བརྡ་བཀོད་འཐུས་ཤོར་བྱུང་ཡོད།\n"
 
-#: cmdline/apt-get.cc:2692
+#: cmdline/apt-get.cc:2707
 msgid "Child process failed"
 msgstr "ཆ་ལག་ལས་སྦྱོར་དེ་འཐུས་ཤོར་བྱུང་ནུག"
 
-#: cmdline/apt-get.cc:2711
+#: cmdline/apt-get.cc:2726
 msgid "Must specify at least one package to check builddeps for"
 msgstr "builddeps ཞིབ་དཔྱད་འབད་ནིའི་དོན་ལུ་ཉུང་མཐའ་རང་ཐུམ་སྒྲིལ་གཅིག་གསལ་བཀོད་འབད་དགོ"
 
-#: cmdline/apt-get.cc:2736
+#: cmdline/apt-get.cc:2751
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
 
-#: cmdline/apt-get.cc:2753
+#: cmdline/apt-get.cc:2768
 #, c-format
 msgid "Unable to get build-dependency information for %s"
 msgstr "%s་གི་དོན་ལུ་བཟོ་བརྩིགས་-རྟེན་འབྲེལ་བརྡ་དོན་དེ་ལེན་མ་ཚུགས།"
 
-#: cmdline/apt-get.cc:2773
+#: cmdline/apt-get.cc:2788
 #, c-format
 msgid "%s has no build depends.\n"
 msgstr "%s ལུ་བཟོ་བརྩིགས་རྟེན་འབྲེལ་མིན་འདུག\n"
 
-#: cmdline/apt-get.cc:2909
+#: cmdline/apt-get.cc:2924
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s can't be satisfied because %s is not allowed on '%s' "
 "packages"
 msgstr "%sཐུམ་སྒྲིལ་འདི་འཐོབ་མ་ཚུགསཔ་ལས་བརྟེན་ %sགི་དོན་ལུ་%s རྟེན་འབྲེལ་དེ་ངལ་རང་མ་ཚུགས་པས།"
 
-#: cmdline/apt-get.cc:2930
+#: cmdline/apt-get.cc:2945
 #, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because the package %s cannot be "
 "found"
 msgstr "%sཐུམ་སྒྲིལ་འདི་འཐོབ་མ་ཚུགསཔ་ལས་བརྟེན་ %sགི་དོན་ལུ་%s རྟེན་འབྲེལ་དེ་ངལ་རང་མ་ཚུགས་པས།"
 
-#: cmdline/apt-get.cc:2953
+#: cmdline/apt-get.cc:2968
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: Installed package %s is too new"
 msgstr ""
 "%s:གི་དོན་ལུ་%s་རྟེན་འབྲེལ་དེ་གི་རེ་བ་སྐོང་ནི་འདི་འཐུས་ཤོར་བྱུང་ཡོདཔ་ཨིན་  གཞི་བཙུགས་འབད་ཡོད་པའི་ཐུམ་"
 "སྒྲིལ་%s་དེ་གནམ་མེད་ས་མེད་གསརཔ་ཨིན་པས།"
 
-#: cmdline/apt-get.cc:2992
+#: cmdline/apt-get.cc:3007
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because candidate version of "
@@ -1327,37 +1327,37 @@ msgstr ""
 "%s གི་དོན་ལུ་%s་རྟེན་འབྲེལ་འདི་གི་རེ་བ་སྐོང་མི་ཚུགས་ནུག་ག་ཅི་འབད་ཟེར་བ་ཅིན་ཐུམ་སྒརིལ་%s་གི་འཐོན་རིམ་"
 "ཚུ་འཐོབ་མ་ཚུགསཔ་ལས་བརྟེན་འཐོན་རིམ་དགོས་མཁོ་ཚུ་གི་རེ་བ་དོ་སྐོང་མ་ཚུགས་པས།"
 
-#: cmdline/apt-get.cc:2998
+#: cmdline/apt-get.cc:3013
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because package %s has no candidate "
 "version"
 msgstr "%sཐུམ་སྒྲིལ་འདི་འཐོབ་མ་ཚུགསཔ་ལས་བརྟེན་ %sགི་དོན་ལུ་%s རྟེན་འབྲེལ་དེ་ངལ་རང་མ་ཚུགས་པས།"
 
-#: cmdline/apt-get.cc:3021
+#: cmdline/apt-get.cc:3036
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: %s"
 msgstr "%s: %s་གི་དོན་ལུ་་%s་རྟེན་འབྲེལ་འདི་ངལ་རངས་འབད་ནི་འཐུས་ཤོར་བྱུང་ནུག"
 
-#: cmdline/apt-get.cc:3037
+#: cmdline/apt-get.cc:3052
 #, c-format
 msgid "Build-dependencies for %s could not be satisfied."
 msgstr " %s་གི་དོན་ལུ་བཟོ་བརྩིགས་-རྟེན་འབྲེལ་འདི་ངལ་རངས་མ་ཚུགས་པས།"
 
-#: cmdline/apt-get.cc:3042
+#: cmdline/apt-get.cc:3057
 msgid "Failed to process build dependencies"
 msgstr "བཟོ་བརྩིགས་རྟེན་འབྲེལ་འདི་ལས་སྦྱོར་འབད་ནི་ལུ་འཐུས་ཤོར་བྱུང་ཡོདཔ་ཨིན།"
 
-#: cmdline/apt-get.cc:3135 cmdline/apt-get.cc:3147
+#: cmdline/apt-get.cc:3150 cmdline/apt-get.cc:3162
 #, fuzzy, c-format
 msgid "Changelog for %s (%s)"
 msgstr "%s (%s)་ལུ་མཐུད་དོ།"
 
-#: cmdline/apt-get.cc:3269
+#: cmdline/apt-get.cc:3284
 msgid "Supported modules:"
 msgstr "རྒྱབ་སྐྱོར་འབད་ཡོད་པའི་ཚད་གཞི་ཚུ:"
 
-#: cmdline/apt-get.cc:3310
+#: cmdline/apt-get.cc:3325
 #, fuzzy
 msgid ""
 "Usage: apt-get [options] command\n"
@@ -1446,7 +1446,7 @@ msgstr ""
 "ཤོག་ལེབ་ཚུ་ལུ་བལྟ།\n"
 "                       འ་ནི་ ཨེ་ཊི་པི་འདི་ལུ་ཡང་དག་ ཀའུ་ ནུས་ཤུགས་ཚུ་ཡོད།\n"
 
-#: cmdline/apt-get.cc:3475
+#: cmdline/apt-get.cc:3490
 msgid ""
 "NOTE: This is only a simulation!\n"
 "      apt-get needs root privileges for real execution.\n"
@@ -2895,7 +2895,7 @@ msgstr "ཐབས་ལམ་འདྲེན་བྱེད་%s་འདི་�
 msgid "Method %s did not start correctly"
 msgstr "ཐབས་ལམ་ %s འདི་ངེས་བདེན་སྦེ་འགོ་མ་བཙུགས་འབད།"
 
-#: apt-pkg/acquire-worker.cc:425
+#: apt-pkg/acquire-worker.cc:432
 #, c-format
 msgid "Please insert the disc labeled: '%s' in the drive '%s' and press enter."
 msgstr "ཁ་ཡིག་བཀོད་ཡོད་པའི་ ཌིསི་འདི་བཙུགས་གནང་། '%s'འདྲེན་འཕྲུལ་ནང་'%s' དང་ལོག་ལྡེ་འདི་ཨེབ།་"

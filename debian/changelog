@@ -1,8 +1,18 @@
-apt (0.8.16~exp12ubuntu10.16pexip1) pexip; urgency=low
+apt (0.8.16~exp12ubuntu10.17pexip1) pexip; urgency=low
 
-  * Prepare Pexip packaging
+  * New upstream release
 
- -- John-Mark Bell <jmb@pexip.com>  Tue, 24 Dec 2013 13:07:32 +0000
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 17 Jun 2014 20:43:12 +0100
+
+apt (0.8.16~exp12ubuntu10.17) precise-security; urgency=low
+
+  * SECURITY UPDATE: incorrect apt-get source validation (LP: #1329274)
+    - warn if not authenticated in cmdline/apt-get.cc, added regression
+      test to test/integration/test-apt-get-source-authenticated,
+      test/integration/framework.
+    - CVE-2014-0478
+
+ -- Michael Vogt <michael.vogt@ubuntu.com>  Thu, 12 Jun 2014 14:12:19 +0200
 
 apt (0.8.16~exp12ubuntu10.16) precise; urgency=low
 
