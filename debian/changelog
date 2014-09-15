@@ -1,3 +1,13 @@
+apt (0.8.16~exp12ubuntu10.19) precise-security; urgency=low
+
+  * SECURITY UPDATE:
+    - incorrect invalidating of unauthenticated data (CVE-2014-0488)
+    - incorect verification of 304 reply (CVE-2014-0487)
+    - incorrect verification of Acquire::Gzip indexes (CVE-2014-0489)
+    - incorrect apt-get download validation (CVE-2014-0490)
+
+ -- Michael Vogt <michael.vogt@ubuntu.com>  Mon, 15 Sep 2014 08:23:20 +0200
+
 apt (0.8.16~exp12ubuntu10.17) precise-security; urgency=low
 
   * SECURITY UPDATE: incorrect apt-get source validation (LP: #1329274)
