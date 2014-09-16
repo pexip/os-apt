@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-06-13 12:58-0400\n"
+"POT-Creation-Date: 2014-08-20 14:11+0200\n"
 "PO-Revision-Date: 2010-08-24 21:18+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@debian.org>\n"
@@ -157,7 +157,7 @@ msgstr "  Versionstabell:"
 
 #: cmdline/apt-cache.cc:1679 cmdline/apt-cdrom.cc:199 cmdline/apt-config.cc:75
 #: cmdline/apt-extracttemplates.cc:227 ftparchive/apt-ftparchive.cc:591
-#: cmdline/apt-get.cc:3279 cmdline/apt-internal-solver.cc:32
+#: cmdline/apt-get.cc:3285 cmdline/apt-internal-solver.cc:32
 #: cmdline/apt-mark.cc:267 cmdline/apt-sortpkgs.cc:147
 #, c-format
 msgid "%s %s for %s compiled on %s %s\n"
@@ -947,8 +947,8 @@ msgstr ""
 msgid "After this operation, %sB disk space will be freed.\n"
 msgstr "Efter denna åtgärd kommer %sB att frigöras på disken.\n"
 
-#: cmdline/apt-get.cc:1195 cmdline/apt-get.cc:1198 cmdline/apt-get.cc:2549
-#: cmdline/apt-get.cc:2552
+#: cmdline/apt-get.cc:1195 cmdline/apt-get.cc:1198 cmdline/apt-get.cc:2555
+#: cmdline/apt-get.cc:2558
 #, c-format
 msgid "Couldn't determine free space in %s"
 msgstr "Kunde inte fastställa ledigt utrymme i %s"
@@ -986,7 +986,7 @@ msgstr "Avbryter."
 msgid "Do you want to continue [Y/n]? "
 msgstr "Vill du fortsätta [J/n]? "
 
-#: cmdline/apt-get.cc:1321 cmdline/apt-get.cc:2614 apt-pkg/algorithms.cc:1491
+#: cmdline/apt-get.cc:1321 cmdline/apt-get.cc:2620 apt-pkg/algorithms.cc:1491
 #, c-format
 msgid "Failed to fetch %s  %s\n"
 msgstr "Misslyckades med att hämta %s  %s\n"
@@ -995,7 +995,7 @@ msgstr "Misslyckades med att hämta %s  %s\n"
 msgid "Some files failed to download"
 msgstr "Misslyckades med att hämta vissa filer"
 
-#: cmdline/apt-get.cc:1340 cmdline/apt-get.cc:2626
+#: cmdline/apt-get.cc:1340 cmdline/apt-get.cc:2632
 msgid "Download complete and in download only mode"
 msgstr "Hämtningen färdig i \"endast-hämta\"-läge"
 
@@ -1193,21 +1193,21 @@ msgstr "Internt fel, problemlösaren förstörde någonting"
 msgid "Unable to lock the download directory"
 msgstr "Kunde inte låsa hämtningskatalogen"
 
-#: cmdline/apt-get.cc:2345
+#: cmdline/apt-get.cc:2348
 #, c-format
 msgid "Downloading %s %s"
 msgstr ""
 
-#: cmdline/apt-get.cc:2403
+#: cmdline/apt-get.cc:2409
 msgid "Must specify at least one package to fetch source for"
 msgstr "Du måste ange minst ett paket att hämta källkod för"
 
-#: cmdline/apt-get.cc:2444 cmdline/apt-get.cc:2763
+#: cmdline/apt-get.cc:2450 cmdline/apt-get.cc:2769
 #, c-format
 msgid "Unable to find a source package for %s"
 msgstr "Kunde inte hitta något källkodspaket för %s"
 
-#: cmdline/apt-get.cc:2464
+#: cmdline/apt-get.cc:2470
 #, c-format
 msgid ""
 "NOTICE: '%s' packaging is maintained in the '%s' version control system at:\n"
@@ -1217,7 +1217,7 @@ msgstr ""
 "på:\n"
 "%s\n"
 
-#: cmdline/apt-get.cc:2469
+#: cmdline/apt-get.cc:2475
 #, fuzzy, c-format
 msgid ""
 "Please use:\n"
@@ -1228,85 +1228,85 @@ msgstr ""
 "bzr get %s\n"
 "för att hämta senaste (möjligen inte utgivna) uppdateringar av paketet.\n"
 
-#: cmdline/apt-get.cc:2522
+#: cmdline/apt-get.cc:2528
 #, c-format
 msgid "Skipping already downloaded file '%s'\n"
 msgstr "Hoppar över redan hämtade filen \"%s\"\n"
 
-#: cmdline/apt-get.cc:2563
+#: cmdline/apt-get.cc:2569
 #, c-format
 msgid "You don't have enough free space in %s"
 msgstr "Du har inte tillräckligt mycket ledigt utrymme i %s"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement strings, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2572
+#: cmdline/apt-get.cc:2578
 #, c-format
 msgid "Need to get %sB/%sB of source archives.\n"
 msgstr "Behöver hämta %sB/%sB källkodsarkiv.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2577
+#: cmdline/apt-get.cc:2583
 #, c-format
 msgid "Need to get %sB of source archives.\n"
 msgstr "Behöver hämta %sB källkodsarkiv.\n"
 
-#: cmdline/apt-get.cc:2583
+#: cmdline/apt-get.cc:2589
 #, c-format
 msgid "Fetch source %s\n"
 msgstr "Hämtar källkoden %s\n"
 
-#: cmdline/apt-get.cc:2621
+#: cmdline/apt-get.cc:2627
 msgid "Failed to fetch some archives."
 msgstr "Misslyckades med att hämta vissa arkiv."
 
-#: cmdline/apt-get.cc:2652
+#: cmdline/apt-get.cc:2658
 #, c-format
 msgid "Skipping unpack of already unpacked source in %s\n"
 msgstr "Packar inte upp redan uppackad källkod i %s\n"
 
-#: cmdline/apt-get.cc:2664
+#: cmdline/apt-get.cc:2670
 #, c-format
 msgid "Unpack command '%s' failed.\n"
 msgstr "Uppackningskommandot \"%s\" misslyckades.\n"
 
-#: cmdline/apt-get.cc:2665
+#: cmdline/apt-get.cc:2671
 #, c-format
 msgid "Check if the 'dpkg-dev' package is installed.\n"
 msgstr "Försäkra dig om att paketet \"dpkg-dev\" är installerat.\n"
 
-#: cmdline/apt-get.cc:2687
+#: cmdline/apt-get.cc:2693
 #, c-format
 msgid "Build command '%s' failed.\n"
 msgstr "Byggkommandot \"%s\" misslyckades.\n"
 
-#: cmdline/apt-get.cc:2707
+#: cmdline/apt-get.cc:2713
 msgid "Child process failed"
 msgstr "Barnprocessen misslyckades"
 
-#: cmdline/apt-get.cc:2726
+#: cmdline/apt-get.cc:2732
 msgid "Must specify at least one package to check builddeps for"
 msgstr "Du måste ange minst ett paket att kontrollera byggberoenden för"
 
-#: cmdline/apt-get.cc:2751
+#: cmdline/apt-get.cc:2757
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
 
-#: cmdline/apt-get.cc:2768
+#: cmdline/apt-get.cc:2774
 #, c-format
 msgid "Unable to get build-dependency information for %s"
 msgstr "Kunde inte hämta information om byggberoenden för %s"
 
-#: cmdline/apt-get.cc:2788
+#: cmdline/apt-get.cc:2794
 #, c-format
 msgid "%s has no build depends.\n"
 msgstr "%s har inga byggberoenden.\n"
 
-#: cmdline/apt-get.cc:2924
+#: cmdline/apt-get.cc:2930
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s can't be satisfied because %s is not allowed on '%s' "
@@ -1315,7 +1315,7 @@ msgstr ""
 "%s-beroendet på %s kan inte tillfredsställas eftersom paketet %s inte kan "
 "hittas"
 
-#: cmdline/apt-get.cc:2945
+#: cmdline/apt-get.cc:2951
 #, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because the package %s cannot be "
@@ -1324,14 +1324,14 @@ msgstr ""
 "%s-beroendet på %s kan inte tillfredsställas eftersom paketet %s inte kan "
 "hittas"
 
-#: cmdline/apt-get.cc:2968
+#: cmdline/apt-get.cc:2974
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: Installed package %s is too new"
 msgstr ""
 "Misslyckades med att tillfredsställa %s-beroendet för %s: Det installerade "
 "paketet %s är för nytt"
 
-#: cmdline/apt-get.cc:3007
+#: cmdline/apt-get.cc:3013
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because candidate version of "
@@ -1340,7 +1340,7 @@ msgstr ""
 "%s-beroendet på %s kan inte tillfredsställas eftersom inga tillgängliga "
 "versioner av paketet %s tillfredsställer versionskraven"
 
-#: cmdline/apt-get.cc:3013
+#: cmdline/apt-get.cc:3019
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because package %s has no candidate "
@@ -1349,31 +1349,31 @@ msgstr ""
 "%s-beroendet på %s kan inte tillfredsställas eftersom paketet %s inte kan "
 "hittas"
 
-#: cmdline/apt-get.cc:3036
+#: cmdline/apt-get.cc:3042
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: %s"
 msgstr "Misslyckades med att tillfredsställa %s-beroendet för %s: %s"
 
-#: cmdline/apt-get.cc:3052
+#: cmdline/apt-get.cc:3058
 #, c-format
 msgid "Build-dependencies for %s could not be satisfied."
 msgstr "Byggberoenden för %s kunde inte tillfredsställas."
 
-#: cmdline/apt-get.cc:3057
+#: cmdline/apt-get.cc:3063
 msgid "Failed to process build dependencies"
 msgstr "Misslyckades med att behandla byggberoenden"
 
 # Felmeddelande för misslyckad chdir
-#: cmdline/apt-get.cc:3150 cmdline/apt-get.cc:3162
+#: cmdline/apt-get.cc:3156 cmdline/apt-get.cc:3168
 #, fuzzy, c-format
 msgid "Changelog for %s (%s)"
 msgstr "Ansluter till %s (%s)"
 
-#: cmdline/apt-get.cc:3284
+#: cmdline/apt-get.cc:3290
 msgid "Supported modules:"
 msgstr "Moduler som stöds:"
 
-#: cmdline/apt-get.cc:3325
+#: cmdline/apt-get.cc:3331
 #, fuzzy
 msgid ""
 "Usage: apt-get [options] command\n"
@@ -1461,7 +1461,7 @@ msgstr ""
 "för mer information och flaggor.\n"
 "                     Denna APT har Speciella Ko-Krafter.\n"
 
-#: cmdline/apt-get.cc:3490
+#: cmdline/apt-get.cc:3496
 msgid ""
 "NOTE: This is only a simulation!\n"
 "      apt-get needs root privileges for real execution.\n"
@@ -1950,13 +1950,13 @@ msgstr "Kunde inte öppna rör för %s"
 msgid "Read error from %s process"
 msgstr "Läsfel från %s-processen"
 
-#: methods/bzip2.cc:143 methods/bzip2.cc:152 methods/copy.cc:46
+#: methods/bzip2.cc:143 methods/bzip2.cc:152 methods/copy.cc:63
 #: methods/gzip.cc:94 methods/gzip.cc:103 methods/rred.cc:498
 #: methods/rred.cc:507
 msgid "Failed to stat"
 msgstr "Kunde inte ta status"
 
-#: methods/bzip2.cc:149 methods/copy.cc:83 methods/gzip.cc:100
+#: methods/bzip2.cc:149 methods/copy.cc:108 methods/gzip.cc:100
 #: methods/rred.cc:504
 msgid "Failed to set modification time"
 msgstr "Misslyckades ställa in ändringstid"
@@ -3049,40 +3049,40 @@ msgstr "namnbyte misslyckades, %s (%s -> %s)."
 msgid "MD5Sum mismatch"
 msgstr "MD5-kontrollsumman stämmer inte"
 
-#: apt-pkg/acquire-item.cc:911 apt-pkg/acquire-item.cc:1892
-#: apt-pkg/acquire-item.cc:2035
+#: apt-pkg/acquire-item.cc:938 apt-pkg/acquire-item.cc:1945
+#: apt-pkg/acquire-item.cc:2088
 msgid "Hash Sum mismatch"
 msgstr "Hash-kontrollsumman stämmer inte"
 
-#: apt-pkg/acquire-item.cc:1410
+#: apt-pkg/acquire-item.cc:1463
 #, c-format
 msgid ""
 "Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
 "or malformed file)"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc:1426
+#: apt-pkg/acquire-item.cc:1479
 #, fuzzy, c-format
 msgid "Unable to find hash sum for '%s' in Release file"
 msgstr "Kunde inte tolka \"Release\"-filen %s"
 
-#: apt-pkg/acquire-item.cc:1461
+#: apt-pkg/acquire-item.cc:1514
 msgid "There is no public key available for the following key IDs:\n"
 msgstr "Det finns ingen öppen nyckel tillgänglig för följande nyckel-id:n:\n"
 
-#: apt-pkg/acquire-item.cc:1499
+#: apt-pkg/acquire-item.cc:1552
 #, c-format
 msgid ""
 "Release file for %s is expired (invalid since %s). Updates for this "
 "repository will not be applied."
 msgstr ""
 
-#: apt-pkg/acquire-item.cc:1521
+#: apt-pkg/acquire-item.cc:1574
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Konflikt i distribution: %s (förväntade %s men fick %s)"
 
-#: apt-pkg/acquire-item.cc:1554
+#: apt-pkg/acquire-item.cc:1607
 #, c-format
 msgid ""
 "A error occurred during the signature verification. The repository is not "
@@ -3093,12 +3093,12 @@ msgstr ""
 "%s\n"
 
 #. Invalid signature file, reject (LP: #346386) (Closes: #627642)
-#: apt-pkg/acquire-item.cc:1564 apt-pkg/acquire-item.cc:1569
+#: apt-pkg/acquire-item.cc:1617 apt-pkg/acquire-item.cc:1622
 #, c-format
 msgid "GPG error: %s: %s"
 msgstr "GPG-fel: %s: %s"
 
-#: apt-pkg/acquire-item.cc:1668
+#: apt-pkg/acquire-item.cc:1721
 #, c-format
 msgid ""
 "I wasn't able to locate a file for the %s package. This might mean you need "
@@ -3107,7 +3107,7 @@ msgstr ""
 "Jag kunde inte hitta någon fil för paketet %s. Detta kan betyda att du "
 "manuellt måste reparera detta paket (på grund av saknad arkitektur)."
 
-#: apt-pkg/acquire-item.cc:1727
+#: apt-pkg/acquire-item.cc:1780
 #, c-format
 msgid ""
 "I wasn't able to locate a file for the %s package. This might mean you need "
@@ -3116,13 +3116,13 @@ msgstr ""
 "Jag kunde inte hitta någon fil för paketet %s. Detta kan betyda att du "
 "manuellt måste reparera detta paket."
 
-#: apt-pkg/acquire-item.cc:1786
+#: apt-pkg/acquire-item.cc:1839
 #, c-format
 msgid ""
 "The package index files are corrupted. No Filename: field for package %s."
 msgstr "Paketindexfilerna är skadede. Inget \"Filename:\"-fält för paketet %s."
 
-#: apt-pkg/acquire-item.cc:1884
+#: apt-pkg/acquire-item.cc:1937
 msgid "Size mismatch"
 msgstr "Storleken stämmer inte"
 

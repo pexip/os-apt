@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: APT\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-06-13 12:58-0400\n"
+"POT-Creation-Date: 2014-08-20 14:11+0200\n"
 "PO-Revision-Date: 2005-06-06 13:46+0100\n"
 "Last-Translator: Dafydd Harries <daf@muse.19inch.net>\n"
 "Language-Team: Welsh <cy@pengwyn.linux.org.uk>\n"
@@ -173,7 +173,7 @@ msgstr "  Tabl Fersiynnau:"
 
 #: cmdline/apt-cache.cc:1679 cmdline/apt-cdrom.cc:199 cmdline/apt-config.cc:75
 #: cmdline/apt-extracttemplates.cc:227 ftparchive/apt-ftparchive.cc:591
-#: cmdline/apt-get.cc:3279 cmdline/apt-internal-solver.cc:32
+#: cmdline/apt-get.cc:3285 cmdline/apt-internal-solver.cc:32
 #: cmdline/apt-mark.cc:267 cmdline/apt-sortpkgs.cc:147
 #, fuzzy, c-format
 msgid "%s %s for %s compiled on %s %s\n"
@@ -972,8 +972,8 @@ msgstr "Ar ôl dadbacio defnyddir %sB o ofod disg ychwanegol.\n"
 msgid "After this operation, %sB disk space will be freed.\n"
 msgstr "Ar ôl dadbactio caiff %sB o ofod disg ei rhyddhau.\n"
 
-#: cmdline/apt-get.cc:1195 cmdline/apt-get.cc:1198 cmdline/apt-get.cc:2549
-#: cmdline/apt-get.cc:2552
+#: cmdline/apt-get.cc:1195 cmdline/apt-get.cc:1198 cmdline/apt-get.cc:2555
+#: cmdline/apt-get.cc:2558
 #, fuzzy, c-format
 msgid "Couldn't determine free space in %s"
 msgstr "Does dim digon o le rhydd yn %s gennych"
@@ -1011,7 +1011,7 @@ msgstr "Erthylu."
 msgid "Do you want to continue [Y/n]? "
 msgstr "Ydych chi eisiau mynd ymlaen? [Y/n] "
 
-#: cmdline/apt-get.cc:1321 cmdline/apt-get.cc:2614 apt-pkg/algorithms.cc:1491
+#: cmdline/apt-get.cc:1321 cmdline/apt-get.cc:2620 apt-pkg/algorithms.cc:1491
 #, c-format
 msgid "Failed to fetch %s  %s\n"
 msgstr "Methwyd cyrchu %s  %s\n"
@@ -1020,7 +1020,7 @@ msgstr "Methwyd cyrchu %s  %s\n"
 msgid "Some files failed to download"
 msgstr "Methodd rhai ffeiliau lawrlwytho"
 
-#: cmdline/apt-get.cc:1340 cmdline/apt-get.cc:2626
+#: cmdline/apt-get.cc:1340 cmdline/apt-get.cc:2632
 msgid "Download complete and in download only mode"
 msgstr "Lawrlwytho yn gyflawn ac yn y modd lawrlwytho'n unig"
 
@@ -1215,28 +1215,28 @@ msgstr "Gwall Mewnol, torrodd AllUpgrade bethau"
 msgid "Unable to lock the download directory"
 msgstr "Ni ellir cloi'r cyfeiriadur lawrlwytho"
 
-#: cmdline/apt-get.cc:2345
+#: cmdline/apt-get.cc:2348
 #, c-format
 msgid "Downloading %s %s"
 msgstr ""
 
-#: cmdline/apt-get.cc:2403
+#: cmdline/apt-get.cc:2409
 msgid "Must specify at least one package to fetch source for"
 msgstr "Rhaid penodi o leiaf un pecyn i gyrchi ffynhonell ar ei gyfer"
 
-#: cmdline/apt-get.cc:2444 cmdline/apt-get.cc:2763
+#: cmdline/apt-get.cc:2450 cmdline/apt-get.cc:2769
 #, c-format
 msgid "Unable to find a source package for %s"
 msgstr "Ni ellir canfod pecyn ffynhonell ar gyfer %s"
 
-#: cmdline/apt-get.cc:2464
+#: cmdline/apt-get.cc:2470
 #, c-format
 msgid ""
 "NOTICE: '%s' packaging is maintained in the '%s' version control system at:\n"
 "%s\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2469
+#: cmdline/apt-get.cc:2475
 #, c-format
 msgid ""
 "Please use:\n"
@@ -1244,86 +1244,86 @@ msgid ""
 "to retrieve the latest (possibly unreleased) updates to the package.\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2522
+#: cmdline/apt-get.cc:2528
 #, fuzzy, c-format
 msgid "Skipping already downloaded file '%s'\n"
 msgstr "Yn hepgor dadbacio y ffynhonell wedi ei dadbacio eisioes yn %s\n"
 
-#: cmdline/apt-get.cc:2563
+#: cmdline/apt-get.cc:2569
 #, c-format
 msgid "You don't have enough free space in %s"
 msgstr "Does dim digon o le rhydd yn %s gennych"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement strings, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2572
+#: cmdline/apt-get.cc:2578
 #, c-format
 msgid "Need to get %sB/%sB of source archives.\n"
 msgstr "Rhaid cyrchu %sB/%sB o archifau ffynhonell.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2577
+#: cmdline/apt-get.cc:2583
 #, c-format
 msgid "Need to get %sB of source archives.\n"
 msgstr "Rhaid cyrchu %sB o archifau ffynhonell.\n"
 
-#: cmdline/apt-get.cc:2583
+#: cmdline/apt-get.cc:2589
 #, fuzzy, c-format
 msgid "Fetch source %s\n"
 msgstr "Cyrchu Ffynhonell %s\n"
 
-#: cmdline/apt-get.cc:2621
+#: cmdline/apt-get.cc:2627
 msgid "Failed to fetch some archives."
 msgstr "Methwyd cyrchu rhai archifau."
 
-#: cmdline/apt-get.cc:2652
+#: cmdline/apt-get.cc:2658
 #, c-format
 msgid "Skipping unpack of already unpacked source in %s\n"
 msgstr "Yn hepgor dadbacio y ffynhonell wedi ei dadbacio eisioes yn %s\n"
 
-#: cmdline/apt-get.cc:2664
+#: cmdline/apt-get.cc:2670
 #, c-format
 msgid "Unpack command '%s' failed.\n"
 msgstr "Methodd y gorchymyn dadbacio '%s'.\n"
 
-#: cmdline/apt-get.cc:2665
+#: cmdline/apt-get.cc:2671
 #, c-format
 msgid "Check if the 'dpkg-dev' package is installed.\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2687
+#: cmdline/apt-get.cc:2693
 #, c-format
 msgid "Build command '%s' failed.\n"
 msgstr "Methodd y gorchymyn adeiladu '%s'.\n"
 
-#: cmdline/apt-get.cc:2707
+#: cmdline/apt-get.cc:2713
 msgid "Child process failed"
 msgstr "Methodd proses plentyn"
 
-#: cmdline/apt-get.cc:2726
+#: cmdline/apt-get.cc:2732
 msgid "Must specify at least one package to check builddeps for"
 msgstr ""
 "Rhaid penodi o leiaf un pecyn i wirio dibyniaethau adeiladu ar eu cyfer"
 
-#: cmdline/apt-get.cc:2751
+#: cmdline/apt-get.cc:2757
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
 
-#: cmdline/apt-get.cc:2768
+#: cmdline/apt-get.cc:2774
 #, c-format
 msgid "Unable to get build-dependency information for %s"
 msgstr "Ni ellir cyrchu manylion dibyniaeth adeiladu ar gyfer %s"
 
-#: cmdline/apt-get.cc:2788
+#: cmdline/apt-get.cc:2794
 #, c-format
 msgid "%s has no build depends.\n"
 msgstr "Nid oes dibyniaethau adeiladu gan %s.\n"
 
-#: cmdline/apt-get.cc:2924
+#: cmdline/apt-get.cc:2930
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s can't be satisfied because %s is not allowed on '%s' "
@@ -1332,7 +1332,7 @@ msgstr ""
 "Ni ellir bodloni dibyniaeth %s ar gyfer %s oherwydd ni ellir canfod y pecyn "
 "%s"
 
-#: cmdline/apt-get.cc:2945
+#: cmdline/apt-get.cc:2951
 #, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because the package %s cannot be "
@@ -1341,14 +1341,14 @@ msgstr ""
 "Ni ellir bodloni dibyniaeth %s ar gyfer %s oherwydd ni ellir canfod y pecyn "
 "%s"
 
-#: cmdline/apt-get.cc:2968
+#: cmdline/apt-get.cc:2974
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: Installed package %s is too new"
 msgstr ""
 "Methwyd bodloni dibynniaeth %s am %s: Mae'r pecyn sefydliedig %s yn rhy "
 "newydd"
 
-#: cmdline/apt-get.cc:3007
+#: cmdline/apt-get.cc:3013
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because candidate version of "
@@ -1357,7 +1357,7 @@ msgstr ""
 "Ni ellir bodloni'r dibyniaeth %s ar gyfer %s oherwydd does dim fersiwn sydd "
 "ar gael o'r pecyn %s yn gallu bodloni'r gofynion ferswin"
 
-#: cmdline/apt-get.cc:3013
+#: cmdline/apt-get.cc:3019
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because package %s has no candidate "
@@ -1366,32 +1366,32 @@ msgstr ""
 "Ni ellir bodloni dibyniaeth %s ar gyfer %s oherwydd ni ellir canfod y pecyn "
 "%s"
 
-#: cmdline/apt-get.cc:3036
+#: cmdline/apt-get.cc:3042
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: %s"
 msgstr "Methwyd bodloni dibyniaeth %s am %s: %s"
 
-#: cmdline/apt-get.cc:3052
+#: cmdline/apt-get.cc:3058
 #, c-format
 msgid "Build-dependencies for %s could not be satisfied."
 msgstr "Methwyd bodloni'r dibyniaethau adeiladu ar gyfer %s."
 
-#: cmdline/apt-get.cc:3057
+#: cmdline/apt-get.cc:3063
 msgid "Failed to process build dependencies"
 msgstr "Methwyd prosesu dibyniaethau adeiladu"
 
-#: cmdline/apt-get.cc:3150 cmdline/apt-get.cc:3162
+#: cmdline/apt-get.cc:3156 cmdline/apt-get.cc:3168
 #, fuzzy, c-format
 msgid "Changelog for %s (%s)"
 msgstr "Yn cysylltu i %s (%s)"
 
-#: cmdline/apt-get.cc:3284
+#: cmdline/apt-get.cc:3290
 #, fuzzy
 msgid "Supported modules:"
 msgstr "Modylau a Gynhelir:"
 
 # FIXME: split
-#: cmdline/apt-get.cc:3325
+#: cmdline/apt-get.cc:3331
 #, fuzzy
 msgid ""
 "Usage: apt-get [options] command\n"
@@ -1478,7 +1478,7 @@ msgstr ""
 "\n"
 "                   Mae gan yr APT hwn bŵerau buwch hudol.\n"
 
-#: cmdline/apt-get.cc:3490
+#: cmdline/apt-get.cc:3496
 msgid ""
 "NOTE: This is only a simulation!\n"
 "      apt-get needs root privileges for real execution.\n"
@@ -1972,13 +1972,13 @@ msgstr "Methwyd agor pibell ar gyfer %s"
 msgid "Read error from %s process"
 msgstr "Gwall darllen o broses %s"
 
-#: methods/bzip2.cc:143 methods/bzip2.cc:152 methods/copy.cc:46
+#: methods/bzip2.cc:143 methods/bzip2.cc:152 methods/copy.cc:63
 #: methods/gzip.cc:94 methods/gzip.cc:103 methods/rred.cc:498
 #: methods/rred.cc:507
 msgid "Failed to stat"
 msgstr "Methwyd stat()"
 
-#: methods/bzip2.cc:149 methods/copy.cc:83 methods/gzip.cc:100
+#: methods/bzip2.cc:149 methods/copy.cc:108 methods/gzip.cc:100
 #: methods/rred.cc:504
 msgid "Failed to set modification time"
 msgstr "Methwyd gosod amser newid"
@@ -3093,13 +3093,13 @@ msgstr "methwyd ailenwi, %s (%s -> %s)."
 msgid "MD5Sum mismatch"
 msgstr "Camgyfatebiaeth swm MD5"
 
-#: apt-pkg/acquire-item.cc:911 apt-pkg/acquire-item.cc:1892
-#: apt-pkg/acquire-item.cc:2035
+#: apt-pkg/acquire-item.cc:938 apt-pkg/acquire-item.cc:1945
+#: apt-pkg/acquire-item.cc:2088
 #, fuzzy
 msgid "Hash Sum mismatch"
 msgstr "Camgyfatebiaeth swm MD5"
 
-#: apt-pkg/acquire-item.cc:1410
+#: apt-pkg/acquire-item.cc:1463
 #, c-format
 msgid ""
 "Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
@@ -3107,28 +3107,28 @@ msgid ""
 msgstr ""
 
 # FIXME: number?
-#: apt-pkg/acquire-item.cc:1426
+#: apt-pkg/acquire-item.cc:1479
 #, fuzzy, c-format
 msgid "Unable to find hash sum for '%s' in Release file"
 msgstr "Ni ellir gramadegu ffeil becynnau %s (1)"
 
-#: apt-pkg/acquire-item.cc:1461
+#: apt-pkg/acquire-item.cc:1514
 msgid "There is no public key available for the following key IDs:\n"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc:1499
+#: apt-pkg/acquire-item.cc:1552
 #, c-format
 msgid ""
 "Release file for %s is expired (invalid since %s). Updates for this "
 "repository will not be applied."
 msgstr ""
 
-#: apt-pkg/acquire-item.cc:1521
+#: apt-pkg/acquire-item.cc:1574
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc:1554
+#: apt-pkg/acquire-item.cc:1607
 #, c-format
 msgid ""
 "A error occurred during the signature verification. The repository is not "
@@ -3136,13 +3136,13 @@ msgid ""
 msgstr ""
 
 #. Invalid signature file, reject (LP: #346386) (Closes: #627642)
-#: apt-pkg/acquire-item.cc:1564 apt-pkg/acquire-item.cc:1569
+#: apt-pkg/acquire-item.cc:1617 apt-pkg/acquire-item.cc:1622
 #, c-format
 msgid "GPG error: %s: %s"
 msgstr ""
 
 # FIXME: case
-#: apt-pkg/acquire-item.cc:1668
+#: apt-pkg/acquire-item.cc:1721
 #, c-format
 msgid ""
 "I wasn't able to locate a file for the %s package. This might mean you need "
@@ -3151,7 +3151,7 @@ msgstr ""
 "Methais i leoli ffeila r gyfer y pecyn %s. Fa all hyn olygu bod rhaid i chi "
 "drwsio'r pecyn hyn a law. (Oherwydd pensaerniaeth coll.)"
 
-#: apt-pkg/acquire-item.cc:1727
+#: apt-pkg/acquire-item.cc:1780
 #, c-format
 msgid ""
 "I wasn't able to locate a file for the %s package. This might mean you need "
@@ -3160,14 +3160,14 @@ msgstr ""
 "Methais i leoli ffeila r gyfer y pecyn %s. Fa all hyn olygu bod rhaid i chi "
 "drwsio'r pecyn hyn a law."
 
-#: apt-pkg/acquire-item.cc:1786
+#: apt-pkg/acquire-item.cc:1839
 #, c-format
 msgid ""
 "The package index files are corrupted. No Filename: field for package %s."
 msgstr ""
 "Mae'r ffeiliau mynegai pecyn yn llygr. Dim maes Filename: gan y pecyn %s."
 
-#: apt-pkg/acquire-item.cc:1884
+#: apt-pkg/acquire-item.cc:1937
 msgid "Size mismatch"
 msgstr "Camgyfatebiaeth maint"
 

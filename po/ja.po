@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 0.8.0~pre1\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-06-13 12:58-0400\n"
+"POT-Creation-Date: 2014-08-20 14:11+0200\n"
 "PO-Revision-Date: 2010-08-25 09:33+0900\n"
 "Last-Translator: Kenshi Muto <kmuto@debian.org>\n"
 "Language-Team: Debian Japanese List <debian-japanese@lists.debian.org>\n"
@@ -155,7 +155,7 @@ msgstr "  バージョンテーブル:"
 
 #: cmdline/apt-cache.cc:1679 cmdline/apt-cdrom.cc:199 cmdline/apt-config.cc:75
 #: cmdline/apt-extracttemplates.cc:227 ftparchive/apt-ftparchive.cc:591
-#: cmdline/apt-get.cc:3279 cmdline/apt-internal-solver.cc:32
+#: cmdline/apt-get.cc:3285 cmdline/apt-internal-solver.cc:32
 #: cmdline/apt-mark.cc:267 cmdline/apt-sortpkgs.cc:147
 #, c-format
 msgid "%s %s for %s compiled on %s %s\n"
@@ -943,8 +943,8 @@ msgstr "この操作後に追加で %sB のディスク容量が消費されま�
 msgid "After this operation, %sB disk space will be freed.\n"
 msgstr "この操作後に %sB のディスク容量が解放されます。\n"
 
-#: cmdline/apt-get.cc:1195 cmdline/apt-get.cc:1198 cmdline/apt-get.cc:2549
-#: cmdline/apt-get.cc:2552
+#: cmdline/apt-get.cc:1195 cmdline/apt-get.cc:1198 cmdline/apt-get.cc:2555
+#: cmdline/apt-get.cc:2558
 #, c-format
 msgid "Couldn't determine free space in %s"
 msgstr "%s の空き領域を測定できません"
@@ -981,7 +981,7 @@ msgstr "中断しました。"
 msgid "Do you want to continue [Y/n]? "
 msgstr "続行しますか [Y/n]? "
 
-#: cmdline/apt-get.cc:1321 cmdline/apt-get.cc:2614 apt-pkg/algorithms.cc:1491
+#: cmdline/apt-get.cc:1321 cmdline/apt-get.cc:2620 apt-pkg/algorithms.cc:1491
 #, c-format
 msgid "Failed to fetch %s  %s\n"
 msgstr "%s の取得に失敗しました  %s\n"
@@ -990,7 +990,7 @@ msgstr "%s の取得に失敗しました  %s\n"
 msgid "Some files failed to download"
 msgstr "いくつかのファイルの取得に失敗しました"
 
-#: cmdline/apt-get.cc:1340 cmdline/apt-get.cc:2626
+#: cmdline/apt-get.cc:1340 cmdline/apt-get.cc:2632
 msgid "Download complete and in download only mode"
 msgstr "ダウンロードオンリーモードでパッケージのダウンロードが完了しました"
 
@@ -1192,22 +1192,22 @@ msgstr "内部エラー、問題リゾルバが何かを破壊しました"
 msgid "Unable to lock the download directory"
 msgstr "ダウンロードディレクトリをロックできません"
 
-#: cmdline/apt-get.cc:2345
+#: cmdline/apt-get.cc:2348
 #, c-format
 msgid "Downloading %s %s"
 msgstr ""
 
-#: cmdline/apt-get.cc:2403
+#: cmdline/apt-get.cc:2409
 msgid "Must specify at least one package to fetch source for"
 msgstr ""
 "ソースを取得するには少なくともひとつのパッケージ名を指定する必要があります"
 
-#: cmdline/apt-get.cc:2444 cmdline/apt-get.cc:2763
+#: cmdline/apt-get.cc:2450 cmdline/apt-get.cc:2769
 #, c-format
 msgid "Unable to find a source package for %s"
 msgstr "%s のソースパッケージが見つかりません"
 
-#: cmdline/apt-get.cc:2464
+#: cmdline/apt-get.cc:2470
 #, c-format
 msgid ""
 "NOTICE: '%s' packaging is maintained in the '%s' version control system at:\n"
@@ -1217,7 +1217,7 @@ msgstr ""
 "ます:\n"
 "%s\n"
 
-#: cmdline/apt-get.cc:2469
+#: cmdline/apt-get.cc:2475
 #, fuzzy, c-format
 msgid ""
 "Please use:\n"
@@ -1229,87 +1229,87 @@ msgstr ""
 "bzr get %s\n"
 "を使用してください。\n"
 
-#: cmdline/apt-get.cc:2522
+#: cmdline/apt-get.cc:2528
 #, c-format
 msgid "Skipping already downloaded file '%s'\n"
 msgstr "すでにダウンロードされたファイル '%s' をスキップします\n"
 
-#: cmdline/apt-get.cc:2563
+#: cmdline/apt-get.cc:2569
 #, c-format
 msgid "You don't have enough free space in %s"
 msgstr "%s に充分な空きスペースがありません"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement strings, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2572
+#: cmdline/apt-get.cc:2578
 #, c-format
 msgid "Need to get %sB/%sB of source archives.\n"
 msgstr "%2$sB 中 %1$sB のソースアーカイブを取得する必要があります。\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2577
+#: cmdline/apt-get.cc:2583
 #, c-format
 msgid "Need to get %sB of source archives.\n"
 msgstr "%sB のソースアーカイブを取得する必要があります。\n"
 
-#: cmdline/apt-get.cc:2583
+#: cmdline/apt-get.cc:2589
 #, c-format
 msgid "Fetch source %s\n"
 msgstr "ソース %s を取得\n"
 
-#: cmdline/apt-get.cc:2621
+#: cmdline/apt-get.cc:2627
 msgid "Failed to fetch some archives."
 msgstr "いくつかのアーカイブの取得に失敗しました。"
 
-#: cmdline/apt-get.cc:2652
+#: cmdline/apt-get.cc:2658
 #, c-format
 msgid "Skipping unpack of already unpacked source in %s\n"
 msgstr "すでに %s に展開されたソースがあるため、展開をスキップします\n"
 
-#: cmdline/apt-get.cc:2664
+#: cmdline/apt-get.cc:2670
 #, c-format
 msgid "Unpack command '%s' failed.\n"
 msgstr "展開コマンド '%s' が失敗しました。\n"
 
-#: cmdline/apt-get.cc:2665
+#: cmdline/apt-get.cc:2671
 #, c-format
 msgid "Check if the 'dpkg-dev' package is installed.\n"
 msgstr ""
 "'dpkg-dev' パッケージがインストールされていることを確認してください。\n"
 
-#: cmdline/apt-get.cc:2687
+#: cmdline/apt-get.cc:2693
 #, c-format
 msgid "Build command '%s' failed.\n"
 msgstr "ビルドコマンド '%s' が失敗しました。\n"
 
-#: cmdline/apt-get.cc:2707
+#: cmdline/apt-get.cc:2713
 msgid "Child process failed"
 msgstr "子プロセスが失敗しました"
 
-#: cmdline/apt-get.cc:2726
+#: cmdline/apt-get.cc:2732
 msgid "Must specify at least one package to check builddeps for"
 msgstr ""
 "ビルド依存関係をチェックするパッケージを少なくとも 1 つ指定する必要があります"
 
-#: cmdline/apt-get.cc:2751
+#: cmdline/apt-get.cc:2757
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
 
-#: cmdline/apt-get.cc:2768
+#: cmdline/apt-get.cc:2774
 #, c-format
 msgid "Unable to get build-dependency information for %s"
 msgstr "%s のビルド依存情報を取得できません"
 
-#: cmdline/apt-get.cc:2788
+#: cmdline/apt-get.cc:2794
 #, c-format
 msgid "%s has no build depends.\n"
 msgstr "%s にはビルド依存情報が指定されていません。\n"
 
-#: cmdline/apt-get.cc:2924
+#: cmdline/apt-get.cc:2930
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s can't be satisfied because %s is not allowed on '%s' "
@@ -1318,7 +1318,7 @@ msgstr ""
 "パッケージ %3$s が見つからないため、%2$s に対する %1$s の依存関係を満たすこと"
 "ができません"
 
-#: cmdline/apt-get.cc:2945
+#: cmdline/apt-get.cc:2951
 #, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because the package %s cannot be "
@@ -1327,14 +1327,14 @@ msgstr ""
 "パッケージ %3$s が見つからないため、%2$s に対する %1$s の依存関係を満たすこと"
 "ができません"
 
-#: cmdline/apt-get.cc:2968
+#: cmdline/apt-get.cc:2974
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: Installed package %s is too new"
 msgstr ""
 "%2$s の依存関係 %1$s を満たすことができません: インストールされた %3$s パッ"
 "ケージは新しすぎます"
 
-#: cmdline/apt-get.cc:3007
+#: cmdline/apt-get.cc:3013
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because candidate version of "
@@ -1343,7 +1343,7 @@ msgstr ""
 "入手可能な %3$s はいずれもバージョンについての要求を満たせないため、%2$s に対"
 "する %1$s の依存関係を満たすことができません"
 
-#: cmdline/apt-get.cc:3013
+#: cmdline/apt-get.cc:3019
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because package %s has no candidate "
@@ -1352,30 +1352,30 @@ msgstr ""
 "パッケージ %3$s が見つからないため、%2$s に対する %1$s の依存関係を満たすこと"
 "ができません"
 
-#: cmdline/apt-get.cc:3036
+#: cmdline/apt-get.cc:3042
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: %s"
 msgstr "%2$s の依存関係 %1$s を満たすことができません: %3$s"
 
-#: cmdline/apt-get.cc:3052
+#: cmdline/apt-get.cc:3058
 #, c-format
 msgid "Build-dependencies for %s could not be satisfied."
 msgstr "%s のビルド依存関係を満たすことができませんでした。"
 
-#: cmdline/apt-get.cc:3057
+#: cmdline/apt-get.cc:3063
 msgid "Failed to process build dependencies"
 msgstr "ビルド依存関係の処理に失敗しました"
 
-#: cmdline/apt-get.cc:3150 cmdline/apt-get.cc:3162
+#: cmdline/apt-get.cc:3156 cmdline/apt-get.cc:3168
 #, fuzzy, c-format
 msgid "Changelog for %s (%s)"
 msgstr "%s (%s) へ接続しています"
 
-#: cmdline/apt-get.cc:3284
+#: cmdline/apt-get.cc:3290
 msgid "Supported modules:"
 msgstr "サポートされているモジュール:"
 
-#: cmdline/apt-get.cc:3325
+#: cmdline/apt-get.cc:3331
 #, fuzzy
 msgid ""
 "Usage: apt-get [options] command\n"
@@ -1470,7 +1470,7 @@ msgstr ""
 "apt-get(8)、sources.list(5)、apt.conf(5) を参照してください。\n"
 "                        この APT は Super Cow Powers 化されています。\n"
 
-#: cmdline/apt-get.cc:3490
+#: cmdline/apt-get.cc:3496
 msgid ""
 "NOTE: This is only a simulation!\n"
 "      apt-get needs root privileges for real execution.\n"
@@ -1951,13 +1951,13 @@ msgstr "%s に対してパイプを開けませんでした"
 msgid "Read error from %s process"
 msgstr "%s プロセスからの読み込みエラー"
 
-#: methods/bzip2.cc:143 methods/bzip2.cc:152 methods/copy.cc:46
+#: methods/bzip2.cc:143 methods/bzip2.cc:152 methods/copy.cc:63
 #: methods/gzip.cc:94 methods/gzip.cc:103 methods/rred.cc:498
 #: methods/rred.cc:507
 msgid "Failed to stat"
 msgstr "状態の取得に失敗しました"
 
-#: methods/bzip2.cc:149 methods/copy.cc:83 methods/gzip.cc:100
+#: methods/bzip2.cc:149 methods/copy.cc:108 methods/gzip.cc:100
 #: methods/rred.cc:504
 msgid "Failed to set modification time"
 msgstr "変更時刻の設定に失敗しました"
@@ -3044,42 +3044,42 @@ msgstr "名前の変更に失敗しました。%s (%s -> %s)"
 msgid "MD5Sum mismatch"
 msgstr "MD5Sum が適合しません"
 
-#: apt-pkg/acquire-item.cc:911 apt-pkg/acquire-item.cc:1892
-#: apt-pkg/acquire-item.cc:2035
+#: apt-pkg/acquire-item.cc:938 apt-pkg/acquire-item.cc:1945
+#: apt-pkg/acquire-item.cc:2088
 msgid "Hash Sum mismatch"
 msgstr "ハッシュサムが適合しません"
 
-#: apt-pkg/acquire-item.cc:1410
+#: apt-pkg/acquire-item.cc:1463
 #, c-format
 msgid ""
 "Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
 "or malformed file)"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc:1426
+#: apt-pkg/acquire-item.cc:1479
 #, fuzzy, c-format
 msgid "Unable to find hash sum for '%s' in Release file"
 msgstr "Release ファイル %s を解釈することができません"
 
-#: apt-pkg/acquire-item.cc:1461
+#: apt-pkg/acquire-item.cc:1514
 msgid "There is no public key available for the following key IDs:\n"
 msgstr "以下の鍵 ID に対して利用可能な公開鍵がありません:\n"
 
-#: apt-pkg/acquire-item.cc:1499
+#: apt-pkg/acquire-item.cc:1552
 #, c-format
 msgid ""
 "Release file for %s is expired (invalid since %s). Updates for this "
 "repository will not be applied."
 msgstr ""
 
-#: apt-pkg/acquire-item.cc:1521
+#: apt-pkg/acquire-item.cc:1574
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
 "ディストリビューションが競合しています: %s (%s を期待していたのに %s を取得し"
 "ました)"
 
-#: apt-pkg/acquire-item.cc:1554
+#: apt-pkg/acquire-item.cc:1607
 #, c-format
 msgid ""
 "A error occurred during the signature verification. The repository is not "
@@ -3089,12 +3089,12 @@ msgstr ""
 "ファイルが使われます。GPG エラー: %s: %s\n"
 
 #. Invalid signature file, reject (LP: #346386) (Closes: #627642)
-#: apt-pkg/acquire-item.cc:1564 apt-pkg/acquire-item.cc:1569
+#: apt-pkg/acquire-item.cc:1617 apt-pkg/acquire-item.cc:1622
 #, c-format
 msgid "GPG error: %s: %s"
 msgstr "GPG エラー: %s: %s"
 
-#: apt-pkg/acquire-item.cc:1668
+#: apt-pkg/acquire-item.cc:1721
 #, c-format
 msgid ""
 "I wasn't able to locate a file for the %s package. This might mean you need "
@@ -3103,7 +3103,7 @@ msgstr ""
 "パッケージ %s のファイルの位置を特定できません。おそらくこのパッケージを手動"
 "で修正する必要があります (存在しないアーキテクチャのため)。"
 
-#: apt-pkg/acquire-item.cc:1727
+#: apt-pkg/acquire-item.cc:1780
 #, c-format
 msgid ""
 "I wasn't able to locate a file for the %s package. This might mean you need "
@@ -3112,7 +3112,7 @@ msgstr ""
 "パッケージ %s のファイルの位置を特定できません。おそらくこのパッケージを手動"
 "で修正する必要があります。"
 
-#: apt-pkg/acquire-item.cc:1786
+#: apt-pkg/acquire-item.cc:1839
 #, c-format
 msgid ""
 "The package index files are corrupted. No Filename: field for package %s."
@@ -3120,7 +3120,7 @@ msgstr ""
 "パッケージインデックスファイルが壊れています。パッケージ %s に Filename: "
 "フィールドがありません。"
 
-#: apt-pkg/acquire-item.cc:1884
+#: apt-pkg/acquire-item.cc:1937
 msgid "Size mismatch"
 msgstr "サイズが適合しません"
 

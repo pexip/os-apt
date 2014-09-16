@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-06-13 12:58-0400\n"
+"POT-Creation-Date: 2014-08-20 14:11+0200\n"
 "PO-Revision-Date: 2008-08-02 01:47-0400\n"
 "Last-Translator: Gintautas Miliauskas <gintas@akl.lt>\n"
 "Language-Team: Lithuanian <komp_lt@konferencijos.lt>\n"
@@ -158,7 +158,7 @@ msgstr "  Versijų lentelė:"
 
 #: cmdline/apt-cache.cc:1679 cmdline/apt-cdrom.cc:199 cmdline/apt-config.cc:75
 #: cmdline/apt-extracttemplates.cc:227 ftparchive/apt-ftparchive.cc:591
-#: cmdline/apt-get.cc:3279 cmdline/apt-internal-solver.cc:32
+#: cmdline/apt-get.cc:3285 cmdline/apt-internal-solver.cc:32
 #: cmdline/apt-mark.cc:267 cmdline/apt-sortpkgs.cc:147
 #, c-format
 msgid "%s %s for %s compiled on %s %s\n"
@@ -911,8 +911,8 @@ msgstr "Po šios operacijos bus naudojama %sB papildomos disko vietos.\n"
 msgid "After this operation, %sB disk space will be freed.\n"
 msgstr "Po šios operacijos bus atlaisvinta %sB disko vietos.\n"
 
-#: cmdline/apt-get.cc:1195 cmdline/apt-get.cc:1198 cmdline/apt-get.cc:2549
-#: cmdline/apt-get.cc:2552
+#: cmdline/apt-get.cc:1195 cmdline/apt-get.cc:1198 cmdline/apt-get.cc:2555
+#: cmdline/apt-get.cc:2558
 #, c-format
 msgid "Couldn't determine free space in %s"
 msgstr "Nepavyko nustatyti %s laisvos vietos"
@@ -949,7 +949,7 @@ msgstr "Nutraukti."
 msgid "Do you want to continue [Y/n]? "
 msgstr "Ar norite tęsti [T/n]? "
 
-#: cmdline/apt-get.cc:1321 cmdline/apt-get.cc:2614 apt-pkg/algorithms.cc:1491
+#: cmdline/apt-get.cc:1321 cmdline/apt-get.cc:2620 apt-pkg/algorithms.cc:1491
 #, c-format
 msgid "Failed to fetch %s  %s\n"
 msgstr "Nepavyko parsiųsti %s  %s\n"
@@ -958,7 +958,7 @@ msgstr "Nepavyko parsiųsti %s  %s\n"
 msgid "Some files failed to download"
 msgstr "Nepavyko parsiųsti kai kurių failų"
 
-#: cmdline/apt-get.cc:1340 cmdline/apt-get.cc:2626
+#: cmdline/apt-get.cc:1340 cmdline/apt-get.cc:2632
 msgid "Download complete and in download only mode"
 msgstr "Pavyko parsiųsti tik parsiuntimo režime"
 
@@ -1146,28 +1146,28 @@ msgstr "Vidinė klaida, problemos sprendimas kažką sugadino"
 msgid "Unable to lock the download directory"
 msgstr "Nepavyko užrakinti parsiuntimų aplanko"
 
-#: cmdline/apt-get.cc:2345
+#: cmdline/apt-get.cc:2348
 #, c-format
 msgid "Downloading %s %s"
 msgstr ""
 
-#: cmdline/apt-get.cc:2403
+#: cmdline/apt-get.cc:2409
 msgid "Must specify at least one package to fetch source for"
 msgstr "Būtina nurodyti bent vieną paketą, kad parsiųsti jo išeities tekstą"
 
-#: cmdline/apt-get.cc:2444 cmdline/apt-get.cc:2763
+#: cmdline/apt-get.cc:2450 cmdline/apt-get.cc:2769
 #, c-format
 msgid "Unable to find a source package for %s"
 msgstr "Nepavyko surasti išeities teksto paketo, skirto %s"
 
-#: cmdline/apt-get.cc:2464
+#: cmdline/apt-get.cc:2470
 #, c-format
 msgid ""
 "NOTICE: '%s' packaging is maintained in the '%s' version control system at:\n"
 "%s\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2469
+#: cmdline/apt-get.cc:2475
 #, c-format
 msgid ""
 "Please use:\n"
@@ -1175,85 +1175,85 @@ msgid ""
 "to retrieve the latest (possibly unreleased) updates to the package.\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2522
+#: cmdline/apt-get.cc:2528
 #, c-format
 msgid "Skipping already downloaded file '%s'\n"
 msgstr "Praleidžiama jau parsiųsta byla „%s“\n"
 
-#: cmdline/apt-get.cc:2563
+#: cmdline/apt-get.cc:2569
 #, c-format
 msgid "You don't have enough free space in %s"
 msgstr "Neturite pakankamai laisvos vietos %s"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement strings, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2572
+#: cmdline/apt-get.cc:2578
 #, c-format
 msgid "Need to get %sB/%sB of source archives.\n"
 msgstr "Reikia parsiųsti %sB/%sB išeities archyvų.\n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
-#: cmdline/apt-get.cc:2577
+#: cmdline/apt-get.cc:2583
 #, c-format
 msgid "Need to get %sB of source archives.\n"
 msgstr "Reikia parsiųsti %sB išeities archyvų.\n"
 
-#: cmdline/apt-get.cc:2583
+#: cmdline/apt-get.cc:2589
 #, c-format
 msgid "Fetch source %s\n"
 msgstr "Parsiunčiamas archyvas %s\n"
 
-#: cmdline/apt-get.cc:2621
+#: cmdline/apt-get.cc:2627
 msgid "Failed to fetch some archives."
 msgstr "Nepavyko gauti kai kurių arhcyvų."
 
-#: cmdline/apt-get.cc:2652
+#: cmdline/apt-get.cc:2658
 #, c-format
 msgid "Skipping unpack of already unpacked source in %s\n"
 msgstr "Jau išpakuotas archyvas %s praleidžiama\n"
 
-#: cmdline/apt-get.cc:2664
+#: cmdline/apt-get.cc:2670
 #, c-format
 msgid "Unpack command '%s' failed.\n"
 msgstr "Nepavyko įvykdyti išpakavimo komandos „%s“\n"
 
-#: cmdline/apt-get.cc:2665
+#: cmdline/apt-get.cc:2671
 #, c-format
 msgid "Check if the 'dpkg-dev' package is installed.\n"
 msgstr "Patikrinkite, ar įdiegtas „dpkg-dev“ paketas.\n"
 
-#: cmdline/apt-get.cc:2687
+#: cmdline/apt-get.cc:2693
 #, c-format
 msgid "Build command '%s' failed.\n"
 msgstr "Nepavyko įvykdyti paketo kompiliavimo komandos „%s“\n"
 
-#: cmdline/apt-get.cc:2707
+#: cmdline/apt-get.cc:2713
 msgid "Child process failed"
 msgstr "Klaida procese-palikuonyje"
 
-#: cmdline/apt-get.cc:2726
+#: cmdline/apt-get.cc:2732
 msgid "Must specify at least one package to check builddeps for"
 msgstr "Būtina nurodyti bent vieną paketą, kuriam norite įvykdyti builddeps"
 
-#: cmdline/apt-get.cc:2751
+#: cmdline/apt-get.cc:2757
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
 
-#: cmdline/apt-get.cc:2768
+#: cmdline/apt-get.cc:2774
 #, c-format
 msgid "Unable to get build-dependency information for %s"
 msgstr "Nepavyko gauti kūrimo-priklausomybių informacijos paketui %s"
 
-#: cmdline/apt-get.cc:2788
+#: cmdline/apt-get.cc:2794
 #, c-format
 msgid "%s has no build depends.\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:2924
+#: cmdline/apt-get.cc:2930
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s can't be satisfied because %s is not allowed on '%s' "
@@ -1261,7 +1261,7 @@ msgid ""
 msgstr ""
 "%s priklausomybė %s paketui negali būti patenkinama, nes paketas %s nerastas"
 
-#: cmdline/apt-get.cc:2945
+#: cmdline/apt-get.cc:2951
 #, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because the package %s cannot be "
@@ -1269,14 +1269,14 @@ msgid ""
 msgstr ""
 "%s priklausomybė %s paketui negali būti patenkinama, nes paketas %s nerastas"
 
-#: cmdline/apt-get.cc:2968
+#: cmdline/apt-get.cc:2974
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: Installed package %s is too new"
 msgstr ""
 "Nepavyko patenkinti %s priklausomybės %s paketui: Įdiegtas paketas %s yra "
 "per naujas"
 
-#: cmdline/apt-get.cc:3007
+#: cmdline/apt-get.cc:3013
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because candidate version of "
@@ -1285,7 +1285,7 @@ msgstr ""
 "%s priklausomybė %s paketui negali būti patenkinama, nes nėra tinkamos "
 "versijos %s paketo"
 
-#: cmdline/apt-get.cc:3013
+#: cmdline/apt-get.cc:3019
 #, fuzzy, c-format
 msgid ""
 "%s dependency for %s cannot be satisfied because package %s has no candidate "
@@ -1293,30 +1293,30 @@ msgid ""
 msgstr ""
 "%s priklausomybė %s paketui negali būti patenkinama, nes paketas %s nerastas"
 
-#: cmdline/apt-get.cc:3036
+#: cmdline/apt-get.cc:3042
 #, c-format
 msgid "Failed to satisfy %s dependency for %s: %s"
 msgstr "Nepavyko patenkinti %s priklausomybės %s: %s"
 
-#: cmdline/apt-get.cc:3052
+#: cmdline/apt-get.cc:3058
 #, c-format
 msgid "Build-dependencies for %s could not be satisfied."
 msgstr ""
 
-#: cmdline/apt-get.cc:3057
+#: cmdline/apt-get.cc:3063
 msgid "Failed to process build dependencies"
 msgstr ""
 
-#: cmdline/apt-get.cc:3150 cmdline/apt-get.cc:3162
+#: cmdline/apt-get.cc:3156 cmdline/apt-get.cc:3168
 #, fuzzy, c-format
 msgid "Changelog for %s (%s)"
 msgstr "Jungiamasi prie %s (%s)"
 
-#: cmdline/apt-get.cc:3284
+#: cmdline/apt-get.cc:3290
 msgid "Supported modules:"
 msgstr "Palaikomi moduliai:"
 
-#: cmdline/apt-get.cc:3325
+#: cmdline/apt-get.cc:3331
 msgid ""
 "Usage: apt-get [options] command\n"
 "       apt-get [options] install|remove pkg1 [pkg2 ...]\n"
@@ -1362,7 +1362,7 @@ msgid ""
 "                       This APT has Super Cow Powers.\n"
 msgstr ""
 
-#: cmdline/apt-get.cc:3490
+#: cmdline/apt-get.cc:3496
 msgid ""
 "NOTE: This is only a simulation!\n"
 "      apt-get needs root privileges for real execution.\n"
@@ -1840,13 +1840,13 @@ msgstr "Nepavyko atverti failo %s"
 msgid "Read error from %s process"
 msgstr ""
 
-#: methods/bzip2.cc:143 methods/bzip2.cc:152 methods/copy.cc:46
+#: methods/bzip2.cc:143 methods/bzip2.cc:152 methods/copy.cc:63
 #: methods/gzip.cc:94 methods/gzip.cc:103 methods/rred.cc:498
 #: methods/rred.cc:507
 msgid "Failed to stat"
 msgstr ""
 
-#: methods/bzip2.cc:149 methods/copy.cc:83 methods/gzip.cc:100
+#: methods/bzip2.cc:149 methods/copy.cc:108 methods/gzip.cc:100
 #: methods/rred.cc:504
 msgid "Failed to set modification time"
 msgstr ""
@@ -2905,40 +2905,40 @@ msgstr ""
 msgid "MD5Sum mismatch"
 msgstr "MD5 sumos neatitikimas"
 
-#: apt-pkg/acquire-item.cc:911 apt-pkg/acquire-item.cc:1892
-#: apt-pkg/acquire-item.cc:2035
+#: apt-pkg/acquire-item.cc:938 apt-pkg/acquire-item.cc:1945
+#: apt-pkg/acquire-item.cc:2088
 msgid "Hash Sum mismatch"
 msgstr "Maišos sumos nesutapimas"
 
-#: apt-pkg/acquire-item.cc:1410
+#: apt-pkg/acquire-item.cc:1463
 #, c-format
 msgid ""
 "Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
 "or malformed file)"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc:1426
+#: apt-pkg/acquire-item.cc:1479
 #, fuzzy, c-format
 msgid "Unable to find hash sum for '%s' in Release file"
 msgstr "Nepavyko atverti DB failo %s: %s"
 
-#: apt-pkg/acquire-item.cc:1461
+#: apt-pkg/acquire-item.cc:1514
 msgid "There is no public key available for the following key IDs:\n"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc:1499
+#: apt-pkg/acquire-item.cc:1552
 #, c-format
 msgid ""
 "Release file for %s is expired (invalid since %s). Updates for this "
 "repository will not be applied."
 msgstr ""
 
-#: apt-pkg/acquire-item.cc:1521
+#: apt-pkg/acquire-item.cc:1574
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc:1554
+#: apt-pkg/acquire-item.cc:1607
 #, c-format
 msgid ""
 "A error occurred during the signature verification. The repository is not "
@@ -2946,32 +2946,32 @@ msgid ""
 msgstr ""
 
 #. Invalid signature file, reject (LP: #346386) (Closes: #627642)
-#: apt-pkg/acquire-item.cc:1564 apt-pkg/acquire-item.cc:1569
+#: apt-pkg/acquire-item.cc:1617 apt-pkg/acquire-item.cc:1622
 #, c-format
 msgid "GPG error: %s: %s"
 msgstr "GPG klaida: %s: %s"
 
-#: apt-pkg/acquire-item.cc:1668
+#: apt-pkg/acquire-item.cc:1721
 #, c-format
 msgid ""
 "I wasn't able to locate a file for the %s package. This might mean you need "
 "to manually fix this package. (due to missing arch)"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc:1727
+#: apt-pkg/acquire-item.cc:1780
 #, c-format
 msgid ""
 "I wasn't able to locate a file for the %s package. This might mean you need "
 "to manually fix this package."
 msgstr ""
 
-#: apt-pkg/acquire-item.cc:1786
+#: apt-pkg/acquire-item.cc:1839
 #, c-format
 msgid ""
 "The package index files are corrupted. No Filename: field for package %s."
 msgstr ""
 
-#: apt-pkg/acquire-item.cc:1884
+#: apt-pkg/acquire-item.cc:1937
 msgid "Size mismatch"
 msgstr "Neatitinka dydžiai"
 
