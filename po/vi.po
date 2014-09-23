@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 0.8.0~pre1\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-08-20 14:11+0200\n"
+"POT-Creation-Date: 2014-09-23 09:54+0200\n"
 "PO-Revision-Date: 2010-09-29 21:36+0930\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -2126,7 +2126,7 @@ msgstr "Quá giờ kết nối ổ cắm dữ liệu"
 msgid "Unable to accept connection"
 msgstr "Không thể chấp nhận kết nối"
 
-#: methods/ftp.cc:874 methods/http.cc:1034 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "Gặp khó khăn khi tạo chuỗi duy nhất cho tập tin"
 
@@ -2276,43 +2276,43 @@ msgstr "Máy phục vụ HTTP đã ngắt cách hỗ trợ phạm vị"
 msgid "Unknown date format"
 msgstr "Không rõ dạng ngày"
 
-#: methods/http.cc:820
+#: methods/http.cc:818
 msgid "Select failed"
 msgstr "Việc chọn bị lỗi"
 
-#: methods/http.cc:825
+#: methods/http.cc:823
 msgid "Connection timed out"
 msgstr "Kết nối đã quá giờ"
 
-#: methods/http.cc:848
+#: methods/http.cc:846
 msgid "Error writing to output file"
 msgstr "Gặp lỗi khi ghi vào tập tin xuất"
 
-#: methods/http.cc:879
+#: methods/http.cc:877
 msgid "Error writing to file"
 msgstr "Gặp lỗi khi ghi vào tập tin"
 
-#: methods/http.cc:907
+#: methods/http.cc:905
 msgid "Error writing to the file"
 msgstr "Gặp lỗi khi ghi vào tập tin đó"
 
-#: methods/http.cc:921
+#: methods/http.cc:919
 msgid "Error reading from server. Remote end closed connection"
 msgstr "Gặp lỗi khi đọc từ máy phục vụ : cuối ở xa đã đóng kết nối"
 
-#: methods/http.cc:923
+#: methods/http.cc:921
 msgid "Error reading from server"
 msgstr "Gặp lỗi khi đọc từ máy phục vụ"
 
-#: methods/http.cc:1193
+#: methods/http.cc:1191
 msgid "Bad header data"
 msgstr "Dữ liệu dòng đầu sai"
 
-#: methods/http.cc:1210 methods/http.cc:1265
+#: methods/http.cc:1208 methods/http.cc:1263
 msgid "Connection failed"
 msgstr "Kết nối bị ngắt"
 
-#: methods/http.cc:1357
+#: methods/http.cc:1355
 msgid "Internal error"
 msgstr "Gặp lỗi nội bộ"
 
