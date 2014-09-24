@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 0.7.23.1\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-08-20 14:11+0200\n"
+"POT-Creation-Date: 2014-09-23 09:54+0200\n"
 "PO-Revision-Date: 2012-01-22 20:35+0100\n"
 "Last-Translator: Michał Kułach <michal.kulach@gmail.com>\n"
 "Language-Team: Polish <debian-l10n-polish@lists.debian.org>\n"
@@ -2159,7 +2159,7 @@ msgstr "Przekroczony czas połączenia gniazda danych"
 msgid "Unable to accept connection"
 msgstr "Nie udało się przyjąć połączenia"
 
-#: methods/ftp.cc:874 methods/http.cc:1034 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "Nie udało się obliczyć skrótu pliku"
 
@@ -2308,43 +2308,43 @@ msgstr "Ten serwer HTTP nieprawidłowo obsługuje zakresy (ranges)"
 msgid "Unknown date format"
 msgstr "Nieznany format daty"
 
-#: methods/http.cc:820
+#: methods/http.cc:818
 msgid "Select failed"
 msgstr "Operacja select nie powiodła się"
 
-#: methods/http.cc:825
+#: methods/http.cc:823
 msgid "Connection timed out"
 msgstr "Przekroczenie czasu połączenia"
 
-#: methods/http.cc:848
+#: methods/http.cc:846
 msgid "Error writing to output file"
 msgstr "Błąd przy pisaniu do pliku wyjściowego"
 
-#: methods/http.cc:879
+#: methods/http.cc:877
 msgid "Error writing to file"
 msgstr "Błąd przy pisaniu do pliku"
 
-#: methods/http.cc:907
+#: methods/http.cc:905
 msgid "Error writing to the file"
 msgstr "Błąd przy pisaniu do pliku"
 
-#: methods/http.cc:921
+#: methods/http.cc:919
 msgid "Error reading from server. Remote end closed connection"
 msgstr "Błąd czytania z serwera: Zdalna strona zamknęła połączenie"
 
-#: methods/http.cc:923
+#: methods/http.cc:921
 msgid "Error reading from server"
 msgstr "Błąd czytania z serwera"
 
-#: methods/http.cc:1193
+#: methods/http.cc:1191
 msgid "Bad header data"
 msgstr "Błędne dane nagłówka"
 
-#: methods/http.cc:1210 methods/http.cc:1265
+#: methods/http.cc:1208 methods/http.cc:1263
 msgid "Connection failed"
 msgstr "Połączenie nie powiodło się"
 
-#: methods/http.cc:1357
+#: methods/http.cc:1355
 msgid "Internal error"
 msgstr "Błąd wewnętrzny"
 

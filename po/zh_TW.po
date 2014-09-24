@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.5.4\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-08-20 14:11+0200\n"
+"POT-Creation-Date: 2014-09-23 09:54+0200\n"
 "PO-Revision-Date: 2009-01-28 10:41+0800\n"
 "Last-Translator: Tetralet <tetralet@gmail.com>\n"
 "Language-Team: Debian-user in Chinese [Big5] <debian-chinese-big5@lists."
@@ -2056,7 +2056,7 @@ msgstr "Data socket 連線逾時"
 msgid "Unable to accept connection"
 msgstr "無法接受連線"
 
-#: methods/ftp.cc:874 methods/http.cc:1034 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "有問題的雜湊檔"
 
@@ -2201,43 +2201,43 @@ msgstr "這個 HTTP 伺服器的範圍支援有問題"
 msgid "Unknown date format"
 msgstr "未知的資料格式"
 
-#: methods/http.cc:820
+#: methods/http.cc:818
 msgid "Select failed"
 msgstr "選擇失敗"
 
-#: methods/http.cc:825
+#: methods/http.cc:823
 msgid "Connection timed out"
 msgstr "連線逾時"
 
-#: methods/http.cc:848
+#: methods/http.cc:846
 msgid "Error writing to output file"
 msgstr "在寫入輸出檔時發生錯誤"
 
-#: methods/http.cc:879
+#: methods/http.cc:877
 msgid "Error writing to file"
 msgstr "在寫入檔案時發生錯誤"
 
-#: methods/http.cc:907
+#: methods/http.cc:905
 msgid "Error writing to the file"
 msgstr "在寫入該檔時發生錯誤"
 
-#: methods/http.cc:921
+#: methods/http.cc:919
 msgid "Error reading from server. Remote end closed connection"
 msgstr "在讀取伺服器時發生錯誤，遠端主機已關閉連線"
 
-#: methods/http.cc:923
+#: methods/http.cc:921
 msgid "Error reading from server"
 msgstr "在讀取伺服器時發生錯誤"
 
-#: methods/http.cc:1193
+#: methods/http.cc:1191
 msgid "Bad header data"
 msgstr "錯誤的標頭資料"
 
-#: methods/http.cc:1210 methods/http.cc:1265
+#: methods/http.cc:1208 methods/http.cc:1263
 msgid "Connection failed"
 msgstr "連線失敗"
 
-#: methods/http.cc:1357
+#: methods/http.cc:1355
 msgid "Internal error"
 msgstr "內部錯誤"
 

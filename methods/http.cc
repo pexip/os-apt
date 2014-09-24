@@ -668,18 +668,14 @@ void HttpMethod::SendReq(FetchItem *Itm,CircleBuf &Out)
    URI Uri = Itm->Uri;
 
    // The HTTP server expects a hostname with a trailing :port
-   char Buf[1000];
+   string Buf;
    string ProperHost = Uri.Host;
    if (Uri.Port != 0)
    {
-      sprintf(Buf,":%u",Uri.Port);
+      strprintf(Buf,":%u",Uri.Port);
       ProperHost += Buf;
    }   
       
-   // Just in case.
-   if (Itm->Uri.length() >= sizeof(Buf))
-       abort();
-       
    /* Build the request. We include a keep-alive header only for non-proxy
       requests. This is to tweak old http/1.0 servers that do support keep-alive
       but not HTTP/1.1 automatic keep-alive. Doing this with a proxy server 
@@ -687,32 +683,34 @@ void HttpMethod::SendReq(FetchItem *Itm,CircleBuf &Out)
       pass it on, HTTP/1.1 says the connection should default to keep alive
       and we expect the proxy to do this */
    if (Proxy.empty() == true || Proxy.Host.empty())
-      sprintf(Buf,"GET %s HTTP/1.1\r\nHost: %s\r\nConnection: keep-alive\r\n",
+      strprintf(Buf,"GET %s HTTP/1.1\r\nHost: %s\r\nConnection: keep-alive\r\n",
 	      QuoteString(Uri.Path,"~").c_str(),ProperHost.c_str());
    else
    {
       /* Generate a cache control header if necessary. We place a max
        	 cache age on index files, optionally set a no-cache directive
        	 and a no-store directive for archives. */
-      sprintf(Buf,"GET %s HTTP/1.1\r\nHost: %s\r\n",
+      strprintf(Buf,"GET %s HTTP/1.1\r\nHost: %s\r\n",
 	      Itm->Uri.c_str(),ProperHost.c_str());
    }
    // generate a cache control header (if needed)
    if (_config->FindB("Acquire::http::No-Cache",false) == true) 
    {
-      strcat(Buf,"Cache-Control: no-cache\r\nPragma: no-cache\r\n");
+      Buf += "Cache-Control: no-cache\r\nPragma: no-cache\r\n";
    }
    else
    {
       if (Itm->IndexFile == true) 
       {
-	 sprintf(Buf+strlen(Buf),"Cache-Control: max-age=%u\r\n",
+         std::string Tmp;
+	 strprintf(Tmp,"Cache-Control: max-age=%u\r\n",
 		 _config->FindI("Acquire::http::Max-Age",0));
+         Buf += Tmp;
       }
       else
       {
 	 if (_config->FindB("Acquire::http::No-Store",false) == true)
-	    strcat(Buf,"Cache-Control: no-store\r\n");
+	    Buf += "Cache-Control: no-store\r\n";
       }
    }
 
@@ -726,7 +724,7 @@ void HttpMethod::SendReq(FetchItem *Itm,CircleBuf &Out)
       size_t const filepos = Itm->Uri.find_last_of('/');
       string const file = Itm->Uri.substr(filepos + 1);
       if (flExtension(file) == file)
-	 strcat(Buf,"Accept: text/*\r\n");
+	 Buf += "Accept: text/*\r\n";
    }
 
    string Req = Buf;
@@ -736,7 +734,7 @@ void HttpMethod::SendReq(FetchItem *Itm,CircleBuf &Out)
    if (stat(Itm->DestFile.c_str(),&SBuf) >= 0 && SBuf.st_size > 0)
    {
       // In this case we send an if-range query with a range header
-      sprintf(Buf,"Range: bytes=%lli-\r\nIf-Range: %s\r\n",(long long)SBuf.st_size - 1,
+      strprintf(Buf,"Range: bytes=%lli-\r\nIf-Range: %s\r\n",(long long)SBuf.st_size - 1,
 	      TimeRFC1123(SBuf.st_mtime).c_str());
       Req += Buf;
    }
@@ -744,7 +742,7 @@ void HttpMethod::SendReq(FetchItem *Itm,CircleBuf &Out)
    {
       if (Itm->LastModified != 0)
       {
-	 sprintf(Buf,"If-Modified-Since: %s\r\n",TimeRFC1123(Itm->LastModified).c_str());
+	 strprintf(Buf,"If-Modified-Since: %s\r\n",TimeRFC1123(Itm->LastModified).c_str());
 	 Req += Buf;
       }
    }

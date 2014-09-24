@@ -1,3 +1,23 @@
+apt (0.8.16~exp12ubuntu10.20.1pexip1) pexip; urgency=low
+
+  * New upstream release
+
+ -- John-Mark Bell <jmb@pexip.com>  Wed, 24 Sep 2014 16:33:41 +0100
+
+apt (0.8.16~exp12ubuntu10.20.1) precise-security; urgency=low
+
+  * SECURITY UPDATE:
+    - fix potential buffer overflow, thanks to the
+      Google Security Team (CVE-2014-6273)
+  * Fix regression in 0.9.7.9+deb7u3 when file:/// sources
+    are used and those are on a different partition than
+    the apt state directoryo (LP: #1371058)
+  * Revert FileFd::ReadOnlyGzip change
+  * Fix regression when Dir::state::lists is set to a relative path
+  * Fix regression when cdrom: sources got rewriten by apt-cdrom add
+
+ -- Michael Vogt <michael.vogt@ubuntu.com>  Tue, 23 Sep 2014 09:02:26 +0200
+
 apt (0.8.16~exp12ubuntu10.19pexip1) pexip; urgency=low
 
   * New upstream release

@@ -943,9 +943,9 @@ void pkgAcqIndex::Done(string Message,unsigned long long Size,string Hash,
 
       /* Verify the index file for correctness (all indexes must
        * have a Package field) (LP: #346386) (Closes: #627642) */
-      if (Verify == true)
+      if (Verify == true && !_config->FindB("Acquire::GzipIndexes",false))
       {
-	 FileFd fd(DestFile, FileFd::ReadOnlyGzip);
+	 FileFd fd(DestFile, FileFd::ReadOnly);
 	 pkgTagSection sec;
 	 pkgTagFile tag(&fd);
 
@@ -990,12 +990,6 @@ void pkgAcqIndex::Done(string Message,unsigned long long Size,string Hash,
    string FileName = LookupTag(Message,"Alt-Filename");
    if (FileName.empty() == false)
    {
-      // The files timestamp matches
-      if (StringToBool(LookupTag(Message,"Alt-IMS-Hit"),false) == true)
-      {
-         ReverifyAfterIMS(FileName);
-         return;
-      }
       Decompression = true;
       Local = true;
       DestFile += ".decomp";
@@ -1012,18 +1006,24 @@ void pkgAcqIndex::Done(string Message,unsigned long long Size,string Hash,
       ErrorText = "Method gave a blank filename";
    }
 
+   if (FileName == DestFile)
+      Erase = true;
+   else
+      Local = true;
+
+   // do not reverify cdrom sources as apt-cdrom may rewrite the Packages
+   // file when its doing the indexcopy
+   if (RealURI.substr(0,6) == "cdrom:" &&
+       StringToBool(LookupTag(Message,"IMS-Hit"),false) == true)
+      return;
+
    // The files timestamp matches
-   if (StringToBool(LookupTag(Message,"IMS-Hit"),false) == true)
+   if (!Local && StringToBool(LookupTag(Message,"IMS-Hit"),false) == true)
    {
       ReverifyAfterIMS(FileName);
       return;
     }
 
-   if (FileName == DestFile)
-      Erase = true;
-   else
-      Local = true;
-   
    string decompProg;
 
    // If we enable compressed indexes, queue for hash verification

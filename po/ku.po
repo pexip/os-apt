@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt-ku\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-08-20 14:11+0200\n"
+"POT-Creation-Date: 2014-09-23 09:54+0200\n"
 "PO-Revision-Date: 2008-05-08 12:48+0200\n"
 "Last-Translator: Erdal Ronahi <erdal dot ronahi at gmail dot com>\n"
 "Language-Team: ku <ubuntu-l10n-kur@lists.ubuntu.com>\n"
@@ -1905,7 +1905,7 @@ msgstr ""
 msgid "Unable to accept connection"
 msgstr ""
 
-#: methods/ftp.cc:874 methods/http.cc:1034 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr ""
 
@@ -2051,44 +2051,44 @@ msgstr ""
 msgid "Unknown date format"
 msgstr ""
 
-#: methods/http.cc:820
+#: methods/http.cc:818
 msgid "Select failed"
 msgstr "Hilbijartin neserketî"
 
-#: methods/http.cc:825
+#: methods/http.cc:823
 msgid "Connection timed out"
 msgstr ""
 
-#: methods/http.cc:848
+#: methods/http.cc:846
 #, fuzzy
 msgid "Error writing to output file"
 msgstr "Dema li dosyeya naverokê joreagahî dihate nivîsîn çewtî"
 
-#: methods/http.cc:879
+#: methods/http.cc:877
 msgid "Error writing to file"
 msgstr "Dema li pelî dihate nivîsîn çewtî"
 
-#: methods/http.cc:907
+#: methods/http.cc:905
 msgid "Error writing to the file"
 msgstr "Dema li pelî dihate nivîsîn çewtî"
 
-#: methods/http.cc:921
+#: methods/http.cc:919
 msgid "Error reading from server. Remote end closed connection"
 msgstr ""
 
-#: methods/http.cc:923
+#: methods/http.cc:921
 msgid "Error reading from server"
 msgstr ""
 
-#: methods/http.cc:1193
+#: methods/http.cc:1191
 msgid "Bad header data"
 msgstr ""
 
-#: methods/http.cc:1210 methods/http.cc:1265
+#: methods/http.cc:1208 methods/http.cc:1263
 msgid "Connection failed"
 msgstr "Girêdan pêk nehatiye"
 
-#: methods/http.cc:1357
+#: methods/http.cc:1355
 msgid "Internal error"
 msgstr "Çewtiya hundirîn"
 

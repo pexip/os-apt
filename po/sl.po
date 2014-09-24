@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 0.5.5\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-08-20 14:11+0200\n"
+"POT-Creation-Date: 2014-09-23 09:54+0200\n"
 "PO-Revision-Date: 2011-03-06 15:47+0000\n"
 "Last-Translator: Andrej Znidarsic <andrej.znidarsic@gmail.com>\n"
 "Language-Team: Slovenian <sl@li.org>\n"
@@ -2101,7 +2101,7 @@ msgstr "Povezava podatkovne vtičnice je zakasnela"
 msgid "Unable to accept connection"
 msgstr "Ni mogoče sprejeti povezave"
 
-#: methods/ftp.cc:874 methods/http.cc:1034 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "Težava med razprševanjem datoteke"
 
@@ -2247,43 +2247,43 @@ msgstr "Ta strežnik HTTP ima pokvarjen obseg podpore"
 msgid "Unknown date format"
 msgstr "Neznana oblika datuma"
 
-#: methods/http.cc:820
+#: methods/http.cc:818
 msgid "Select failed"
 msgstr "Izbira ni uspela"
 
-#: methods/http.cc:825
+#: methods/http.cc:823
 msgid "Connection timed out"
 msgstr "Povezava je zakasnela"
 
-#: methods/http.cc:848
+#: methods/http.cc:846
 msgid "Error writing to output file"
 msgstr "Napaka med pisanjem v izhodno datoteko"
 
-#: methods/http.cc:879
+#: methods/http.cc:877
 msgid "Error writing to file"
 msgstr "Napaka med pisanjem v datoteko"
 
-#: methods/http.cc:907
+#: methods/http.cc:905
 msgid "Error writing to the file"
 msgstr "Napaka med pisanjem v datoteko"
 
-#: methods/http.cc:921
+#: methods/http.cc:919
 msgid "Error reading from server. Remote end closed connection"
 msgstr "Napaka med branjem s strežnika. Oddaljeni del je zaprl povezavo"
 
-#: methods/http.cc:923
+#: methods/http.cc:921
 msgid "Error reading from server"
 msgstr "Napaka med branjem s strežnika"
 
-#: methods/http.cc:1193
+#: methods/http.cc:1191
 msgid "Bad header data"
 msgstr "Napačni podatki glave"
 
-#: methods/http.cc:1210 methods/http.cc:1265
+#: methods/http.cc:1208 methods/http.cc:1263
 msgid "Connection failed"
 msgstr "Povezava ni uspela"
 
-#: methods/http.cc:1357
+#: methods/http.cc:1355
 msgid "Internal error"
 msgstr "Notranja napaka"
 

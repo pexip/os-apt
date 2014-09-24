@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-08-20 14:11+0200\n"
+"POT-Creation-Date: 2014-09-23 09:54+0200\n"
 "PO-Revision-Date: 2010-08-28 09:03+0100\n"
 "Last-Translator: Miguel Figueiredo <elmig@debianpt.org>\n"
 "Language-Team: Portuguese <traduz@debianpt.org>\n"
@@ -2113,7 +2113,7 @@ msgstr "Ligação de socket de dados expirou"
 msgid "Unable to accept connection"
 msgstr "Impossível aceitar ligação"
 
-#: methods/ftp.cc:874 methods/http.cc:1034 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "Problema ao calcular o hash do ficheiro"
 
@@ -2263,43 +2263,43 @@ msgstr "Este servidor HTTP possui suporte de range errado"
 msgid "Unknown date format"
 msgstr "Formato de data desconhecido"
 
-#: methods/http.cc:820
+#: methods/http.cc:818
 msgid "Select failed"
 msgstr "A selecção falhou"
 
-#: methods/http.cc:825
+#: methods/http.cc:823
 msgid "Connection timed out"
 msgstr "O tempo da ligação expirou"
 
-#: methods/http.cc:848
+#: methods/http.cc:846
 msgid "Error writing to output file"
 msgstr "Erro ao escrever para o ficheiro de saída"
 
-#: methods/http.cc:879
+#: methods/http.cc:877
 msgid "Error writing to file"
 msgstr "Erro ao escrever para ficheiro"
 
-#: methods/http.cc:907
+#: methods/http.cc:905
 msgid "Error writing to the file"
 msgstr "Erro ao escrever para o ficheiro"
 
-#: methods/http.cc:921
+#: methods/http.cc:919
 msgid "Error reading from server. Remote end closed connection"
 msgstr "Erro ao ler do servidor. O lado remoto fechou a ligação"
 
-#: methods/http.cc:923
+#: methods/http.cc:921
 msgid "Error reading from server"
 msgstr "Erro ao ler do servidor"
 
-#: methods/http.cc:1193
+#: methods/http.cc:1191
 msgid "Bad header data"
 msgstr "Dados de cabeçalho errados"
 
-#: methods/http.cc:1210 methods/http.cc:1265
+#: methods/http.cc:1208 methods/http.cc:1263
 msgid "Connection failed"
 msgstr "A ligação falhou"
 
-#: methods/http.cc:1357
+#: methods/http.cc:1355
 msgid "Internal error"
 msgstr "Erro interno"
 

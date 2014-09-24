@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 0.8.15\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-08-20 14:11+0200\n"
+"POT-Creation-Date: 2014-09-23 09:54+0200\n"
 "PO-Revision-Date: 2011-06-16 01:41+0200\n"
 "Last-Translator: Jordi Mallach <jordi@debian.org>\n"
 "Language-Team: Catalan <debian-l10n-catalan@lists.debian.org>\n"
@@ -2136,7 +2136,7 @@ msgstr "S'ha esgotat el temps de connexió al sòcol de dades"
 msgid "Unable to accept connection"
 msgstr "No es pot acceptar la connexió"
 
-#: methods/ftp.cc:874 methods/http.cc:1034 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "Problema escollint el fitxer"
 
@@ -2286,44 +2286,44 @@ msgstr "Aquest servidor HTTP té el suport d'abast trencat"
 msgid "Unknown date format"
 msgstr "Format de la data desconegut"
 
-#: methods/http.cc:820
+#: methods/http.cc:818
 msgid "Select failed"
 msgstr "Ha fallat la selecció"
 
-#: methods/http.cc:825
+#: methods/http.cc:823
 msgid "Connection timed out"
 msgstr "Connexió finalitzada"
 
-#: methods/http.cc:848
+#: methods/http.cc:846
 msgid "Error writing to output file"
 msgstr "S'ha produït un error en escriure al fitxer de sortida"
 
-#: methods/http.cc:879
+#: methods/http.cc:877
 msgid "Error writing to file"
 msgstr "S'ha produït un error en escriure al fitxer"
 
-#: methods/http.cc:907
+#: methods/http.cc:905
 msgid "Error writing to the file"
 msgstr "S'ha produït un error en escriure al fitxer"
 
-#: methods/http.cc:921
+#: methods/http.cc:919
 msgid "Error reading from server. Remote end closed connection"
 msgstr ""
 "S'ha produït un error en llegir, el servidor remot ha tancat la connexió"
 
-#: methods/http.cc:923
+#: methods/http.cc:921
 msgid "Error reading from server"
 msgstr "S'ha produït un error en llegir des del servidor"
 
-#: methods/http.cc:1193
+#: methods/http.cc:1191
 msgid "Bad header data"
 msgstr "Capçalera de dades no vàlida"
 
-#: methods/http.cc:1210 methods/http.cc:1265
+#: methods/http.cc:1208 methods/http.cc:1263
 msgid "Connection failed"
 msgstr "Ha fallat la connexió"
 
-#: methods/http.cc:1357
+#: methods/http.cc:1355
 msgid "Internal error"
 msgstr "Error intern"
 

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-08-20 14:11+0200\n"
+"POT-Creation-Date: 2014-09-23 09:54+0200\n"
 "PO-Revision-Date: 2008-11-20 23:27+0530\n"
 "Last-Translator: Sampada <sampadanakhare@gmail.com>\n"
 "Language-Team: Marathi, janabhaaratii, C-DAC, Mumbai, India "
@@ -2071,7 +2071,7 @@ msgstr "डेटा सॉकेट जोडणी वेळेअभावी
 msgid "Unable to accept connection"
 msgstr "जोडणी स्विकारण्यास असमर्थ"
 
-#: methods/ftp.cc:874 methods/http.cc:1034 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "फाईल हॅश करण्यात त्रुटी"
 
@@ -2217,43 +2217,43 @@ msgstr "HTTP सर्व्हरने विस्तार तांत्�
 msgid "Unknown date format"
 msgstr "अपरिचित दिनांक प्रकार/स्वरूप "
 
-#: methods/http.cc:820
+#: methods/http.cc:818
 msgid "Select failed"
 msgstr "चुकले/असमर्थ निवड करा"
 
-#: methods/http.cc:825
+#: methods/http.cc:823
 msgid "Connection timed out"
 msgstr "जोडणी वेळेअभावी तुटली"
 
-#: methods/http.cc:848
+#: methods/http.cc:846
 msgid "Error writing to output file"
 msgstr "निर्गत फाईल मध्ये लिहिताना त्रुटी/चूक"
 
-#: methods/http.cc:879
+#: methods/http.cc:877
 msgid "Error writing to file"
 msgstr "फाईल मध्ये लिहिण्यात चूक/त्रुटी"
 
-#: methods/http.cc:907
+#: methods/http.cc:905
 msgid "Error writing to the file"
 msgstr "फाईल मध्ये लिहिण्यात चूक/त्रुटी"
 
-#: methods/http.cc:921
+#: methods/http.cc:919
 msgid "Error reading from server. Remote end closed connection"
 msgstr "सर्व्हर मधून वाचण्यात चूक. लांब शेवट आणि बंद झालेली जोडणी"
 
-#: methods/http.cc:923
+#: methods/http.cc:921
 msgid "Error reading from server"
 msgstr "सर्व्हर मधून वाचण्यात चूक"
 
-#: methods/http.cc:1193
+#: methods/http.cc:1191
 msgid "Bad header data"
 msgstr "चुकीचा शीर्षक डाटा"
 
-#: methods/http.cc:1210 methods/http.cc:1265
+#: methods/http.cc:1208 methods/http.cc:1263
 msgid "Connection failed"
 msgstr "जोडणी अयशस्वी"
 
-#: methods/http.cc:1357
+#: methods/http.cc:1355
 msgid "Internal error"
 msgstr "अंतर्गत त्रुटी"
 

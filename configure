@@ -2467,7 +2467,7 @@ ac_config_headers="$ac_config_headers include/config.h:buildlib/config.h.in incl
 
 
 cat >>confdefs.h <<_ACEOF
-#define VERSION "0.8.16~exp12ubuntu10.19"
+#define VERSION "0.8.16~exp12ubuntu10.20.1"
 _ACEOF
 
 PACKAGE="apt"

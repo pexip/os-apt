@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: APT\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-08-20 14:11+0200\n"
+"POT-Creation-Date: 2014-09-23 09:54+0200\n"
 "PO-Revision-Date: 2005-06-06 13:46+0100\n"
 "Last-Translator: Dafydd Harries <daf@muse.19inch.net>\n"
 "Language-Team: Welsh <cy@pengwyn.linux.org.uk>\n"
@@ -2145,7 +2145,7 @@ msgstr "Goramserodd cysylltiad y soced data"
 msgid "Unable to accept connection"
 msgstr "Methwyd derbyn cysylltiad"
 
-#: methods/ftp.cc:874 methods/http.cc:1034 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "Problem wrth stwnshio ffeil"
 
@@ -2295,45 +2295,45 @@ msgstr "Mae cynaliaeth amrediad y gweinydd hwn wedi torri"
 msgid "Unknown date format"
 msgstr "Fformat dyddiad anhysbys"
 
-#: methods/http.cc:820
+#: methods/http.cc:818
 msgid "Select failed"
 msgstr "Methwyd dewis"
 
-#: methods/http.cc:825
+#: methods/http.cc:823
 msgid "Connection timed out"
 msgstr "Goramserodd y cysylltiad"
 
-#: methods/http.cc:848
+#: methods/http.cc:846
 msgid "Error writing to output file"
 msgstr "Gwall wrth ysgrifennu i ffeil allbwn"
 
-#: methods/http.cc:879
+#: methods/http.cc:877
 msgid "Error writing to file"
 msgstr "Gwall wrth ysgrifennu at ffeil"
 
-#: methods/http.cc:907
+#: methods/http.cc:905
 msgid "Error writing to the file"
 msgstr "Gwall wrth ysgrifennu at y ffeil"
 
-#: methods/http.cc:921
+#: methods/http.cc:919
 #, fuzzy
 msgid "Error reading from server. Remote end closed connection"
 msgstr "Gwall wrth ddarllen o'r gweinydd: caeodd yr ochr pell y cysylltiad"
 
-#: methods/http.cc:923
+#: methods/http.cc:921
 msgid "Error reading from server"
 msgstr "Gwall wrth ddarllen o'r gweinydd"
 
-#: methods/http.cc:1193
+#: methods/http.cc:1191
 #, fuzzy
 msgid "Bad header data"
 msgstr "Data pennawd gwael"
 
-#: methods/http.cc:1210 methods/http.cc:1265
+#: methods/http.cc:1208 methods/http.cc:1263
 msgid "Connection failed"
 msgstr "Methodd y cysylltiad"
 
-#: methods/http.cc:1357
+#: methods/http.cc:1355
 msgid "Internal error"
 msgstr "Gwall mewnol"
 
