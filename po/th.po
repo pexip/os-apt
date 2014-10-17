@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-09-23 09:54+0200\n"
+"POT-Creation-Date: 2014-10-17 10:05+0200\n"
 "PO-Revision-Date: 2008-11-06 15:54+0700\n"
 "Last-Translator: Theppitak Karoonboonyanan <thep@linux.thai.net>\n"
 "Language-Team: Thai <thai-l10n@googlegroups.com>\n"
@@ -2055,7 +2055,7 @@ msgstr "หมดเวลารอเชื่อมต่อซ็อกเก
 msgid "Unable to accept connection"
 msgstr "ไม่สามารถรับการเชื่อมต่อ"
 
-#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1044 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "เกิดปัญหาขณะคำนวณค่าแฮชของแฟ้ม"
 
@@ -2188,55 +2188,55 @@ msgstr "เซิร์ฟเวอร์ HTTP ส่งข้อมูลส่
 msgid "The HTTP server sent an invalid Content-Length header"
 msgstr "เซิร์ฟเวอร์ HTTP ส่งข้อมูลส่วนหัว Content-Length มาไม่ถูกต้อง"
 
-#: methods/http.cc:623
+#: methods/http.cc:629
 msgid "The HTTP server sent an invalid Content-Range header"
 msgstr "เซิร์ฟเวอร์ HTTP ส่งข้อมูลส่วนหัว Content-Range มาไม่ถูกต้อง"
 
-#: methods/http.cc:625
+#: methods/http.cc:631
 msgid "This HTTP server has broken range support"
 msgstr "การสนับสนุน Content-Range ที่เซิร์ฟเวอร์ HTTP ผิดพลาด"
 
-#: methods/http.cc:649
+#: methods/http.cc:655
 msgid "Unknown date format"
 msgstr "พบรูปแบบวันที่ที่ไม่รู้จัก"
 
-#: methods/http.cc:818
+#: methods/http.cc:824
 msgid "Select failed"
 msgstr "select ไม่สำเร็จ"
 
-#: methods/http.cc:823
+#: methods/http.cc:829
 msgid "Connection timed out"
 msgstr "หมดเวลารอเชื่อมต่อ"
 
-#: methods/http.cc:846
+#: methods/http.cc:852
 msgid "Error writing to output file"
 msgstr "เกิดข้อผิดพลาดขณะเขียนลงแฟ้มผลลัพธ์"
 
-#: methods/http.cc:877
+#: methods/http.cc:883
 msgid "Error writing to file"
 msgstr "เกิดข้อผิดพลาดขณะเขียนลงแฟ้ม"
 
-#: methods/http.cc:905
+#: methods/http.cc:911
 msgid "Error writing to the file"
 msgstr "เกิดข้อผิดพลาดขณะเขียนลงแฟ้ม"
 
-#: methods/http.cc:919
+#: methods/http.cc:925
 msgid "Error reading from server. Remote end closed connection"
 msgstr "เกิดข้อผิดพลาดขณะอ่านข้อมูลจากเซิร์ฟเวอร์ ปลายทางอีกด้านหนึ่งปิดการเชื่อมต่อ"
 
-#: methods/http.cc:921
+#: methods/http.cc:927
 msgid "Error reading from server"
 msgstr "เกิดข้อผิดพลาดขณะอ่านข้อมูลจากเซิร์ฟเวอร์"
 
-#: methods/http.cc:1191
+#: methods/http.cc:1203
 msgid "Bad header data"
 msgstr "ข้อมูลส่วนหัวผิดพลาด"
 
-#: methods/http.cc:1208 methods/http.cc:1263
+#: methods/http.cc:1220 methods/http.cc:1275
 msgid "Connection failed"
 msgstr "เชื่อมต่อไม่สำเร็จ"
 
-#: methods/http.cc:1355
+#: methods/http.cc:1367
 msgid "Internal error"
 msgstr "ข้อผิดพลาดภายใน"
 

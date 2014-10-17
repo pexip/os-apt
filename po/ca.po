@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 0.8.15\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-09-23 09:54+0200\n"
+"POT-Creation-Date: 2014-10-17 10:05+0200\n"
 "PO-Revision-Date: 2011-06-16 01:41+0200\n"
 "Last-Translator: Jordi Mallach <jordi@debian.org>\n"
 "Language-Team: Catalan <debian-l10n-catalan@lists.debian.org>\n"
@@ -2136,7 +2136,7 @@ msgstr "S'ha esgotat el temps de connexió al sòcol de dades"
 msgid "Unable to accept connection"
 msgstr "No es pot acceptar la connexió"
 
-#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1044 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "Problema escollint el fitxer"
 
@@ -2274,56 +2274,56 @@ msgstr "El servidor HTTP ha enviat una capçalera de resposta no vàlida"
 msgid "The HTTP server sent an invalid Content-Length header"
 msgstr "El servidor HTTP ha enviat una capçalera de Content-Length no vàlida"
 
-#: methods/http.cc:623
+#: methods/http.cc:629
 msgid "The HTTP server sent an invalid Content-Range header"
 msgstr "El servidor HTTP ha enviat una capçalera de Content-Range no vàlida"
 
-#: methods/http.cc:625
+#: methods/http.cc:631
 msgid "This HTTP server has broken range support"
 msgstr "Aquest servidor HTTP té el suport d'abast trencat"
 
-#: methods/http.cc:649
+#: methods/http.cc:655
 msgid "Unknown date format"
 msgstr "Format de la data desconegut"
 
-#: methods/http.cc:818
+#: methods/http.cc:824
 msgid "Select failed"
 msgstr "Ha fallat la selecció"
 
-#: methods/http.cc:823
+#: methods/http.cc:829
 msgid "Connection timed out"
 msgstr "Connexió finalitzada"
 
-#: methods/http.cc:846
+#: methods/http.cc:852
 msgid "Error writing to output file"
 msgstr "S'ha produït un error en escriure al fitxer de sortida"
 
-#: methods/http.cc:877
+#: methods/http.cc:883
 msgid "Error writing to file"
 msgstr "S'ha produït un error en escriure al fitxer"
 
-#: methods/http.cc:905
+#: methods/http.cc:911
 msgid "Error writing to the file"
 msgstr "S'ha produït un error en escriure al fitxer"
 
-#: methods/http.cc:919
+#: methods/http.cc:925
 msgid "Error reading from server. Remote end closed connection"
 msgstr ""
 "S'ha produït un error en llegir, el servidor remot ha tancat la connexió"
 
-#: methods/http.cc:921
+#: methods/http.cc:927
 msgid "Error reading from server"
 msgstr "S'ha produït un error en llegir des del servidor"
 
-#: methods/http.cc:1191
+#: methods/http.cc:1203
 msgid "Bad header data"
 msgstr "Capçalera de dades no vàlida"
 
-#: methods/http.cc:1208 methods/http.cc:1263
+#: methods/http.cc:1220 methods/http.cc:1275
 msgid "Connection failed"
 msgstr "Ha fallat la connexió"
 
-#: methods/http.cc:1355
+#: methods/http.cc:1367
 msgid "Internal error"
 msgstr "Error intern"
 

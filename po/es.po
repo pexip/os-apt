@@ -33,7 +33,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 0.8.10\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-09-23 09:54+0200\n"
+"POT-Creation-Date: 2014-10-17 10:05+0200\n"
 "PO-Revision-Date: 2011-01-24 11:47+0100\n"
 "Last-Translator: Javier Fernández-Sanguino Peña <jfs@debian.org>\n"
 "Language-Team: Debian Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -2181,7 +2181,7 @@ msgstr "Expiró conexión a socket de datos"
 msgid "Unable to accept connection"
 msgstr "No pude aceptar la conexión"
 
-#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1044 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "Se produjo un problema al hacer un hash del archivo"
 
@@ -2318,55 +2318,55 @@ msgstr "El servidor de http envió una cabecera de respuesta inválida"
 msgid "The HTTP server sent an invalid Content-Length header"
 msgstr "El servidor de http envió una cabecera de Content-Length inválida"
 
-#: methods/http.cc:623
+#: methods/http.cc:629
 msgid "The HTTP server sent an invalid Content-Range header"
 msgstr "El servidor de http envió una cabecera de Content-Range inválida"
 
-#: methods/http.cc:625
+#: methods/http.cc:631
 msgid "This HTTP server has broken range support"
 msgstr "Éste servidor de http tiene el soporte de alcance roto"
 
-#: methods/http.cc:649
+#: methods/http.cc:655
 msgid "Unknown date format"
 msgstr "Formato de fecha desconocido"
 
-#: methods/http.cc:818
+#: methods/http.cc:824
 msgid "Select failed"
 msgstr "Falló la selección"
 
-#: methods/http.cc:823
+#: methods/http.cc:829
 msgid "Connection timed out"
 msgstr "Expiró la conexión"
 
-#: methods/http.cc:846
+#: methods/http.cc:852
 msgid "Error writing to output file"
 msgstr "Error escribiendo al archivo de salida"
 
-#: methods/http.cc:877
+#: methods/http.cc:883
 msgid "Error writing to file"
 msgstr "Error escribiendo a archivo"
 
-#: methods/http.cc:905
+#: methods/http.cc:911
 msgid "Error writing to the file"
 msgstr "Error escribiendo al archivo"
 
-#: methods/http.cc:919
+#: methods/http.cc:925
 msgid "Error reading from server. Remote end closed connection"
 msgstr "Error leyendo del servidor, el lado remoto cerró la conexión."
 
-#: methods/http.cc:921
+#: methods/http.cc:927
 msgid "Error reading from server"
 msgstr "Error leyendo del servidor"
 
-#: methods/http.cc:1191
+#: methods/http.cc:1203
 msgid "Bad header data"
 msgstr "Mala cabecera Data"
 
-#: methods/http.cc:1208 methods/http.cc:1263
+#: methods/http.cc:1220 methods/http.cc:1275
 msgid "Connection failed"
 msgstr "Fallo la conexión"
 
-#: methods/http.cc:1355
+#: methods/http.cc:1367
 msgid "Internal error"
 msgstr "Error interno"
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-09-23 09:54+0200\n"
+"POT-Creation-Date: 2014-10-17 10:05+0200\n"
 "PO-Revision-Date: 2010-11-27 13:54+0100\n"
 "Last-Translator: Miroslav Kure <kurem@debian.cz>\n"
 "Language-Team: Czech <debian-l10n-czech@lists.debian.org>\n"
@@ -2085,7 +2085,7 @@ msgstr "Spojení datového socketu vypršelo"
 msgid "Unable to accept connection"
 msgstr "Nelze přijmout spojení"
 
-#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1044 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "Problém s hashováním souboru"
 
@@ -2219,55 +2219,55 @@ msgstr "Http server poslal neplatnou hlavičku odpovědi"
 msgid "The HTTP server sent an invalid Content-Length header"
 msgstr "Http server poslal neplatnou hlavičku Content-Length"
 
-#: methods/http.cc:623
+#: methods/http.cc:629
 msgid "The HTTP server sent an invalid Content-Range header"
 msgstr "Http server poslal neplatnou hlavičku Content-Range"
 
-#: methods/http.cc:625
+#: methods/http.cc:631
 msgid "This HTTP server has broken range support"
 msgstr "Tento HTTP server má porouchanou podporu rozsahů"
 
-#: methods/http.cc:649
+#: methods/http.cc:655
 msgid "Unknown date format"
 msgstr "Neznámý formát data"
 
-#: methods/http.cc:818
+#: methods/http.cc:824
 msgid "Select failed"
 msgstr "Výběr selhal"
 
-#: methods/http.cc:823
+#: methods/http.cc:829
 msgid "Connection timed out"
 msgstr "Čas spojení vypršel"
 
-#: methods/http.cc:846
+#: methods/http.cc:852
 msgid "Error writing to output file"
 msgstr "Chyba zápisu do výstupního souboru"
 
-#: methods/http.cc:877
+#: methods/http.cc:883
 msgid "Error writing to file"
 msgstr "Chyba zápisu do souboru"
 
-#: methods/http.cc:905
+#: methods/http.cc:911
 msgid "Error writing to the file"
 msgstr "Chyba zápisu do souboru"
 
-#: methods/http.cc:919
+#: methods/http.cc:925
 msgid "Error reading from server. Remote end closed connection"
 msgstr "Chyba čtení ze serveru. Druhá strana zavřela spojení"
 
-#: methods/http.cc:921
+#: methods/http.cc:927
 msgid "Error reading from server"
 msgstr "Chyba čtení ze serveru"
 
-#: methods/http.cc:1191
+#: methods/http.cc:1203
 msgid "Bad header data"
 msgstr "Špatné datové záhlaví"
 
-#: methods/http.cc:1208 methods/http.cc:1263
+#: methods/http.cc:1220 methods/http.cc:1275
 msgid "Connection failed"
 msgstr "Spojení selhalo"
 
-#: methods/http.cc:1355
+#: methods/http.cc:1367
 msgid "Internal error"
 msgstr "Vnitřní chyba"
 

@@ -619,7 +619,13 @@ bool ServerState::HeaderLine(string Line)
    {
       HaveContent = true;
       
-      if (sscanf(Val.c_str(),"bytes %llu-%*u/%llu",&StartPos,&Size) != 2)
+      // §14.16 says 'byte-range-resp-spec' should be a '*' in case of 416
+      if (Result == 416 && sscanf(Val.c_str(), "bytes */%llu",&Size) == 1)
+      {
+	 StartPos = 1; // ignore Content-Length, it would override Size
+	 HaveContent = false;
+      }
+      else if (sscanf(Val.c_str(),"bytes %llu-%*u/%llu",&StartPos,&Size) != 2)
 	 return _error->Error(_("The HTTP server sent an invalid Content-Range header"));
       if ((unsigned long long)StartPos > Size)
 	 return _error->Error(_("This HTTP server has broken range support"));
@@ -988,6 +994,12 @@ HttpMethod::DealWithHeaders(FetchResult &Res,ServerState *Srv)
          return TRY_AGAIN_OR_REDIRECT;
       }
       /* else pass through for error message */
+   }
+   else if (Srv->Result == 416 && FileExists(Queue->DestFile) == true &&
+	 unlink(Queue->DestFile.c_str()) == 0)
+   {
+      NextURI = Queue->Uri;
+      return TRY_AGAIN_OR_REDIRECT;
    }
  
    /* We have a reply we dont handle. This should indicate a perm server

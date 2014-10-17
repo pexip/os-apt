@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-09-23 09:54+0200\n"
+"POT-Creation-Date: 2014-10-17 10:05+0200\n"
 "PO-Revision-Date: 2011-05-16 21:38+0200\n"
 "Last-Translator: Milo Casagrande <milo@ubuntu.com>\n"
 "Language-Team: Italian <tp@lists.linux.it>\n"
@@ -2132,7 +2132,7 @@ msgstr "Connessione al socket dati terminata"
 msgid "Unable to accept connection"
 msgstr "Impossibile accettare connessioni"
 
-#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1044 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "Si è verificato un problema nel creare l'hash del file"
 
@@ -2271,55 +2271,55 @@ msgstr "Il server HTTP ha inviato un header di risposta non valido"
 msgid "The HTTP server sent an invalid Content-Length header"
 msgstr "Il server HTTP ha inviato un header Content-Length non valido"
 
-#: methods/http.cc:623
+#: methods/http.cc:629
 msgid "The HTTP server sent an invalid Content-Range header"
 msgstr "Il server HTTP ha inviato un header Content-Range non valido"
 
-#: methods/http.cc:625
+#: methods/http.cc:631
 msgid "This HTTP server has broken range support"
 msgstr "Questo server HTTP ha un supporto del range non corretto"
 
-#: methods/http.cc:649
+#: methods/http.cc:655
 msgid "Unknown date format"
 msgstr "Formato della data sconosciuto"
 
-#: methods/http.cc:818
+#: methods/http.cc:824
 msgid "Select failed"
 msgstr "Select non riuscita"
 
-#: methods/http.cc:823
+#: methods/http.cc:829
 msgid "Connection timed out"
 msgstr "Connessione terminata"
 
-#: methods/http.cc:846
+#: methods/http.cc:852
 msgid "Error writing to output file"
 msgstr "Errore nello scrivere sul file di output"
 
-#: methods/http.cc:877
+#: methods/http.cc:883
 msgid "Error writing to file"
 msgstr "Errore nello scrivere su file"
 
-#: methods/http.cc:905
+#: methods/http.cc:911
 msgid "Error writing to the file"
 msgstr "Errore nello scrivere sul file"
 
-#: methods/http.cc:919
+#: methods/http.cc:925
 msgid "Error reading from server. Remote end closed connection"
 msgstr "Errore nel leggere dal server. Il lato remoto ha chiuso la connessione"
 
-#: methods/http.cc:921
+#: methods/http.cc:927
 msgid "Error reading from server"
 msgstr "Errore nel leggere dal server"
 
-#: methods/http.cc:1191
+#: methods/http.cc:1203
 msgid "Bad header data"
 msgstr "Header dati non corretto"
 
-#: methods/http.cc:1208 methods/http.cc:1263
+#: methods/http.cc:1220 methods/http.cc:1275
 msgid "Connection failed"
 msgstr "Connessione non riuscita"
 
-#: methods/http.cc:1355
+#: methods/http.cc:1367
 msgid "Internal error"
 msgstr "Errore interno"
 

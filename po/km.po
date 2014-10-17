@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt_po_km\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-09-23 09:54+0200\n"
+"POT-Creation-Date: 2014-10-17 10:05+0200\n"
 "PO-Revision-Date: 2006-10-10 09:48+0700\n"
 "Last-Translator: Khoem Sokhem <khoemsokhem@khmeros.info>\n"
 "Language-Team: Khmer <support@khmeros.info>\n"
@@ -2067,7 +2067,7 @@ msgstr "ការតភ្ជាប់​រន្ធ​​ទិន្នន័
 msgid "Unable to accept connection"
 msgstr "មិនអាច​ទទួលយក​ការតភ្ជាប់​បានឡើយ"
 
-#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1044 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "បញ្ហា​ធ្វើឲ្យខូច​ឯកសារ"
 
@@ -2200,55 +2200,55 @@ msgstr "ម៉ាស៊ីន​បម្រើ​ HTTP បានផ្ញើប
 msgid "The HTTP server sent an invalid Content-Length header"
 msgstr "ម៉ាស៊ីន​បម្រើ​ HTTP បានផ្ញើ​​បឋមកថាប្រវែង​​​មាតិកា​មិនត្រឹមត្រូវ​"
 
-#: methods/http.cc:623
+#: methods/http.cc:629
 msgid "The HTTP server sent an invalid Content-Range header"
 msgstr "ម៉ាស៊ីន​បម្រើ​ HTTP បានផ្ញើ​បឋមកថា​ជួរ​មាតិកា​មិន​ត្រឹមត្រូវ​"
 
-#: methods/http.cc:625
+#: methods/http.cc:631
 msgid "This HTTP server has broken range support"
 msgstr "ម៉ាស៊ីន​បម្រើ HTTP នេះបាន​ខូច​​​ជួរ​គាំទ្រ​"
 
-#: methods/http.cc:649
+#: methods/http.cc:655
 msgid "Unknown date format"
 msgstr "មិនស្គាល់​ទ្រង់ទ្រាយ​កាលបរិច្ឆេទ"
 
-#: methods/http.cc:818
+#: methods/http.cc:824
 msgid "Select failed"
 msgstr "ជ្រើស​បាន​បរាជ័យ​"
 
-#: methods/http.cc:823
+#: methods/http.cc:829
 msgid "Connection timed out"
 msgstr "ការតភ្ជាប់​បាន​អស់ពេល​"
 
-#: methods/http.cc:846
+#: methods/http.cc:852
 msgid "Error writing to output file"
 msgstr "កំហុស​ក្នុងការ​សរសេរទៅកាន់​ឯកសារលទ្ធផល"
 
-#: methods/http.cc:877
+#: methods/http.cc:883
 msgid "Error writing to file"
 msgstr "កំហុស​ក្នុងការ​សរសេរទៅកាន់​ឯកសារ"
 
-#: methods/http.cc:905
+#: methods/http.cc:911
 msgid "Error writing to the file"
 msgstr "កំហុសក្នុងការ​សរសេរ​ទៅកាន់​ឯកសារ"
 
-#: methods/http.cc:919
+#: methods/http.cc:925
 msgid "Error reading from server. Remote end closed connection"
 msgstr "កំហុស​ក្នុងការ​អាន​ពី​ម៉ាស៊ីនបម្រើ ។ ការបញ្ចប់​ពីចម្ងាយ​បានបិទការតភ្ជាប់"
 
-#: methods/http.cc:921
+#: methods/http.cc:927
 msgid "Error reading from server"
 msgstr "កំហុស​ក្នុងការអាន​ពី​ម៉ាស៊ីន​បម្រើ"
 
-#: methods/http.cc:1191
+#: methods/http.cc:1203
 msgid "Bad header data"
 msgstr "ទិន្នន័យ​បឋមកថា​ខូច"
 
-#: methods/http.cc:1208 methods/http.cc:1263
+#: methods/http.cc:1220 methods/http.cc:1275
 msgid "Connection failed"
 msgstr "ការតភ្ជាប់​បាន​បរាជ័យ​"
 
-#: methods/http.cc:1355
+#: methods/http.cc:1367
 msgid "Internal error"
 msgstr "កំហុស​ខាង​ក្នុង​"
 

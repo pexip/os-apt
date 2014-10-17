@@ -1,3 +1,20 @@
+apt (0.8.16~exp12ubuntu10.22) precise-proposed; urgency=low
+
+  [ David Kalnischkies ]
+  * methods/http.cc:
+    - retry without partial data after a 416 response (closes: 710924)
+      LP: #1382401
+
+ -- Michael Vogt <michael.vogt@ubuntu.com>  Fri, 17 Oct 2014 09:57:34 +0200
+
+apt (0.8.16~exp12ubuntu10.21) precise-security; urgency=low
+
+  * SECURITY UPDATE:
+    - cmdline/apt-get.cc: fix insecure tempfile handling in
+      apt-get changelog (CVE-2014-7206). Thanks to Guillem Jover
+
+ -- Michael Vogt <michael.vogt@ubuntu.com>  Wed, 08 Oct 2014 10:35:46 +0200
+
 apt (0.8.16~exp12ubuntu10.20.1) precise-security; urgency=low
 
   * SECURITY UPDATE:

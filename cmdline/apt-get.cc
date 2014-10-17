@@ -3244,7 +3244,7 @@ bool DoChangelog(CommandLine &CmdL)
    {
       string changelogfile;
       if (downOnly == false)
-	 changelogfile.append(tmpname).append("changelog");
+	 changelogfile.append(tmpname).append("/changelog");
       else
 	 changelogfile.append(Ver.ParentPkg().Name()).append(".changelog");
       if (DownloadChangelog(Cache, Fetcher, Ver, changelogfile) && downOnly == false)
