@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-09-23 09:54+0200\n"
+"POT-Creation-Date: 2014-10-17 10:05+0200\n"
 "PO-Revision-Date: 2008-11-20 23:27+0530\n"
 "Last-Translator: Sampada <sampadanakhare@gmail.com>\n"
 "Language-Team: Marathi, janabhaaratii, C-DAC, Mumbai, India "
@@ -2071,7 +2071,7 @@ msgstr "डेटा सॉकेट जोडणी वेळेअभावी
 msgid "Unable to accept connection"
 msgstr "जोडणी स्विकारण्यास असमर्थ"
 
-#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1044 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "फाईल हॅश करण्यात त्रुटी"
 
@@ -2205,55 +2205,55 @@ msgstr "HTTP सर्व्हरने अवैध प्रत्त्य�
 msgid "The HTTP server sent an invalid Content-Length header"
 msgstr "HTTP सर्व्हरने अवैध मजकूर-लांबी शीर्षक पाठविले "
 
-#: methods/http.cc:623
+#: methods/http.cc:629
 msgid "The HTTP server sent an invalid Content-Range header"
 msgstr "HTTP सर्व्हरने अवैध मजकूर-विस्तार शीर्षक पाठविले"
 
-#: methods/http.cc:625
+#: methods/http.cc:631
 msgid "This HTTP server has broken range support"
 msgstr "HTTP सर्व्हरने विस्तार तांत्रिक मदत जोडली"
 
-#: methods/http.cc:649
+#: methods/http.cc:655
 msgid "Unknown date format"
 msgstr "अपरिचित दिनांक प्रकार/स्वरूप "
 
-#: methods/http.cc:818
+#: methods/http.cc:824
 msgid "Select failed"
 msgstr "चुकले/असमर्थ निवड करा"
 
-#: methods/http.cc:823
+#: methods/http.cc:829
 msgid "Connection timed out"
 msgstr "जोडणी वेळेअभावी तुटली"
 
-#: methods/http.cc:846
+#: methods/http.cc:852
 msgid "Error writing to output file"
 msgstr "निर्गत फाईल मध्ये लिहिताना त्रुटी/चूक"
 
-#: methods/http.cc:877
+#: methods/http.cc:883
 msgid "Error writing to file"
 msgstr "फाईल मध्ये लिहिण्यात चूक/त्रुटी"
 
-#: methods/http.cc:905
+#: methods/http.cc:911
 msgid "Error writing to the file"
 msgstr "फाईल मध्ये लिहिण्यात चूक/त्रुटी"
 
-#: methods/http.cc:919
+#: methods/http.cc:925
 msgid "Error reading from server. Remote end closed connection"
 msgstr "सर्व्हर मधून वाचण्यात चूक. लांब शेवट आणि बंद झालेली जोडणी"
 
-#: methods/http.cc:921
+#: methods/http.cc:927
 msgid "Error reading from server"
 msgstr "सर्व्हर मधून वाचण्यात चूक"
 
-#: methods/http.cc:1191
+#: methods/http.cc:1203
 msgid "Bad header data"
 msgstr "चुकीचा शीर्षक डाटा"
 
-#: methods/http.cc:1208 methods/http.cc:1263
+#: methods/http.cc:1220 methods/http.cc:1275
 msgid "Connection failed"
 msgstr "जोडणी अयशस्वी"
 
-#: methods/http.cc:1355
+#: methods/http.cc:1367
 msgid "Internal error"
 msgstr "अंतर्गत त्रुटी"
 

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt-all\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-09-23 09:54+0200\n"
+"POT-Creation-Date: 2014-10-17 10:05+0200\n"
 "PO-Revision-Date: 2006-07-29 15:57+0300\n"
 "Last-Translator: Artem Bondarenko <artem.brz@gmail.com>\n"
 "Language-Team: Українська <uk@li.org>\n"
@@ -2116,7 +2116,7 @@ msgstr "Час з'єднання з сокетом даних вичерпавс
 msgid "Unable to accept connection"
 msgstr "Неможливо прийняти з'єднання"
 
-#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1044 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "Проблема хешування файла"
 
@@ -2253,57 +2253,57 @@ msgstr "HTTP сервер відіслав невірний заголовок '
 msgid "The HTTP server sent an invalid Content-Length header"
 msgstr "HTTP сервер відіслав невірний заголовок 'Content-Length'"
 
-#: methods/http.cc:623
+#: methods/http.cc:629
 msgid "The HTTP server sent an invalid Content-Range header"
 msgstr "HTTP сервер відіслав невірний заголовок 'Content-Length'"
 
-#: methods/http.cc:625
+#: methods/http.cc:631
 msgid "This HTTP server has broken range support"
 msgstr "Цей HTTP сервер має поламану підтримку 'range'"
 
-#: methods/http.cc:649
+#: methods/http.cc:655
 msgid "Unknown date format"
 msgstr "Невідомий формат дати"
 
-#: methods/http.cc:818
+#: methods/http.cc:824
 msgid "Select failed"
 msgstr "Вибір не вдався"
 
-#: methods/http.cc:823
+#: methods/http.cc:829
 msgid "Connection timed out"
 msgstr "Час очікування з'єднання вийшов"
 
-#: methods/http.cc:846
+#: methods/http.cc:852
 msgid "Error writing to output file"
 msgstr "Помилка запису в вихідний файл"
 
-#: methods/http.cc:877
+#: methods/http.cc:883
 #, fuzzy
 msgid "Error writing to file"
 msgstr "Помилка запису в файл"
 
-#: methods/http.cc:905
+#: methods/http.cc:911
 #, fuzzy
 msgid "Error writing to the file"
 msgstr "Помилка запису в файл"
 
-#: methods/http.cc:919
+#: methods/http.cc:925
 msgid "Error reading from server. Remote end closed connection"
 msgstr "Помилка читання з сервера. Віддалена сторона закрила з'єднання"
 
-#: methods/http.cc:921
+#: methods/http.cc:927
 msgid "Error reading from server"
 msgstr "Помилка читання з сервера"
 
-#: methods/http.cc:1191
+#: methods/http.cc:1203
 msgid "Bad header data"
 msgstr "Погана заголовкова інформація"
 
-#: methods/http.cc:1208 methods/http.cc:1263
+#: methods/http.cc:1220 methods/http.cc:1275
 msgid "Connection failed"
 msgstr "З'єднання не вдалося"
 
-#: methods/http.cc:1355
+#: methods/http.cc:1367
 msgid "Internal error"
 msgstr "Внутрішня помилка"
 

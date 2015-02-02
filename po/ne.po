@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt_po\n"
 "Report-Msgid-Bugs-To: deity@lists.debian.org\n"
-"POT-Creation-Date: 2014-09-23 09:54+0200\n"
+"POT-Creation-Date: 2014-10-17 10:05+0200\n"
 "PO-Revision-Date: 2006-06-12 14:35+0545\n"
 "Last-Translator: Shiva Pokharel <pokharelshiva@hotmail.com>\n"
 "Language-Team: Nepali <info@mpp.org.np>\n"
@@ -2069,7 +2069,7 @@ msgstr "डेटा सकेटको जडान समय सकियो"
 msgid "Unable to accept connection"
 msgstr "जडान स्वीकार गर्न असक्षम भयो"
 
-#: methods/ftp.cc:874 methods/http.cc:1032 methods/rsh.cc:311
+#: methods/ftp.cc:874 methods/http.cc:1044 methods/rsh.cc:311
 msgid "Problem hashing file"
 msgstr "समस्या द्रुतान्वेषण फाइल"
 
@@ -2202,55 +2202,55 @@ msgstr "HTTP सर्भरले अवैध जवाफ हेडर पठ
 msgid "The HTTP server sent an invalid Content-Length header"
 msgstr "HTTP सर्भरले अवैध सामग्री-लम्बाई हेडर पठायो"
 
-#: methods/http.cc:623
+#: methods/http.cc:629
 msgid "The HTTP server sent an invalid Content-Range header"
 msgstr "HTTP सर्भरले अवैध सामग्री-दायरा हेडर पठायो"
 
-#: methods/http.cc:625
+#: methods/http.cc:631
 msgid "This HTTP server has broken range support"
 msgstr "HTTP सर्भर संग भाँचिएको दायरा समर्थन छ"
 
-#: methods/http.cc:649
+#: methods/http.cc:655
 msgid "Unknown date format"
 msgstr "अज्ञात मिति ढाँचा"
 
-#: methods/http.cc:818
+#: methods/http.cc:824
 msgid "Select failed"
 msgstr "असफल चयन गर्नुहोस्"
 
-#: methods/http.cc:823
+#: methods/http.cc:829
 msgid "Connection timed out"
 msgstr "जडान समय सकियो"
 
-#: methods/http.cc:846
+#: methods/http.cc:852
 msgid "Error writing to output file"
 msgstr "निर्गात फाइलमा त्रुटि लेखिदैछ"
 
-#: methods/http.cc:877
+#: methods/http.cc:883
 msgid "Error writing to file"
 msgstr "फाइलमा त्रुटि लेखिदैछ"
 
-#: methods/http.cc:905
+#: methods/http.cc:911
 msgid "Error writing to the file"
 msgstr "फाइलमा त्रुटि लेखिदैछ"
 
-#: methods/http.cc:919
+#: methods/http.cc:925
 msgid "Error reading from server. Remote end closed connection"
 msgstr "सर्भरबाट त्रुटि पढिदैछ । दूर गन्तब्य बन्द जडान"
 
-#: methods/http.cc:921
+#: methods/http.cc:927
 msgid "Error reading from server"
 msgstr "सर्भरबाट त्रुटि पढिदैछ"
 
-#: methods/http.cc:1191
+#: methods/http.cc:1203
 msgid "Bad header data"
 msgstr "खराब हेडर डेटा"
 
-#: methods/http.cc:1208 methods/http.cc:1263
+#: methods/http.cc:1220 methods/http.cc:1275
 msgid "Connection failed"
 msgstr "जडान असफल भयो"
 
-#: methods/http.cc:1355
+#: methods/http.cc:1367
 msgid "Internal error"
 msgstr "आन्तरिक त्रुटि"
 
