@@ -17,11 +17,11 @@ fi
 GPG="$GPG_CMD"
 
 
-# ubuntu keyrings
-MASTER_KEYRING=/usr/share/keyrings/ubuntu-master-keyring.gpg
-ARCHIVE_KEYRING=/usr/share/keyrings/ubuntu-archive-keyring.gpg
-REMOVED_KEYS=/usr/share/keyrings/ubuntu-archive-removed-keys.gpg
-ARCHIVE_KEYRING_URI=http://archive.ubuntu.com/ubuntu/project/ubuntu-archive-keyring.gpg
+# keyrings
+MASTER_KEYRING=
+ARCHIVE_KEYRING=/usr/share/keyrings/pexip-archive-keyring.gpg
+REMOVED_KEYS=/usr/share/keyrings/pexip-archive-removed-keys.gpg
+ARCHIVE_KEYRING_URI=
 TMP_KEYRING=/var/lib/apt/keyrings/maybe-import-keyring.gpg
 
 requires_root() {
@@ -121,7 +121,7 @@ net_update() {
 update() {
     if [ ! -f $ARCHIVE_KEYRING ]; then
 	echo >&2 "ERROR: Can't find the archive-keyring"
-	echo >&2 "Is the ubuntu-keyring package installed?"
+	echo >&2 "Is the keyring package installed?"
 	exit 1
     fi
     requires_root

@@ -1,3 +1,9 @@
+apt (0.8.16~exp12ubuntu10.22pexip2) pexip; urgency=low
+
+  * Update keyring
+
+ -- John-Mark Bell <jmb@pexip.com>  Wed, 02 Sep 2015 17:50:32 +0000
+
 apt (0.8.16~exp12ubuntu10.22pexip1) pexip; urgency=low
 
   * New upstream release

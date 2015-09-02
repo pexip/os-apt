@@ -196,7 +196,7 @@ apt: build build-doc
 	cp debian/apt.conf.changelog debian/$@/etc/apt/apt.conf.d/20changelog
 	cp debian/apt.auto-removal.sh debian/$@/etc/kernel/postinst.d/apt-auto-removal
 	chmod 755 debian/$@/etc/kernel/postinst.d/apt-auto-removal
-	cp share/ubuntu-archive.gpg debian/$@/usr/share/$@
+	#cp share/ubuntu-archive.gpg debian/$@/usr/share/$@
 
 	# make rosetta happy and remove pot files in po/ (but leave stuff
 	# in po/domains/* untouched) and cp *.po into each domain dir
