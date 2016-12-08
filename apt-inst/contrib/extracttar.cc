@@ -6,7 +6,7 @@
    Extract a Tar - Tar Extractor
 
    Some performance measurements showed that zlib performed quite poorly
-   in comparision to a forked gzip process. This tar extractor makes use
+   in comparison to a forked gzip process. This tar extractor makes use
    of the fact that dup'd file descriptors have the same seek pointer
    and that gzip will not read past the end of a compressed stream, 
    even if there is more data. We use the dup property to track extraction
@@ -23,9 +23,11 @@
 #include <apt-pkg/error.h>
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/configuration.h>
-#include <apt-pkg/macros.h>
+#include <apt-pkg/fileutl.h>
 
-#include <stdlib.h>
+#include <string.h>
+#include <algorithm>
+#include <string>
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
@@ -63,7 +65,6 @@ ExtractTar::ExtractTar(FileFd &Fd,unsigned long Max,string DecompressionProgram)
 
 {
    GZPid = -1;
-   InFd = -1;
    Eof = false;
 }
 									/*}}}*/
@@ -112,10 +113,16 @@ bool ExtractTar::Done(bool Force)
    gzip will efficiently ignore the extra bits. */
 bool ExtractTar::StartGzip()
 {
+   if (DecompressProg.empty())
+   {
+      InFd.OpenDescriptor(File.Fd(), FileFd::ReadOnly, FileFd::None, false);
+      return true;
+   }
+
    int Pipes[2];
    if (pipe(Pipes) != 0)
       return _error->Errno("pipe",_("Failed to create pipes"));
-   
+
    // Fork off the process
    GZPid = ExecFork();
 
@@ -131,9 +138,9 @@ bool ExtractTar::StartGzip()
       dup2(Fd,STDERR_FILENO);
       close(Fd);
       SetCloseExec(STDOUT_FILENO,false);
-      SetCloseExec(STDIN_FILENO,false);      
+      SetCloseExec(STDIN_FILENO,false);
       SetCloseExec(STDERR_FILENO,false);
-      
+
       const char *Args[3];
       string confvar = string("dir::bin::") + DecompressProg;
       string argv0 = _config->Find(confvar.c_str(),DecompressProg.c_str());
@@ -162,8 +169,8 @@ bool ExtractTar::Go(pkgDirStream &Stream)
       return false;
    
    // Loop over all blocks
-   string LastLongLink;
-   string LastLongName;
+   string LastLongLink, ItemLink;
+   string LastLongName, ItemName;
    while (1)
    {
       bool BadRecord = false;      
@@ -209,25 +216,23 @@ bool ExtractTar::Go(pkgDirStream &Stream)
 	  StrToNum(Tar->Major,Itm.Major,sizeof(Tar->Major),8) == false ||
 	  StrToNum(Tar->Minor,Itm.Minor,sizeof(Tar->Minor),8) == false)
 	 return _error->Error(_("Corrupted archive"));
-      
-      // Grab the filename
+
+      // Grab the filename and link target: use last long name if one was
+      // set, otherwise use the header value as-is, but remember that it may
+      // fill the entire 100-byte block and needs to be zero-terminated.
+      // See Debian Bug #689582.
       if (LastLongName.empty() == false)
 	 Itm.Name = (char *)LastLongName.c_str();
       else
-      {
-	 Tar->Name[sizeof(Tar->Name)-1] = 0;
-	 Itm.Name = Tar->Name;
-      }      
+	 Itm.Name = (char *)ItemName.assign(Tar->Name, sizeof(Tar->Name)).c_str();
       if (Itm.Name[0] == '.' && Itm.Name[1] == '/' && Itm.Name[2] != 0)
 	 Itm.Name += 2;
-      
-      // Grab the link target
-      Tar->Name[sizeof(Tar->LinkName)-1] = 0;
-      Itm.LinkTarget = Tar->LinkName;
 
       if (LastLongLink.empty() == false)
 	 Itm.LinkTarget = (char *)LastLongLink.c_str();
-      
+      else
+	 Itm.LinkTarget = (char *)ItemLink.assign(Tar->LinkName, sizeof(Tar->LinkName)).c_str();
+
       // Convert the type over
       switch (Tar->LinkFlag)
       {

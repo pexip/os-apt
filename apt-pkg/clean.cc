@@ -16,7 +16,11 @@
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/fileutl.h>
+#include <apt-pkg/pkgcache.h>
+#include <apt-pkg/cacheiterators.h>
 
+#include <string>
+#include <string.h>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -30,7 +34,10 @@
 bool pkgArchiveCleaner::Go(std::string Dir,pkgCache &Cache)
 {
    bool CleanInstalled = _config->FindB("APT::Clean-Installed",true);
-      
+
+   if(Dir == "/")
+      return _error->Error(_("Clean of %s is not supported"), Dir.c_str());
+
    DIR *D = opendir(Dir.c_str());
    if (D == 0)
       return _error->Errno("opendir",_("Unable to read %s"),Dir.c_str());
@@ -54,9 +61,11 @@ bool pkgArchiveCleaner::Go(std::string Dir,pkgCache &Cache)
       struct stat St;
       if (stat(Dir->d_name,&St) != 0)
       {
-	 chdir(StartDir.c_str());
+	 _error->Errno("stat",_("Unable to stat %s."),Dir->d_name);
 	 closedir(D);
-	 return _error->Errno("stat",_("Unable to stat %s."),Dir->d_name);
+	 if (chdir(StartDir.c_str()) != 0)
+	    return _error->Errno("chdir", _("Unable to change to %s"), StartDir.c_str());
+	 return false;
       }
       
       // Grab the package name
@@ -79,12 +88,13 @@ bool pkgArchiveCleaner::Go(std::string Dir,pkgCache &Cache)
       if (*I != '.')
 	 continue;
       std::string const Arch = DeQuoteString(std::string(Start,I-Start));
-      
+
+      // ignore packages of unconfigured architectures
       if (APT::Configuration::checkArchitecture(Arch) == false)
 	 continue;
       
       // Lookup the package
-      pkgCache::PkgIterator P = Cache.FindPkg(Pkg);
+      pkgCache::PkgIterator P = Cache.FindPkg(Pkg, Arch);
       if (P.end() != true)
       {
 	 pkgCache::VerIterator V = P.VersionList();
@@ -102,7 +112,7 @@ bool pkgArchiveCleaner::Go(std::string Dir,pkgCache &Cache)
 	       break;
 	    }
 	    
-	    // See if this verison matches the file
+	    // See if this version matches the file
 	    if (IsFetchable == true && Ver == V.VerStr())
 	       break;
 	 }
@@ -115,8 +125,9 @@ bool pkgArchiveCleaner::Go(std::string Dir,pkgCache &Cache)
       Erase(Dir->d_name,Pkg,Ver,St);
    };
    
-   chdir(StartDir.c_str());
    closedir(D);
-   return true;   
+   if (chdir(StartDir.c_str()) != 0)
+      return _error->Errno("chdir", _("Unable to change to %s"), StartDir.c_str());
+   return true;
 }
 									/*}}}*/

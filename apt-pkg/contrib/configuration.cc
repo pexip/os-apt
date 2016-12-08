@@ -21,10 +21,18 @@
 #include <apt-pkg/error.h>
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/fileutl.h>
+#include <apt-pkg/macros.h>
 
+#include <ctype.h>
+#include <regex.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <algorithm>
+#include <string>
 #include <vector>
 #include <fstream>
-#include <iostream>
 
 #include <apti18n.h>
 
@@ -42,8 +50,7 @@ Configuration::Configuration() : ToFree(true)
 }
 Configuration::Configuration(const Item *Root) : Root((Item *)Root), ToFree(false)
 {
-};
-
+}
 									/*}}}*/
 // Configuration::~Configuration - Destructor				/*{{{*/
 // ---------------------------------------------------------------------
@@ -171,48 +178,60 @@ string Configuration::Find(const char *Name,const char *Default) const
 string Configuration::FindFile(const char *Name,const char *Default) const
 {
    const Item *RootItem = Lookup("RootDir");
-   std::string rootDir =  (RootItem == 0) ? "" : RootItem->Value;
-   if(rootDir.size() > 0 && rootDir[rootDir.size() - 1] != '/')
-     rootDir.push_back('/');
+   std::string result =  (RootItem == 0) ? "" : RootItem->Value;
+   if(result.empty() == false && result[result.size() - 1] != '/')
+     result.push_back('/');
 
    const Item *Itm = Lookup(Name);
    if (Itm == 0 || Itm->Value.empty() == true)
    {
-      if (Default == 0)
-	 return rootDir;
-      else
-	 return rootDir + Default;
+      if (Default != 0)
+	 result.append(Default);
    }
-   
-   string val = Itm->Value;
-   while (Itm->Parent != 0)
+   else
    {
-      if (Itm->Parent->Value.empty() == true)
+      string val = Itm->Value;
+      while (Itm->Parent != 0)
       {
+	 if (Itm->Parent->Value.empty() == true)
+	 {
+	    Itm = Itm->Parent;
+	    continue;
+	 }
+
+	 // Absolute
+	 if (val.length() >= 1 && val[0] == '/')
+	 {
+	    if (val.compare(0, 9, "/dev/null") == 0)
+	       val.erase(9);
+	    break;
+	 }
+
+	 // ~/foo or ./foo
+	 if (val.length() >= 2 && (val[0] == '~' || val[0] == '.') && val[1] == '/')
+	    break;
+
+	 // ../foo
+	 if (val.length() >= 3 && val[0] == '.' && val[1] == '.' && val[2] == '/')
+	    break;
+
+	 if (Itm->Parent->Value.end()[-1] != '/')
+	    val.insert(0, "/");
+
+	 val.insert(0, Itm->Parent->Value);
 	 Itm = Itm->Parent;
-	 continue;
       }
-
-      // Absolute
-      if (val.length() >= 1 && val[0] == '/')
-         break;
-
-      // ~/foo or ./foo 
-      if (val.length() >= 2 && (val[0] == '~' || val[0] == '.') && val[1] == '/')
-	 break;
-	 
-      // ../foo 
-      if (val.length() >= 3 && val[0] == '.' && val[1] == '.' && val[2] == '/')
-	 break;
-      
-      if (Itm->Parent->Value.end()[-1] != '/')
-	 val.insert(0, "/");
-
-      val.insert(0, Itm->Parent->Value);
-      Itm = Itm->Parent;
+      result.append(val);
    }
 
-   return rootDir + val;
+   // do some normalisation by removing // and /./ from the path
+   size_t found = string::npos;
+   while ((found = result.find("/./")) != string::npos)
+      result.replace(found, 3, "/");
+   while ((found = result.find("//")) != string::npos)
+      result.replace(found, 2, "/");
+
+   return result;
 }
 									/*}}}*/
 // Configuration::FindDir - Find a directory name			/*{{{*/
@@ -222,19 +241,30 @@ string Configuration::FindDir(const char *Name,const char *Default) const
 {
    string Res = FindFile(Name,Default);
    if (Res.end()[-1] != '/')
+   {
+      size_t const found = Res.rfind("/dev/null");
+      if (found != string::npos && found == Res.size() - 9)
+	 return Res; // /dev/null returning
       return Res + '/';
+   }
    return Res;
 }
 									/*}}}*/
 // Configuration::FindVector - Find a vector of values			/*{{{*/
 // ---------------------------------------------------------------------
 /* Returns a vector of config values under the given item */
-vector<string> Configuration::FindVector(const char *Name) const
+#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR < 13)
+vector<string> Configuration::FindVector(const char *Name) const { return FindVector(Name, ""); }
+#endif
+vector<string> Configuration::FindVector(const char *Name, std::string const &Default) const
 {
    vector<string> Vec;
    const Item *Top = Lookup(Name);
    if (Top == NULL)
-      return Vec;
+      return VectorizeString(Default, ',');
+
+   if (Top->Value.empty() == false)
+      return VectorizeString(Top->Value, ',');
 
    Item *I = Top->Child;
    while(I != NULL)
@@ -242,6 +272,9 @@ vector<string> Configuration::FindVector(const char *Name) const
       Vec.push_back(I->Value);
       I = I->Next;
    }
+   if (Vec.empty() == true)
+      return VectorizeString(Default, ',');
+
    return Vec;
 }
 									/*}}}*/
@@ -405,6 +438,18 @@ void Configuration::Clear(string const &Name, string const &Value)
      
 }
 									/*}}}*/
+// Configuration::Clear - Clear everything				/*{{{*/
+// ---------------------------------------------------------------------
+void Configuration::Clear()
+{
+   const Configuration::Item *Top = Tree(0);
+   while( Top != 0 )
+   {
+      Clear(Top->FullTag());
+      Top = Top->Next;
+   }
+}
+									/*}}}*/
 // Configuration::Clear - Clear an entire tree				/*{{{*/
 // ---------------------------------------------------------------------
 /* */
@@ -482,24 +527,80 @@ bool Configuration::ExistsAny(const char *Name) const
 /* Dump the entire configuration space */
 void Configuration::Dump(ostream& str)
 {
-   /* Write out all of the configuration directives by walking the 
+   Dump(str, NULL, "%f \"%v\";\n", true);
+}
+void Configuration::Dump(ostream& str, char const * const root,
+			 char const * const formatstr, bool const emptyValue)
+{
+   const Configuration::Item* Top = Tree(root);
+   if (Top == 0)
+      return;
+   const Configuration::Item* const Root = (root == NULL) ? NULL : Top;
+   std::vector<std::string> const format = VectorizeString(formatstr, '%');
+
+   /* Write out all of the configuration directives by walking the
       configuration tree */
-   const Configuration::Item *Top = Tree(0);
-   for (; Top != 0;)
-   {
-      str << Top->FullTag() << " \"" << Top->Value << "\";" << endl;
-      
+   do {
+      if (emptyValue == true || Top->Value.empty() == emptyValue)
+      {
+	 std::vector<std::string>::const_iterator f = format.begin();
+	 str << *f;
+	 for (++f; f != format.end(); ++f)
+	 {
+	    if (f->empty() == true)
+	    {
+	       ++f;
+	       str << '%' << *f;
+	       continue;
+	    }
+	    char const type = (*f)[0];
+	    if (type == 'f')
+	       str << Top->FullTag();
+	    else if (type == 't')
+	       str << Top->Tag;
+	    else if (type == 'v')
+	       str << Top->Value;
+	    else if (type == 'F')
+	       str << QuoteString(Top->FullTag(), "=\"\n");
+	    else if (type == 'T')
+	       str << QuoteString(Top->Tag, "=\"\n");
+	    else if (type == 'V')
+	       str << QuoteString(Top->Value, "=\"\n");
+	    else if (type == 'n')
+	       str << "\n";
+	    else if (type == 'N')
+	       str << "\t";
+	    else
+	       str << '%' << type;
+	    str << f->c_str() + 1;
+	 }
+      }
+
       if (Top->Child != 0)
       {
 	 Top = Top->Child;
 	 continue;
       }
-      
+
       while (Top != 0 && Top->Next == 0)
 	 Top = Top->Parent;
       if (Top != 0)
 	 Top = Top->Next;
-   }
+
+      if (Root != NULL)
+      {
+	 const Configuration::Item* I = Top;
+	 while(I != 0)
+	 {
+	    if (I == Root)
+	       break;
+	    else
+	       I = I->Parent;
+	 }
+	 if (I == 0)
+	    break;
+      }
+   } while (Top != 0);
 }
 									/*}}}*/
 
@@ -738,7 +839,7 @@ bool ReadConfigFile(Configuration &Conf,const string &FName,bool const &AsSectio
 	    // Go down a level
 	    if (TermChar == '{')
 	    {
-	       if (StackPos <= 100)
+	       if (StackPos < sizeof(Stack)/sizeof(std::string))
 		  Stack[StackPos++] = ParentTag;
 	       
 	       /* Make sectional tags incorperate the section into the
@@ -885,7 +986,7 @@ Configuration::MatchAgainstConfig::MatchAgainstConfig(char const * Config)
 	 continue;
       }
    }
-   if (strings.size() == 0)
+   if (strings.empty() == true)
       patterns.push_back(NULL);
 }
 									/*}}}*/

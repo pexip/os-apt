@@ -14,13 +14,17 @@
 #ifndef APTPKG_SHA2_H
 #define APTPKG_SHA2_H
 
-#include <string>
 #include <cstring>
-#include <algorithm>
-#include <stdint.h>
 
 #include "sha2_internal.h"
 #include "hashsum_template.h"
+
+#ifndef APT_10_CLEANER_HEADERS
+#include <string>
+#include <algorithm>
+#include <stdint.h>
+#endif
+
 
 typedef HashSumValue<512> SHA512SumValue;
 typedef HashSumValue<256> SHA256SumValue;
@@ -60,10 +64,11 @@ class SHA256Summation : public SHA2SummationBase
       res.Set(Sum);
       return res;
    };
-   SHA256Summation() 
+   SHA256Summation()
    {
       SHA256_Init(&ctx);
       Done = false;
+      memset(&Sum, 0, sizeof(Sum));
    };
 };
 
@@ -96,6 +101,7 @@ class SHA512Summation : public SHA2SummationBase
    {
       SHA512_Init(&ctx);
       Done = false;
+      memset(&Sum, 0, sizeof(Sum));
    };
 };
 

@@ -1,13 +1,16 @@
+#include <config.h>
+
 #include <apt-pkg/debfile.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
 
+#include <string>
 #include <iostream>
 #include <unistd.h>
 
 using namespace std;
 
-bool ExtractMember(const char *File,const char *Member)
+static bool ExtractMember(const char *File,const char *Member)
 {
    FileFd Fd(File,FileFd::ReadOnly);
    debDebFile Deb(Fd);
@@ -21,8 +24,7 @@ bool ExtractMember(const char *File,const char *Member)
    if (Extract.Control == 0)
       return true;
    
-   write(STDOUT_FILENO,Extract.Control,Extract.Length);
-   return true;
+   return write(STDOUT_FILENO,Extract.Control,Extract.Length) != -1;
 }
 
 int main(int argc, const char *argv[])

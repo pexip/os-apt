@@ -11,9 +11,20 @@
 #define PKGLIB_DPKGPM_H
 
 #include <apt-pkg/packagemanager.h>
+#include <apt-pkg/pkgcache.h>
+#include <apt-pkg/macros.h>
+
 #include <vector>
 #include <map>
 #include <stdio.h>
+#include <string>
+
+#ifndef APT_10_CLEANER_HEADERS
+#include <apt-pkg/init.h>
+#endif
+
+class pkgDepCache;
+namespace APT { namespace Progress { class PackageManager; } }
 
 #ifndef APT_8_CLEANER_HEADERS
 using std::vector;
@@ -21,6 +32,7 @@ using std::map;
 #endif
 
 class pkgDPkgPMPrivate;
+
 
 class pkgDPkgPM : public pkgPackageManager
 {
@@ -79,8 +91,14 @@ class pkgDPkgPM : public pkgPackageManager
 
    // Helpers
    bool RunScriptsWithPkgs(const char *Cnf);
-   bool SendV2Pkgs(FILE *F);
+   APT_DEPRECATED bool SendV2Pkgs(FILE *F);
+   bool SendPkgsInfo(FILE * const F, unsigned int const &Version);
    void WriteHistoryTag(std::string const &tag, std::string value);
+   std::string ExpandShortPackageName(pkgDepCache &Cache,
+                                      const std::string &short_pkgname);
+
+   // Terminal progress 
+   void SendTerminalProgress(float percentage);
 
    // apport integration
    void WriteApportReport(const char *pkgpath, const char *errormsg);
@@ -88,18 +106,40 @@ class pkgDPkgPM : public pkgPackageManager
    // dpkg log
    bool OpenLog();
    bool CloseLog();
+
+   // helper
+   void BuildPackagesProgressMap();
+   void StartPtyMagic();
+   void SetupSlavePtyMagic();
+   void StopPtyMagic();
    
    // input processing
    void DoStdin(int master);
    void DoTerminalPty(int master);
-   void DoDpkgStatusFd(int statusfd, int OutStatusFd);
-   void ProcessDpkgStatusLine(int OutStatusFd, char *line);
+   void DoDpkgStatusFd(int statusfd);
+   void ProcessDpkgStatusLine(char *line);
+#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR < 13)
+   void DoDpkgStatusFd(int statusfd, int /*unused*/) {
+      DoDpkgStatusFd(statusfd);
+   }
+   void ProcessDpkgStatusLine(int /*unused*/, char *line) {
+      ProcessDpkgStatusLine(line);
+   }
+#endif
+
 
    // The Actuall installation implementation
    virtual bool Install(PkgIterator Pkg,std::string File);
    virtual bool Configure(PkgIterator Pkg);
    virtual bool Remove(PkgIterator Pkg,bool Purge = false);
+
+#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
+   virtual bool Go(APT::Progress::PackageManager *progress);
+#else
    virtual bool Go(int StatusFd=-1);
+   bool GoNoABIBreak(APT::Progress::PackageManager *progress);
+#endif
+
    virtual void Reset();
    
    public:

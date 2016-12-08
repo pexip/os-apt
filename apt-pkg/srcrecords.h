@@ -13,6 +13,8 @@
 #ifndef PKGLIB_SRCRECORDS_H
 #define PKGLIB_SRCRECORDS_H
 
+#include <apt-pkg/macros.h>
+#include <apt-pkg/hashes.h>
 
 #include <string>
 #include <vector>
@@ -28,15 +30,28 @@ class pkgSrcRecords
 {
    public:
 
+#if __GNUC__ >= 4
+	// ensure that con- & de-structor don't trigger this warning
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
    // Describes a single file
    struct File
    {
-      std::string MD5Hash;
-      unsigned long Size;
+      APT_DEPRECATED std::string MD5Hash;
+      APT_DEPRECATED unsigned long Size;
       std::string Path;
       std::string Type;
    };
-   
+   struct File2 : public File
+   {
+      unsigned long long FileSize;
+      HashStringList Hashes;
+   };
+#if __GNUC__ >= 4
+	#pragma GCC diagnostic pop
+#endif
+
    // Abstract parser for each source record
    class Parser
    {
@@ -71,10 +86,12 @@ class pkgSrcRecords
       virtual std::string Section() const = 0;
       virtual const char **Binaries() = 0;   // Ownership does not transfer
 
+      //FIXME: Add a parameter to specify which architecture to use for [wildcard] matching
       virtual bool BuildDepends(std::vector<BuildDepRec> &BuildDeps, bool const &ArchOnly, bool const &StripMultiArch = true) = 0;
-      static const char *BuildDepType(unsigned char const &Type);
+      static const char *BuildDepType(unsigned char const &Type) APT_PURE;
 
       virtual bool Files(std::vector<pkgSrcRecords::File> &F) = 0;
+      bool Files2(std::vector<pkgSrcRecords::File2> &F);
       
       Parser(const pkgIndexFile *Index) : iIndex(Index) {};
       virtual ~Parser() {};
@@ -93,8 +110,13 @@ class pkgSrcRecords
    // Reset the search
    bool Restart();
 
-   // Locate a package by name
-   Parser *Find(const char *Package,bool const &SrcOnly = false);
+   // Step to the next SourcePackage and return pointer to the 
+   // next SourceRecord. The pointer is owned by libapt.
+   const Parser* Step();
+
+   // Locate a package by name and return pointer to the Parser.
+   // The pointer is owned by libapt.
+   Parser* Find(const char *Package,bool const &SrcOnly = false);
    
    pkgSrcRecords(pkgSourceList &List);
    virtual ~pkgSrcRecords();

@@ -10,7 +10,7 @@
    see all of the effects of an upgrade run.
 
    pkgDistUpgrade computes an upgrade that causes as many packages as
-   possible to move to the newest verison.
+   possible to move to the newest version.
    
    pkgApplyStatus sets the target state based on the content of the status
    field in the status file. It is important to get proper crash recovery.
@@ -33,15 +33,25 @@
 
 #include <apt-pkg/packagemanager.h>
 #include <apt-pkg/depcache.h>
+#include <apt-pkg/pkgcache.h>
+#include <apt-pkg/cacheiterators.h>
 
 #include <iostream>
+#include <string>
+
+#include <apt-pkg/macros.h>
 
 #ifndef APT_8_CLEANER_HEADERS
 #include <apt-pkg/acquire.h>
 using std::ostream;
 #endif
 
-class pkgAcquireStatus;
+#ifndef APT_9_CLEANER_HEADERS
+// include pkg{DistUpgrade,AllUpgrade,MiniizeUpgrade} here for compatibility
+#include <apt-pkg/upgrade.h>
+#include <apt-pkg/update.h>
+#endif
+
 
 class pkgSimulate : public pkgPackageManager				/*{{{*/
 {
@@ -78,10 +88,12 @@ private:
    public:
 
    pkgSimulate(pkgDepCache *Cache);
+   ~pkgSimulate();
 };
 									/*}}}*/
 class pkgProblemResolver						/*{{{*/
 {
+ private:
    /** \brief dpointer placeholder (for later in case we need it) */
    void *d;
 
@@ -102,7 +114,7 @@ class pkgProblemResolver						/*{{{*/
    
    // Sort stuff
    static pkgProblemResolver *This;
-   static int ScoreSort(const void *a,const void *b);
+   static int ScoreSort(const void *a,const void *b) APT_PURE;
 
    struct PackageKill
    {
@@ -131,21 +143,16 @@ class pkgProblemResolver						/*{{{*/
    // Try to resolve problems only by using keep
    bool ResolveByKeep();
 
-   // Install all protected packages   
-   void InstallProtect();   
-   
+   APT_DEPRECATED void InstallProtect();
+
    pkgProblemResolver(pkgDepCache *Cache);
    ~pkgProblemResolver();
 };
 									/*}}}*/
-bool pkgDistUpgrade(pkgDepCache &Cache);
 bool pkgApplyStatus(pkgDepCache &Cache);
 bool pkgFixBroken(pkgDepCache &Cache);
-bool pkgAllUpgrade(pkgDepCache &Cache);
-bool pkgMinimizeUpgrade(pkgDepCache &Cache);
 
 void pkgPrioSortList(pkgCache &Cache,pkgCache::Version **List);
 
-bool ListUpdate(pkgAcquireStatus &progress, pkgSourceList &List, int PulseInterval=0);
-		     
+
 #endif

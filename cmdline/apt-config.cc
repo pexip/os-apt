@@ -8,7 +8,7 @@
    This program will parse a config file and then do something with it.
    
    Commands:
-     shell - Shell mode. After this a series of word pairs should occure.
+     shell - Shell mode. After this a series of word pairs should occur.
              The first is the environment var to set and the second is
              the key to set it from. Use like: 
  eval `apt-config shell QMode apt::QMode`
@@ -26,10 +26,12 @@
 #include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/pkgsystem.h>
 
-#include <locale.h>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <string.h>
+
+#include <apt-private/private-cmndline.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -38,7 +40,7 @@ using namespace std;
 // DoShell - Handle the shell command					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-bool DoShell(CommandLine &CmdL)
+static bool DoShell(CommandLine &CmdL)
 {
    for (const char **I = CmdL.FileList + 1; *I != 0; I += 2)
    {
@@ -61,21 +63,27 @@ bool DoShell(CommandLine &CmdL)
 // DoDump - Dump the configuration space				/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-bool DoDump(CommandLine &CmdL)
+static bool DoDump(CommandLine &CmdL)
 {
-   _config->Dump(cout);
+   bool const empty = _config->FindB("APT::Config::Dump::EmptyValue", true);
+   std::string const format = _config->Find("APT::Config::Dump::Format", "%f \"%v\";\n");
+   if (CmdL.FileSize() == 1)
+      _config->Dump(cout, NULL, format.c_str(), empty);
+   else
+      for (const char **I = CmdL.FileList + 1; *I != 0; ++I)
+	 _config->Dump(cout, *I, format.c_str(), empty);
    return true;
 }
 									/*}}}*/
 // ShowHelp - Show the help screen					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-int ShowHelp()
+static bool ShowHelp(CommandLine &)
 {
-   ioprintf(cout,_("%s %s for %s compiled on %s %s\n"),PACKAGE,VERSION,
+   ioprintf(cout,_("%s %s for %s compiled on %s %s\n"),PACKAGE,PACKAGE_VERSION,
 	    COMMON_ARCH,__DATE__,__TIME__);
    if (_config->FindB("version") == true)
-      return 0;
+      return true;
    
    cout <<
     _("Usage: apt-config [options] command\n"
@@ -90,27 +98,24 @@ int ShowHelp()
       "  -h   This help text.\n" 
       "  -c=? Read this configuration file\n" 
       "  -o=? Set an arbitrary configuration option, eg -o dir::cache=/tmp\n");
-   return 0;
+   return true;
 }
 									/*}}}*/
 int main(int argc,const char *argv[])					/*{{{*/
 {
-   CommandLine::Args Args[] = {
-      {'h',"help","help",0},
-      {'v',"version","version",0},
-      {'c',"config-file",0,CommandLine::ConfigFile},
-      {'o',"option",0,CommandLine::ArbItem},
-      {0,0,0,0}};
    CommandLine::Dispatch Cmds[] = {{"shell",&DoShell},
                                    {"dump",&DoDump},
+				   {"help",&ShowHelp},
                                    {0,0}};
+
+   std::vector<CommandLine::Args> Args = getCommandArgs("apt-config", CommandLine::GetCommand(Cmds, argc, argv));
 
    // Set up gettext support
    setlocale(LC_ALL,"");
    textdomain(PACKAGE);
 
    // Parse the command line and initialize the package library
-   CommandLine CmdL(Args,_config);
+   CommandLine CmdL(Args.data(),_config);
    if (pkgInitConfig(*_config) == false ||
        CmdL.Parse(argc,argv) == false ||
        pkgInitSystem(*_config,_system) == false)
@@ -122,7 +127,7 @@ int main(int argc,const char *argv[])					/*{{{*/
    // See if the help should be shown
    if (_config->FindB("help") == true ||
        CmdL.FileSize() == 0)
-      return ShowHelp();
+      return ShowHelp(CmdL);
 
    std::vector<std::string> const langs = APT::Configuration::getLanguages(true);
    _config->Clear("Acquire::Languages");
@@ -149,6 +154,11 @@ int main(int argc,const char *argv[])					/*{{{*/
       for (std::vector<std::string>::const_iterator a = c->UncompressArgs.begin(); a != c->UncompressArgs.end(); ++a)
 	 _config->Set(comp + "UncompressArg::", *a);
    }
+
+   std::vector<std::string> const profiles = APT::Configuration::getBuildProfiles();
+   _config->Clear("APT::Build-Profiles");
+   for (std::vector<std::string>::const_iterator p = profiles.begin(); p != profiles.end(); ++p)
+      _config->Set("APT::Build-Profiles::", *p);
 
    // Match the operation
    CmdL.DispatchArg(Cmds);

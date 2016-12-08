@@ -17,12 +17,13 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/acquire-method.h>
+#include <apt-pkg/configuration.h>
 
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
 #include <sstream>
-
+#include <string.h>
 #include<set>
 #include<string>
 
@@ -141,9 +142,9 @@ bool Connect(std::string Host,int Port,const char *Service,int DefPort,int &Fd,
    // Convert the port name/number
    char ServStr[300];
    if (Port != 0)
-      snprintf(ServStr,sizeof(ServStr),"%u",Port);
+      snprintf(ServStr,sizeof(ServStr),"%i", Port);
    else
-      snprintf(ServStr,sizeof(ServStr),"%s",Service);
+      snprintf(ServStr,sizeof(ServStr),"%s", Service);
    
    /* We used a cached address record.. Yes this is against the spec but
       the way we have setup our rotating dns suggests that this is more
@@ -167,6 +168,13 @@ bool Connect(std::string Host,int Port,const char *Service,int DefPort,int &Fd,
       Hints.ai_flags = AI_ADDRCONFIG;
       Hints.ai_protocol = 0;
       
+      if(_config->FindB("Acquire::ForceIPv4", false) == true)
+         Hints.ai_family = AF_INET;
+      else if(_config->FindB("Acquire::ForceIPv6", false) == true)
+         Hints.ai_family = AF_INET6;
+      else
+         Hints.ai_family = AF_UNSPEC;
+
       // if we couldn't resolve the host before, we don't try now
       if(bad_addr.find(Host) != bad_addr.end()) 
 	 return _error->Error(_("Could not resolve '%s'"),Host.c_str());
@@ -182,7 +190,7 @@ bool Connect(std::string Host,int Port,const char *Service,int DefPort,int &Fd,
 	    {
 	       if (DefPort != 0)
 	       {
-		  snprintf(ServStr,sizeof(ServStr),"%u",DefPort);
+		  snprintf(ServStr, sizeof(ServStr), "%i", DefPort);
 		  DefPort = 0;
 		  continue;
 	       }
@@ -197,6 +205,9 @@ bool Connect(std::string Host,int Port,const char *Service,int DefPort,int &Fd,
 	       return _error->Error(_("Temporary failure resolving '%s'"),
 				    Host.c_str());
 	    }
+	    if (Res == EAI_SYSTEM)
+	       return _error->Errno("getaddrinfo", _("System error resolving '%s:%s'"),
+                                      Host.c_str(),ServStr);
 	    return _error->Error(_("Something wicked happened resolving '%s:%s' (%i - %s)"),
 				 Host.c_str(),ServStr,Res,gai_strerror(Res));
 	 }

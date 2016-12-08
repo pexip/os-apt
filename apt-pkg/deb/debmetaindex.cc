@@ -1,4 +1,3 @@
-// ijones, walters
 #include <config.h>
 
 #include <apt-pkg/debmetaindex.h>
@@ -10,8 +9,15 @@
 #include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/indexrecords.h>
 #include <apt-pkg/sourcelist.h>
-#include <apt-pkg/error.h>
+#include <apt-pkg/hashes.h>
+#include <apt-pkg/macros.h>
+#include <apt-pkg/metaindex.h>
 
+#include <string.h>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 #include <set>
 #include <algorithm>
 
@@ -72,6 +78,22 @@ string debReleaseIndex::MetaIndexURI(const char *Type) const
    return Res;
 }
 
+#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
+std::string debReleaseIndex::LocalFileName() const
+{
+   // see if we have a InRelease file
+   std::string PathInRelease =  MetaIndexFile("InRelease");
+   if (FileExists(PathInRelease))
+      return PathInRelease;
+
+   // and if not return the normal one
+   if (FileExists(PathInRelease))
+      return MetaIndexFile("Release");
+
+   return "";
+}
+#endif
+
 string debReleaseIndex::IndexURISuffix(const char *Type, string const &Section, string const &Arch) const
 {
    string Res ="";
@@ -128,7 +150,7 @@ string debReleaseIndex::TranslationIndexURISuffix(const char *Type, const string
 {
    string Res ="";
    if (Dist[Dist.size() - 1] != '/')
-      Res += Section + "/i18n/";
+      Res += Section + "/i18n/Translation-";
    return Res + Type;
 }
 
@@ -210,31 +232,17 @@ vector <struct IndexTarget *>* debReleaseIndex::ComputeIndexTargets() const {
 	if (lang.empty() == true)
 		return IndexTargets;
 
-	// get the Translations:
-	// - if its a dists-style repository get the i18n/Index first
-	// - if its flat try to acquire files by guessing
-	if (Dist[Dist.size() - 1] == '/') {
-		for (std::set<std::string>::const_iterator s = sections.begin();
-		     s != sections.end(); ++s) {
-			for (std::vector<std::string>::const_iterator l = lang.begin();
-			     l != lang.end(); ++l) {
-				IndexTarget * Target = new OptionalIndexTarget();
-				Target->ShortDesc = "Translation-" + *l;
-				Target->MetaKey = TranslationIndexURISuffix(l->c_str(), *s);
-				Target->URI = TranslationIndexURI(l->c_str(), *s);
-				Target->Description = Info (Target->ShortDesc.c_str(), *s);
-				IndexTargets->push_back(Target);
-			}
-		}
-	} else {
-		for (std::set<std::string>::const_iterator s = sections.begin();
-		     s != sections.end(); ++s) {
-			IndexTarget * Target = new OptionalSubIndexTarget();
-			Target->ShortDesc = "TranslationIndex";
-			Target->MetaKey = TranslationIndexURISuffix("Index", *s);
-			Target->URI = TranslationIndexURI("Index", *s);
+	// get the Translation-* files, later we will skip download of non-existent if we have an index
+	for (std::set<std::string>::const_iterator s = sections.begin();
+	     s != sections.end(); ++s) {
+		for (std::vector<std::string>::const_iterator l = lang.begin();
+		     l != lang.end(); ++l) {
+			IndexTarget * Target = new OptionalIndexTarget();
+			Target->ShortDesc = "Translation-" + *l;
+			Target->MetaKey = TranslationIndexURISuffix(l->c_str(), *s);
+			Target->URI = TranslationIndexURI(l->c_str(), *s);
 			Target->Description = Info (Target->ShortDesc.c_str(), *s);
-			IndexTargets->push_back (Target);
+			IndexTargets->push_back(Target);
 		}
 	}
 
@@ -243,6 +251,8 @@ vector <struct IndexTarget *>* debReleaseIndex::ComputeIndexTargets() const {
 									/*}}}*/
 bool debReleaseIndex::GetIndexes(pkgAcquire *Owner, bool const &GetAll) const
 {
+   bool const tryInRelease = _config->FindB("Acquire::TryInRelease", true);
+
    // special case for --print-uris
    if (GetAll) {
       vector <struct IndexTarget *> *targets = ComputeIndexTargets();
@@ -250,21 +260,31 @@ bool debReleaseIndex::GetIndexes(pkgAcquire *Owner, bool const &GetAll) const
 	 new pkgAcqIndex(Owner, (*Target)->URI, (*Target)->Description,
 			 (*Target)->ShortDesc, HashString());
       }
+      delete targets;
 
       // this is normally created in pkgAcqMetaSig, but if we run
       // in --print-uris mode, we add it here
-      new pkgAcqMetaIndex(Owner, MetaIndexURI("Release"),
-			  MetaIndexInfo("Release"), "Release",
-			  MetaIndexURI("Release.gpg"),
-			  ComputeIndexTargets(),
-			  new indexRecords (Dist));
+      if (tryInRelease == false)
+	 new pkgAcqMetaIndex(Owner, MetaIndexURI("Release"),
+	       MetaIndexInfo("Release"), "Release",
+	       MetaIndexURI("Release.gpg"),
+	       ComputeIndexTargets(),
+	       new indexRecords (Dist));
    }
 
-   new pkgAcqMetaSig(Owner, MetaIndexURI("Release.gpg"),
-		     MetaIndexInfo("Release.gpg"), "Release.gpg",
-		     MetaIndexURI("Release"), MetaIndexInfo("Release"), "Release",
-		     ComputeIndexTargets(),
-		     new indexRecords (Dist));
+   if (tryInRelease == true)
+      new pkgAcqMetaClearSig(Owner, MetaIndexURI("InRelease"),
+	    MetaIndexInfo("InRelease"), "InRelease",
+	    MetaIndexURI("Release"), MetaIndexInfo("Release"), "Release",
+	    MetaIndexURI("Release.gpg"), MetaIndexInfo("Release.gpg"), "Release.gpg",
+	    ComputeIndexTargets(),
+	    new indexRecords (Dist));
+   else
+      new pkgAcqMetaSig(Owner, MetaIndexURI("Release.gpg"),
+	    MetaIndexInfo("Release.gpg"), "Release.gpg",
+	    MetaIndexURI("Release"), MetaIndexInfo("Release"), "Release",
+	    ComputeIndexTargets(),
+	    new indexRecords (Dist));
 
    return true;
 }
@@ -376,10 +396,29 @@ class debSLTypeDebian : public pkgSourceList::Type
 			   string const &Dist, string const &Section,
 			   bool const &IsSrc, map<string, string> const &Options) const
    {
-      map<string, string>::const_iterator const arch = Options.find("arch");
-      vector<string> const Archs =
+      // parse arch=, arch+= and arch-= settings
+      map<string, string>::const_iterator arch = Options.find("arch");
+      vector<string> Archs =
 		(arch != Options.end()) ? VectorizeString(arch->second, ',') :
 				APT::Configuration::getArchitectures();
+      if ((arch = Options.find("arch+")) != Options.end())
+      {
+	 std::vector<std::string> const plusArch = VectorizeString(arch->second, ',');
+	 for (std::vector<std::string>::const_iterator plus = plusArch.begin(); plus != plusArch.end(); ++plus)
+	    if (std::find(Archs.begin(), Archs.end(), *plus) == Archs.end())
+	       Archs.push_back(*plus);
+      }
+      if ((arch = Options.find("arch-")) != Options.end())
+      {
+	 std::vector<std::string> const minusArch = VectorizeString(arch->second, ',');
+	 for (std::vector<std::string>::const_iterator minus = minusArch.begin(); minus != minusArch.end(); ++minus)
+	 {
+	    std::vector<std::string>::iterator kill = std::find(Archs.begin(), Archs.end(), *minus);
+	    if (kill != Archs.end())
+	       Archs.erase(kill);
+	 }
+      }
+
       map<string, string>::const_iterator const trusted = Options.find("trusted");
 
       for (vector<metaIndex *>::const_iterator I = List.begin();

@@ -21,6 +21,8 @@
 #include <string>
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -50,21 +52,27 @@ public:
 /* */
 pkgTagFile::pkgTagFile(FileFd *pFd,unsigned long long Size)
 {
+   /* The size is increased by 4 because if we start with the Size of the
+      filename we need to try to read 1 char more to see an EOF faster, 1
+      char the end-pointer can be on and maybe 2 newlines need to be added
+      to the end of the file -> 4 extra chars */
+   Size += 4;
    d = new pkgTagFilePrivate(pFd, Size);
 
    if (d->Fd.IsOpen() == false)
-   {
       d->Start = d->End = d->Buffer = 0;
+   else
+      d->Buffer = (char*)malloc(sizeof(char) * Size);
+
+   if (d->Buffer == NULL)
       d->Done = true;
-      d->iOffset = 0;
-      return;
-   }
-   
-   d->Buffer = new char[Size];
+   else
+      d->Done = false;
+
    d->Start = d->End = d->Buffer;
-   d->Done = false;
    d->iOffset = 0;
-   Fill();
+   if (d->Done == false)
+      Fill();
 }
 									/*}}}*/
 // TagFile::~pkgTagFile - Destructor					/*{{{*/
@@ -72,12 +80,12 @@ pkgTagFile::pkgTagFile(FileFd *pFd,unsigned long long Size)
 /* */
 pkgTagFile::~pkgTagFile()
 {
-   delete [] d->Buffer;
+   free(d->Buffer);
    delete d;
 }
 									/*}}}*/
-// TagFile::Offset - Return the current offset in the buffer     	/*{{{*/
-unsigned long pkgTagFile::Offset()
+// TagFile::Offset - Return the current offset in the buffer		/*{{{*/
+APT_PURE unsigned long pkgTagFile::Offset()
 {
    return d->iOffset;
 }
@@ -89,19 +97,22 @@ unsigned long pkgTagFile::Offset()
  */
 bool pkgTagFile::Resize()
 {
-   char *tmp;
-   unsigned long long EndSize = d->End - d->Start;
-
    // fail is the buffer grows too big
    if(d->Size > 1024*1024+1)
       return false;
 
+   return Resize(d->Size * 2);
+}
+bool pkgTagFile::Resize(unsigned long long const newSize)
+{
+   unsigned long long const EndSize = d->End - d->Start;
+
    // get new buffer and use it
-   tmp = new char[2*d->Size];
-   memcpy(tmp, d->Buffer, d->Size);
-   d->Size = d->Size*2;
-   delete [] d->Buffer;
-   d->Buffer = tmp;
+   char* newBuffer = (char*)realloc(d->Buffer, sizeof(char) * newSize);
+   if (newBuffer == NULL)
+      return false;
+   d->Buffer = newBuffer;
+   d->Size = newSize;
 
    // update the start/end pointers to the new buffer
    d->Start = d->Buffer;
@@ -152,9 +163,10 @@ bool pkgTagFile::Fill()
    if (d->Done == false)
    {
       // See if only a bit of the file is left
-      if (d->Fd.Read(d->End, d->Size - (d->End - d->Buffer),&Actual) == false)
+      unsigned long long const dataSize = d->Size - ((d->End - d->Buffer) + 1);
+      if (d->Fd.Read(d->End, dataSize, &Actual) == false)
 	 return false;
-      if (Actual != d->Size - (d->End - d->Buffer))
+      if (Actual != dataSize)
 	 d->Done = true;
       d->End += Actual;
    }
@@ -171,8 +183,13 @@ bool pkgTagFile::Fill()
       for (const char *E = d->End - 1; E - d->End < 6 && (*E == '\n' || *E == '\r'); E--)
 	 if (*E == '\n')
 	    LineCount++;
-      for (; LineCount < 2; LineCount++)
-	 *d->End++ = '\n';
+      if (LineCount < 2)
+      {
+	 if ((unsigned)(d->End - d->Buffer) >= d->Size)
+	    Resize(d->Size + 3);
+	 for (; LineCount < 2; LineCount++)
+	    *d->End++ = '\n';
+      }
       
       return true;
    }
@@ -192,7 +209,11 @@ bool pkgTagFile::Jump(pkgTagSection &Tag,unsigned long long Offset)
       unsigned long long Dist = Offset - d->iOffset;
       d->Start += Dist;
       d->iOffset += Dist;
-      return Step(Tag);
+      // if we have seen the end, don't ask for more
+      if (d->Done == true)
+	 return Tag.Scan(d->Start, d->End - d->Start);
+      else
+	 return Step(Tag);
    }
 
    // Reposition and reload..
@@ -218,6 +239,16 @@ bool pkgTagFile::Jump(pkgTagSection &Tag,unsigned long long Offset)
    return true;
 }
 									/*}}}*/
+// pkgTagSection::pkgTagSection - Constructor				/*{{{*/
+// ---------------------------------------------------------------------
+/* */
+pkgTagSection::pkgTagSection()
+   : Section(0), TagCount(0), d(NULL), Stop(0)
+{
+   memset(&Indexes, 0, sizeof(Indexes));
+   memset(&AlphaIndexes, 0, sizeof(AlphaIndexes));
+}
+									/*}}}*/
 // TagSection::Scan - Scan for the end of the header information	/*{{{*/
 // ---------------------------------------------------------------------
 /* This looks for the first double new line in the data stream.
@@ -234,7 +265,12 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength)
    TagCount = 0;
    while (TagCount+1 < sizeof(Indexes)/sizeof(Indexes[0]) && Stop < End)
    {
-       TrimRecord(true,End);
+      TrimRecord(true,End);
+
+      // this can happen when TrimRecord trims away the entire Record
+      // (e.g. because it just contains comments)
+      if(Stop == End)
+         return true;
 
       // Start a new index and add it to the hash
       if (isspace(Stop[0]) == 0)
@@ -248,7 +284,9 @@ bool pkgTagSection::Scan(const char *Start,unsigned long MaxLength)
       if (Stop == 0)
 	 return false;
 
-      for (; Stop+1 < End && Stop[1] == '\r'; Stop++);
+      for (; Stop+1 < End && Stop[1] == '\r'; Stop++)
+         /* nothing */
+         ;
 
       // Double newline marks the end of the record
       if (Stop+1 < End && Stop[1] == '\n')
@@ -282,10 +320,17 @@ void pkgTagSection::Trim()
    for (; Stop > Section + 2 && (Stop[-2] == '\n' || Stop[-2] == '\r'); Stop--);
 }
 									/*}}}*/
+// TagSection::Exists - return True if a tag exists                	/*{{{*/
+bool pkgTagSection::Exists(const char* const Tag)
+{
+   unsigned int tmp;
+   return Find(Tag, tmp);
+}
+									/*}}}*/
 // TagSection::Find - Locate a tag					/*{{{*/
 // ---------------------------------------------------------------------
 /* This searches the section for a tag that matches the given string. */
-bool pkgTagSection::Find(const char *Tag,unsigned &Pos) const
+bool pkgTagSection::Find(const char *Tag,unsigned int &Pos) const
 {
    unsigned int Length = strlen(Tag);
    unsigned int I = AlphaIndexes[AlphaHash(Tag)];
@@ -428,7 +473,7 @@ bool pkgTagSection::FindFlag(const char *Tag,unsigned long &Flags,
       return true;
    return FindFlag(Flags, Flag, Start, Stop);
 }
-bool const pkgTagSection::FindFlag(unsigned long &Flags, unsigned long Flag,
+bool pkgTagSection::FindFlag(unsigned long &Flags, unsigned long Flag,
 					char const* Start, char const* Stop)
 {
    switch (StringToBool(string(Start, Stop)))
@@ -481,7 +526,7 @@ static const char *iTFRewritePackageOrder[] = {
                           "Conffiles",
                           "Filename",
                           "Size",
-                          "MD5Sum",
+                          "MD5sum",
                           "SHA1",
                           "SHA256",
                           "SHA512",
@@ -528,52 +573,54 @@ bool TFRewrite(FILE *Output,pkgTagSection const &Tags,const char *Order[],
    }
    
    // Write all all of the tags, in order.
-   for (unsigned int I = 0; Order[I] != 0; I++)
+   if (Order != NULL)
    {
-      bool Rewritten = false;
-      
-      // See if this is a field that needs to be rewritten
-      for (unsigned int J = 0; Rewrite != 0 && Rewrite[J].Tag != 0; J++)
+      for (unsigned int I = 0; Order[I] != 0; I++)
       {
-	 if (strcasecmp(Rewrite[J].Tag,Order[I]) == 0)
-	 {
-	    Visited[J] |= 2;
-	    if (Rewrite[J].Rewrite != 0 && Rewrite[J].Rewrite[0] != 0)
-	    {
-	       if (isspace(Rewrite[J].Rewrite[0]))
-		  fprintf(Output,"%s:%s\n",Rewrite[J].NewTag,Rewrite[J].Rewrite);
-	       else
-		  fprintf(Output,"%s: %s\n",Rewrite[J].NewTag,Rewrite[J].Rewrite);
-	    }
+         bool Rewritten = false;
+         
+         // See if this is a field that needs to be rewritten
+         for (unsigned int J = 0; Rewrite != 0 && Rewrite[J].Tag != 0; J++)
+         {
+            if (strcasecmp(Rewrite[J].Tag,Order[I]) == 0)
+            {
+               Visited[J] |= 2;
+               if (Rewrite[J].Rewrite != 0 && Rewrite[J].Rewrite[0] != 0)
+               {
+                  if (isspace(Rewrite[J].Rewrite[0]))
+                     fprintf(Output,"%s:%s\n",Rewrite[J].NewTag,Rewrite[J].Rewrite);
+                  else
+                     fprintf(Output,"%s: %s\n",Rewrite[J].NewTag,Rewrite[J].Rewrite);
+               }
+               Rewritten = true;
+               break;
+            }
+         }
 	    
-	    Rewritten = true;
-	    break;
-	 }
-      }      
-	    
-      // See if it is in the fragment
-      unsigned Pos;
-      if (Tags.Find(Order[I],Pos) == false)
-	 continue;
-      Visited[Pos] |= 1;
+         // See if it is in the fragment
+         unsigned Pos;
+         if (Tags.Find(Order[I],Pos) == false)
+            continue;
+         Visited[Pos] |= 1;
 
-      if (Rewritten == true)
-	 continue;
+         if (Rewritten == true)
+            continue;
       
-      /* Write out this element, taking a moment to rewrite the tag
-         in case of changes of case. */
-      const char *Start;
-      const char *Stop;
-      Tags.Get(Start,Stop,Pos);
+         /* Write out this element, taking a moment to rewrite the tag
+            in case of changes of case. */
+         const char *Start;
+         const char *Stop;
+         Tags.Get(Start,Stop,Pos);
       
-      if (fputs(Order[I],Output) < 0)
-	 return _error->Errno("fputs","IO Error to output");
-      Start += strlen(Order[I]);
-      if (fwrite(Start,Stop - Start,1,Output) != 1)
-	 return _error->Errno("fwrite","IO Error to output");
-      if (Stop[-1] != '\n')
-	 fprintf(Output,"\n");
-   }   
+         if (fputs(Order[I],Output) < 0)
+            return _error->Errno("fputs","IO Error to output");
+         Start += strlen(Order[I]);
+         if (fwrite(Start,Stop - Start,1,Output) != 1)
+            return _error->Errno("fwrite","IO Error to output");
+         if (Stop[-1] != '\n')
+            fprintf(Output,"\n");
+      }
+   }
 
    // Now write all the old tags that were missed.
    for (unsigned int I = 0; I != Tags.Count(); I++)

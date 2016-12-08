@@ -16,6 +16,8 @@
 
 #include <string>
 
+#include <apt-pkg/macros.h>
+
 #ifndef APT_8_CLEANER_HEADERS
 #include <apt-pkg/strutl.h>
 #endif
@@ -25,11 +27,9 @@
 
 class URI;
 
-// Assume: password[0]=0, host[0] != 0.
-// If login[0] = 0, search for login and password within a machine section
-// in the netrc.
-// If login[0] != 0, search for password within machine and login.
-int parsenetrc (char *host, char *login, char *password, char *filename);
+// FIXME: kill this export on the next ABI break - strongly doubt its in use anyway
+// outside of the apt itself, its really a internal interface
+APT_DEPRECATED int parsenetrc (char *host, char *login, char *password, char *filename);
 
 void maybe_add_auth (URI &Uri, std::string NetRCFile);
 #endif

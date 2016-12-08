@@ -13,14 +13,16 @@
 #ifndef WRITER_H
 #define WRITER_H
 
-
 #include <string>
 #include <stdio.h>
 #include <iostream>
 #include <vector>
 #include <map>
 #include <set>
+#include <stdlib.h>
+#include <sys/types.h>
 
+#include "contents.h"
 #include "cachedb.h"
 #include "override.h"
 #include "apt-ftparchive.h"
@@ -125,8 +127,10 @@ class PackagesWriter : public FTWScanner
       {return Over.ReadExtraOverride(File);};
    virtual bool DoPackage(string FileName);
 
-   PackagesWriter(string const &DB,string const &Overrides,string const &ExtOverrides=string(),
-		  string const &Arch=string());
+   PackagesWriter(string const &DB,
+                  string const &Overrides,
+                  string const &ExtOverrides = "",
+		  string const &Arch = "");
    virtual ~PackagesWriter() {};
 };
 
@@ -172,7 +176,7 @@ class SourcesWriter : public FTWScanner
    string PathPrefix;
    string DirStrip;
    FILE *Output;
-   struct CacheDB::Stats Stats;
+   struct CacheDB::Stats &Stats;
 
    virtual bool DoPackage(string FileName);
 

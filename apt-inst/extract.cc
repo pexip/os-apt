@@ -10,7 +10,7 @@
    object is unpacked to '.dpkg.new' then the original is hardlinked to
    '.dpkg.tmp' and finally the new object is renamed to overwrite the old
    one. From an external perspective the file never ceased to exist.
-   After the archive has been sucessfully unpacked the .dpkg.tmp files 
+   After the archive has been successfully unpacked the .dpkg.tmp files
    are erased. A failure causes all the .dpkg.tmp files to be restored.
    
    Decisions about unpacking go like this:
@@ -22,7 +22,7 @@
         [Note, this is reduced to only check if a file was expected to be
          there]
       - If the existing link/file is not a directory then it is replaced
-        irregardless
+        regardless
       - If the existing link/directory is being replaced by a directory then
         absolutely nothing happens.
       - If the existing link/directory is being replaced by a link then
@@ -50,13 +50,20 @@
 #include <apt-pkg/error.h>
 #include <apt-pkg/debversion.h>
 #include <apt-pkg/fileutl.h>
+#include <apt-pkg/dirstream.h>
+#include <apt-pkg/filelist.h>
+#include <apt-pkg/mmap.h>
+#include <apt-pkg/pkgcache.h>
+#include <apt-pkg/cacheiterators.h>
 
+#include <string.h>
+#include <string>
 #include <sys/stat.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <errno.h>
 #include <dirent.h>
 #include <iostream>
+
 #include <apti18n.h>
 									/*}}}*/
 using namespace std;
@@ -79,10 +86,8 @@ pkgExtract::pkgExtract(pkgFLCache &FLCache,pkgCache::VerIterator Ver) :
 // Extract::DoItem - Handle a single item from the stream		/*{{{*/
 // ---------------------------------------------------------------------
 /* This performs the setup for the extraction.. */
-bool pkgExtract::DoItem(Item &Itm,int &Fd)
+bool pkgExtract::DoItem(Item &Itm, int &/*Fd*/)
 {
-   char Temp[sizeof(FileName)];
-   
    /* Strip any leading/trailing /s from the filename, then copy it to the
       temp buffer and re-apply the leading / We use a class variable
       to store the new filename for use by the three extraction funcs */
@@ -183,6 +188,7 @@ bool pkgExtract::DoItem(Item &Itm,int &Fd)
       // See if we can recover the backup file
       if (Nde.end() == false)
       {
+	 char Temp[sizeof(FileName)];
 	 snprintf(Temp,sizeof(Temp),"%s.%s",Itm.Name,TempExt);
 	 if (rename(Temp,Itm.Name) != 0 && errno != ENOENT)
 	    return _error->Errno("rename",_("Failed to rename %s to %s"),
@@ -254,7 +260,7 @@ bool pkgExtract::DoItem(Item &Itm,int &Fd)
 // Extract::Finished - Sequence finished, erase the temp files		/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-bool pkgExtract::Finished()
+APT_CONST bool pkgExtract::Finished()
 {
    return true;
 }

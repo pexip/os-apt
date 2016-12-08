@@ -1,9 +1,13 @@
 #include<config.h>
 
-#include <iostream>
-#include <apt-pkg/error.h>
 #include <apt-pkg/vendor.h>
 #include <apt-pkg/configuration.h>
+
+#include <iostream>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
 Vendor::Vendor(std::string VendorID,
                std::string Origin,
@@ -12,7 +16,7 @@ Vendor::Vendor(std::string VendorID,
    this->VendorID = VendorID;
    this->Origin = Origin;
    for (std::vector<struct Vendor::Fingerprint *>::iterator I = FingerprintList->begin();
-	I != FingerprintList->end(); I++)
+	I != FingerprintList->end(); ++I)
    {
       if (_config->FindB("Debug::Vendor", false))
          std::cerr << "Vendor \"" << VendorID << "\": Mapping \""
@@ -31,7 +35,7 @@ const std::string Vendor::LookupFingerprint(std::string Print) const
       return (*Elt).second;
 }
 
-bool Vendor::CheckDist(std::string Dist)
+APT_CONST bool Vendor::CheckDist(std::string /*Dist*/)
 {
    return true;
 }

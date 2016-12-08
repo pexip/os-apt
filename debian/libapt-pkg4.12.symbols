@@ -15,7 +15,6 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"ReadPinFile(pkgPolicy&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.8.0
  (c++)"RegexChoice(RxChoiceList*, char const**, char const**)@Base" 0.8.0
  (c++)"SetNonBlock(int, bool)@Base" 0.8.0
- (c++)"TimeRFC1123(long)@Base" 0.8.0
  (c++)"flExtension(std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.8.0
  (c++)"Base64Encode(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.0
  (c++)"ReadMessages(int, std::vector<std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&)@Base" 0.8.0
@@ -36,6 +35,7 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"safe_snprintf(char*, char*, char const*, ...)@Base" 0.8.0
  (c++)"stringcasecmp(__gnu_cxx::__normal_iterator<char const*, std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, __gnu_cxx::__normal_iterator<char const*, std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, char const*, char const*)@Base" 0.8.0
  (c++)"stringcasecmp(__gnu_cxx::__normal_iterator<char const*, std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, __gnu_cxx::__normal_iterator<char const*, std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, __gnu_cxx::__normal_iterator<char const*, std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, __gnu_cxx::__normal_iterator<char const*, std::basic_string<char, std::char_traits<char>, std::allocator<char> > >)@Base" 0.8.0
+ (c++)"stringcasecmp(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, char const*)@Base" 0.8.0
  (c++)"stringcasecmp(char const*, char const*, char const*, char const*)@Base" 0.8.0
  (c++)"tolower_ascii(int)@Base" 0.8.0
  (c++)"ParseQuoteWord(char const*&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >&)@Base" 0.8.0
@@ -49,13 +49,10 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"DirectoryExists(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.0
  (c++)"VectorizeString(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, char const&)@Base" 0.8.0
  (c++)"pkgPrioSortList(pkgCache&, pkgCache::Version**)@Base" 0.8.0
- (c++)"FTPMDTMStrToTime(char const*, long&)@Base" 0.8.0
- (c++)"RFC1123StrToTime(char const*, long&)@Base" 0.8.0
  (c++)"pkgMakeStatusCache(pkgSourceList&, OpProgress&, MMap**, bool)@Base" 0.8.0
  (c++)"pkgMinimizeUpgrade(pkgDepCache&)@Base" 0.8.0
  (c++)"GetListOfFilesInDir(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::vector<std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&, bool const&)@Base" 0.8.0
  (c++)"GetListOfFilesInDir(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool const&, bool const&)@Base" 0.8.0
- (c++)"pkgMakeStatusCacheMem(pkgSourceList&, OpProgress&)@Base" 0.8.0
  (c++)"pkgMakeOnlyStatusCache(OpProgress&, DynamicMMap**)@Base" 0.8.0
  (c++)"WaitFd(int, bool, unsigned long)@Base" 0.8.0
  (c++)"GetLock(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, bool)@Base" 0.8.0
@@ -72,7 +69,6 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"IsMounted(std::basic_string<char, std::char_traits<char>, std::allocator<char> >&)@Base" 0.8.0
  (c++)"LookupTag(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, char const*, char const*)@Base" 0.8.0
  (c++)"SizeToStr(double)@Base" 0.8.0
- (c++)"StrToTime(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long&)@Base" 0.8.0
  (c++)"TFRewrite(_IO_FILE*, pkgTagSection const&, char const**, TFRewriteData*)@Base" 0.8.0
  (c++)"TimeToStr(unsigned long)@Base" 0.8.0
  (c++)"_strstrip(char*)@Base" 0.8.0
@@ -185,12 +181,9 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"pkgRecords::Parser::ShortDesc()@Base" 0.8.0
  (c++)"pkgRecords::Parser::SourcePkg()@Base" 0.8.0
  (c++)"pkgRecords::Parser::SourceVer()@Base" 0.8.0
- (c++)"pkgRecords::Parser::~Parser()@Base" 0.8.0
  (c++)"pkgRecords::pkgRecords(pkgCache&)@Base" 0.8.0
  (c++)"pkgRecords::~pkgRecords()@Base" 0.8.0
- (c++)"pkgTagFile::Fill()@Base" 0.8.0
  (c++)"pkgTagFile::Step(pkgTagSection&)@Base" 0.8.0
- (c++)"pkgTagFile::Resize()@Base" 0.8.0
  (c++)"pkgTagFile::~pkgTagFile()@Base" 0.8.0
  (c++)"CdromDevice::~CdromDevice()@Base" 0.8.0
  (c++)"CommandLine::DispatchArg(CommandLine::Dispatch*, bool)@Base" 0.8.0
@@ -321,8 +314,6 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"pkgIndexFile::Type::GlobalListLen@Base" 0.8.0
  (c++)"pkgIndexFile::Type::GetType(char const*)@Base" 0.8.0
  (c++)"pkgIndexFile::Type::Type()@Base" 0.8.0
- (c++)"pkgIndexFile::Type::~Type()@Base" 0.8.0
- (c++)"pkgIndexFile::~pkgIndexFile()@Base" 0.8.0
  (c++)"pkgOrderList::VisitRDeps(bool (pkgOrderList::*)(pkgCache::DepIterator), pkgCache::PkgIterator)@Base" 0.8.0
  (c++)"pkgOrderList::OrderUnpack(std::basic_string<char, std::char_traits<char>, std::allocator<char> >*)@Base" 0.8.0
  (c++)"pkgOrderList::DepConfigure(pkgCache::DepIterator)@Base" 0.8.0
@@ -408,7 +399,6 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"pkgSourceList::Type::GlobalListLen@Base" 0.8.0
  (c++)"pkgSourceList::Type::GetType(char const*)@Base" 0.8.0
  (c++)"pkgSourceList::Type::Type()@Base" 0.8.0
- (c++)"pkgSourceList::Type::~Type()@Base" 0.8.0
  (c++)"pkgSourceList::Reset()@Base" 0.8.0
  (c++)"pkgSourceList::pkgSourceList(std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.8.0
  (c++)"pkgSourceList::pkgSourceList()@Base" 0.8.0
@@ -417,7 +407,6 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"pkgSrcRecords::Find(char const*, bool const&)@Base" 0.8.0
  (c++)"pkgSrcRecords::Parser::BuildDepRec::~BuildDepRec()@Base" 0.8.0
  (c++)"pkgSrcRecords::Parser::BuildDepType(unsigned char const&)@Base" 0.8.0
- (c++)"pkgSrcRecords::Parser::~Parser()@Base" 0.8.0
  (c++)"pkgSrcRecords::Restart()@Base" 0.8.0
  (c++)"pkgSrcRecords::pkgSrcRecords(pkgSourceList&)@Base" 0.8.0
  (c++)"pkgSrcRecords::~pkgSrcRecords()@Base" 0.8.0
@@ -463,7 +452,6 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"debReleaseIndex::debReleaseIndex(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.0
  (c++)"debReleaseIndex::~debReleaseIndex()@Base" 0.8.0
  (c++)"debSLTypeDebSrc::~debSLTypeDebSrc()@Base" 0.8.0
- (c++)"debSLTypeDebian::~debSLTypeDebian()@Base" 0.8.0
  (c++)"debSourcesIndex::debSourcesIndex(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, bool)@Base" 0.8.0
  (c++)"debSourcesIndex::~debSourcesIndex()@Base" 0.8.0
  (c++)"pkgAcqDiffIndex::ParseDiffIndex(std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.8.0
@@ -509,24 +497,18 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"pkgAcquireStatus::Start()@Base" 0.8.0
  (c++)"pkgAcquireStatus::IMSHit(pkgAcquire::ItemDesc&)@Base" 0.8.0
  (c++)"pkgAcquireStatus::pkgAcquireStatus()@Base" 0.8.0
- (c++)"pkgAcquireStatus::~pkgAcquireStatus()@Base" 0.8.0
  (c++)"PreferenceSection::TrimRecord(bool, char const*&)@Base" 0.8.0
  (c++)"pkgArchiveCleaner::Go(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, pkgCache&)@Base" 0.8.0
  (c++)"pkgCacheGenerator::ListParser::NewDepends(pkgCache::VerIterator&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned int, unsigned int)@Base" 0.8.0
  (c++)"pkgCacheGenerator::ListParser::NewProvides(pkgCache::VerIterator&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.0
  (c++)"pkgCacheGenerator::ListParser::CollectFileProvides(pkgCache&, pkgCache::VerIterator&)@Base" 0.8.0
- (c++)"pkgCacheGenerator::ListParser::~ListParser()@Base" 0.8.0
  (c++)"pkgCacheGenerator::NewFileVer(pkgCache::VerIterator&, pkgCacheGenerator::ListParser&)@Base" 0.8.0
  (c++)"pkgCacheGenerator::NewPackage(pkgCache::PkgIterator&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.0
- (c++)"pkgCacheGenerator::NewVersion(pkgCache::VerIterator&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned long)@Base" 0.8.0
  (c++)"pkgCacheGenerator::SelectFile(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, pkgIndexFile const&, unsigned long)@Base" 0.8.0
  (c++)"pkgCacheGenerator::FinishCache(OpProgress*)@Base" 0.8.0
  (c++)"pkgCacheGenerator::NewFileDesc(pkgCache::DescIterator&, pkgCacheGenerator::ListParser&)@Base" 0.8.0
- (c++)"pkgCacheGenerator::AllocateInMap(unsigned long const&)@Base" 0.8.0
  (c++)"pkgCacheGenerator::MakeStatusCache(pkgSourceList&, OpProgress*, MMap**, bool)@Base" 0.8.0
  (c++)"pkgCacheGenerator::WriteUniqString(char const*, unsigned int)@Base" 0.8.0
- (c++)"pkgCacheGenerator::WriteStringInMap(char const*)@Base" 0.8.0
- (c++)"pkgCacheGenerator::WriteStringInMap(char const*, unsigned long const&)@Base" 0.8.0
  (c++)"pkgCacheGenerator::CreateDynamicMMap(FileFd*, unsigned long)@Base" 0.8.0
  (c++)"pkgCacheGenerator::MergeFileProvides(pkgCacheGenerator::ListParser&)@Base" 0.8.0
  (c++)"pkgCacheGenerator::MakeOnlyStatusCache(OpProgress*, DynamicMMap**)@Base" 0.8.0
@@ -551,13 +533,11 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"pkgPackageManager::ImmediateAdd(pkgCache::PkgIterator, bool, unsigned int const&)@Base" 0.8.0
  (c++)"pkgPackageManager::OrderInstall()@Base" 0.8.0
  (c++)"pkgPackageManager::DepAlwaysTrue(pkgCache::DepIterator)@Base" 0.8.0
- (c++)"pkgPackageManager::SmartConfigure(pkgCache::PkgIterator)@Base" 0.8.0
  (c++)"pkgPackageManager::CheckRConflicts(pkgCache::PkgIterator, pkgCache::DepIterator, char const*)@Base" 0.8.0
  (c++)"pkgPackageManager::CreateOrderList()@Base" 0.8.0
  (c++)"pkgPackageManager::DoInstallPostFork(int)@Base" 0.8.0
  (c++)"pkgPackageManager::Go(int)@Base" 0.8.0
  (c++)"pkgPackageManager::Reset()@Base" 0.8.0
- (c++)"pkgPackageManager::DepAdd(pkgOrderList&, pkgCache::PkgIterator, int)@Base" 0.8.0
  (c++)"pkgPackageManager::Remove(pkgCache::PkgIterator, bool)@Base" 0.8.0
  (c++)"pkgPackageManager::Install(pkgCache::PkgIterator, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.8.0
  (c++)"pkgPackageManager::Configure(pkgCache::PkgIterator)@Base" 0.8.0
@@ -598,23 +578,8 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"pkgVersioningSystem::TestCompatibility(pkgVersioningSystem const&)@Base" 0.8.0
  (c++)"pkgVersioningSystem::GetVS(char const*)@Base" 0.8.0
  (c++)"pkgVersioningSystem::pkgVersioningSystem()@Base" 0.8.0
- (c++)"pkgVersioningSystem::~pkgVersioningSystem()@Base" 0.8.0
  (c++)"debTranslationsIndex::debTranslationsIndex(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, char const*)@Base" 0.8.0
  (c++)"debTranslationsIndex::~debTranslationsIndex()@Base" 0.8.0
- (c++)"APT::PackageSet::FromString(pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, APT::CacheSetHelper&)@Base" 0.8.0
- (c++)"APT::PackageSet::FromCommandLine(pkgCacheFile&, char const**, APT::CacheSetHelper&)@Base" 0.8.0
- (c++)"APT::PackageSet::GroupedFromCommandLine(pkgCacheFile&, char const**, std::list<APT::PackageSet::Modifier, std::allocator<APT::PackageSet::Modifier> > const&, unsigned short const&, APT::CacheSetHelper&)@Base" 0.8.0
- (c++)"APT::PackageSet::FromName(pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, APT::CacheSetHelper&)@Base" 0.8.0
- (c++)"APT::PackageSet::FromTask(pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, APT::CacheSetHelper&)@Base" 0.8.0
- (c++)"APT::PackageSet::FromRegEx(pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, APT::CacheSetHelper&)@Base" 0.8.0
- (c++)"APT::PackageSet::~PackageSet()@Base" 0.8.0
- (c++)"APT::VersionSet::FromString(pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, APT::VersionSet::Version const&, APT::CacheSetHelper&, bool const&)@Base" 0.8.0
- (c++)"APT::VersionSet::FromPackage(pkgCacheFile&, pkgCache::PkgIterator const&, APT::VersionSet::Version const&, APT::CacheSetHelper&)@Base" 0.8.0
- (c++)"APT::VersionSet::FromCommandLine(pkgCacheFile&, char const**, APT::VersionSet::Version const&, APT::CacheSetHelper&)@Base" 0.8.0
- (c++)"APT::VersionSet::getCandidateVer(pkgCacheFile&, pkgCache::PkgIterator const&, APT::CacheSetHelper&)@Base" 0.8.0
- (c++)"APT::VersionSet::getInstalledVer(pkgCacheFile&, pkgCache::PkgIterator const&, APT::CacheSetHelper&)@Base" 0.8.0
- (c++)"APT::VersionSet::GroupedFromCommandLine(pkgCacheFile&, char const**, std::list<APT::VersionSet::Modifier, std::allocator<APT::VersionSet::Modifier> > const&, unsigned short const&, APT::CacheSetHelper&)@Base" 0.8.0
- (c++)"APT::VersionSet::~VersionSet()@Base" 0.8.0
  (c++)"APT::CacheFilter::PackageNameMatchesRegEx::PackageNameMatchesRegEx(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.0
  (c++)"APT::CacheFilter::PackageNameMatchesRegEx::~PackageNameMatchesRegEx()@Base" 0.8.0
  (c++)"APT::CacheFilter::PackageNameMatchesRegEx::operator()(pkgCache::GrpIterator const&)@Base" 0.8.0
@@ -623,17 +588,8 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"APT::Configuration::getArchitectures(bool const&)@Base" 0.8.0
  (c++)"APT::Configuration::checkArchitecture(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.0
  (c++)"APT::Configuration::getCompressionTypes(bool const&)@Base" 0.8.0
- (c++)"APT::CacheSetHelper::canNotFindTask(pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.8.0
- (c++)"APT::CacheSetHelper::canNotFindRegEx(pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.8.0
- (c++)"APT::CacheSetHelper::canNotFindAllVer(pkgCacheFile&, pkgCache::PkgIterator const&)@Base" 0.8.0
- (c++)"APT::CacheSetHelper::canNotFindPackage(pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.0
  (c++)"APT::CacheSetHelper::canNotFindPkgName(pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.0
- (c++)"APT::CacheSetHelper::showTaskSelection(APT::PackageSet const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.0
- (c++)"APT::CacheSetHelper::showRegExSelection(APT::PackageSet const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.0
  (c++)"APT::CacheSetHelper::canNotFindNewestVer(pkgCacheFile&, pkgCache::PkgIterator const&)@Base" 0.8.0
- (c++)"APT::CacheSetHelper::showSelectedVersion(pkgCache::PkgIterator const&, pkgCache::VerIterator, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool const&)@Base" 0.8.0
- (c++)"APT::CacheSetHelper::canNotFindCandInstVer(pkgCacheFile&, pkgCache::PkgIterator const&)@Base" 0.8.0
- (c++)"APT::CacheSetHelper::canNotFindInstCandVer(pkgCacheFile&, pkgCache::PkgIterator const&)@Base" 0.8.0
  (c++)"APT::CacheSetHelper::canNotFindCandidateVer(pkgCacheFile&, pkgCache::PkgIterator const&)@Base" 0.8.0
  (c++)"APT::CacheSetHelper::canNotFindInstalledVer(pkgCacheFile&, pkgCache::PkgIterator const&)@Base" 0.8.0
  (c++)"APT::CacheSetHelper::~CacheSetHelper()@Base" 0.8.0
@@ -649,8 +605,6 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"MMap::MMap(FileFd&, unsigned long)@Base" 0.8.0
  (c++)"MMap::MMap(unsigned long)@Base" 0.8.0
  (c++)"MMap::~MMap()@Base" 0.8.0
- (c++)"FileFd::OpenDescriptor(int, FileFd::OpenMode, bool)@Base" 0.8.0
- (c++)"FileFd::Open(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, FileFd::OpenMode, unsigned long)@Base" 0.8.0
  (c++)"FileFd::Size()@Base" 0.8.0
  (c++)"FileFd::Sync()@Base" 0.8.0
  (c++)"FileFd::Tell()@Base" 0.8.0
@@ -708,7 +662,6 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"IndexCopy::ConvertToSourceList(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >&)@Base" 0.8.0
  (c++)"IndexCopy::ChopDirs(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int)@Base" 0.8.0
  (c++)"IndexCopy::GrabFirst(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >&, unsigned int)@Base" 0.8.0
- (c++)"IndexCopy::~IndexCopy()@Base" 0.8.0
  (c++)"SigVerify::CopyAndVerify(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::vector<std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&, std::vector<std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::vector<std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >)@Base" 0.8.0
  (c++)"SigVerify::CopyMetaIndex(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.8.0
  (c++)"SigVerify::Verify(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, indexRecords*)@Base" 0.8.0
@@ -722,14 +675,11 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"debSystem::UnLock(bool)@Base" 0.8.0
  (c++)"debSystem::debSystem()@Base" 0.8.0
  (c++)"debSystem::~debSystem()@Base" 0.8.0
- (c++)"metaIndex::~metaIndex()@Base" 0.8.0
  (c++)"pkgDPkgPM::SendV2Pkgs(_IO_FILE*)@Base" 0.8.0
  (c++)"pkgDPkgPM::DoTerminalPty(int)@Base" 0.8.0
- (c++)"pkgDPkgPM::DoDpkgStatusFd(int, int)@Base" 0.8.0
  (c++)"pkgDPkgPM::WriteHistoryTag(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.8.0
  (c++)"pkgDPkgPM::WriteApportReport(char const*, char const*)@Base" 0.8.0
  (c++)"pkgDPkgPM::RunScriptsWithPkgs(char const*)@Base" 0.8.0
- (c++)"pkgDPkgPM::ProcessDpkgStatusLine(int, char*)@Base" 0.8.0
  (c++)"pkgDPkgPM::handleDisappearAction(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.0
  (c++)"pkgDPkgPM::Go(int)@Base" 0.8.0
  (c++)"pkgDPkgPM::Reset()@Base" 0.8.0
@@ -755,7 +705,6 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"pkgSystem::Score(Configuration const&)@Base" 0.8.0
  (c++)"pkgSystem::GetSystem(char const*)@Base" 0.8.0
  (c++)"pkgSystem::pkgSystem()@Base" 0.8.0
- (c++)"pkgSystem::~pkgSystem()@Base" 0.8.0
  (c++)"HashString::VerifyFile(std::basic_string<char, std::char_traits<char>, std::allocator<char> >) const@Base" 0.8.0
  (c++)"HashString::empty() const@Base" 0.8.0
  (c++)"HashString::toStr() const@Base" 0.8.0
@@ -1152,68 +1101,44 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  debVS@Base 0.8.0
  pkgLibVersion@Base 0.8.0
  pkgVersion@Base 0.8.0
-### demangle strangeness - buildd report it as MISSING and as new…
- (c++)"pkgAcqMetaSig::pkgAcqMetaSig(pkgAcquire*, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::vector<IndexTarget*, std::allocator<IndexTarget*> > const*, indexRecords*)@Base" 0.8.0
-### gcc-4.4 specific
-# (c++|optional=inherent)"APT::PackageSet::PackageSet(APT::PackageSet const&)@Base" 0.8.0
-# (c++|optional=inline)"stringcasecmp(char const*, char const*, char const*)@Base" 0.8.0
-# (arch=armel|c++|optional=inline)"stringcasecmp(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, char const*)@Base" 0.8.0
-# (c++|optional=inherent)"APT::VersionSet::insert(pkgCache::VerIterator const&)@Base" 0.8.0
-# (c++|optional=inline)"APT::VersionSet::insert(APT::VersionSet const&)@Base" 0.8.0
-# (c++|optional=private)"debTranslationsIndex::IndexFile(char const*) const@Base" 0.8.0
-# (c++|optional=inline)"pkgCache::Iterator<pkgCache::Version, pkgCache::VerIterator>::end() const@Base" 0.8.0
-# (c++|optional=inherent)"HashString::operator=(HashString const&)@Base" 0.8.0
-# (c++|regex|optional=std)"^std::less<[^ ]+>::operator\(\)\(.+\) const@Base$" 0.8.0
-# (c++|regex|optional=std)"^std::vector<.+ >::(vector|push_back|erase|_[^ ]+)\(.+\)( const|)@Base$" 0.8.0
-# (c++|regex|optional=std)"^pkgCache::(Dep|Pkg|Ver|Grp|Prv|Desc|PkgFile)Iterator\*\* std::_.+@Base$" 0.8.0
-### gcc-4.5 specific
-# (c++|regex|optional=std)"^char\* std::[^ ]+<.+ >::_.+@Base$" 0.8.0
-# (c++|optional=inline)"FileFd::FileFd(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, FileFd::OpenMode, unsigned long)@Base" 0.8.0
-# (c++|regex|optional=template)"^SPtrArray<[^ ]+>::~SPtrArray\(\)@Base$" 0.8.0
-# (c++|optional=template)"SPtrArray<unsigned char>::~SPtrArray()@Base" 0.8.0
-### gcc-4.6 specific
- (c++|optional=template)"SPtrArray<pkgCache::Version*>::~SPtrArray()@Base" 0.8.0
- (c++|regex|optional=std)"^std::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string<char( const|)\*>\(.+\)@Base$" 0.8.0
- (c++|regex|optional=std)"^std::vector<DiffInfo, .+@Base$" 0.8.0
- (c++|regex|optional=std)"^std::vector<.+ >::(vector|push_back|erase|_[^ ]+)\(.+\)( const|)@Base$" 0.8.0
-# (c++|optional=strange)"pkgCache::VerIterator::VerIterator(pkgCache&, pkgCache::Version*)@Base" 0.8.0
 ### architecture specific: va_list
  (arch=armel armhf|c++)"pkgAcqMethod::PrintStatus(char const*, char const*, std::__va_list&) const@Base" 0.8.15~exp1
- (arch=i386 hurd-i386 kfreebsd-i386|c++)"pkgAcqMethod::PrintStatus(char const*, char const*, char*&) const@Base" 0.8.15~exp1
+ (arch=i386 hurd-i386 kfreebsd-i386 ppc64|c++)"pkgAcqMethod::PrintStatus(char const*, char const*, char*&) const@Base" 0.8.15~exp1
  (arch=hppa ia64 mips mipsel sparc sparc64|c++)"pkgAcqMethod::PrintStatus(char const*, char const*, void*&) const@Base" 0.8.15~exp1
- (arch=amd64 kfreebsd-amd64 powerpc powerpcspe s390|c++)"pkgAcqMethod::PrintStatus(char const*, char const*, __va_list_tag (&) [1]) const@Base" 0.8.15~exp1
+ (arch=amd64 kfreebsd-amd64 powerpc powerpcspe s390 s390x x32|c++)"pkgAcqMethod::PrintStatus(char const*, char const*, __va_list_tag (&) [1]) const@Base" 0.8.15~exp1
  (arch=sh4|c++)"pkgAcqMethod::PrintStatus(char const*, char const*, __builtin_va_list&) const@Base" 0.8.15~exp1
  (arch=alpha|c++)"pkgAcqMethod::PrintStatus(char const*, char const*, __va_list_tag&) const@Base" 0.8.15~exp1
 ### architecture specific: va_list & size_t
- (arch=i386 hurd-i386 kfreebsd-i386|c++|optional=private)"GlobalError::Insert(GlobalError::MsgType, char const*, char*&, unsigned int&)@Base" 0.8.11.4
- (arch=armel armhf|c++|optional=private)"GlobalError::Insert(GlobalError::MsgType, char const*, std::__va_list&, unsigned int&)@Base" 0.8.11.4
- (arch=alpha|c++|optional=private)"GlobalError::Insert(GlobalError::MsgType, char const*, __va_list_tag&, unsigned long&)@Base" 0.8.11.4
- (arch=powerpc powerpcspe|c++|optional=private)"GlobalError::Insert(GlobalError::MsgType, char const*, __va_list_tag (&) [1], unsigned int&)@Base" 0.8.11.4
- (arch=amd64 kfreebsd-amd64 s390|c++|optional=private)"GlobalError::Insert(GlobalError::MsgType, char const*, __va_list_tag (&) [1], unsigned long&)@Base" 0.8.11.4
- (arch=hppa mips mipsel sparc|c++|optional=private)"GlobalError::Insert(GlobalError::MsgType, char const*, void*&, unsigned int&)@Base" 0.8.11.4
- (arch=ia64 sparc64|c++|optional=private)"GlobalError::Insert(GlobalError::MsgType, char const*, void*&, unsigned long&)@Base" 0.8.11.4
- (arch=sh4|c++|optional=private)"GlobalError::Insert(GlobalError::MsgType, char const*, __builtin_va_list&, unsigned int&)@Base" 0.8.11.4
- (arch=i386 hurd-i386 kfreebsd-i386|c++|optional=private)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, char*&, int, unsigned int&)@Base" 0.8.11.4
- (arch=armel armhf|c++|optional=private)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, std::__va_list&, int, unsigned int&)@Base" 0.8.11.4
- (arch=alpha|c++|optional=private)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, __va_list_tag&, int, unsigned long&)@Base" 0.8.11.4
- (arch=powerpc powerpcspe|c++|optional=private)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, __va_list_tag (&) [1], int, unsigned int&)@Base" 0.8.11.4
- (arch=amd64 kfreebsd-amd64 s390|c++|optional=private)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, __va_list_tag (&) [1], int, unsigned long&)@Base" 0.8.11.4
- (arch=hppa mips mipsel sparc|c++|optional=private)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, void*&, int, unsigned int&)@Base" 0.8.11.4
- (arch=ia64 sparc64|c++|optional=private)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, void*&, int, unsigned long&)@Base" 0.8.11.4 1
- (arch=sh4|c++|optional=private)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, __builtin_va_list&, int, unsigned int&)@Base" 0.8.11.4
+ (arch=i386 hurd-i386 kfreebsd-i386|c++)"GlobalError::Insert(GlobalError::MsgType, char const*, char*&, unsigned int&)@Base" 0.8.11.4
+ (arch=armel armhf|c++)"GlobalError::Insert(GlobalError::MsgType, char const*, std::__va_list&, unsigned int&)@Base" 0.8.11.4
+ (arch=alpha|c++)"GlobalError::Insert(GlobalError::MsgType, char const*, __va_list_tag&, unsigned long&)@Base" 0.8.11.4
+ (arch=powerpc powerpcspe x32|c++)"GlobalError::Insert(GlobalError::MsgType, char const*, __va_list_tag (&) [1], unsigned int&)@Base" 0.8.11.4
+ (arch=amd64 kfreebsd-amd64 s390 s390x|c++)"GlobalError::Insert(GlobalError::MsgType, char const*, __va_list_tag (&) [1], unsigned long&)@Base" 0.8.11.4
+ (arch=hppa mips mipsel sparc|c++)"GlobalError::Insert(GlobalError::MsgType, char const*, void*&, unsigned int&)@Base" 0.8.11.4
+ (arch=ia64 sparc64|c++)"GlobalError::Insert(GlobalError::MsgType, char const*, void*&, unsigned long&)@Base" 0.8.11.4
+ (arch=sh4|c++)"GlobalError::Insert(GlobalError::MsgType, char const*, __builtin_va_list&, unsigned int&)@Base" 0.8.11.4
+ (arch=ppc64|c++)"GlobalError::Insert(GlobalError::MsgType, char const*, char*&, unsigned long&)@Base" 0.8.11.4
+ (arch=i386 hurd-i386 kfreebsd-i386|c++)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, char*&, int, unsigned int&)@Base" 0.8.11.4
+ (arch=armel armhf|c++)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, std::__va_list&, int, unsigned int&)@Base" 0.8.11.4
+ (arch=alpha|c++)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, __va_list_tag&, int, unsigned long&)@Base" 0.8.11.4
+ (arch=powerpc powerpcspe x32|c++)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, __va_list_tag (&) [1], int, unsigned int&)@Base" 0.8.11.4
+ (arch=amd64 kfreebsd-amd64 s390 s390x|c++)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, __va_list_tag (&) [1], int, unsigned long&)@Base" 0.8.11.4
+ (arch=hppa mips mipsel sparc|c++)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, void*&, int, unsigned int&)@Base" 0.8.11.4
+ (arch=ia64 sparc64|c++)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, void*&, int, unsigned long&)@Base" 0.8.11.4 1
+ (arch=sh4|c++)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, __builtin_va_list&, int, unsigned int&)@Base" 0.8.11.4
+ (arch=ppc64|c++)"GlobalError::InsertErrno(GlobalError::MsgType, char const*, char const*, char*&, int, unsigned long&)@Base" 0.8.11.4
 ### architecture specific: size_t
- (arch=i386 armel armhf hppa hurd-i386 kfreebsd-i386 mips mipsel powerpc powerpcspe sh4 sparc|c++)"_strtabexpand(char*, unsigned int)@Base" 0.8.0
- (arch=alpha amd64 ia64 kfreebsd-amd64 s390 sparc64|c++)"_strtabexpand(char*, unsigned long)@Base" 0.8.0
-### try to ignore std:: template instances
- (c++|regex|optional=std)"^(void |)std::[^ ]+<.+ >::(_|~).+\(.*\)@Base$" 0.8.0
- (c++|regex|optional=std)"^std::[^ ]+<.+ >::(append|insert|reserve|operator[^ ]+)\(.*\)@Base$" 0.8.0
- (c++|regex|optional=std)"^(void |DiffInfo\* |)std::_.*@Base$" 0.8.0
- (c++|regex|optional=std)"^(bool|void) std::(operator|sort_heap|make_heap)[^ ]+<.+ >\(.+\)@Base$" 0.8.0
- (c++|regex|optional=std)"^std::reverse_iterator<.+ > std::__.+@Base$" 0.8.0
- (c++|regex|optional=std)"^std::basic_string<.+ >\(.+\)@Base$" 0.8.0
- (c++|regex|optional=std)"^__gnu_cxx::__[^ ]+<.*@Base$" 0.8.0
- (c++|regex|optional=std)"^typeinfo name for std::iterator<.*>@Base$" 0.8.0
- (c++|regex|optional=std)"^typeinfo for std::iterator<.*>@Base$" 0.8.0
+ (arch=i386 armel armhf hppa hurd-i386 kfreebsd-i386 mips mipsel powerpc powerpcspe sh4 sparc x32|c++)"_strtabexpand(char*, unsigned int)@Base" 0.8.0
+ (arch=alpha amd64 ia64 kfreebsd-amd64 s390 s390x sparc64 ppc64|c++)"_strtabexpand(char*, unsigned long)@Base" 0.8.0
+### architecture specific: time_t
+ (arch=!x32|c++)"TimeRFC1123(long)@Base" 0.8.0
+ (arch=x32|c++)"TimeRFC1123(long long)@Base" 0.8.0
+ (arch=!x32|c++)"FTPMDTMStrToTime(char const*, long&)@Base" 0.8.0
+ (arch=x32|c++)"FTPMDTMStrToTime(char const*, long long&)@Base" 0.8.0
+ (arch=!x32|c++)"StrToTime(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long&)@Base" 0.8.0
+ (arch=x32|c++)"StrToTime(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, long long&)@Base" 0.8.0
+ (arch=!x32|c++)"RFC1123StrToTime(char const*, long&)@Base" 0.8.0
+ (arch=x32|c++)"RFC1123StrToTime(char const*, long long&)@Base" 0.8.0
 ###
  (c++)"Configuration::MatchAgainstConfig::clearPatterns()@Base" 0.8.1
  (c++)"CreateAPTDirectoryIfNeeded(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.2
@@ -1223,7 +1148,6 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"pkgDepCache::SetCandidateRelease(pkgCache::VerIterator, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.11
  (c++)"RealFileExists(std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.8.11
  (c++)"StripEpoch(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.11
- (c++)"IndexTarget::~IndexTarget()@Base" 0.8.11
  (c++)"pkgAcqIndex::Init(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.11
  (c++)"pkgAcqIndex::pkgAcqIndex(pkgAcquire*, IndexTarget const*, HashString const&, indexRecords const*)@Base" 0.8.11
  (c++)"pkgTagSection::FindFlag(unsigned long&, unsigned long, char const*, char const*)@Base" 0.8.11
@@ -1255,10 +1179,8 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"APT::Configuration::getCompressorExtensions()@Base" 0.8.12
  (c++)"APT::Configuration::setDefaultConfigurationForCompressors()@Base" 0.8.12
  (c++)"pkgAcqMetaClearSig::Custom600Headers()@Base" 0.8.13
- (c++|optional=private)"debListParser::NewProvidesAllArch(pkgCache::VerIterator&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.13.2
- (c++|optional=private)"PrintMode(char)@Base" 0.8.13.2
+ (c++)"debListParser::NewProvidesAllArch(pkgCache::VerIterator&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.13.2
  (c++)"pkgDepCache::IsModeChangeOk(pkgDepCache::ModeList, pkgCache::PkgIterator const&, unsigned long, bool)@Base" 0.8.13.2
- (c++)"pkgPackageManager::SmartUnPack(pkgCache::PkgIterator, bool)@Base" 0.8.15~exp1
  (c++)"pkgCache::DepIterator::IsNegative() const@Base" 0.8.15~exp1
  (c++)"Configuration::CndSet(char const*, int)@Base" 0.8.15.3
  (c++)"pkgProblemResolver::InstOrNewPolicyBroken(pkgCache::PkgIterator)@Base" 0.8.15.3
@@ -1298,20 +1220,14 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"EDSP::ReadRequest(int, std::list<std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&, std::list<std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&, bool&, bool&, bool&)@Base" 0.8.16~exp2
  (c++)"EDSP::ApplyRequest(std::list<std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&, std::list<std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&, pkgDepCache&)@Base" 0.8.16~exp2
  (c++)"EDSP::ReadResponse(int, pkgDepCache&, OpProgress*)@Base" 0.8.16~exp2
- (c++)"EDSP::StringToBool(char const*, bool)@Base" 0.8.16~exp2
  (c++)"EDSP::WriteRequest(pkgDepCache&, _IO_FILE*, bool, bool, bool, OpProgress*)@Base" 0.8.16~exp2
  (c++)"EDSP::ExecuteSolver(char const*, int*, int*)@Base" 0.8.16~exp2
  (c++)"EDSP::WriteProgress(unsigned short, char const*, _IO_FILE*)@Base" 0.8.16~exp2
  (c++)"EDSP::WriteScenario(pkgDepCache&, _IO_FILE*, OpProgress*)@Base" 0.8.16~exp2
  (c++)"EDSP::WriteSolution(pkgDepCache&, _IO_FILE*)@Base" 0.8.16~exp2
  (c++)"EDSP::ResolveExternal(char const*, pkgDepCache&, bool, bool, bool, OpProgress*)@Base" 0.8.16~exp2
- (c++)"EDSP::WriteLimitedScenario(pkgDepCache&, _IO_FILE*, APT::PackageSet const&, OpProgress*)@Base" 0.8.16~exp2
- (c++)"EDSP::WriteScenarioVersion(pkgDepCache&, _IO_FILE*, pkgCache::PkgIterator const&, pkgCache::VerIterator const&)@Base" 0.8.16~exp2
- (c++)"EDSP::WriteScenarioDependency(pkgDepCache&, _IO_FILE*, pkgCache::PkgIterator const&, pkgCache::VerIterator const&)@Base" 0.8.16~exp2
- (c++)"EDSP::WriteScenarioLimitedDependency(pkgDepCache&, _IO_FILE*, pkgCache::PkgIterator const&, pkgCache::VerIterator const&, APT::PackageSet const&)@Base" 0.8.16~exp2
  (c++)"EDSP::DepMap@Base" 0.8.16~exp2
  (c++)"EDSP::PrioMap@Base" 0.8.16~exp2
- (c++)"EDSP::ReadLine(int, std::basic_string<char, std::char_traits<char>, std::allocator<char> >&)@Base" 0.8.16~exp2
  (c++)"pkgDepCache::Policy::GetPriority(pkgCache::PkgIterator const&)@Base" 0.8.16~exp6
  (c++)"pkgDepCache::Policy::GetPriority(pkgCache::PkgFileIterator const&)@Base" 0.8.16~exp6
  (c++)"typeinfo for edspIFType@Base" 0.8.16~exp2
@@ -1328,21 +1244,6 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"vtable for edspIndex@Base" 0.8.16~exp2
  edspSys@Base 0.8.16~exp2
 ### generalisation of checksums (with lfs) -- mostly api-compatible available (without sha512 in previous versions)
- (c++)"SHA256_End(_SHA256_CTX*, char*)@Base" 0.8.16~exp2
- (c++)"SHA384_End(_SHA512_CTX*, char*)@Base" 0.8.16~exp2
- (c++)"SHA512_End(_SHA512_CTX*, char*)@Base" 0.8.16~exp2
- (c++)"SHA256_Data(unsigned char const*, unsigned int, char*)@Base" 0.8.16~exp2
- (c++)"SHA256_Init(_SHA256_CTX*)@Base" 0.8.16~exp2
- (c++)"SHA384_Data(unsigned char const*, unsigned int, char*)@Base" 0.8.16~exp2
- (c++)"SHA384_Init(_SHA512_CTX*)@Base" 0.8.16~exp2
- (c++)"SHA512_Data(unsigned char const*, unsigned int, char*)@Base" 0.8.16~exp2
- (c++)"SHA512_Init(_SHA512_CTX*)@Base" 0.8.16~exp2
- (c++)"SHA256_Final(unsigned char*, _SHA256_CTX*)@Base" 0.8.16~exp2
- (c++)"SHA384_Final(unsigned char*, _SHA512_CTX*)@Base" 0.8.16~exp2
- (c++)"SHA512_Final(unsigned char*, _SHA512_CTX*)@Base" 0.8.16~exp2
- (c++)"SHA256_Update(_SHA256_CTX*, unsigned char const*, unsigned int)@Base" 0.8.16~exp2
- (c++)"SHA384_Update(_SHA512_CTX*, unsigned char const*, unsigned int)@Base" 0.8.16~exp2
- (c++)"SHA512_Update(_SHA512_CTX*, unsigned char const*, unsigned int)@Base" 0.8.16~exp2
  (c++)"AddCRC16(unsigned short, void const*, unsigned long long)@Base" 0.8.16~exp2
  (c++)"MD5Summation::Add(unsigned char const*, unsigned long long)@Base" 0.8.16~exp6
  (c++)"MD5Summation::Result()@Base" 0.8.16~exp2
@@ -1414,7 +1315,6 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"FileFd::Skip(unsigned long long)@Base" 0.8.16~exp6
  (c++)"FileFd::Write(void const*, unsigned long long)@Base" 0.8.16~exp6
  (c++)"FileFd::Truncate(unsigned long long)@Base" 0.8.16~exp6
- (c++)"pkgCache::PkgIterator::PkgIterator(pkgCache&, pkgCache::Package*)@Base" 0.8.16~exp6
  (c++)"pkgPolicy::GetPriority(pkgCache::PkgFileIterator const&)@Base" 0.8.16~exp6
  (c++)"OptionalIndexTarget::IsOptional() const@Base" 0.8.16~exp6
  (c++)"typeinfo for pkgTagFile@Base" 0.8.16~exp6
@@ -1445,3 +1345,285 @@ libapt-pkg.so.4.12 libapt-pkg4.12 #MINVER#
  (c++)"pkgDepCache::SetCandidateVersion(pkgCache::VerIterator)@Base" 0.8.16~exp6
  (c++)"pkgDepCache::AddSizes(pkgCache::PkgIterator const&, bool)@Base" 0.8.16~exp6
  (c++)"pkgDepCache::AddStates(pkgCache::PkgIterator const&, bool)@Base" 0.8.16~exp6
+### used internally by public interfaces - if you use them directly, you can keep the pieces
+ (c++|optional=internal|regex)"^SHA256_.*@Base$" 0.8.16~exp2
+ (c++|optional=internal|regex)"^SHA384_.*@Base$" 0.8.16~exp2
+ (c++|optional=internal|regex)"^SHA512_.*@Base$" 0.8.16~exp2
+### orderlist rework: the touched methods are protected
+ (c++)"SigINT(int)@Base" 0.8.16~exp14
+ (c++)"pkgPackageManager::SigINTStop@Base" 0.8.16~exp14
+ (c++)"pkgPackageManager::SmartUnPack(pkgCache::PkgIterator, bool, int)@Base" 0.8.16~exp14
+ (c++)"pkgPackageManager::SmartConfigure(pkgCache::PkgIterator, int)@Base" 0.8.16~exp14
+### FileFd rework: supporting different on-the-fly (de)compressing needs more parameter (abi), but the api is stable
+ (c++)"FileFd::OpenDescriptor(int, unsigned int, FileFd::CompressMode, bool)@Base" 0.8.16~exp9
+ (c++)"FileFd::OpenDescriptor(int, unsigned int, APT::Configuration::Compressor const&, bool)@Base" 0.8.16~exp9
+ (c++)"FileFd::ModificationTime()@Base" 0.8.16~exp9
+ (c++)"FileFd::Open(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, FileFd::CompressMode, unsigned long)@Base" 0.8.16~exp9
+ (c++)"FileFd::Open(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, APT::Configuration::Compressor const&, unsigned long)@Base" 0.8.16~exp9
+ (c++)"FileFd::ReadLine(char*, unsigned long long)@Base" 0.8.16~exp9
+ (c++)"SummationImplementation::AddFD(FileFd&, unsigned long long)@Base" 0.8.16~exp9
+ (c++)"Hashes::AddFD(FileFd&, unsigned long long, bool, bool, bool, bool)@Base" 0.8.16~exp9
+ (c++|optional=deprecated,previous-inline)"FileFd::gzFd()@Base" 0.8.0
+### CacheSet rework: making them real containers breaks bigtime the API (for the CacheSetHelper)
+ (c++)"APT::PackageContainer<std::set<pkgCache::PkgIterator, std::less<pkgCache::PkgIterator>, std::allocator<pkgCache::PkgIterator> > >::const_iterator::getPkg() const@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainer<std::set<pkgCache::PkgIterator, std::less<pkgCache::PkgIterator>, std::allocator<pkgCache::PkgIterator> > >::getConstructor() const@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainer<std::set<pkgCache::PkgIterator, std::less<pkgCache::PkgIterator>, std::allocator<pkgCache::PkgIterator> > >::empty() const@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainer<std::list<pkgCache::PkgIterator, std::allocator<pkgCache::PkgIterator> > >::const_iterator::getPkg() const@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainer<std::list<pkgCache::PkgIterator, std::allocator<pkgCache::PkgIterator> > >::getConstructor() const@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainer<std::list<pkgCache::PkgIterator, std::allocator<pkgCache::PkgIterator> > >::empty() const@Base" 0.8.16~exp9
+ (c++)"APT::VersionContainer<std::list<pkgCache::VerIterator, std::allocator<pkgCache::VerIterator> > >::empty() const@Base" 0.8.16~exp9
+ (c++)"APT::VersionContainer<std::list<pkgCache::VerIterator, std::allocator<pkgCache::VerIterator> > >::iterator::getVer() const@Base" 0.8.16~exp9
+ (c++)"APT::CacheSetHelper::canNotFindTask(APT::PackageContainerInterface*, pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.8.16~exp9
+ (c++)"APT::CacheSetHelper::canNotFindRegEx(APT::PackageContainerInterface*, pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.8.16~exp9
+ (c++)"APT::CacheSetHelper::canNotFindAllVer(APT::VersionContainerInterface*, pkgCacheFile&, pkgCache::PkgIterator const&)@Base" 0.8.16~exp9
+ (c++)"APT::CacheSetHelper::canNotFindPackage(APT::PackageContainerInterface*, pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.16~exp9
+ (c++)"APT::CacheSetHelper::showTaskSelection(pkgCache::PkgIterator const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.16~exp9
+ (c++)"APT::CacheSetHelper::showRegExSelection(pkgCache::PkgIterator const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.8.16~exp9
+ (c++)"APT::CacheSetHelper::showSelectedVersion(pkgCache::PkgIterator const&, pkgCache::VerIterator, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool)@Base" 0.8.16~exp9
+ (c++)"APT::CacheSetHelper::canNotFindCandInstVer(APT::VersionContainerInterface*, pkgCacheFile&, pkgCache::PkgIterator const&)@Base" 0.8.16~exp9
+ (c++)"APT::CacheSetHelper::canNotFindInstCandVer(APT::VersionContainerInterface*, pkgCacheFile&, pkgCache::PkgIterator const&)@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainer<std::set<pkgCache::PkgIterator, std::less<pkgCache::PkgIterator>, std::allocator<pkgCache::PkgIterator> > >::setConstructor(APT::PackageContainerInterface::Constructor const&)@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainer<std::set<pkgCache::PkgIterator, std::less<pkgCache::PkgIterator>, std::allocator<pkgCache::PkgIterator> > >::clear()@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainer<std::set<pkgCache::PkgIterator, std::less<pkgCache::PkgIterator>, std::allocator<pkgCache::PkgIterator> > >::insert(pkgCache::PkgIterator const&)@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainer<std::list<pkgCache::PkgIterator, std::allocator<pkgCache::PkgIterator> > >::setConstructor(APT::PackageContainerInterface::Constructor const&)@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainer<std::list<pkgCache::PkgIterator, std::allocator<pkgCache::PkgIterator> > >::clear()@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainer<std::list<pkgCache::PkgIterator, std::allocator<pkgCache::PkgIterator> > >::insert(pkgCache::PkgIterator const&)@Base" 0.8.16~exp9
+ (c++)"APT::VersionContainer<std::list<pkgCache::VerIterator, std::allocator<pkgCache::VerIterator> > >::clear()@Base" 0.8.16~exp9
+ (c++)"APT::VersionContainer<std::list<pkgCache::VerIterator, std::allocator<pkgCache::VerIterator> > >::insert(pkgCache::VerIterator const&)@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainerInterface::FromString(APT::PackageContainerInterface*, pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, APT::CacheSetHelper&)@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainerInterface::FromCommandLine(APT::PackageContainerInterface*, pkgCacheFile&, char const**, APT::CacheSetHelper&)@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainerInterface::FromModifierCommandLine(unsigned short&, APT::PackageContainerInterface*, pkgCacheFile&, char const*, std::list<APT::PackageContainerInterface::Modifier, std::allocator<APT::PackageContainerInterface::Modifier> > const&, APT::CacheSetHelper&)@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainerInterface::FromName(pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, APT::CacheSetHelper&)@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainerInterface::FromTask(APT::PackageContainerInterface*, pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, APT::CacheSetHelper&)@Base" 0.8.16~exp9
+ (c++)"APT::PackageContainerInterface::FromRegEx(APT::PackageContainerInterface*, pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, APT::CacheSetHelper&)@Base" 0.8.16~exp9
+ (c++)"APT::VersionContainerInterface::FromString(APT::VersionContainerInterface*, pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, APT::VersionContainerInterface::Version const&, APT::CacheSetHelper&, bool)@Base" 0.8.16~exp9
+ (c++)"APT::VersionContainerInterface::FromPackage(APT::VersionContainerInterface*, pkgCacheFile&, pkgCache::PkgIterator const&, APT::VersionContainerInterface::Version const&, APT::CacheSetHelper&)@Base" 0.8.16~exp9
+ (c++)"APT::VersionContainerInterface::FromCommandLine(APT::VersionContainerInterface*, pkgCacheFile&, char const**, APT::VersionContainerInterface::Version const&, APT::CacheSetHelper&)@Base" 0.8.16~exp9
+ (c++)"APT::VersionContainerInterface::getCandidateVer(pkgCacheFile&, pkgCache::PkgIterator const&, APT::CacheSetHelper&)@Base" 0.8.16~exp9
+ (c++)"APT::VersionContainerInterface::getInstalledVer(pkgCacheFile&, pkgCache::PkgIterator const&, APT::CacheSetHelper&)@Base" 0.8.16~exp9
+ (c++)"APT::VersionContainerInterface::FromModifierCommandLine(unsigned short&, APT::VersionContainerInterface*, pkgCacheFile&, char const*, std::list<APT::VersionContainerInterface::Modifier, std::allocator<APT::VersionContainerInterface::Modifier> > const&, APT::CacheSetHelper&)@Base" 0.8.16~exp9
+ (c++)"EDSP::WriteLimitedScenario(pkgDepCache&, _IO_FILE*, APT::PackageContainer<std::set<pkgCache::PkgIterator, std::less<pkgCache::PkgIterator>, std::allocator<pkgCache::PkgIterator> > > const&, OpProgress*)@Base" 0.8.16~exp9
+ (c++)"typeinfo for APT::PackageContainer<std::set<pkgCache::PkgIterator, std::less<pkgCache::PkgIterator>, std::allocator<pkgCache::PkgIterator> > >::const_iterator@Base" 0.8.16~exp9
+ (c++)"typeinfo for APT::PackageContainer<std::set<pkgCache::PkgIterator, std::less<pkgCache::PkgIterator>, std::allocator<pkgCache::PkgIterator> > >@Base" 0.8.16~exp9
+ (c++)"typeinfo for APT::PackageContainer<std::list<pkgCache::PkgIterator, std::allocator<pkgCache::PkgIterator> > >::const_iterator@Base" 0.8.16~exp9
+ (c++)"typeinfo for APT::PackageContainer<std::list<pkgCache::PkgIterator, std::allocator<pkgCache::PkgIterator> > >@Base" 0.8.16~exp9
+ (c++)"typeinfo for APT::VersionContainer<std::list<pkgCache::VerIterator, std::allocator<pkgCache::VerIterator> > >::iterator@Base" 0.8.16~exp9
+ (c++)"typeinfo for APT::VersionContainer<std::list<pkgCache::VerIterator, std::allocator<pkgCache::VerIterator> > >@Base" 0.8.16~exp9
+ (c++)"typeinfo for APT::PackageContainerInterface::const_iterator@Base" 0.8.16~exp9
+ (c++)"typeinfo for APT::PackageContainerInterface@Base" 0.8.16~exp9
+ (c++)"typeinfo for APT::VersionContainerInterface::const_iterator@Base" 0.8.16~exp9
+ (c++)"typeinfo for APT::VersionContainerInterface@Base" 0.8.16~exp9
+ (c++)"typeinfo name for APT::PackageContainer<std::set<pkgCache::PkgIterator, std::less<pkgCache::PkgIterator>, std::allocator<pkgCache::PkgIterator> > >::const_iterator@Base" 0.8.16~exp9
+ (c++)"typeinfo name for APT::PackageContainer<std::set<pkgCache::PkgIterator, std::less<pkgCache::PkgIterator>, std::allocator<pkgCache::PkgIterator> > >@Base" 0.8.16~exp9
+ (c++)"typeinfo name for APT::PackageContainer<std::list<pkgCache::PkgIterator, std::allocator<pkgCache::PkgIterator> > >::const_iterator@Base" 0.8.16~exp9
+ (c++)"typeinfo name for APT::PackageContainer<std::list<pkgCache::PkgIterator, std::allocator<pkgCache::PkgIterator> > >@Base" 0.8.16~exp9
+ (c++)"typeinfo name for APT::VersionContainer<std::list<pkgCache::VerIterator, std::allocator<pkgCache::VerIterator> > >::iterator@Base" 0.8.16~exp9
+ (c++)"typeinfo name for APT::VersionContainer<std::list<pkgCache::VerIterator, std::allocator<pkgCache::VerIterator> > >@Base" 0.8.16~exp9
+ (c++)"typeinfo name for APT::PackageContainerInterface::const_iterator@Base" 0.8.16~exp9
+ (c++)"typeinfo name for APT::PackageContainerInterface@Base" 0.8.16~exp9
+ (c++)"typeinfo name for APT::VersionContainerInterface::const_iterator@Base" 0.8.16~exp9
+ (c++)"typeinfo name for APT::VersionContainerInterface@Base" 0.8.16~exp9
+ (c++)"vtable for APT::PackageContainer<std::set<pkgCache::PkgIterator, std::less<pkgCache::PkgIterator>, std::allocator<pkgCache::PkgIterator> > >::const_iterator@Base" 0.8.16~exp9
+ (c++)"vtable for APT::PackageContainer<std::set<pkgCache::PkgIterator, std::less<pkgCache::PkgIterator>, std::allocator<pkgCache::PkgIterator> > >@Base" 0.8.16~exp9
+ (c++)"vtable for APT::PackageContainer<std::list<pkgCache::PkgIterator, std::allocator<pkgCache::PkgIterator> > >::const_iterator@Base" 0.8.16~exp9
+ (c++)"vtable for APT::PackageContainer<std::list<pkgCache::PkgIterator, std::allocator<pkgCache::PkgIterator> > >@Base" 0.8.16~exp9
+ (c++)"vtable for APT::VersionContainer<std::list<pkgCache::VerIterator, std::allocator<pkgCache::VerIterator> > >::iterator@Base" 0.8.16~exp9
+ (c++)"vtable for APT::VersionContainer<std::list<pkgCache::VerIterator, std::allocator<pkgCache::VerIterator> > >@Base" 0.8.16~exp9
+ (c++)"vtable for APT::PackageContainerInterface::const_iterator@Base" 0.8.16~exp9
+ (c++)"vtable for APT::PackageContainerInterface@Base" 0.8.16~exp9
+ (c++)"vtable for APT::VersionContainerInterface::const_iterator@Base" 0.8.16~exp9
+ (c++)"vtable for APT::VersionContainerInterface@Base" 0.8.16~exp9
+### rework of the packagemanager rework
+ (c++)"APT::Progress::PackageManager::ConffilePrompt(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, unsigned int, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManager::Error(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, unsigned int, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerFancy::HandleSIGWINCH(int)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerFancy::~PackageManagerFancy()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerFancy::PackageManagerFancy()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerFancy::SetupTerminalScrollArea(int)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerFancy::StatusChanged(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, unsigned int, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerFancy::Stop()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManager::fork()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManager::GetPulseInterval()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManager::~PackageManager()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressDeb822Fd::ConffilePrompt(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, unsigned int, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressDeb822Fd::Error(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, unsigned int, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressDeb822Fd::~PackageManagerProgressDeb822Fd()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressDeb822Fd::PackageManagerProgressDeb822Fd(int)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressDeb822Fd::StartDpkg()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressDeb822Fd::StatusChanged(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, unsigned int, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressDeb822Fd::Stop()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressDeb822Fd::WriteToStatusFd(std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressFactory()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressFd::ConffilePrompt(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, unsigned int, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressFd::Error(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, unsigned int, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressFd::~PackageManagerProgressFd()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressFd::PackageManagerProgressFd(int)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressFd::StartDpkg()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressFd::StatusChanged(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, unsigned int, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressFd::Stop()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerProgressFd::WriteToStatusFd(std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManager::Pulse()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManager::StartDpkg()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManager::StatusChanged(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, unsigned int, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManager::Stop()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerText::~PackageManagerText()@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerText::StatusChanged(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, unsigned int, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.13~exp1
+ (c++)"APT::String::Strip(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.9.13~exp1
+ (c++)"APT::Upgrade::Upgrade(pkgDepCache&, int)@Base" 0.9.13~exp1
+ (c++)"pkgDPkgPM::BuildPackagesProgressMap()@Base" 0.9.13~exp1
+ (c++)"pkgDPkgPM::DoDpkgStatusFd(int)@Base" 0.9.13~exp1
+ (c++)"pkgDPkgPM::GoNoABIBreak(APT::Progress::PackageManager*)@Base" 0.9.13~exp1
+ (c++)"pkgDPkgPM::ProcessDpkgStatusLine(char*)@Base" 0.9.13~exp1
+ (c++)"pkgDPkgPM::StartPtyMagic()@Base" 0.9.13~exp1
+ (c++)"pkgDPkgPM::StopPtyMagic()@Base" 0.9.13~exp1
+ (c++)"typeinfo for APT::Progress::PackageManager@Base" 0.9.13~exp1
+ (c++)"typeinfo for APT::Progress::PackageManagerFancy@Base" 0.9.13~exp1
+ (c++)"typeinfo for APT::Progress::PackageManagerProgressDeb822Fd@Base" 0.9.13~exp1
+ (c++)"typeinfo for APT::Progress::PackageManagerProgressFd@Base" 0.9.13~exp1
+ (c++)"typeinfo for APT::Progress::PackageManagerText@Base" 0.9.13~exp1
+ (c++)"typeinfo name for APT::Progress::PackageManager@Base" 0.9.13~exp1
+ (c++)"typeinfo name for APT::Progress::PackageManagerFancy@Base" 0.9.13~exp1
+ (c++)"typeinfo name for APT::Progress::PackageManagerProgressDeb822Fd@Base" 0.9.13~exp1
+ (c++)"typeinfo name for APT::Progress::PackageManagerProgressFd@Base" 0.9.13~exp1
+ (c++)"typeinfo name for APT::Progress::PackageManagerText@Base" 0.9.13~exp1
+ (c++)"vtable for APT::Progress::PackageManager@Base" 0.9.13~exp1
+ (c++)"vtable for APT::Progress::PackageManagerFancy@Base" 0.9.13~exp1
+ (c++)"vtable for APT::Progress::PackageManagerProgressDeb822Fd@Base" 0.9.13~exp1
+ (c++)"vtable for APT::Progress::PackageManagerProgressFd@Base" 0.9.13~exp1
+ (c++)"vtable for APT::Progress::PackageManagerText@Base" 0.9.13~exp1
+ (c++)"APT::Progress::PackageManagerFancy::instances@Base" 0.9.14.2
+ (c++)"APT::Progress::PackageManagerFancy::Start(int)@Base" 0.9.14.2
+ (c++)"APT::Progress::PackageManagerFancy::staticSIGWINCH(int)@Base" 0.9.14.2
+ (c++)"APT::Progress::PackageManager::Start(int)@Base" 0.9.14.2
+### client-side merged pdiffs
+ (c++)"pkgAcqIndexMergeDiffs::DescURI()@Base" 0.9.14.3~exp1
+ (c++)"pkgAcqIndexMergeDiffs::Done(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned long long, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, pkgAcquire::MethodConfig*)@Base" 0.9.14.3~exp1
+ (c++)"pkgAcqIndexMergeDiffs::Failed(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, pkgAcquire::MethodConfig*)@Base" 0.9.14.3~exp1
+ (c++)"pkgAcqIndexMergeDiffs::~pkgAcqIndexMergeDiffs()@Base" 0.9.14.3~exp1
+ (c++)"pkgAcqIndexMergeDiffs::pkgAcqIndexMergeDiffs(pkgAcquire*, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, HashString const&, DiffInfo const&, std::vector<pkgAcqIndexMergeDiffs*, std::allocator<pkgAcqIndexMergeDiffs*> > const*)@Base" 0.9.14.3~exp1
+ (c++)"typeinfo for pkgAcqIndexMergeDiffs@Base" 0.9.14.3~exp1
+ (c++)"typeinfo name for pkgAcqIndexMergeDiffs@Base" 0.9.14.3~exp1
+ (c++)"vtable for pkgAcqIndexMergeDiffs@Base" 0.9.14.3~exp1
+### deb822 sources.list format
+ (c++)"pkgSourceList::ParseFileDeb822(std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.14.3~exp1
+ (c++)"pkgSourceList::ParseFileOldStyle(std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.14.3~exp1
+ (c++)"pkgSourceList::Type::ParseStanza(std::vector<metaIndex*, std::allocator<metaIndex*> >&, pkgTagSection&, int, FileFd&)@Base" 0.9.14.3~exp1
+### mixed stuff
+ (c++)"GetListOfFilesInDir(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool)@Base" 0.8.16~exp13
+ (c++)"pkgCache::DepIterator::IsIgnorable(pkgCache::PkgIterator const&) const@Base" 0.8.16~exp10
+ (c++)"pkgCache::DepIterator::IsIgnorable(pkgCache::PrvIterator const&) const@Base" 0.8.16~exp10
+ (c++)"FileFd::Write(int, void const*, unsigned long long)@Base" 0.8.16~exp14
+ (c++)"pkgTagSection::Exists(char const*)@Base" 0.9.7.9~exp1
+ (c++)"_strrstrip(char*)@Base" 0.9.7.9~exp2
+ (c++)"SplitClearSignedFile(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, FileFd*, std::vector<std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >*, FileFd*)@Base" 0.9.7.9~exp2
+ (c++)"OpenMaybeClearSignedFile(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, FileFd&)@Base" 0.9.7.9~exp2
+ (c++)"ExecGPGV(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int const&, int*)@Base" 0.9.7.9~exp2
+ (c++)"SigVerify::RunGPGV(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int const&)@Base" 0.9.7.9~exp2
+ (c++)"Configuration::Dump(std::basic_ostream<char, std::char_traits<char> >&, char const*, char const*, bool)@Base" 0.9.3
+ (c++)"AcquireUpdate(pkgAcquire&, int, bool, bool)@Base" 0.9.3
+ (c++)"pkgCache::DepIterator::IsMultiArchImplicit() const@Base" 0.9.6
+ (c++)"pkgCache::PrvIterator::IsMultiArchImplicit() const@Base" 0.9.6
+ (c++)"APT::PackageContainerInterface::FromGroup(APT::PackageContainerInterface*, pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, APT::CacheSetHelper&)@Base" 0.9.7
+ (c++)"APT::CacheFilter::PackageArchitectureMatchesSpecification::PackageArchitectureMatchesSpecification(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool)@Base" 0.9.7
+ (c++)"APT::CacheFilter::PackageArchitectureMatchesSpecification::~PackageArchitectureMatchesSpecification()@Base" 0.9.7
+ (c++)"APT::CacheFilter::PackageArchitectureMatchesSpecification::operator()(pkgCache::PkgIterator const&)@Base" 0.9.7
+ (c++)"APT::CacheFilter::PackageArchitectureMatchesSpecification::operator()(pkgCache::VerIterator const&)@Base" 0.9.7
+ (c++)"APT::CacheFilter::PackageArchitectureMatchesSpecification::operator()(char const* const&)@Base" 0.9.7
+ (c++)"APT::Configuration::checkLanguage(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, bool)@Base" 0.9.7.5
+ (c++)"pkgCdrom::DropTranslation(std::vector<std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&)@Base" 0.9.7.5
+ (c++)"pkgCache::DepIterator::IsSatisfied(pkgCache::PrvIterator const&) const@Base" 0.9.8
+ (c++)"pkgCache::DepIterator::IsSatisfied(pkgCache::VerIterator const&) const@Base" 0.9.8
+ (c++)"pkgCacheGenerator::NewDepends(pkgCache::PkgIterator&, pkgCache::VerIterator&, unsigned int, unsigned int const&, unsigned int const&, unsigned int*&)@Base" 0.9.8
+ (c++)"pkgCacheGenerator::NewVersion(pkgCache::VerIterator&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned int, unsigned long, unsigned long)@Base" 0.9.8
+ (c++)"operator<<(std::basic_ostream<char, std::char_traits<char> >&, GlobalError::Item)@Base" 0.9.9
+ (c++)"pkgDepCache::IsDeleteOkProtectInstallRequests(pkgCache::PkgIterator const&, bool, unsigned long, bool)@Base" 0.9.9.1
+ (c++)"pkgDepCache::IsInstallOkMultiArchSameVersionSynced(pkgCache::PkgIterator const&, bool, unsigned long, bool)@Base" 0.9.9.1
+ (c++)"pkgDPkgPM::SendPkgsInfo(_IO_FILE*, unsigned int const&)@Base" 0.9.9.1
+ (c++)"pkgCache::VerIterator::MultiArchType() const@Base" 0.9.9.1
+ (c++)"CommandLine::GetCommand(CommandLine::Dispatch const*, unsigned int, char const* const*)@Base" 0.9.11
+ (c++)"CommandLine::MakeArgs(char, char const*, char const*, unsigned long)@Base" 0.9.11
+ (c++)"Configuration::Clear()@Base" 0.9.11
+ (c++)"Glob(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, int)@Base" 0.9.11
+ (c++)"APT::CacheFilter::PackageNameMatchesFnmatch::operator()(pkgCache::GrpIterator const&)@Base" 0.9.11
+ (c++)"APT::CacheFilter::PackageNameMatchesFnmatch::operator()(pkgCache::PkgIterator const&)@Base" 0.9.11
+ (c++)"APT::PackageContainerInterface::FromFnmatch(APT::PackageContainerInterface*, pkgCacheFile&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, APT::CacheSetHelper&)@Base" 0.9.11
+ (c++)"pkgTagSection::pkgTagSection()@Base" 0.9.11
+ (c++)"strv_length(char const**)@Base" 0.9.11
+ (c++)"StringSplit(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned int)@Base" 0.9.11.3
+ (c++)"pkgAcquire::Item::RenameOnError(pkgAcquire::Item::RenameOnErrorState)@Base" 0.9.12
+ (c++)"APT::String::Endswith(std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0.9.13.1
+ (c++)"ExecFork(std::set<int, std::less<int>, std::allocator<int> >)@Base" 0.9.13.1
+ (c++)"MergeKeepFdsFromConfiguration(std::set<int, std::less<int>, std::allocator<int> >&)@Base" 0.9.13.1
+ (c++)"HashString::FromFile(std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.13.1
+ (c++)"HashString::GetHashForFile(std::basic_string<char, std::char_traits<char>, std::allocator<char> >) const@Base" 0.9.13.1
+ (c++)"indexRecords::GetSuite() const@Base" 0.9.13.2
+ (c++)"GetTempDir()@Base" 0.9.14.2
+ (c++)"APT::Configuration::getBuildProfiles()@Base" 0.9.16
+ (c++)"APT::Configuration::getBuildProfilesString()@Base" 0.9.16
+ (c++)"Configuration::FindVector(char const*, std::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) const@Base" 0.9.16
+ (c++)"debListParser::ParseDepends(char const*, char const*, std::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >&, unsigned int&)@Base" 0.9.16
+ (c++)"debListParser::ParseDepends(char const*, char const*, std::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >&, unsigned int&, bool const&)@Base" 0.9.16
+ (c++)"debListParser::ParseDepends(char const*, char const*, std::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::basic_string<char, std::char_traits<char>, std::allocator<char> >&, unsigned int&, bool const&, bool const&, bool const&)@Base" 0.9.16
+ (c++)"pkgCacheGenerator::ListParser::SameVersion(unsigned short, pkgCache::VerIterator const&)@Base" 0.9.16
+ (c++)"Rename(std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)@Base" 0.9.16
+ (c++)"pkgDepCache::IsInstallOkDependenciesSatisfiableByCandidates(pkgCache::PkgIterator const&, bool, unsigned long, bool)@Base" 1.0
+ (c++)"APT::Progress::PackageManagerFancy::GetTerminalSize()@Base" 1.0
+ (c++)"APT::Progress::PackageManagerFancy::GetTextProgressStr(float, int)@Base" 1.0
+ (c++)"pkgCdromStatus::GetOpProgress()@Base" 1.0
+ (c++)"pkgCdromStatus::SetTotal(int)@Base" 1.0
+ (c++)"EDSP::ExecuteSolver(char const*, int*, int*, bool)@Base" 1.0.4
+ (c++)"pkgPackageManager::EarlyRemove(pkgCache::PkgIterator, pkgCache::DepIterator const*)@Base" 1.0.4
+ (c++)"debTranslationsParser::Architecture()@Base" 1.0.4
+ (c++)"debTranslationsParser::~debTranslationsParser()@Base" 1.0.4
+ (c++)"debTranslationsParser::Version()@Base" 1.0.4
+ (c++)"typeinfo for debTranslationsParser@Base" 1.0.4
+ (c++)"typeinfo name for debTranslationsParser@Base" 1.0.4
+ (c++)"vtable for debTranslationsParser@Base" 1.0.4
+ (c++)"HashStringList::find(char const*) const@Base" 1.0.9.4
+ (c++)"HashStringList::operator==(HashStringList const&) const@Base" 1.0.9.4
+ (c++)"HashStringList::operator!=(HashStringList const&) const@Base" 1.0.9.4
+ (c++)"HashStringList::push_back(HashString const&)@Base" 1.0.9.4
+ (c++)"HashStringList::supported(char const*)@Base" 1.0.9.4
+ (c++)"HashStringList::VerifyFile(std::basic_string<char, std::char_traits<char>, std::allocator<char> >) const@Base" 1.0.9.4
+ (c++)"HashString::operator==(HashString const&) const@Base" 1.0.9.4
+ (c++)"HashString::operator!=(HashString const&) const@Base" 1.0.9.4
+ (c++)"pkgSrcRecords::Parser::Files2(std::vector<pkgSrcRecords::File2, std::allocator<pkgSrcRecords::File2> >&)@Base" 1.0.9.4
+ (c++)"debSrcRecordParser::Files2(std::vector<pkgSrcRecords::File2, std::allocator<pkgSrcRecords::File2> >&)@Base" 1.0.9.4
+### demangle strangeness - buildd report it as MISSING and as new…
+ (c++)"pkgAcqMetaSig::pkgAcqMetaSig(pkgAcquire*, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::vector<IndexTarget*, std::allocator<IndexTarget*> > const*, indexRecords*)@Base" 0.8.0
+### gcc-4.6 artefacts
+# (c++|optional=implicit)"HashString::operator=(HashString const&)@Base" 0.8.0
+# (c++|optional=implicit)"HashString::HashString(HashString const&)@Base" 0.8.0
+# (c++|optional=inline)"APT::VersionContainer<std::list<pkgCache::VerIterator, std::allocator<pkgCache::VerIterator> > >::iterator std::max_element<APT::VersionContainer<std::list<pkgCache::VerIterator, std::allocator<pkgCache::VerIterator> > >::iterator, CompareProviders>(APT::VersionContainer<std::list<pkgCache::VerIterator, std::allocator<pkgCache::VerIterator> > >::iterator, APT::VersionContainer<std::list<pkgCache::VerIterator, std::allocator<pkgCache::VerIterator> > >::iterator, CompareProviders)@Base" 0.8.0
+# (c++|optional=inline)"pkgCache::VerIterator::ParentPkg() const@Base" 0.8.0
+### gcc-4.8 artefacts
+# (c++|optional=implicit)"debSLTypeDebian::~debSLTypeDebian()@Base" 0.8.0
+### empty destructors included in the .h file
+# (c++|optional=inline)"pkgVersioningSystem::~pkgVersioningSystem()@Base" 0.8.0
+# (c++|optional=inline)"pkgSystem::~pkgSystem()@Base" 0.8.0
+# (c++|optional=inline)"pkgRecords::Parser::~Parser()@Base" 0.8.0
+# (c++|optional=inline)"pkgSrcRecords::Parser::~Parser()@Base" 0.8.0
+# (c++|optional=inline)"pkgIndexFile::Type::~Type()@Base" 0.8.0
+# (c++|optional=inline)"pkgSourceList::Type::~Type()@Base" 0.8.0
+# (c++|optional=inline)"pkgIndexFile::~pkgIndexFile()@Base" 0.8.0
+# (c++|optional=inline)"pkgCacheGenerator::ListParser::~ListParser()@Base" 0.8.0
+# (c++|optional=inline)"pkgAcquireStatus::~pkgAcquireStatus()@Base" 0.8.0
+# (c++|optional=inline)"metaIndex::~metaIndex()@Base" 0.8.0
+# (c++|optional=inline)"IndexCopy::~IndexCopy()@Base" 0.8.0
+### std library artefacts
+ (c++|regex|optional=std)"^std::vector<DiffInfo, .+@Base$" 0.8.0
+ (c++|regex|optional=std)"^std::vector<.+ >::(vector|push_back|erase|_[^ ]+)\(.+\)( const|)@Base$" 0.8.0
+ (c++|optional=std)"char* std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_S_construct<__gnu_cxx::__normal_iterator<char const*, std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >(__gnu_cxx::__normal_iterator<char const*, std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, __gnu_cxx::__normal_iterator<char const*, std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<char> const&, std::forward_iterator_tag)@Base" 0.8.0
+ (c++|optional=std)"char* std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_S_construct<__gnu_cxx::__normal_iterator<char*, std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >(__gnu_cxx::__normal_iterator<char*, std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, __gnu_cxx::__normal_iterator<char*, std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<char> const&, std::forward_iterator_tag)@Base" 0.8.0
+ (c++|optional=std)"char* std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_S_construct<char const*>(char const*, char const*, std::allocator<char> const&, std::forward_iterator_tag)@Base" 0.8.0
+ (c++|optional=std)"char* std::basic_string<char, std::char_traits<char>, std::allocator<char> >::_S_construct<char*>(char*, char*, std::allocator<char> const&, std::forward_iterator_tag)@Base" 0.8.0
+### try to ignore std:: template instances
+ (c++|regex|optional=std)"^(void |)std::[^ ]+<.+ >::(_|~).+\(.*\)@Base$" 0.8.0
+ (c++|regex|optional=std)"^std::[^ ]+<.+ >::(append|insert|reserve|operator[^ ]+)\(.*\)@Base$" 0.8.0
+ (c++|regex|optional=std)"^(void |DiffInfo\* |)std::_.*@Base$" 0.8.0
+ (c++|regex|optional=std)"^std::reverse_iterator<.+ > std::__.+@Base$" 0.8.0
+ (c++|regex|optional=std)"^std::basic_string<.+ >\(.+\)@Base$" 0.8.0
+ (c++|regex|optional=std)"^__gnu_cxx::__[^ ]+<.*@Base$" 0.8.0
+ (c++|regex|optional=std)"^typeinfo name for std::iterator<.*>@Base$" 0.8.0
+ (c++|regex|optional=std)"^typeinfo for std::iterator<.*>@Base$" 0.8.0
+ (c++|optional=std)"std::ctype<char>::do_widen(char) const@Base" 1.0.3

@@ -5,16 +5,18 @@
 #ifndef PKGLIB_INDEXRECORDS_H
 #define PKGLIB_INDEXRECORDS_H
 
-
-#include <apt-pkg/pkgcache.h>
 #include <apt-pkg/hashes.h>
 
 #include <map>
 #include <vector>
 #include <ctime>
+#include <string>
 
 #ifndef APT_8_CLEANER_HEADERS
 #include <apt-pkg/fileutl.h>
+#endif
+#ifndef APT_10_CLEANER_HEADERS
+#include <apt-pkg/pkgcache.h>
 #endif
 
 class indexRecords
@@ -46,6 +48,7 @@ class indexRecords
 
    virtual bool Load(std::string Filename);
    std::string GetDist() const;
+   std::string GetSuite() const;
    time_t GetValidUntil() const;
    virtual bool CheckDist(const std::string MaybeDist) const;
    std::string GetExpectedDist() const;

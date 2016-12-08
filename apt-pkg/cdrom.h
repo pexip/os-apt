@@ -1,8 +1,12 @@
 #ifndef PKGLIB_CDROM_H
 #define PKGLIB_CDROM_H
 
+#include <apt-pkg/macros.h>
+
 #include<string>
 #include<vector>
+
+#include <stddef.h>
 
 #ifndef APT_8_CLEANER_HEADERS
 #include <apt-pkg/init.h>
@@ -18,7 +22,7 @@ class pkgCdromStatus							/*{{{*/
    int totalSteps;
 
  public:
-   pkgCdromStatus() {};
+   pkgCdromStatus() : totalSteps(0) {};
    virtual ~pkgCdromStatus() {};
 
    // total steps
@@ -60,6 +64,7 @@ class pkgCdrom								/*{{{*/
 		     unsigned int Depth = 0);
    bool DropBinaryArch(std::vector<std::string> &List);
    bool DropRepeats(std::vector<std::string> &List,const char *Name);
+   bool DropTranslation(std::vector<std::string> &List);
    void ReduceSourcelist(std::string CD,std::vector<std::string> &List);
    bool WriteDatabase(Configuration &Cnf);
    bool WriteSourceList(std::string Name,std::vector<std::string> &List,bool Source);
@@ -68,6 +73,11 @@ class pkgCdrom								/*{{{*/
  public:
    bool Ident(std::string &ident, pkgCdromStatus *log);
    bool Add(pkgCdromStatus *log);
+
+ private:
+   APT_HIDDEN bool MountAndIdentCDROM(Configuration &Database, std::string &CDROM,
+	 std::string &ident, pkgCdromStatus * const log, bool const interactive);
+   APT_HIDDEN bool UnmountCDROM(std::string const &CDROM, pkgCdromStatus * const log);
 };
 									/*}}}*/
 
@@ -83,7 +93,7 @@ struct CdromDevice							/*{{{*/
 class pkgUdevCdromDevices						/*{{{*/
 {
  protected:
-   // libudev dlopen stucture
+   // libudev dlopen structure
    void *libudev_handle;
    struct udev* (*udev_new)(void);
    int (*udev_enumerate_add_match_property)(struct udev_enumerate *udev_enumerate, const char *property, const char *value);

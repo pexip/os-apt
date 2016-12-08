@@ -3,9 +3,16 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/configuration.h>
+
+#include <stddef.h>
+#include <iostream>
+#include <string>
+#include <vector>
+
 #include <apti18n.h>
 
 #if __GNUC__ >= 4
+	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
@@ -66,7 +73,7 @@ bool pkgVendorList::CreateList(Configuration& Cnf)			/*{{{*/
       Configuration Block(Top);
       string VendorID = Top->Tag;
       vector <struct Vendor::Fingerprint *> *Fingerprints = new vector<Vendor::Fingerprint *>;
-      struct Vendor::Fingerprint *Fingerprint = new struct Vendor::Fingerprint;
+      struct Vendor::Fingerprint *Fingerprint = new struct Vendor::Fingerprint();
       string Origin = Block.Find("Origin");
 
       Fingerprint->Print = Block.Find("Fingerprint");
@@ -157,5 +164,5 @@ const Vendor* pkgVendorList::FindVendor(const std::vector<string> GPGVOutput)	/*
 									/*}}}*/
 
 #if __GNUC__ >= 4
-	#pragma GCC diagnostic warning "-Wdeprecated-declarations"
+	#pragma GCC diagnostic pop
 #endif

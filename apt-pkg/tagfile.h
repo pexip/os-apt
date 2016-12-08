@@ -20,6 +20,8 @@
 #ifndef PKGLIB_TAGFILE_H
 #define PKGLIB_TAGFILE_H
 
+#include <apt-pkg/macros.h>
+
 #include <stdio.h>
 
 #include <string>
@@ -59,13 +61,13 @@ class pkgTagSection
    inline bool operator !=(const pkgTagSection &rhs) {return Section != rhs.Section;};
    
    bool Find(const char *Tag,const char *&Start, const char *&End) const;
-   bool Find(const char *Tag,unsigned &Pos) const;
+   bool Find(const char *Tag,unsigned int &Pos) const;
    std::string FindS(const char *Tag) const;
    signed int FindI(const char *Tag,signed long Default = 0) const ;
    unsigned long long FindULL(const char *Tag, unsigned long long const &Default = 0) const;
    bool FindFlag(const char *Tag,unsigned long &Flags,
 		 unsigned long Flag) const;
-   bool static const FindFlag(unsigned long &Flags, unsigned long Flag,
+   bool static FindFlag(unsigned long &Flags, unsigned long Flag,
 				const char* Start, const char* Stop);
    bool Scan(const char *Start,unsigned long MaxLength);
    inline unsigned long size() const {return Stop - Section;};
@@ -73,7 +75,7 @@ class pkgTagSection
    virtual void TrimRecord(bool BeforeRecord, const char* &End);
    
    inline unsigned int Count() const {return TagCount;};
-   inline bool Exists(const char* const Tag) {return AlphaIndexes[AlphaHash(Tag)] != 0;}
+   bool Exists(const char* const Tag);
  
    inline void Get(const char *&Start,const char *&Stop,unsigned int I) const
                    {Start = Section + Indexes[I]; Stop = Section + Indexes[I+1];}
@@ -84,7 +86,7 @@ class pkgTagSection
       Stop = this->Stop;
    };
    
-   pkgTagSection() : Section(0), TagCount(0), Stop(0) {};
+   pkgTagSection();
    virtual ~pkgTagSection() {};
 };
 
@@ -93,8 +95,9 @@ class pkgTagFile
 {
    pkgTagFilePrivate *d;
 
-   bool Fill();
-   bool Resize();
+   APT_HIDDEN bool Fill();
+   APT_HIDDEN bool Resize();
+   APT_HIDDEN bool Resize(unsigned long long const newSize);
 
    public:
 

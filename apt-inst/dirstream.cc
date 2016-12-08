@@ -18,9 +18,8 @@
 
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <sys/types.h>
+#include <sys/time.h>
 #include <errno.h>
-#include <utime.h>
 #include <unistd.h>
 #include <apti18n.h>
 									/*}}}*/
@@ -46,15 +45,13 @@ bool pkgDirStream::DoItem(Item &Itm,int &Fd)
 	 // fchmod deals with umask and fchown sets the ownership
 	 if (fchmod(iFd,Itm.Mode) != 0)
 	 {
-	    _error->Errno("fchmod",_("Failed to write file %s"), Itm.Name);
 	    close(iFd);
-	    return false;
+	    return _error->Errno("fchmod",_("Failed to write file %s"), Itm.Name);
 	 }
 	 if (fchown(iFd,Itm.UID,Itm.GID) != 0 && errno != EPERM)
 	 {
-	    return _error->Errno("fchown",_("Failed to write file %s"), Itm.Name);
 	    close(iFd);
-	    return false;
+	    return _error->Errno("fchown",_("Failed to write file %s"), Itm.Name);
 	 }
 	 Fd = iFd;
 	 return true;
@@ -95,25 +92,24 @@ bool pkgDirStream::FinishedFile(Item &Itm,int Fd)
 {
    if (Fd < 0)
       return true;
-   
-   if (close(Fd) != 0)
-      return _error->Errno("close",_("Failed to close file %s"),Itm.Name);
 
    /* Set the modification times. The only way it can fail is if someone
       has futzed with our file, which is intolerable :> */
-   struct utimbuf Time;
-   Time.actime = Itm.MTime;
-   Time.modtime = Itm.MTime;
-   if (utime(Itm.Name,&Time) != 0)
-      _error->Errno("utime",_("Failed to close file %s"),Itm.Name);
-   
-   return true;   
+   struct timeval times[2];
+   times[0].tv_sec = times[1].tv_sec = Itm.MTime;
+   times[0].tv_usec = times[1].tv_usec = 0;
+   if (utimes(Itm.Name, times) != 0)
+      _error->Errno("utimes", "Failed to set modification time for %s",Itm.Name);
+
+   if (close(Fd) != 0)
+      return _error->Errno("close",_("Failed to close file %s"),Itm.Name);
+   return true;
 }
 									/*}}}*/
 // DirStream::Fail - Failed processing a file				/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-bool pkgDirStream::Fail(Item &Itm,int Fd)
+bool pkgDirStream::Fail(Item &/*Itm*/, int Fd)
 {
    if (Fd < 0)
       return true;

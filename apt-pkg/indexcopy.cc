@@ -20,17 +20,17 @@
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/tagfile.h>
 #include <apt-pkg/indexrecords.h>
-#include <apt-pkg/md5.h>
 #include <apt-pkg/cdrom.h>
+#include <apt-pkg/gpgv.h>
+#include <apt-pkg/hashes.h>
 
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "indexcopy.h"
 #include <apti18n.h>
@@ -65,7 +65,7 @@ bool IndexCopy::CopyPackages(string CDROM,string Name,vector<string> &List,
       for (std::vector<APT::Configuration::Compressor>::const_iterator c = compressor.begin();
 	   c != compressor.end(); ++c)
       {
-	 if (stat(std::string(file + c->Extension).c_str(), &Buf) != 0)
+	 if (stat((file + c->Extension).c_str(), &Buf) != 0)
 	    continue;
 	 found = true;
 	 break;
@@ -106,9 +106,9 @@ bool IndexCopy::CopyPackages(string CDROM,string Name,vector<string> &List,
       } else {
          Target.Open(TargetF,FileFd::WriteAtomic);
       }
-      FILE *TargetFl = fdopen(dup(Target.Fd()),"w");
       if (_error->PendingError() == true)
 	 return false;
+      FILE *TargetFl = fdopen(dup(Target.Fd()),"w");
       if (TargetFl == 0)
 	 return _error->Errno("fdopen","Failed to reopen fd");
       
@@ -141,7 +141,6 @@ bool IndexCopy::CopyPackages(string CDROM,string Name,vector<string> &List,
 	    File = OrigPath + ChopDirs(File,Chop);
 	 
 	 // See if the file exists
-	 bool Mangled = false;
 	 if (NoStat == false || Hits < 10)
 	 {
 	    // Attempt to fix broken structure
@@ -161,9 +160,10 @@ bool IndexCopy::CopyPackages(string CDROM,string Name,vector<string> &List,
 	    
 	    // Get the size
 	    struct stat Buf;
-	    if (stat(string(CDROM + Prefix + File).c_str(),&Buf) != 0 || 
+	    if (stat((CDROM + Prefix + File).c_str(),&Buf) != 0 || 
 		Buf.st_size == 0)
 	    {
+	       bool Mangled = false;
 	       // Attempt to fix busted symlink support for one instance
 	       string OrigFile = File;
 	       string::size_type Start = File.find("binary-");
@@ -175,7 +175,7 @@ bool IndexCopy::CopyPackages(string CDROM,string Name,vector<string> &List,
 	       }
 	       
 	       if (Mangled == false ||
-		   stat(string(CDROM + Prefix + File).c_str(),&Buf) != 0)
+		   stat((CDROM + Prefix + File).c_str(),&Buf) != 0)
 	       {
 		  if (Debug == true)
 		     clog << "Missed(2): " << OrigFile << endl;
@@ -286,7 +286,7 @@ bool IndexCopy::ReconstructPrefix(string &Prefix,string OrigPath,string CD,
    while (1)
    {
       struct stat Buf;
-      if (stat(string(CD + MyPrefix + File).c_str(),&Buf) != 0)
+      if (stat((CD + MyPrefix + File).c_str(),&Buf) != 0)
       {
 	 if (Debug == true)
 	    cout << "Failed, " << CD + MyPrefix + File << endl;
@@ -315,7 +315,7 @@ bool IndexCopy::ReconstructChop(unsigned long &Chop,string Dir,string File)
    while (1)
    {
       struct stat Buf;
-      if (stat(string(Dir + File).c_str(),&Buf) != 0)
+      if (stat((Dir + File).c_str(),&Buf) != 0)
       {
 	 File = ChopDirs(File,1);
 	 Depth++;
@@ -350,9 +350,6 @@ bool IndexCopy::ReconstructChop(unsigned long &Chop,string Dir,string File)
  */
 void IndexCopy::ConvertToSourceList(string CD,string &Path)
 {
-   char S[300];
-   snprintf(S,sizeof(S),"binary-%s",_config->Find("Apt::Architecture").c_str());
-   
    // Strip the cdrom base path
    Path = string(Path,CD.length());
    if (Path.empty() == true)
@@ -388,7 +385,13 @@ void IndexCopy::ConvertToSourceList(string CD,string &Path)
 	 return;
       string Binary = string(Path,Slash+1,BinSlash - Slash-1);
       
-      if (Binary != S && Binary != "source")
+      if (strncmp(Binary.c_str(), "binary-", strlen("binary-")) == 0)
+      {
+	 Binary.erase(0, strlen("binary-"));
+	 if (APT::Configuration::checkArchitecture(Binary) == false)
+	    continue;
+      }
+      else if (Binary != "source")
 	 continue;
 
       Path = Dist + ' ' + Comp;
@@ -433,8 +436,8 @@ bool PackageCopy::GetFile(string &File,unsigned long long &Size)
 /* */
 bool PackageCopy::RewriteEntry(FILE *Target,string File)
 {
-   TFRewriteData Changes[] = {{"Filename",File.c_str()},
-                              {}};
+   TFRewriteData Changes[] = {{ "Filename", File.c_str(), NULL },
+                              { NULL, NULL, NULL }};
    
    if (TFRewrite(Target,*Section,TFRewritePackageOrder,Changes) == false)
       return false;
@@ -479,8 +482,8 @@ bool SourceCopy::GetFile(string &File,unsigned long long &Size)
 bool SourceCopy::RewriteEntry(FILE *Target,string File)
 {
    string Dir(File,0,File.rfind('/'));
-   TFRewriteData Changes[] = {{"Directory",Dir.c_str()},
-                              {}};
+   TFRewriteData Changes[] = {{ "Directory", Dir.c_str(), NULL },
+                              { NULL, NULL, NULL }};
    
    if (TFRewrite(Target,*Section,TFRewriteSourceOrder,Changes) == false)
       return false;
@@ -494,17 +497,20 @@ bool SourceCopy::RewriteEntry(FILE *Target,string File)
 bool SigVerify::Verify(string prefix, string file, indexRecords *MetaIndex)
 {
    const indexRecords::checkSum *Record = MetaIndex->Lookup(file);
+   bool const Debug = _config->FindB("Debug::aptcdrom",false);
 
-   // we skip non-existing files in the verifcation to support a cdrom
-   // with no Packages file (just a Package.gz), see LP: #255545
-   // (non-existing files are not considered a error)
+   // we skip non-existing files in the verifcation of the Release file
+   // as non-existing files do not harm, but a warning scares people and
+   // makes it hard to strip unneeded files from an ISO like uncompressed
+   // indexes as it is done on the mirrors (see also LP: #255545 )
    if(!RealFileExists(prefix+file))
    {
-      _error->Warning(_("Skipping nonexistent file %s"), string(prefix+file).c_str());
+      if (Debug == true)
+	 cout << "Skipping nonexistent in " << prefix << " file " << file << std::endl;
       return true;
    }
 
-   if (!Record) 
+   if (!Record)
    {
       _error->Warning(_("Can't find authentication record for: %s"), file.c_str());
       return false;
@@ -516,7 +522,7 @@ bool SigVerify::Verify(string prefix, string file, indexRecords *MetaIndex)
       return false;
    }
 
-   if(_config->FindB("Debug::aptcdrom",false)) 
+   if(Debug == true)
    {
       cout << "File: " << prefix+file << endl;
       cout << "Expected Hash " << Record->Hash.toStr() << endl;
@@ -538,16 +544,14 @@ bool SigVerify::CopyMetaIndex(string CDROM, string CDName,		/*{{{*/
       FileFd Rel;
       Target.Open(TargetF,FileFd::WriteAtomic);
       Rel.Open(prefix + file,FileFd::ReadOnly);
-      if (_error->PendingError() == true)
-	 return false;
       if (CopyFile(Rel,Target) == false)
-	 return false;
-   
+	 return _error->Error("Copying of '%s' for '%s' from '%s' failed", file.c_str(), CDName.c_str(), prefix.c_str());
+
       return true;
 }
 									/*}}}*/
 bool SigVerify::CopyAndVerify(string CDROM,string Name,vector<string> &SigList,	/*{{{*/
-			      vector<string> PkgList,vector<string> SrcList)
+			      vector<string> /*PkgList*/,vector<string> /*SrcList*/)
 {
    if (SigList.empty() == true)
       return true;
@@ -587,9 +591,9 @@ bool SigVerify::CopyAndVerify(string CDROM,string Name,vector<string> &SigList,	
       if(pid == 0)
       {
 	 if (useInRelease == true)
-	    RunGPGV(inrelease, inrelease);
+	    ExecGPGV(inrelease, inrelease);
 	 else
-	    RunGPGV(release, releasegpg);
+	    ExecGPGV(release, releasegpg);
       }
 
       if(!ExecWait(pid, "gpgv")) {
@@ -597,6 +601,7 @@ bool SigVerify::CopyAndVerify(string CDROM,string Name,vector<string> &SigList,	
 			 (useInRelease ? inrelease.c_str() : releasegpg.c_str()));
 	 // something went wrong, don't copy the Release.gpg
 	 // FIXME: delete any existing gpg file?
+	 delete MetaIndex;
 	 continue;
       }
 
@@ -636,118 +641,14 @@ bool SigVerify::CopyAndVerify(string CDROM,string Name,vector<string> &SigList,	
    return true;
 }
 									/*}}}*/
-// SigVerify::RunGPGV - returns the command needed for verify		/*{{{*/
-// ---------------------------------------------------------------------
-/* Generating the commandline for calling gpgv is somehow complicated as
-   we need to add multiple keyrings and user supplied options. Also, as
-   the cdrom code currently can not use the gpgv method we have two places
-   these need to be done - so the place for this method is wrong but better
-   than code duplication… */
-bool SigVerify::RunGPGV(std::string const &File, std::string const &FileGPG,
-			int const &statusfd, int fd[2])
-{
-   if (File == FileGPG)
-   {
-      FILE* gpg = fopen(File.c_str(), "r");
-      if (gpg == NULL)
-	 return _error->Errno("RunGPGV", _("Could not open file %s"), File.c_str());
-      fclose(gpg);
-      if (!StartsWithGPGClearTextSignature(File))
-	 return _error->Error(_("File %s doesn't start with a clearsigned message"), File.c_str());
-   }
-
-
-   string const gpgvpath = _config->Find("Dir::Bin::gpg", "/usr/bin/gpgv");
-   // FIXME: remove support for deprecated APT::GPGV setting
-   string const trustedFile = _config->Find("APT::GPGV::TrustedKeyring", _config->FindFile("Dir::Etc::Trusted"));
-   string const trustedPath = _config->FindDir("Dir::Etc::TrustedParts");
-
-   bool const Debug = _config->FindB("Debug::Acquire::gpgv", false);
-
-   if (Debug == true)
-   {
-      std::clog << "gpgv path: " << gpgvpath << std::endl;
-      std::clog << "Keyring file: " << trustedFile << std::endl;
-      std::clog << "Keyring path: " << trustedPath << std::endl;
-   }
-
-   std::vector<string> keyrings;
-   if (DirectoryExists(trustedPath))
-     keyrings = GetListOfFilesInDir(trustedPath, "gpg", false, true);
-   if (RealFileExists(trustedFile) == true)
-     keyrings.push_back(trustedFile);
-
-   std::vector<const char *> Args;
-   Args.reserve(30);
-
-   if (keyrings.empty() == true)
-   {
-      // TRANSLATOR: %s is the trusted keyring parts directory
-      return _error->Error(_("No keyring installed in %s."),
-			   _config->FindDir("Dir::Etc::TrustedParts").c_str());
-   }
-
-   Args.push_back(gpgvpath.c_str());
-   Args.push_back("--ignore-time-conflict");
-
-   if (statusfd != -1)
-   {
-      Args.push_back("--status-fd");
-      char fd[10];
-      snprintf(fd, sizeof(fd), "%i", statusfd);
-      Args.push_back(fd);
-   }
-
-   for (vector<string>::const_iterator K = keyrings.begin();
-	K != keyrings.end(); ++K)
-   {
-      Args.push_back("--keyring");
-      Args.push_back(K->c_str());
-   }
-
-   Configuration::Item const *Opts;
-   Opts = _config->Tree("Acquire::gpgv::Options");
-   if (Opts != 0)
-   {
-      Opts = Opts->Child;
-      for (; Opts != 0; Opts = Opts->Next)
-      {
-	 if (Opts->Value.empty() == true)
-	    continue;
-	 Args.push_back(Opts->Value.c_str());
-      }
-   }
-
-   Args.push_back(FileGPG.c_str());
-   if (FileGPG != File)
-      Args.push_back(File.c_str());
-   Args.push_back(NULL);
-
-   if (Debug == true)
-   {
-      std::clog << "Preparing to exec: " << gpgvpath;
-      for (std::vector<const char *>::const_iterator a = Args.begin(); *a != NULL; ++a)
-	 std::clog << " " << *a;
-      std::clog << std::endl;
-   }
-
-   if (statusfd != -1)
-   {
-      int const nullfd = open("/dev/null", O_RDONLY);
-      close(fd[0]);
-      // Redirect output to /dev/null; we read from the status fd
-      dup2(nullfd, STDOUT_FILENO);
-      dup2(nullfd, STDERR_FILENO);
-      // Redirect the pipe to the status fd (3)
-      dup2(fd[1], statusfd);
-
-      putenv((char *)"LANG=");
-      putenv((char *)"LC_ALL=");
-      putenv((char *)"LC_MESSAGES=");
-   }
-
-   execvp(gpgvpath.c_str(), (char **) &Args[0]);
-   return true;
+// SigVerify::RunGPGV - deprecated wrapper calling ExecGPGV		/*{{{*/
+APT_NORETURN bool SigVerify::RunGPGV(std::string const &File, std::string const &FileOut,
+      int const &statusfd, int fd[2]) {
+   ExecGPGV(File, FileOut, statusfd, fd);
+}
+APT_NORETURN bool SigVerify::RunGPGV(std::string const &File, std::string const &FileOut,
+      int const &statusfd) {
+   ExecGPGV(File, FileOut, statusfd);
 }
 									/*}}}*/
 bool TranslationsCopy::CopyTranslations(string CDROM,string Name,	/*{{{*/
@@ -773,7 +674,7 @@ bool TranslationsCopy::CopyTranslations(string CDROM,string Name,	/*{{{*/
       for (std::vector<APT::Configuration::Compressor>::const_iterator c = compressor.begin();
 	   c != compressor.end(); ++c)
       {
-	 if (stat(std::string(file + c->Extension).c_str(), &Buf) != 0)
+	 if (stat((file + c->Extension).c_str(), &Buf) != 0)
 	    continue;
 	 found = true;
 	 break;
@@ -789,9 +690,7 @@ bool TranslationsCopy::CopyTranslations(string CDROM,string Name,	/*{{{*/
    unsigned int WrongSize = 0;
    unsigned int Packages = 0;
    for (vector<string>::iterator I = List.begin(); I != List.end(); ++I)
-   {      
-      string OrigPath = string(*I,CDROM.length());
-
+   {
       // Open the package file
       FileFd Pkg(*I, FileFd::ReadOnly, FileFd::Auto);
       off_t const FileSize = Pkg.Size();
@@ -806,12 +705,17 @@ bool TranslationsCopy::CopyTranslations(string CDROM,string Name,	/*{{{*/
 	       (*I).c_str() + CDROM.length());
       string TargetF = _config->FindDir("Dir::State::lists") + "partial/";
       TargetF += URItoFileName(S);
+      FileFd Target;
       if (_config->FindB("APT::CDROM::NoAct",false) == true)
+      {
 	 TargetF = "/dev/null";
-      FileFd Target(TargetF,FileFd::WriteAtomic);
-      FILE *TargetFl = fdopen(dup(Target.Fd()),"w");
+	 Target.Open(TargetF,FileFd::WriteExists);
+      } else {
+	 Target.Open(TargetF,FileFd::WriteAtomic);
+      }
       if (_error->PendingError() == true)
 	 return false;
+      FILE *TargetFl = fdopen(dup(Target.Fd()),"w");
       if (TargetFl == 0)
 	 return _error->Errno("fdopen","Failed to reopen fd");
       

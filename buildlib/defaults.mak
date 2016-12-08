@@ -76,7 +76,7 @@ PO_DOMAINS := $(BUILD)/po/domains
 
 # Module types
 LIBRARY_H = $(BASE)/buildlib/library.mak
-DEBIANDOC_H = $(BASE)/buildlib/debiandoc.mak
+DOCBOOK_H = $(BASE)/buildlib/docbook.mak
 MANPAGE_H = $(BASE)/buildlib/manpage.mak
 PROGRAM_H = $(BASE)/buildlib/program.mak
 PYTHON_H = $(BASE)/buildlib/python.mak
@@ -121,7 +121,7 @@ MKDIRS := $(BIN)
 all: dirs binary doc
 binary: library program
 maintainer-clean dist-clean distclean pristine sanity: veryclean
-headers library clean veryclean program test:
+startup headers library clean veryclean program test update-po manpages docbook:
 
 veryclean:
 	echo Very Clean done for $(SUBDIR)
@@ -172,12 +172,11 @@ ifeq ($(NUM_PROCS),1)
   PARALLEL_RUN=no
 endif
 
-# mvo: commented out, lead to build failures in the arch-build target
-#ifndef PARALLEL_RUN
-# PARALLEL_RUN=yes
-# .EXPORT: PARALLEL_RUN
-# # handle recursion
-# ifneq ($(NUM_PROCS),)
-#  MAKEFLAGS += -j $(NUM_PROCS)
-# endif
-#endif
+ifndef PARALLEL_RUN
+ PARALLEL_RUN=yes
+ export PARALLEL_RUN
+ # handle recursion
+ ifneq ($(NUM_PROCS),)
+  MAKEFLAGS += -j $(NUM_PROCS)
+ endif
+endif
