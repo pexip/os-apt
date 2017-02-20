@@ -7,7 +7,7 @@ include ../buildlib/defaults.mak
 BIN := $(BIN)/methods
 
 include ../buildlib/libversion.mak
-APT_DOMAIN := libapt-pkg$(LIBAPTPKG_MAJOR)
+APT_DOMAIN := apt
 
 # The file method
 PROGRAM=file
@@ -39,7 +39,7 @@ include $(PROGRAM_H)
 
 # The cdrom method
 PROGRAM=cdrom
-SLIBS = -lapt-pkg -ldl $(INTLLIBS)
+SLIBS = -lapt-pkg $(INTLLIBS)
 LIB_MAKES = apt-pkg/makefile
 SOURCE = cdrom.cc
 include $(PROGRAM_H)
@@ -48,14 +48,14 @@ include $(PROGRAM_H)
 PROGRAM=http
 SLIBS = -lapt-pkg $(SOCKETLIBS) $(INTLLIBS)
 LIB_MAKES = apt-pkg/makefile
-SOURCE = http.cc http_main.cc rfc2553emu.cc connect.cc
+SOURCE = http.cc http_main.cc rfc2553emu.cc connect.cc server.cc
 include $(PROGRAM_H)
 
 # The https method
 PROGRAM=https
 SLIBS = -lapt-pkg -lcurl $(INTLLIBS)
 LIB_MAKES = apt-pkg/makefile
-SOURCE = https.cc
+SOURCE = https.cc server.cc
 include $(PROGRAM_H)
 
 # The ftp method
@@ -67,7 +67,7 @@ include $(PROGRAM_H)
 
 # The rred method
 PROGRAM=rred
-SLIBS = -lapt-pkg -lz $(SOCKETLIBS) $(INTLLIBS)
+SLIBS = -lapt-pkg $(SOCKETLIBS) $(INTLLIBS)
 LIB_MAKES = apt-pkg/makefile
 SOURCE = rred.cc
 include $(PROGRAM_H)
@@ -83,19 +83,12 @@ include $(PROGRAM_H)
 PROGRAM=mirror
 SLIBS = -lapt-pkg $(SOCKETLIBS)
 LIB_MAKES = apt-pkg/makefile
-SOURCE = mirror.cc http.cc rfc2553emu.cc connect.cc
+SOURCE = mirror.cc http.cc rfc2553emu.cc connect.cc server.cc
 include $(PROGRAM_H)
 
-# The gzip method
-PROGRAM=bzip2
-SLIBS = -lapt-pkg $(INTLLIBS)
-LIB_MAKES = apt-pkg/makefile
-SOURCE = bzip2.cc
-include $(PROGRAM_H)
-
-# SSH and lzma method symlink
-binary: $(BIN)/ssh $(BIN)/lzma $(BIN)/xz
-veryclean: clean-$(BIN)/ssh clean-$(BIN)/lzma clean-$(BIN)/xz
+# SSH method symlink
+binary: $(BIN)/ssh
+veryclean: clean-$(BIN)/ssh
 
 $(BIN)/ssh:
 	echo "Installing ssh method link"
@@ -103,14 +96,15 @@ $(BIN)/ssh:
 clean-$(BIN)/ssh:
 	-rm $(BIN)/ssh
 
-$(BIN)/lzma:
-	echo "Installing lzma method link"
-	ln -fs bzip2 $(BIN)/lzma
-clean-$(BIN)/lzma:
-	-rm $(BIN)/lzma
+# create links for all other compressors
+COMPRESSORS=bzip2 lzma xz
 
-$(BIN)/xz:
-	echo "Installing xz method link"
-	ln -fs bzip2 $(BIN)/xz
-clean-$(BIN)/xz:
-	-rm $(BIN)/xz
+binary: $(addprefix $(BIN)/,$(COMPRESSORS))
+veryclean: $(addprefix clean-$(BIN)/,$(COMPRESSORS))
+
+$(addprefix $(BIN)/,$(COMPRESSORS)): $(BIN)/gzip
+	echo "Installing $(notdir $@) method link"
+	ln -fs gzip $@
+
+$(addprefix clean-$(BIN)/,$(COMPRESSORS)):
+	-rm $(BIN)/$(notdir $@)

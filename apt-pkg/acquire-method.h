@@ -20,7 +20,10 @@
 #ifndef PKGLIB_ACQUIRE_METHOD_H
 #define PKGLIB_ACQUIRE_METHOD_H
 
+#include <apt-pkg/macros.h>
+
 #include <stdarg.h>
+#include <time.h>
 
 #include <string>
 #include <vector>
@@ -104,6 +107,9 @@ class pkgAcqMethod
    
    pkgAcqMethod(const char *Ver,unsigned long Flags = 0);
    virtual ~pkgAcqMethod() {};
+
+   private:
+   APT_HIDDEN void Dequeue();
 };
 
 /** @} */

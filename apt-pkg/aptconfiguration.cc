@@ -17,19 +17,24 @@
 #include <apt-pkg/macros.h>
 #include <apt-pkg/strutl.h>
 
-#include <sys/types.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <fcntl.h>
-
+#include <ctype.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <algorithm>
 #include <string>
 #include <vector>
+
+#include <apti18n.h>
 									/*}}}*/
 namespace APT {
-// getCompressionTypes - Return Vector of usbale compressiontypes	/*{{{*/
+// getCompressionTypes - Return Vector of usable compressiontypes	/*{{{*/
 // ---------------------------------------------------------------------
-/* return a vector of compression types in the prefered order. */
+/* return a vector of compression types in the preferred order. */
 std::vector<std::string>
 const Configuration::getCompressionTypes(bool const &Cached) {
 	static std::vector<std::string> types;
@@ -47,11 +52,7 @@ const Configuration::getCompressionTypes(bool const &Cached) {
 	_config->CndSet("Acquire::CompressionTypes::gz","gzip");
 
 	setDefaultConfigurationForCompressors();
-
-	// accept non-list order as override setting for config settings on commandline
-	std::string const overrideOrder = _config->Find("Acquire::CompressionTypes::Order","");
-	if (overrideOrder.empty() == false)
-		types.push_back(overrideOrder);
+	std::vector<APT::Configuration::Compressor> const compressors = getCompressors();
 
 	// load the order setting into our vector
 	std::vector<std::string> const order = _config->FindVector("Acquire::CompressionTypes::Order");
@@ -60,15 +61,17 @@ const Configuration::getCompressionTypes(bool const &Cached) {
 		if ((*o).empty() == true)
 			continue;
 		// ignore types we have no method ready to use
-		if (_config->Exists(std::string("Acquire::CompressionTypes::").append(*o)) == false)
+		std::string const method = std::string("Acquire::CompressionTypes::").append(*o);
+		if (_config->Exists(method) == false)
 			continue;
 		// ignore types we have no app ready to use
-		std::string const appsetting = std::string("Dir::Bin::").append(*o);
-		if (_config->Exists(appsetting) == true) {
-			std::string const app = _config->FindFile(appsetting.c_str(), "");
-			if (app.empty() == false && FileExists(app) == false)
-				continue;
-		}
+		std::string const app = _config->Find(method);
+		std::vector<APT::Configuration::Compressor>::const_iterator c = compressors.begin();
+		for (; c != compressors.end(); ++c)
+			if (c->Name == app)
+				break;
+		if (c == compressors.end())
+			continue;
 		types.push_back(*o);
 	}
 
@@ -84,12 +87,12 @@ const Configuration::getCompressionTypes(bool const &Cached) {
 		if (std::find(types.begin(),types.end(),Types->Tag) != types.end())
 			continue;
 		// ignore types we have no app ready to use
-		std::string const appsetting = std::string("Dir::Bin::").append(Types->Value);
-		if (appsetting.empty() == false && _config->Exists(appsetting) == true) {
-			std::string const app = _config->FindFile(appsetting.c_str(), "");
-			if (app.empty() == false && FileExists(app) == false)
-				continue;
-		}
+		std::vector<APT::Configuration::Compressor>::const_iterator c = compressors.begin();
+		for (; c != compressors.end(); ++c)
+			if (c->Name == Types->Value)
+				break;
+		if (c == compressors.end())
+			continue;
 		types.push_back(Types->Tag);
 	}
 
@@ -106,7 +109,7 @@ const Configuration::getCompressionTypes(bool const &Cached) {
 									/*}}}*/
 // GetLanguages - Return Vector of Language Codes			/*{{{*/
 // ---------------------------------------------------------------------
-/* return a vector of language codes in the prefered order.
+/* return a vector of language codes in the preferred order.
    the special word "environment" will be replaced with the long and the short
    code of the local settings and it will be insured that this will not add
    duplicates. So in an german local the setting "environment, de_DE, en, de"
@@ -138,10 +141,10 @@ std::vector<std::string> const Configuration::getLanguages(bool const &All,
 	// so they will be all included in the Cache.
 	std::vector<string> builtin;
 	DIR *D = opendir(_config->FindDir("Dir::State::lists").c_str());
-	if (D != 0) {
+	if (D != NULL) {
 		builtin.push_back("none");
 		for (struct dirent *Ent = readdir(D); Ent != 0; Ent = readdir(D)) {
-			string const name = Ent->d_name;
+			string const name = SubstVar(Ent->d_name, "%5f", "_");
 			size_t const foundDash = name.rfind("-");
 			size_t const foundUnderscore = name.rfind("_", foundDash);
 			if (foundDash == string::npos || foundUnderscore == string::npos ||
@@ -163,8 +166,8 @@ std::vector<std::string> const Configuration::getLanguages(bool const &All,
 				continue;
 			builtin.push_back(c);
 		}
+		closedir(D);
 	}
-	closedir(D);
 
 	// FIXME: Remove support for the old APT::Acquire::Translation
 	// it was undocumented and so it should be not very widthly used
@@ -224,57 +227,11 @@ std::vector<std::string> const Configuration::getLanguages(bool const &All,
 			}
 		}
 	} else {
+		// cornercase: LANG=C, so we use only "en" Translation
 		environment.push_back("en");
 	}
 
-	// Support settings like Acquire::Languages=none on the command line to
-	// override the configuration settings vector of languages.
-	string const forceLang = _config->Find("Acquire::Languages","");
-	if (forceLang.empty() == false) {
-		if (forceLang == "environment") {
-			codes = environment;
-		} else if (forceLang != "none")
-			codes.push_back(forceLang);
-		else //if (forceLang == "none")
-			builtin.clear();
-		allCodes = codes;
-		for (std::vector<string>::const_iterator b = builtin.begin();
-		     b != builtin.end(); ++b)
-			if (std::find(allCodes.begin(), allCodes.end(), *b) == allCodes.end())
-				allCodes.push_back(*b);
-		if (All == true)
-			return allCodes;
-		else
-			return codes;
-	}
-
-	// cornercase: LANG=C, so we use only "en" Translation
-	if (envShort == "C") {
-		allCodes = codes = environment;
-		allCodes.insert(allCodes.end(), builtin.begin(), builtin.end());
-		if (All == true)
-			return allCodes;
-		else
-			return codes;
-	}
-
-	std::vector<string> const lang = _config->FindVector("Acquire::Languages");
-	// the default setting -> "environment, en"
-	if (lang.empty() == true) {
-		codes = environment;
-		if (envShort != "en")
-			codes.push_back("en");
-		allCodes = codes;
-		for (std::vector<string>::const_iterator b = builtin.begin();
-		     b != builtin.end(); ++b)
-			if (std::find(allCodes.begin(), allCodes.end(), *b) == allCodes.end())
-				allCodes.push_back(*b);
-		if (All == true)
-			return allCodes;
-		else
-			return codes;
-	}
-
+	std::vector<string> const lang = _config->FindVector("Acquire::Languages", "environment,en");
 	// the configs define the order, so add the environment
 	// then needed and ensure the codes are not listed twice.
 	bool noneSeen = false;
@@ -301,10 +258,15 @@ std::vector<std::string> const Configuration::getLanguages(bool const &All,
 		allCodes.push_back(*l);
 	}
 
-	for (std::vector<string>::const_iterator b = builtin.begin();
-	     b != builtin.end(); ++b)
-		if (std::find(allCodes.begin(), allCodes.end(), *b) == allCodes.end())
-			allCodes.push_back(*b);
+	if (allCodes.empty() == false) {
+		for (std::vector<string>::const_iterator b = builtin.begin();
+		     b != builtin.end(); ++b)
+			if (std::find(allCodes.begin(), allCodes.end(), *b) == allCodes.end())
+				allCodes.push_back(*b);
+	} else {
+		// "none" was forced
+		allCodes.push_back("none");
+	}
 
 	if (All == true)
 		return allCodes;
@@ -312,7 +274,18 @@ std::vector<std::string> const Configuration::getLanguages(bool const &All,
 		return codes;
 }
 									/*}}}*/
-// getArchitectures - Return Vector of prefered Architectures		/*{{{*/
+// checkLanguage - are we interested in the given Language?		/*{{{*/
+bool Configuration::checkLanguage(std::string Lang, bool const All) {
+	// the empty Language is always interesting as it is the original
+	if (Lang.empty() == true)
+		return true;
+	// filenames are encoded, so undo this
+	Lang = SubstVar(Lang, "%5f", "_");
+	std::vector<std::string> const langs = getLanguages(All, true);
+	return (std::find(langs.begin(), langs.end(), Lang) != langs.end());
+}
+									/*}}}*/
+// getArchitectures - Return Vector of preferred Architectures		/*{{{*/
 std::vector<std::string> const Configuration::getArchitectures(bool const &Cached) {
 	using std::string;
 
@@ -370,21 +343,21 @@ std::vector<std::string> const Configuration::getArchitectures(bool const &Cache
 		if (dpkgMultiArch == 0) {
 			close(external[0]);
 			std::string const chrootDir = _config->FindDir("DPkg::Chroot-Directory");
-			if (chrootDir != "/" && chroot(chrootDir.c_str()) != 0)
-				_error->WarningE("getArchitecture", "Couldn't chroot into %s for dpkg --print-foreign-architectures", chrootDir.c_str());
 			int const nullfd = open("/dev/null", O_RDONLY);
 			dup2(nullfd, STDIN_FILENO);
 			dup2(external[1], STDOUT_FILENO);
 			dup2(nullfd, STDERR_FILENO);
-			execv(Args[0], (char**) &Args[0]);
+			if (chrootDir != "/" && chroot(chrootDir.c_str()) != 0 && chdir("/") != 0)
+				_error->WarningE("getArchitecture", "Couldn't chroot into %s for dpkg --print-foreign-architectures", chrootDir.c_str());
+			execvp(Args[0], (char**) &Args[0]);
 			_error->WarningE("getArchitecture", "Can't detect foreign architectures supported by dpkg!");
 			_exit(100);
 		}
 		close(external[1]);
 
 		FILE *dpkg = fdopen(external[0], "r");
-		char buf[1024];
 		if(dpkg != NULL) {
+			char buf[1024];
 			while (fgets(buf, sizeof(buf), dpkg) != NULL) {
 				char* arch = strtok(buf, " ");
 				while (arch != NULL) {
@@ -392,7 +365,9 @@ std::vector<std::string> const Configuration::getArchitectures(bool const &Cache
 					if (arch[0] != '\0') {
 						char const* archend = arch;
 						for (; isspace(*archend) == 0 && *archend != '\0'; ++archend);
-						archs.push_back(string(arch, (archend - arch)));
+						string a(arch, (archend - arch));
+						if (std::find(archs.begin(), archs.end(), a) == archs.end())
+							archs.push_back(a);
 					}
 					arch = strtok(NULL, " ");
 				}
@@ -420,7 +395,7 @@ std::vector<std::string> const Configuration::getArchitectures(bool const &Cache
 }
 									/*}}}*/
 // checkArchitecture - are we interested in the given Architecture?	/*{{{*/
-bool const Configuration::checkArchitecture(std::string const &Arch) {
+bool Configuration::checkArchitecture(std::string const &Arch) {
 	if (Arch == "all")
 		return true;
 	std::vector<std::string> const archs = getArchitectures(true);
@@ -430,12 +405,33 @@ bool const Configuration::checkArchitecture(std::string const &Arch) {
 // setDefaultConfigurationForCompressors				/*{{{*/
 void Configuration::setDefaultConfigurationForCompressors() {
 	// Set default application paths to check for optional compression types
-	_config->CndSet("Dir::Bin::lzma", "/usr/bin/lzma");
-	_config->CndSet("Dir::Bin::xz", "/usr/bin/xz");
 	_config->CndSet("Dir::Bin::bzip2", "/bin/bzip2");
+	_config->CndSet("Dir::Bin::xz", "/usr/bin/xz");
+	if (FileExists(_config->FindFile("Dir::Bin::xz")) == true) {
+		_config->Set("Dir::Bin::lzma", _config->FindFile("Dir::Bin::xz"));
+		_config->Set("APT::Compressor::lzma::Binary", "xz");
+		if (_config->Exists("APT::Compressor::lzma::CompressArg") == false) {
+			_config->Set("APT::Compressor::lzma::CompressArg::", "--format=lzma");
+			_config->Set("APT::Compressor::lzma::CompressArg::", "-9");
+		}
+		if (_config->Exists("APT::Compressor::lzma::UncompressArg") == false) {
+			_config->Set("APT::Compressor::lzma::UncompressArg::", "--format=lzma");
+			_config->Set("APT::Compressor::lzma::UncompressArg::", "-d");
+		}
+	} else {
+		_config->CndSet("Dir::Bin::lzma", "/usr/bin/lzma");
+		if (_config->Exists("APT::Compressor::lzma::CompressArg") == false) {
+			_config->Set("APT::Compressor::lzma::CompressArg::", "--suffix=");
+			_config->Set("APT::Compressor::lzma::CompressArg::", "-9");
+		}
+		if (_config->Exists("APT::Compressor::lzma::UncompressArg") == false) {
+			_config->Set("APT::Compressor::lzma::UncompressArg::", "--suffix=");
+			_config->Set("APT::Compressor::lzma::UncompressArg::", "-d");
+		}
+	}
 }
 									/*}}}*/
-// getCompressors - Return Vector of usbale compressors			/*{{{*/
+// getCompressors - Return Vector of usealbe compressors		/*{{{*/
 // ---------------------------------------------------------------------
 /* return a vector of compressors used by apt-ftparchive in the
    multicompress functionality or to detect data.tar files */
@@ -451,20 +447,36 @@ const Configuration::getCompressors(bool const Cached) {
 
 	setDefaultConfigurationForCompressors();
 
-	compressors.push_back(Compressor(".", "", "", "", "", 1));
+	compressors.push_back(Compressor(".", "", "", NULL, NULL, 1));
 	if (_config->Exists("Dir::Bin::gzip") == false || FileExists(_config->FindFile("Dir::Bin::gzip")) == true)
 		compressors.push_back(Compressor("gzip",".gz","gzip","-9n","-d",2));
+#ifdef HAVE_ZLIB
+	else
+		compressors.push_back(Compressor("gzip",".gz","false", NULL, NULL, 2));
+#endif
 	if (_config->Exists("Dir::Bin::bzip2") == false || FileExists(_config->FindFile("Dir::Bin::bzip2")) == true)
 		compressors.push_back(Compressor("bzip2",".bz2","bzip2","-9","-d",3));
-	if (_config->Exists("Dir::Bin::lzma") == false || FileExists(_config->FindFile("Dir::Bin::lzma")) == true)
-		compressors.push_back(Compressor("lzma",".lzma","lzma","-9","-d",4));
+#ifdef HAVE_BZ2
+	else
+		compressors.push_back(Compressor("bzip2",".bz2","false", NULL, NULL, 3));
+#endif
 	if (_config->Exists("Dir::Bin::xz") == false || FileExists(_config->FindFile("Dir::Bin::xz")) == true)
-		compressors.push_back(Compressor("xz",".xz","xz","-6","-d",5));
+		compressors.push_back(Compressor("xz",".xz","xz","-6","-d",4));
+#ifdef HAVE_LZMA
+	else
+		compressors.push_back(Compressor("xz",".xz","false", NULL, NULL, 4));
+#endif
+	if (_config->Exists("Dir::Bin::lzma") == false || FileExists(_config->FindFile("Dir::Bin::lzma")) == true)
+		compressors.push_back(Compressor("lzma",".lzma","lzma","-9","-d",5));
+#ifdef HAVE_LZMA
+	else
+		compressors.push_back(Compressor("lzma",".lzma","false", NULL, NULL, 5));
+#endif
 
 	std::vector<std::string> const comp = _config->FindVector("APT::Compressor");
 	for (std::vector<std::string>::const_iterator c = comp.begin();
 	     c != comp.end(); ++c) {
-		if (*c == "." || *c == "gzip" || *c == "bzip2" || *c == "lzma" || *c == "xz")
+		if (c->empty() || *c == "." || *c == "gzip" || *c == "bzip2" || *c == "lzma" || *c == "xz")
 			continue;
 		compressors.push_back(Compressor(c->c_str(), std::string(".").append(*c).c_str(), c->c_str(), "-9", "-d", 100));
 	}
@@ -492,7 +504,7 @@ Configuration::Compressor::Compressor(char const *name, char const *extension,
 				      char const *binary,
 				      char const *compressArg, char const *uncompressArg,
 				      unsigned short const cost) {
-	std::string const config = std::string("APT:Compressor::").append(name).append("::");
+	std::string const config = std::string("APT::Compressor::").append(name).append("::");
 	Name = _config->Find(std::string(config).append("Name"), name);
 	Extension = _config->Find(std::string(config).append("Extension"), extension);
 	Binary = _config->Find(std::string(config).append("Binary"), binary);
@@ -507,6 +519,30 @@ Configuration::Compressor::Compressor(char const *name, char const *extension,
 		UncompressArgs = _config->FindVector(uncompConf);
 	else if (uncompressArg != NULL)
 		UncompressArgs.push_back(uncompressArg);
+}
+									/*}}}*/
+// getBuildProfiles - return a vector of enabled build profiles		/*{{{*/
+std::vector<std::string> const Configuration::getBuildProfiles() {
+	// order is: override value (~= commandline), environment variable, list (~= config file)
+	std::string profiles_env = getenv("DEB_BUILD_PROFILES") == 0 ? "" : getenv("DEB_BUILD_PROFILES");
+	if (profiles_env.empty() == false) {
+		profiles_env = SubstVar(profiles_env, " ", ",");
+		std::string const bp = _config->Find("APT::Build-Profiles");
+		_config->Clear("APT::Build-Profiles");
+		if (bp.empty() == false)
+			_config->Set("APT::Build-Profiles", bp);
+	}
+	return _config->FindVector("APT::Build-Profiles", profiles_env);
+}
+std::string const Configuration::getBuildProfilesString() {
+	std::vector<std::string> profiles = getBuildProfiles();
+	if (profiles.empty() == true)
+		return "";
+	std::vector<std::string>::const_iterator p = profiles.begin();
+	std::string list = *p;
+	for (; p != profiles.end(); ++p)
+	   list.append(",").append(*p);
+	return list;
 }
 									/*}}}*/
 }

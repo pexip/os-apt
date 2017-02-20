@@ -16,14 +16,22 @@
 #include <apt-pkg/cachefilter.h>
 #include <apt-pkg/cacheset.h>
 #include <apt-pkg/error.h>
-#include <apt-pkg/strutl.h>
 #include <apt-pkg/versionmatch.h>
 #include <apt-pkg/pkgrecords.h>
 #include <apt-pkg/policy.h>
+#include <apt-pkg/cacheiterators.h>
+#include <apt-pkg/configuration.h>
+#include <apt-pkg/depcache.h>
+#include <apt-pkg/macros.h>
+#include <apt-pkg/pkgcache.h>
 
-#include <vector>
-
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 #include <regex.h>
+#include <list>
+#include <string>
+#include <vector>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -73,6 +81,8 @@ bool PackageContainerInterface::FromTask(PackageContainerInterface * const pci, 
 		const char *start, *end;
 		parser.GetRec(start,end);
 		unsigned int const length = end - start;
+		if (unlikely(length == 0))
+		   continue;
 		char buf[length];
 		strncpy(buf, start, length);
 		buf[length-1] = '\0';
@@ -155,6 +165,77 @@ bool PackageContainerInterface::FromRegEx(PackageContainerInterface * const pci,
 	return true;
 }
 									/*}}}*/
+// FromFnmatch - Returns the package defined  by this fnmatch		/*{{{*/
+bool 
+PackageContainerInterface::FromFnmatch(PackageContainerInterface * const pci, 
+                                       pkgCacheFile &Cache,
+                                       std::string pattern,
+                                       CacheSetHelper &helper)
+{
+	static const char * const isfnmatch = ".?*[]!";
+	if (pattern.find_first_of(isfnmatch) == std::string::npos)
+		return false;
+
+	bool const wasEmpty = pci->empty();
+	if (wasEmpty == true)
+		pci->setConstructor(FNMATCH);
+
+	size_t archfound = pattern.find_last_of(':');
+	std::string arch = "native";
+	if (archfound != std::string::npos) {
+		arch = pattern.substr(archfound+1);
+		if (arch.find_first_of(isfnmatch) == std::string::npos)
+			pattern.erase(archfound);
+		else
+			arch = "native";
+	}
+
+	if (unlikely(Cache.GetPkgCache() == 0))
+		return false;
+
+	APT::CacheFilter::PackageNameMatchesFnmatch filter(pattern);
+
+	bool found = false;
+	for (pkgCache::GrpIterator Grp = Cache.GetPkgCache()->GrpBegin(); Grp.end() == false; ++Grp) {
+		if (filter(Grp) == false)
+			continue;
+		pkgCache::PkgIterator Pkg = Grp.FindPkg(arch);
+		if (Pkg.end() == true) {
+			if (archfound == std::string::npos) {
+				std::vector<std::string> archs = APT::Configuration::getArchitectures();
+				for (std::vector<std::string>::const_iterator a = archs.begin();
+				     a != archs.end() && Pkg.end() != true; ++a)
+					Pkg = Grp.FindPkg(*a);
+			}
+			if (Pkg.end() == true)
+				continue;
+		}
+
+		pci->insert(Pkg);
+#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
+		helper.showFnmatchSelection(Pkg, pattern);
+#else
+		helper.showRegExSelection(Pkg, pattern);
+#endif
+		found = true;
+	}
+
+	if (found == false) {
+#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
+		helper.canNotFindFnmatch(pci, Cache, pattern);
+#else
+                helper.canNotFindRegEx(pci, Cache, pattern);
+#endif
+		pci->setConstructor(UNKNOWN);
+		return false;
+	}
+
+	if (wasEmpty == false && pci->getConstructor() != UNKNOWN)
+		pci->setConstructor(UNKNOWN);
+
+	return true;
+}
+									/*}}}*/
 // FromName - Returns the package defined  by this string		/*{{{*/
 pkgCache::PkgIterator PackageContainerInterface::FromName(pkgCacheFile &Cache,
 			std::string const &str, CacheSetHelper &helper) {
@@ -182,15 +263,66 @@ pkgCache::PkgIterator PackageContainerInterface::FromName(pkgCacheFile &Cache,
 	return Pkg;
 }
 									/*}}}*/
+// FromGroup - Returns the package defined  by this string		/*{{{*/
+bool PackageContainerInterface::FromGroup(PackageContainerInterface * const pci, pkgCacheFile &Cache,
+			std::string pkg, CacheSetHelper &helper) {
+	if (unlikely(Cache.GetPkgCache() == 0))
+		return false;
+
+	size_t const archfound = pkg.find_last_of(':');
+	std::string arch;
+	if (archfound != std::string::npos) {
+		arch = pkg.substr(archfound+1);
+		pkg.erase(archfound);
+		if (arch == "all" || arch == "native")
+			arch = _config->Find("APT::Architecture");
+	}
+
+	pkgCache::GrpIterator Grp = Cache.GetPkgCache()->FindGrp(pkg);
+	if (Grp.end() == false) {
+		if (arch.empty() == true) {
+			pkgCache::PkgIterator Pkg = Grp.FindPreferredPkg();
+			if (Pkg.end() == false)
+			{
+			   pci->insert(Pkg);
+			   return true;
+			}
+		} else {
+			bool found = false;
+			// for 'linux-any' return the first package matching, for 'linux-*' return all matches
+			bool const isGlobal = arch.find('*') != std::string::npos;
+			APT::CacheFilter::PackageArchitectureMatchesSpecification pams(arch);
+			for (pkgCache::PkgIterator Pkg = Grp.PackageList(); Pkg.end() == false; Pkg = Grp.NextPkg(Pkg)) {
+				if (pams(Pkg) == false)
+					continue;
+				pci->insert(Pkg);
+				found = true;
+				if (isGlobal == false)
+					break;
+			}
+			if (found == true)
+				return true;
+		}
+	}
+
+	pkgCache::PkgIterator Pkg = helper.canNotFindPkgName(Cache, pkg);
+	if (Pkg.end() == true)
+	   return false;
+
+	pci->insert(Pkg);
+	return true;
+}
+									/*}}}*/
 // FromString - Return all packages matching a specific string		/*{{{*/
 bool PackageContainerInterface::FromString(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string const &str, CacheSetHelper &helper) {
 	bool found = true;
 	_error->PushToStack();
 
-	pkgCache::PkgIterator Pkg = FromName(Cache, str, helper);
-	if (Pkg.end() == false)
-		pci->insert(Pkg);
-	else if (FromTask(pci, Cache, str, helper) == false &&
+	if (FromGroup(pci, Cache, str, helper) == false &&
+		 FromTask(pci, Cache, str, helper) == false &&
+#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
+		 FromFnmatch(pci, Cache, str, helper) == false)
+#endif
 		 FromRegEx(pci, Cache, str, helper) == false)
 	{
 		helper.canNotFindPackage(pci, Cache, str);
@@ -259,6 +391,8 @@ bool VersionContainerInterface::FromModifierCommandLine(unsigned short &modID,
 							CacheSetHelper &helper) {
 	Version select = NEWEST;
 	std::string str = cmdline;
+	if (unlikely(str.empty() == true))
+		return false;
 	bool modifierPresent = false;
 	unsigned short fallback = modID;
 	for (std::list<Modifier>::const_iterator mod = mods.begin();
@@ -268,8 +402,8 @@ bool VersionContainerInterface::FromModifierCommandLine(unsigned short &modID,
 		size_t const alength = strlen(mod->Alias);
 		switch(mod->Pos) {
 		case Modifier::POSTFIX:
-			if (str.compare(str.length() - alength, alength,
-					mod->Alias, 0, alength) != 0)
+			if (str.length() <= alength ||
+			      str.compare(str.length() - alength, alength, mod->Alias, 0, alength) != 0)
 				continue;
 			str.erase(str.length() - alength);
 			modID = mod->ID;
@@ -464,37 +598,43 @@ pkgCache::PkgIterator CacheSetHelper::canNotFindPkgName(pkgCacheFile &Cache,
 }
 									/*}}}*/
 // canNotFindTask - handle the case no package is found for a task	/*{{{*/
-void CacheSetHelper::canNotFindTask(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern) {
+void CacheSetHelper::canNotFindTask(PackageContainerInterface * const /*pci*/, pkgCacheFile &/*Cache*/, std::string pattern) {
 	if (ShowError == true)
 		_error->Insert(ErrorType, _("Couldn't find task '%s'"), pattern.c_str());
 }
 									/*}}}*/
 // canNotFindRegEx - handle the case no package is found by a regex	/*{{{*/
-void CacheSetHelper::canNotFindRegEx(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern) {
+void CacheSetHelper::canNotFindRegEx(PackageContainerInterface * const /*pci*/, pkgCacheFile &/*Cache*/, std::string pattern) {
 	if (ShowError == true)
 		_error->Insert(ErrorType, _("Couldn't find any package by regex '%s'"), pattern.c_str());
 }
-									/*}}}*/
+#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
+// canNotFindFnmatch - handle the case no package is found by a fnmatch	/*{{{*/
+void CacheSetHelper::canNotFindFnmatch(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern) {
+	if (ShowError == true)
+		_error->Insert(ErrorType, _("Couldn't find any package by glob '%s'"), pattern.c_str());
+}
+#endif									/*}}}*/
 // canNotFindPackage - handle the case no package is found from a string/*{{{*/
-void CacheSetHelper::canNotFindPackage(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string const &str) {
+APT_CONST void CacheSetHelper::canNotFindPackage(PackageContainerInterface * const /*pci*/, pkgCacheFile &/*Cache*/, std::string const &/*str*/) {
 }
 									/*}}}*/
 // canNotFindAllVer							/*{{{*/
-void CacheSetHelper::canNotFindAllVer(VersionContainerInterface * const vci, pkgCacheFile &Cache,
+void CacheSetHelper::canNotFindAllVer(VersionContainerInterface * const /*vci*/, pkgCacheFile &/*Cache*/,
 		pkgCache::PkgIterator const &Pkg) {
 	if (ShowError == true)
 		_error->Insert(ErrorType, _("Can't select versions from package '%s' as it is purely virtual"), Pkg.FullName(true).c_str());
 }
 									/*}}}*/
 // canNotFindInstCandVer						/*{{{*/
-void CacheSetHelper::canNotFindInstCandVer(VersionContainerInterface * const vci, pkgCacheFile &Cache,
+void CacheSetHelper::canNotFindInstCandVer(VersionContainerInterface * const /*vci*/, pkgCacheFile &/*Cache*/,
 		pkgCache::PkgIterator const &Pkg) {
 	if (ShowError == true)
 		_error->Insert(ErrorType, _("Can't select installed nor candidate version from package '%s' as it has neither of them"), Pkg.FullName(true).c_str());
 }
 									/*}}}*/
 // canNotFindInstCandVer						/*{{{*/
-void CacheSetHelper::canNotFindCandInstVer(VersionContainerInterface * const vci, pkgCacheFile &Cache,
+void CacheSetHelper::canNotFindCandInstVer(VersionContainerInterface * const /*vci*/, pkgCacheFile &/*Cache*/,
 		pkgCache::PkgIterator const &Pkg) {
 	if (ShowError == true)
 		_error->Insert(ErrorType, _("Can't select installed nor candidate version from package '%s' as it has neither of them"), Pkg.FullName(true).c_str());
@@ -525,20 +665,27 @@ pkgCache::VerIterator CacheSetHelper::canNotFindInstalledVer(pkgCacheFile &Cache
 }
 									/*}}}*/
 // showTaskSelection							/*{{{*/
-void CacheSetHelper::showTaskSelection(pkgCache::PkgIterator const &pkg,
-				       std::string const &pattern) {
+APT_CONST void CacheSetHelper::showTaskSelection(pkgCache::PkgIterator const &/*pkg*/,
+				       std::string const &/*pattern*/) {
 }
 									/*}}}*/
 // showRegExSelection							/*{{{*/
-void CacheSetHelper::showRegExSelection(pkgCache::PkgIterator const &pkg,
-					std::string const &pattern) {
+APT_CONST void CacheSetHelper::showRegExSelection(pkgCache::PkgIterator const &/*pkg*/,
+					std::string const &/*pattern*/) {
 }
 									/*}}}*/
+#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
+// showFnmatchSelection							/*{{{*/
+APT_CONST void CacheSetHelper::showFnmatchSelection(pkgCache::PkgIterator const &pkg,
+                                          std::string const &pattern) {
+}
+									/*}}}*/
+#endif
 // showSelectedVersion							/*{{{*/
-void CacheSetHelper::showSelectedVersion(pkgCache::PkgIterator const &Pkg,
-					 pkgCache::VerIterator const Ver,
-					 std::string const &ver,
-					 bool const verIsRel) {
+APT_CONST void CacheSetHelper::showSelectedVersion(pkgCache::PkgIterator const &/*Pkg*/,
+					 pkgCache::VerIterator const /*Ver*/,
+					 std::string const &/*ver*/,
+					 bool const /*verIsRel*/) {
 }
 									/*}}}*/
 }

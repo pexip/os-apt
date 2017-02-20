@@ -17,10 +17,13 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/hashes.h>
 #include <apt-pkg/configuration.h>
+#include <apt-pkg/acquire-method.h>
+#include <apt-pkg/strutl.h>
 
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <utime.h>
 #include <unistd.h>
 #include <signal.h>
 #include <stdio.h>
@@ -215,15 +218,20 @@ bool RSHConn::WriteMsg(std::string &Text,bool Sync,const char *Fmt,...)
    va_list args;
    va_start(args,Fmt);
 
-   // sprintf the description
-   char S[512];
-   vsnprintf(S,sizeof(S) - 4,Fmt,args);
+   // sprintf into a buffer
+   char Tmp[1024];
+   vsnprintf(Tmp,sizeof(Tmp),Fmt,args);
+   va_end(args);
+
+   // concat to create the real msg
+   std::string Msg;
    if (Sync == true)
-      strcat(S," 2> /dev/null || echo\n");
+      Msg = std::string(Tmp) + " 2> /dev/null || echo\n";
    else
-      strcat(S," 2> /dev/null\n");
+      Msg = std::string(Tmp) + " 2> /dev/null\n";
 
    // Send it off
+   const char *S = Msg.c_str();
    unsigned long Len = strlen(S);
    unsigned long Start = 0;
    while (Len != 0)
@@ -254,7 +262,7 @@ bool RSHConn::WriteMsg(std::string &Text,bool Sync,const char *Fmt,...)
 									/*}}}*/
 // RSHConn::Size - Return the size of the file				/*{{{*/
 // ---------------------------------------------------------------------
-/* Right now for successfull transfer the file size must be known in 
+/* Right now for successful transfer the file size must be known in
    advance. */
 bool RSHConn::Size(const char *Path,unsigned long long &Size)
 {
@@ -367,7 +375,7 @@ RSHMethod::RSHMethod() : pkgAcqMethod("1.0",SendConfig)
    signal(SIGINT,SigTerm);
    Server = 0;
    FailFd = -1;
-};
+}
 									/*}}}*/
 // RSHMethod::Configuration - Handle a configuration message		/*{{{*/
 // ---------------------------------------------------------------------
@@ -389,17 +397,18 @@ bool RSHMethod::Configuration(std::string Message)
 // RSHMethod::SigTerm - Clean up and timestamp the files on exit	/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-void RSHMethod::SigTerm(int sig)
+void RSHMethod::SigTerm(int)
 {
    if (FailFd == -1)
       _exit(100);
-   close(FailFd);
 
-   // Timestamp
-   struct utimbuf UBuf;
-   UBuf.actime = FailTime;
-   UBuf.modtime = FailTime;
-   utime(FailFile.c_str(),&UBuf);
+   // Transfer the modification times
+   struct timeval times[2];
+   times[0].tv_sec = FailTime;
+   times[1].tv_sec = FailTime;
+   times[0].tv_usec = times[1].tv_usec = 0;
+   utimes(FailFile.c_str(), times);
+   close(FailFd);
 
    _exit(100);
 }
@@ -486,10 +495,11 @@ bool RSHMethod::Fetch(FetchItem *Itm)
 	 Fd.Close();
 
 	 // Timestamp
-	 struct utimbuf UBuf;
-	 UBuf.actime = FailTime;
-	 UBuf.modtime = FailTime;
-	 utime(FailFile.c_str(),&UBuf);
+	 struct timeval times[2];
+	 times[0].tv_sec = FailTime;
+	 times[1].tv_sec = FailTime;
+	 times[0].tv_usec = times[1].tv_usec = 0;
+	 utimes(FailFile.c_str(), times);
 
 	 // If the file is missing we hard fail otherwise transient fail
 	 if (Missing == true)
@@ -499,17 +509,16 @@ bool RSHMethod::Fetch(FetchItem *Itm)
       }
 
       Res.Size = Fd.Size();
+      struct timeval times[2];
+      times[0].tv_sec = FailTime;
+      times[1].tv_sec = FailTime;
+      times[0].tv_usec = times[1].tv_usec = 0;
+      utimes(Fd.Name().c_str(), times);
+      FailFd = -1;
    }
 
    Res.LastModified = FailTime;
    Res.TakeHashes(Hash);
-
-   // Timestamp
-   struct utimbuf UBuf;
-   UBuf.actime = FailTime;
-   UBuf.modtime = FailTime;
-   utime(Queue->DestFile.c_str(),&UBuf);
-   FailFd = -1;
 
    URIDone(Res);
 
@@ -517,7 +526,7 @@ bool RSHMethod::Fetch(FetchItem *Itm)
 }
 									/*}}}*/
 
-int main(int argc, const char *argv[])
+int main(int, const char *argv[])
 {
    setlocale(LC_ALL, "");
 

@@ -36,15 +36,16 @@
 #include <config.h>
 
 #include <apt-pkg/debfile.h>
-#include <apt-pkg/extracttar.h>
+#include <apt-pkg/dirstream.h>
 #include <apt-pkg/error.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <malloc.h>
+
+#include "contents.h"
 
 #include <apti18n.h>
-#include "contents.h"
 									/*}}}*/
 
 // GenContents::~GenContents - Free allocated memory			/*{{{*/
@@ -231,7 +232,7 @@ void GenContents::Add(const char *Dir,const char *Package)
    
    // The final component if it does not have a trailing /
    if (I - Start >= 1)
-      Root = Grab(Root,Start,Package);
+      Grab(Root,Start,Package);
 }
 									/*}}}*/
 // GenContents::WriteSpace - Write a given number of white space chars	/*{{{*/
@@ -301,7 +302,18 @@ void GenContents::DoPrint(FILE *Out,GenContents::Node *Top, char *Buf)
    DoPrint(Out,Top->BTreeRight,Buf);  
 }
 									/*}}}*/
-
+// ContentsExtract Constructor           				/*{{{*/
+ContentsExtract::ContentsExtract()
+   : Data(0), MaxSize(0), CurSize(0) 
+{
+};
+									/*}}}*/
+// ContentsExtract Destructor           				/*{{{*/
+ContentsExtract::~ContentsExtract()
+{
+   free(Data);
+};
+									/*}}}*/
 // ContentsExtract::Read - Read the archive				/*{{{*/
 // ---------------------------------------------------------------------
 /* */
@@ -314,7 +326,7 @@ bool ContentsExtract::Read(debDebFile &Deb)
 // ContentsExtract::DoItem - Extract an item				/*{{{*/
 // ---------------------------------------------------------------------
 /* This just tacks the name onto the end of our memory buffer */
-bool ContentsExtract::DoItem(Item &Itm,int &Fd)
+bool ContentsExtract::DoItem(Item &Itm, int &/*Fd*/)
 {
    unsigned long Len = strlen(Itm.Name);
    

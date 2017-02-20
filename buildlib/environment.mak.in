@@ -2,12 +2,18 @@
 # if you want you can edit it, just don't re-run configure.
 
 PACKAGE = @PACKAGE@
+PACKAGE_VERSION = @PACKAGE_VERSION@
+PACKAGE_MAIL = @PACKAGE_MAIL@
 
 # C++ compiler options
 CC = @CC@
-CPPFLAGS+= @CPPFLAGS@ @DEFS@ -D_REENTRANT -Wall
+CPPFLAGS+= @CPPFLAGS@ @DEFS@ -D_REENTRANT -D_FORTIFY_SOURCE=2
 CXX = @CXX@
-CXXFLAGS+= @CXXFLAGS@
+CXXFLAGS+= @CXXFLAGS@ -Wall -Wextra
+CXXFLAGS+= -Wcast-align -Wlogical-op -Wredundant-decls -Wmissing-declarations -Wunsafe-loop-optimizations
+CXXFLAGS+= -Wsuggest-attribute=pure -Wsuggest-attribute=const -Wsuggest-attribute=noreturn
+# a bit too pedantic to be run by default
+#CXXFLAGS+= -Wpedantic -Wno-long-long -Wno-vla -Wno-variadic-macros
 NUM_PROCS = @NUM_PROCS@
 
 # Linker stuff
@@ -22,14 +28,16 @@ RANLIB:=@RANLIB@
 GCC3DEP = @GCC3DEP@
 INLINEDEPFLAG = -MD
 
-# Debian doc stuff
-DEBIANDOC_HTML = @DEBIANDOC_HTML@
-DEBIANDOC_TEXT = @DEBIANDOC_TEXT@
-
 DOXYGEN = @DOXYGEN@
+W3M = @W3M@
 
-# xsltproc for the man pages
+# xsltproc for the man pages and documentation
 XSLTPROC := @XSLTPROC@
+
+# DocBook XML
+DOCBOOK = $(XSLTPROC) --nonet --novalid --xinclude
+DOCBOOK2TEXT = $(W3M) -o display_charset=UTF-8 -no-graph -T text/html \
+	-cols 78 -dump
 
 # po4a for the man pages
 PO4A := @PO4A@
@@ -52,9 +60,10 @@ BDBLIB = @BDBLIB@
 INTLLIBS = @INTLLIBS@
 
 # Shim Headerfile control
-HAVE_C9X = @HAVE_C9X@
 HAVE_STATVFS = @HAVE_STATVFS@
-HAVE_TIMEGM = @HAVE_TIMEGM@
+HAVE_ZLIB = @HAVE_ZLIB@
+HAVE_BZ2 = @HAVE_BZ2@
+HAVE_LZMA = @HAVE_LZMA@
 NEED_SOCKLEN_T_DEFINE = @NEED_SOCKLEN_T_DEFINE@
 
 # Shared library things
@@ -66,4 +75,3 @@ else
    # Do not know how to create shared libraries here.
    ONLYSTATICLIBS = yes
 endif
-	

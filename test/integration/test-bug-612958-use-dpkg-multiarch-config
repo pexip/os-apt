@@ -14,13 +14,13 @@ insertinstalledpackage 'libapt' 'armel' '1.0'
 testpass() {
 	rm rootdir/var/cache/apt/*.bin
 	msgtest 'Test architecture handling' "$1 with $2"
-	aptcache show libapt:$2 2> /dev/null > /dev/null && msgpass || msgfail
+	testsuccess --nomsg aptcache show libapt:$2
 }
 
 testfail() {
 	rm rootdir/var/cache/apt/*.bin
 	msgtest 'Test architecture handling' "$1 with $2"
-	aptcache show libapt:$2 2> /dev/null > /dev/null && msgfail || msgpass
+	testfailure --nomsg aptcache show libapt:$2
 }
 
 testpass 'no config' 'i386'
@@ -39,6 +39,15 @@ testfail 'apt config' 'armel'
 echo 'APT::Architectures:: "armel";' >> $CONFFILE
 
 testpass 'apt config' 'armel'
+
+rm $CONFFILE
+
+echo '#clear APT::Architectures;' >> $CONFFILE
+echo 'APT::Architectures "i386,amd64";' >> $CONFFILE
+
+testpass 'apt config' 'i386'
+testpass 'apt config' 'amd64'
+testfail 'apt config' 'armel'
 
 rm $CONFFILE
 

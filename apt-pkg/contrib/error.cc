@@ -17,12 +17,14 @@
 
 #include <apt-pkg/error.h>
 
+#include <stdarg.h>
+#include <stddef.h>
+#include <list>
 #include <iostream>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
 #include <string>
 #include <cstring>
 
@@ -67,9 +69,10 @@ bool GlobalError::NAME (const char *Function, const char *Description,...) { \
 	int const errsv = errno; \
 	while (true) { \
 		va_start(args,Description); \
-		if (InsertErrno(TYPE, Function, Description, args, errsv, msgSize) == false) \
-			break; \
+		bool const retry = InsertErrno(TYPE, Function, Description, args, errsv, msgSize); \
 		va_end(args); \
+		if (retry == false) \
+			break; \
 	} \
 	return false; \
 }
@@ -88,9 +91,10 @@ bool GlobalError::InsertErrno(MsgType const &type, const char *Function,
 	int const errsv = errno;
 	while (true) {
 		va_start(args,Description);
-		if (InsertErrno(type, Function, Description, args, errsv, msgSize) == false)
-			break;
+		bool const retry = InsertErrno(type, Function, Description, args, errsv, msgSize);
 		va_end(args);
+		if (retry == false)
+		   break;
 	}
 	return false;
 }
@@ -221,7 +225,7 @@ void GlobalError::DumpErrors(std::ostream &out, MsgType const &threshold,
 void GlobalError::Discard() {
 	Messages.clear();
 	PendingFlag = false;
-};
+}
 									/*}}}*/
 // GlobalError::empty - does our error list include anything?		/*{{{*/
 bool GlobalError::empty(MsgType const &trashhold) const {

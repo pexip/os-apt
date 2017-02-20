@@ -15,25 +15,35 @@
 #include <apt-pkg/deblistparser.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/configuration.h>
+#include <apt-pkg/cachefilter.h>
 #include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/crc-16.h>
 #include <apt-pkg/md5.h>
+#include <apt-pkg/mmap.h>
+#include <apt-pkg/pkgcache.h>
+#include <apt-pkg/cacheiterators.h>
+#include <apt-pkg/tagfile.h>
 #include <apt-pkg/macros.h>
 
-#include <fnmatch.h>
+#include <stddef.h>
+#include <string.h>
+#include <algorithm>
+#include <string>
+#include <vector>
 #include <ctype.h>
 									/*}}}*/
 
 using std::string;
 
-static debListParser::WordList PrioList[] = {{"important",pkgCache::State::Important},
-                       {"required",pkgCache::State::Required},
-                       {"standard",pkgCache::State::Standard},
-                       {"optional",pkgCache::State::Optional},
-	               {"extra",pkgCache::State::Extra},
-                       {}};
+static debListParser::WordList PrioList[] = {
+   {"required",pkgCache::State::Required},
+   {"important",pkgCache::State::Important},
+   {"standard",pkgCache::State::Standard},
+   {"optional",pkgCache::State::Optional},
+   {"extra",pkgCache::State::Extra},
+   {NULL, 0}};
 
 // ListParser::debListParser - Constructor				/*{{{*/
 // ---------------------------------------------------------------------
@@ -94,44 +104,50 @@ string debListParser::Version()
    return Section.FindS("Version");
 }
 									/*}}}*/
+unsigned char debListParser::ParseMultiArch(bool const showErrors)	/*{{{*/
+{
+   unsigned char MA;
+   string const MultiArch = Section.FindS("Multi-Arch");
+   if (MultiArch.empty() == true || MultiArch == "no")
+      MA = pkgCache::Version::None;
+   else if (MultiArch == "same") {
+      if (ArchitectureAll() == true)
+      {
+	 if (showErrors == true)
+	    _error->Warning("Architecture: all package '%s' can't be Multi-Arch: same",
+		  Section.FindS("Package").c_str());
+	 MA = pkgCache::Version::None;
+      }
+      else
+	 MA = pkgCache::Version::Same;
+   }
+   else if (MultiArch == "foreign")
+      MA = pkgCache::Version::Foreign;
+   else if (MultiArch == "allowed")
+      MA = pkgCache::Version::Allowed;
+   else
+   {
+      if (showErrors == true)
+	 _error->Warning("Unknown Multi-Arch type '%s' for package '%s'",
+	       MultiArch.c_str(), Section.FindS("Package").c_str());
+      MA = pkgCache::Version::None;
+   }
+
+   if (ArchitectureAll() == true)
+      MA |= pkgCache::Version::All;
+
+   return MA;
+}
+									/*}}}*/
 // ListParser::NewVersion - Fill in the version structure		/*{{{*/
 // ---------------------------------------------------------------------
 /* */
 bool debListParser::NewVersion(pkgCache::VerIterator &Ver)
 {
    // Parse the section
-   Ver->Section = UniqFindTagWrite("Section");
-
-   // Parse multi-arch
-   string const MultiArch = Section.FindS("Multi-Arch");
-   if (MultiArch.empty() == true)
-      Ver->MultiArch = pkgCache::Version::None;
-   else if (MultiArch == "same") {
-      // Parse multi-arch
-      if (ArchitectureAll() == true)
-      {
-	 /* Arch all packages can't be Multi-Arch: same */
-	 _error->Warning("Architecture: all package '%s' can't be Multi-Arch: same",
-			Section.FindS("Package").c_str());
-	 Ver->MultiArch = pkgCache::Version::None;
-      }
-      else
-	 Ver->MultiArch = pkgCache::Version::Same;
-   }
-   else if (MultiArch == "foreign")
-      Ver->MultiArch = pkgCache::Version::Foreign;
-   else if (MultiArch == "allowed")
-      Ver->MultiArch = pkgCache::Version::Allowed;
-   else
-   {
-      _error->Warning("Unknown Multi-Arch type '%s' for package '%s'",
-			MultiArch.c_str(), Section.FindS("Package").c_str());
-      Ver->MultiArch = pkgCache::Version::None;
-   }
-
-   if (ArchitectureAll() == true)
-      Ver->MultiArch |= pkgCache::Version::All;
-
+   unsigned long const idxSection = UniqFindTagWrite("Section");
+   Ver->Section = idxSection;
+   Ver->MultiArch = ParseMultiArch(true);
    // Archive Size
    Ver->Size = Section.FindULL("Size");
    // Unpacked Size (in K)
@@ -215,15 +231,26 @@ string debListParser::DescriptionLanguage()
  */
 MD5SumValue debListParser::Description_md5()
 {
-   string value = Section.FindS("Description-md5");
-
-   if (value.empty()) 
+   string const value = Section.FindS("Description-md5");
+   if (value.empty() == true)
    {
+      std::string const desc = Description() + "\n";
+      if (desc == "\n")
+	 return MD5SumValue();
+
       MD5Summation md5;
-      md5.Add((Description() + "\n").c_str());
+      md5.Add(desc.c_str());
       return md5.Result();
-   } else
-      return MD5SumValue(value);
+   }
+   else if (likely(value.size() == 32))
+   {
+      if (likely(value.find_first_not_of("0123456789abcdefABCDEF") == string::npos))
+	 return MD5SumValue(value);
+      _error->Error("Malformed Description-md5 line; includes invalid character '%s'", value.c_str());
+      return MD5SumValue();
+   }
+   _error->Error("Malformed Description-md5 line; doesn't have the required length (32 != %d) '%s'", (int)value.size(), value.c_str());
+   return MD5SumValue();
 }
                                                                         /*}}}*/
 // ListParser::UsePackage - Update a package structure			/*{{{*/
@@ -234,23 +261,31 @@ bool debListParser::UsePackage(pkgCache::PkgIterator &Pkg,
 			       pkgCache::VerIterator &Ver)
 {
    if (Pkg->Section == 0)
-      Pkg->Section = UniqFindTagWrite("Section");
+   {
+      unsigned long const idxSection = UniqFindTagWrite("Section");
+      Pkg->Section = idxSection;
+   }
 
-   // Packages which are not from the "native" arch doesn't get the essential flag
-   // in the default "native" mode - it is also possible to mark "all" or "none".
-   // The "installed" mode is handled by ParseStatus(), See #544481 and friends.
    string const static myArch = _config->Find("APT::Architecture");
-   string const static essential = _config->Find("pkgCacheGen::Essential", "native");
-   if ((essential == "native" && Pkg->Arch != 0 && myArch == Pkg.Arch()) ||
-       essential == "all")
+   // Possible values are: "all", "native", "installed" and "none"
+   // The "installed" mode is handled by ParseStatus(), See #544481 and friends.
+   string const static essential = _config->Find("pkgCacheGen::Essential", "all");
+   if (essential == "all" ||
+       (essential == "native" && Pkg->Arch != 0 && myArch == Pkg.Arch()))
       if (Section.FindFlag("Essential",Pkg->Flags,pkgCache::Flag::Essential) == false)
 	 return false;
    if (Section.FindFlag("Important",Pkg->Flags,pkgCache::Flag::Important) == false)
       return false;
 
    if (strcmp(Pkg.Name(),"apt") == 0)
-      Pkg->Flags |= pkgCache::Flag::Important;
-   
+   {
+      if ((essential == "native" && Pkg->Arch != 0 && myArch == Pkg.Arch()) ||
+	  essential == "all")
+	 Pkg->Flags |= pkgCache::Flag::Essential | pkgCache::Flag::Important;
+      else
+	 Pkg->Flags |= pkgCache::Flag::Important;
+   }
+
    if (ParseStatus(Pkg,Ver) == false)
       return false;
    return true;
@@ -271,7 +306,7 @@ unsigned short debListParser::VersionHash()
                             "Replaces",0};
    unsigned long Result = INIT_FCS;
    char S[1024];
-   for (const char **I = Sections; *I != 0; I++)
+   for (const char * const *I = Sections; *I != 0; ++I)
    {
       const char *Start;
       const char *End;
@@ -282,13 +317,13 @@ unsigned short debListParser::VersionHash()
          of certain fields. dpkg also has the rather interesting notion of
          reformatting depends operators < -> <= */
       char *J = S;
-      for (; Start != End; Start++)
+      for (; Start != End; ++Start)
       {
-	 if (isspace(*Start) == 0)
-	    *J++ = tolower_ascii(*Start);
-	 if (*Start == '<' && Start[1] != '<' && Start[1] != '=')
-	    *J++ = '=';
-	 if (*Start == '>' && Start[1] != '>' && Start[1] != '=')
+	 if (isspace(*Start) != 0)
+	    continue;
+	 *J++ = tolower_ascii(*Start);
+
+	 if ((*Start == '<' || *Start == '>') && Start[1] != *Start && Start[1] != '=')
 	    *J++ = '=';
       }
 
@@ -298,20 +333,21 @@ unsigned short debListParser::VersionHash()
    return Result;
 }
 									/*}}}*/
-// ListParser::ParseStatus - Parse the status field			/*{{{*/
+// StatusListParser::ParseStatus - Parse the status field		/*{{{*/
 // ---------------------------------------------------------------------
 /* Status lines are of the form,
      Status: want flag status
    want = unknown, install, hold, deinstall, purge
-   flag = ok, reinstreq, hold, hold-reinstreq
-   status = not-installed, unpacked, half-configured,
-            half-installed, config-files, post-inst-failed, 
-            removal-failed, installed
-   
-   Some of the above are obsolete (I think?) flag = hold-* and 
-   status = post-inst-failed, removal-failed at least.
+   flag = ok, reinstreq
+   status = not-installed, config-files, half-installed, unpacked,
+            half-configured, triggers-awaited, triggers-pending, installed
  */
 bool debListParser::ParseStatus(pkgCache::PkgIterator &Pkg,
+				pkgCache::VerIterator &Ver)
+{
+   return true;
+}
+bool debStatusListParser::ParseStatus(pkgCache::PkgIterator &Pkg,
 				pkgCache::VerIterator &Ver)
 {
    const char *Start;
@@ -337,7 +373,7 @@ bool debListParser::ParseStatus(pkgCache::PkgIterator &Pkg,
                           {"hold",pkgCache::State::Hold},
                           {"deinstall",pkgCache::State::DeInstall},
                           {"purge",pkgCache::State::Purge},
-                          {}};
+                          {NULL, 0}};
    if (GrabWord(string(Start,I-Start),WantList,Pkg->SelectedState) == false)
       return _error->Error("Malformed 1st word in the Status line");
 
@@ -353,7 +389,7 @@ bool debListParser::ParseStatus(pkgCache::PkgIterator &Pkg,
                           {"reinstreq",pkgCache::State::ReInstReq},
                           {"hold",pkgCache::State::HoldInst},
                           {"hold-reinstreq",pkgCache::State::HoldReInstReq},
-                          {}};
+                          {NULL, 0}};
    if (GrabWord(string(Start,I-Start),FlagList,Pkg->InstState) == false)
       return _error->Error("Malformed 2nd word in the Status line");
 
@@ -366,16 +402,14 @@ bool debListParser::ParseStatus(pkgCache::PkgIterator &Pkg,
 
    // Process the flag field
    WordList StatusList[] = {{"not-installed",pkgCache::State::NotInstalled},
+                            {"config-files",pkgCache::State::ConfigFiles},
+                            {"half-installed",pkgCache::State::HalfInstalled},
                             {"unpacked",pkgCache::State::UnPacked},
                             {"half-configured",pkgCache::State::HalfConfigured},
-                            {"installed",pkgCache::State::Installed},
-                            {"half-installed",pkgCache::State::HalfInstalled},
-                            {"config-files",pkgCache::State::ConfigFiles},
                             {"triggers-awaited",pkgCache::State::TriggersAwaited},
                             {"triggers-pending",pkgCache::State::TriggersPending},
-                            {"post-inst-failed",pkgCache::State::HalfConfigured},
-                            {"removal-failed",pkgCache::State::HalfInstalled},
-                            {}};
+                            {"installed",pkgCache::State::Installed},
+                            {NULL, 0}};
    if (GrabWord(string(Start,I-Start),StatusList,Pkg->CurrentState) == false)
       return _error->Error("Malformed 3rd word in the Status line");
 
@@ -452,39 +486,36 @@ const char *debListParser::ConvertRelation(const char *I,unsigned int &Op)
    }
    return I;
 }
-
-/*
- * CompleteArch:
- *
- * The complete architecture, consisting of <kernel>-<cpu>.
- */
-static string CompleteArch(std::string const &arch) {
-    if (arch == "armel")              return "linux-arm";
-    if (arch == "armhf")              return "linux-arm";
-    if (arch == "lpia")               return "linux-i386";
-    if (arch == "powerpcspe")         return "linux-powerpc";
-    if (arch == "uclibc-linux-armel") return "linux-arm";
-    if (arch == "uclinux-armel")      return "uclinux-arm";
-
-    return (arch.find("-") != string::npos) ? arch : "linux-" + arch;
-}
 									/*}}}*/
 // ListParser::ParseDepends - Parse a dependency element		/*{{{*/
 // ---------------------------------------------------------------------
 /* This parses the dependency elements out of a standard string in place,
    bit by bit. */
 const char *debListParser::ParseDepends(const char *Start,const char *Stop,
+               std::string &Package,std::string &Ver,unsigned int &Op)
+   { return ParseDepends(Start, Stop, Package, Ver, Op, false, true, false); }
+const char *debListParser::ParseDepends(const char *Start,const char *Stop,
+               std::string &Package,std::string &Ver,unsigned int &Op,
+               bool const &ParseArchFlags)
+   { return ParseDepends(Start, Stop, Package, Ver, Op, ParseArchFlags, true, false); }
+const char *debListParser::ParseDepends(const char *Start,const char *Stop,
+               std::string &Package,std::string &Ver,unsigned int &Op,
+               bool const &ParseArchFlags, bool const &StripMultiArch)
+   { return ParseDepends(Start, Stop, Package, Ver, Op, ParseArchFlags, StripMultiArch, false); }
+const char *debListParser::ParseDepends(const char *Start,const char *Stop,
 					string &Package,string &Ver,
 					unsigned int &Op, bool const &ParseArchFlags,
-					bool const &StripMultiArch)
+					bool const &StripMultiArch,
+					bool const &ParseRestrictionsList)
 {
    // Strip off leading space
-   for (;Start != Stop && isspace(*Start) != 0; Start++);
+   for (;Start != Stop && isspace(*Start) != 0; ++Start);
    
    // Parse off the package name
    const char *I = Start;
    for (;I != Stop && isspace(*I) == 0 && *I != '(' && *I != ')' &&
-	*I != ',' && *I != '|' && *I != '[' && *I != ']'; I++);
+	*I != ',' && *I != '|' && *I != '[' && *I != ']' &&
+	*I != '<' && *I != '>'; ++I);
    
    // Malformed, no '('
    if (I != Stop && *I == ')')
@@ -544,60 +575,153 @@ const char *debListParser::ParseDepends(const char *Start,const char *Stop,
 
    if (ParseArchFlags == true)
    {
-      string completeArch = CompleteArch(arch);
+      APT::CacheFilter::PackageArchitectureMatchesSpecification matchesArch(arch, false);
 
       // Parse an architecture
       if (I != Stop && *I == '[')
       {
+	 ++I;
 	 // malformed
-         I++;
-         if (I == Stop)
-	    return 0; 
-	 
-         const char *End = I;
-         bool Found = false;
-      	 bool NegArch = false;
-         while (I != Stop) 
+	 if (unlikely(I == Stop))
+	    return 0;
+
+	 const char *End = I;
+	 bool Found = false;
+	 bool NegArch = false;
+	 while (I != Stop)
 	 {
-            // look for whitespace or ending ']'
-	    while (End != Stop && !isspace(*End) && *End != ']') 
-	       End++;
-	 
-	    if (End == Stop) 
+	    // look for whitespace or ending ']'
+	    for (;End != Stop && !isspace(*End) && *End != ']'; ++End);
+
+	    if (unlikely(End == Stop))
 	       return 0;
 
 	    if (*I == '!')
-            {
+	    {
 	       NegArch = true;
-	       I++;
-            }
-
-	    if (stringcmp(arch,I,End) == 0) {
-	       Found = true;
-	    } else {
-	       std::string wildcard = SubstVar(string(I, End), "any", "*");
-	       if (fnmatch(wildcard.c_str(), completeArch.c_str(), 0) == 0)
-	          Found = true;
+	       ++I;
 	    }
-	    
+
+	    std::string arch(I, End);
+	    if (arch.empty() == false && matchesArch(arch.c_str()) == true)
+	    {
+	       Found = true;
+	       if (I[-1] != '!')
+		  NegArch = false;
+	       // we found a match, so fast-forward to the end of the wildcards
+	       for (; End != Stop && *End != ']'; ++End);
+	    }
+
 	    if (*End++ == ']') {
 	       I = End;
 	       break;
 	    }
-	    
+
 	    I = End;
 	    for (;I != Stop && isspace(*I) != 0; I++);
-         }
+	 }
 
-	 if (NegArch)
+	 if (NegArch == true)
 	    Found = !Found;
-	 
-         if (Found == false)
+
+	 if (Found == false)
 	    Package = ""; /* not for this arch */
       }
-      
+
       // Skip whitespace
       for (;I != Stop && isspace(*I) != 0; I++);
+   }
+
+   if (ParseRestrictionsList == true)
+   {
+      // Parse a restrictions formula which is in disjunctive normal form:
+      // (foo AND bar) OR (blub AND bla)
+
+      std::vector<string> const profiles = APT::Configuration::getBuildProfiles();
+
+      // if the next character is a restriction list, then by default the
+      // dependency does not apply and the conditions have to be checked
+      // if the next character is not a restriction list, then by default the
+      // dependency applies
+      bool applies1 = (*I != '<');
+      while (I != Stop)
+      {
+	 if (*I != '<')
+	     break;
+
+	 ++I;
+	 // malformed
+	 if (unlikely(I == Stop))
+	    return 0;
+
+	 const char *End = I;
+
+	 // if of the prior restriction list is already fulfilled, then
+	 // we can just skip to the end of the current list
+	 if (applies1) {
+	    for (;End != Stop && *End != '>'; ++End);
+	    I = ++End;
+	    // skip whitespace
+	    for (;I != Stop && isspace(*I) != 0; I++);
+	 } else {
+	    bool applies2 = true;
+	    // all the conditions inside a restriction list have to be
+	    // met so once we find one that is not met, we can skip to
+	    // the end of this list
+	    while (I != Stop)
+	    {
+	       // look for whitespace or ending '>'
+	       // End now points to the character after the current term
+	       for (;End != Stop && !isspace(*End) && *End != '>'; ++End);
+
+	       if (unlikely(End == Stop))
+		  return 0;
+
+	       bool NegRestriction = false;
+	       if (*I == '!')
+	       {
+		  NegRestriction = true;
+		  ++I;
+	       }
+
+	       std::string restriction(I, End);
+
+	       if (restriction.empty() == false && profiles.empty() == false &&
+		  std::find(profiles.begin(), profiles.end(), restriction) != profiles.end())
+	       {
+		  if (NegRestriction) {
+		     applies2 = false;
+		     // since one of the terms does not apply we don't have to check the others
+		     for (; End != Stop && *End != '>'; ++End);
+		  }
+	       } else {
+		  if (!NegRestriction) {
+		     applies2 = false;
+		     // since one of the terms does not apply we don't have to check the others
+		     for (; End != Stop && *End != '>'; ++End);
+		  }
+	       }
+
+	       if (*End++ == '>') {
+		  I = End;
+		  // skip whitespace
+		  for (;I != Stop && isspace(*I) != 0; I++);
+		  break;
+	       }
+
+	       I = End;
+	       // skip whitespace
+	       for (;I != Stop && isspace(*I) != 0; I++);
+	    }
+	    if (applies2) {
+	       applies1 = true;
+	    }
+	 }
+      }
+
+      if (applies1 == false) {
+	 Package = ""; //not for this restriction
+      }
    }
 
    if (I != Stop && *I == '|')
@@ -625,18 +749,21 @@ bool debListParser::ParseDepends(pkgCache::VerIterator &Ver,
    if (Section.Find(Tag,Start,Stop) == false)
       return true;
 
-   string Package;
    string const pkgArch = Ver.Arch();
-   string Version;
-   unsigned int Op;
 
    while (1)
    {
-      Start = ParseDepends(Start,Stop,Package,Version,Op,false,!MultiArchEnabled);
+      string Package;
+      string Version;
+      unsigned int Op;
+
+      Start = ParseDepends(Start, Stop, Package, Version, Op, false, false, false);
       if (Start == 0)
 	 return _error->Error("Problem parsing dependency %s",Tag);
+      size_t const found = Package.rfind(':');
 
-      if (MultiArchEnabled == true &&
+      // If negative is unspecific it needs to apply on all architectures
+      if (MultiArchEnabled == true && found == string::npos &&
 	  (Type == pkgCache::Dep::Conflicts ||
 	   Type == pkgCache::Dep::DpkgBreaks ||
 	   Type == pkgCache::Dep::Replaces))
@@ -645,9 +772,33 @@ bool debListParser::ParseDepends(pkgCache::VerIterator &Ver,
 	      a != Architectures.end(); ++a)
 	    if (NewDepends(Ver,Package,*a,Version,Op,Type) == false)
 	       return false;
+	 if (NewDepends(Ver,Package,"none",Version,Op,Type) == false)
+	    return false;
       }
-      else if (NewDepends(Ver,Package,pkgArch,Version,Op,Type) == false)
-	 return false;
+      else if (found != string::npos &&
+	       strcmp(Package.c_str() + found, ":any") != 0)
+      {
+	 string Arch = Package.substr(found+1, string::npos);
+	 Package = Package.substr(0, found);
+	 // Such dependencies are not supposed to be accepted …
+	 // … but this is probably the best thing to do.
+	 if (Arch == "native")
+	    Arch = _config->Find("APT::Architecture");
+	 if (NewDepends(Ver,Package,Arch,Version,Op,Type) == false)
+	    return false;
+      }
+      else
+      {
+	 if (NewDepends(Ver,Package,pkgArch,Version,Op,Type) == false)
+	    return false;
+	 if ((Type == pkgCache::Dep::Conflicts ||
+	      Type == pkgCache::Dep::DpkgBreaks ||
+	      Type == pkgCache::Dep::Replaces) &&
+	     NewDepends(Ver, Package,
+			(pkgArch != "none") ? "none" : _config->Find("APT::Architecture"),
+			Version,Op,Type) == false)
+	    return false;
+      }
       if (Start == Stop)
 	 break;
    }
@@ -673,8 +824,8 @@ bool debListParser::ParseProvides(pkgCache::VerIterator &Ver)
 	 Start = ParseDepends(Start,Stop,Package,Version,Op);
 	 if (Start == 0)
 	    return _error->Error("Problem parsing Provides line");
-	 if (Op != pkgCache::Dep::NoOp) {
-	    _error->Warning("Ignoring Provides line with DepCompareOp for package %s", Package.c_str());
+	 if (Op != pkgCache::Dep::NoOp && Op != pkgCache::Dep::Equals) {
+	    _error->Warning("Ignoring Provides line with non-equal DepCompareOp for package %s", Package.c_str());
 	 } else if ((Ver->MultiArch & pkgCache::Version::Foreign) == pkgCache::Version::Foreign) {
 	    if (NewProvidesAllArch(Ver, Package, Version) == false)
 	       return false;
@@ -688,9 +839,7 @@ bool debListParser::ParseProvides(pkgCache::VerIterator &Ver)
       }
    }
 
-   if (MultiArchEnabled == false)
-      return true;
-   else if ((Ver->MultiArch & pkgCache::Version::Allowed) == pkgCache::Version::Allowed)
+   if ((Ver->MultiArch & pkgCache::Version::Allowed) == pkgCache::Version::Allowed)
    {
       string const Package = string(Ver.ParentPkg().Name()).append(":").append("any");
       return NewProvidesAllArch(Ver, Package, Ver.VerStr());
@@ -731,7 +880,7 @@ bool debListParser::GrabWord(string Word,WordList *List,unsigned char &Out)
 									/*}}}*/
 // ListParser::Step - Move to the next section in the file		/*{{{*/
 // ---------------------------------------------------------------------
-/* This has to be carefull to only process the correct architecture */
+/* This has to be careful to only process the correct architecture */
 bool debListParser::Step()
 {
    iOffset = Tags.Offset();
@@ -741,12 +890,14 @@ bool debListParser::Step()
          drop the whole section. A missing arch tag only happens (in theory)
          inside the Status file, so that is a positive return */
       string const Architecture = Section.FindS("Architecture");
-      if (Architecture.empty() == true)
-	 return true;
 
       if (Arch.empty() == true || Arch == "any" || MultiArchEnabled == false)
       {
 	 if (APT::Configuration::checkArchitecture(Architecture) == true)
+	    return true;
+	 /* parse version stanzas without an architecture only in the status file
+	    (and as misfortune bycatch flat-archives) */
+	 if ((Arch.empty() == true || Arch == "any") && Architecture.empty() == true)
 	    return true;
       }
       else
@@ -771,105 +922,31 @@ bool debListParser::LoadReleaseInfo(pkgCache::PkgFileIterator &FileI,
 {
    // apt-secure does no longer download individual (per-section) Release
    // file. to provide Component pinning we use the section name now
-   FileI->Component = WriteUniqString(component);
+   map_ptrloc const storage = WriteUniqString(component);
+   FileI->Component = storage;
 
-   // FIXME: Code depends on the fact that Release files aren't compressed
-   FILE* release = fdopen(dup(File.Fd()), "r");
-   if (release == NULL)
+   pkgTagFile TagFile(&File, File.Size());
+   pkgTagSection Section;
+   if (_error->PendingError() == true || TagFile.Step(Section) == false)
       return false;
 
-   char buffer[101];
-   bool gpgClose = false;
-   while (fgets(buffer, sizeof(buffer), release) != NULL)
-   {
-      size_t len = 0;
-
-      // Skip empty lines
-      for (; buffer[len] == '\r' && buffer[len] == '\n'; ++len)
-         /* nothing */
-         ;
-      if (buffer[len] == '\0')
-	 continue;
-
-      // only evalute the first GPG section
-      if (strncmp("-----", buffer, 5) == 0)
-      {
-	 if (gpgClose == true)
-	    break;
-	 gpgClose = true;
-	 continue;
-      }
-
-      // seperate the tag from the data
-      const char* dataStart = strchr(buffer + len, ':');
-      if (dataStart == NULL)
-	 continue;
-      len = dataStart - buffer;
-      for (++dataStart; *dataStart == ' '; ++dataStart)
-         /* nothing */
-         ;
-      const char* dataEnd = (const char*)rawmemchr(dataStart, '\0');
-      // The last char should be a newline, but we can never be sure: #633350
-      const char* lineEnd = dataEnd;
-      for (--lineEnd; *lineEnd == '\r' || *lineEnd == '\n'; --lineEnd)
-         /* nothing */
-         ;
-      ++lineEnd;
-
-      // which datastorage need to be updated
-      enum { Suite, Component, Version, Origin, Codename, Label, None } writeTo = None;
-      if (buffer[0] == ' ')
-	 ;
-      #define APT_PARSER_WRITETO(X) else if (strncmp(#X, buffer, len) == 0) writeTo = X;
-      APT_PARSER_WRITETO(Suite)
-      APT_PARSER_WRITETO(Component)
-      APT_PARSER_WRITETO(Version)
-      APT_PARSER_WRITETO(Origin)
-      APT_PARSER_WRITETO(Codename)
-      APT_PARSER_WRITETO(Label)
-      #undef APT_PARSER_WRITETO
-      #define APT_PARSER_FLAGIT(X) else if (strncmp(#X, buffer, len) == 0) \
-	 pkgTagSection::FindFlag(FileI->Flags, pkgCache::Flag:: X, dataStart, lineEnd);
-      APT_PARSER_FLAGIT(NotAutomatic)
-      APT_PARSER_FLAGIT(ButAutomaticUpgrades)
-      #undef APT_PARSER_FLAGIT
-
-      // load all data from the line and save it
-      string data;
-      if (writeTo != None)
-	 data.append(dataStart, dataEnd);
-      if (sizeof(buffer) - 1 == (dataEnd - buffer))
-      {
-	 while (fgets(buffer, sizeof(buffer), release) != NULL)
-	 {
-	    if (writeTo != None)
-	       data.append(buffer);
-	    if (strlen(buffer) != sizeof(buffer) - 1)
-	       break;
-	 }
-      }
-      if (writeTo != None)
-      {
-	 // remove spaces and stuff from the end of the data line
-	 for (std::string::reverse_iterator s = data.rbegin();
-	      s != data.rend(); ++s)
-	 {
-	    if (*s != '\r' && *s != '\n' && *s != ' ')
-	       break;
-	    *s = '\0';
-	 }
-	 switch (writeTo) {
-	 case Suite: FileI->Archive = WriteUniqString(data); break;
-	 case Component: FileI->Component = WriteUniqString(data); break;
-	 case Version: FileI->Version = WriteUniqString(data); break;
-	 case Origin: FileI->Origin = WriteUniqString(data); break;
-	 case Codename: FileI->Codename = WriteUniqString(data); break;
-	 case Label: FileI->Label = WriteUniqString(data); break;
-	 case None: break;
-	 }
-      }
+   std::string data;
+   #define APT_INRELEASE(TAG, STORE) \
+   data = Section.FindS(TAG); \
+   if (data.empty() == false) \
+   { \
+      map_ptrloc const storage = WriteUniqString(data); \
+      STORE = storage; \
    }
-   fclose(release);
+   APT_INRELEASE("Suite", FileI->Archive)
+   APT_INRELEASE("Component", FileI->Component)
+   APT_INRELEASE("Version", FileI->Version)
+   APT_INRELEASE("Origin", FileI->Origin)
+   APT_INRELEASE("Codename", FileI->Codename)
+   APT_INRELEASE("Label", FileI->Label)
+   #undef APT_INRELEASE
+   Section.FindFlag("NotAutomatic", FileI->Flags, pkgCache::Flag::NotAutomatic);
+   Section.FindFlag("ButAutomaticUpgrades", FileI->Flags, pkgCache::Flag::ButAutomaticUpgrades);
 
    return !_error->PendingError();
 }
@@ -886,3 +963,24 @@ unsigned char debListParser::GetPrio(string Str)
    return Out;
 }
 									/*}}}*/
+#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
+bool debListParser::SameVersion(unsigned short const Hash,		/*{{{*/
+      pkgCache::VerIterator const &Ver)
+{
+   if (pkgCacheGenerator::ListParser::SameVersion(Hash, Ver) == false)
+      return false;
+   // status file has no (Download)Size, but all others are fair game
+   // status file is parsed last, so the first version we encounter is
+   // probably also the version we have downloaded
+   unsigned long long const Size = Section.FindULL("Size");
+   if (Size != 0 && Size != Ver->Size)
+      return false;
+   // available everywhere, but easier to check here than to include in VersionHash
+   unsigned char MultiArch = ParseMultiArch(false);
+   if (MultiArch != Ver->MultiArch)
+      return false;
+   // for all practical proposes (we can check): same version
+   return true;
+}
+									/*}}}*/
+#endif

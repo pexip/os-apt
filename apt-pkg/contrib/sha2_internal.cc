@@ -33,6 +33,7 @@
  */
 #include <config.h>
 
+#include <endian.h>
 #include <string.h>	/* memcpy()/memset() or bcopy()/bzero() */
 #include <assert.h>	/* assert() */
 #include "sha2_internal.h"
@@ -65,7 +66,7 @@
  * Please make sure that your system defines BYTE_ORDER.  If your
  * architecture is little-endian, make sure it also defines
  * LITTLE_ENDIAN and that the two (BYTE_ORDER and LITTLE_ENDIAN) are
- * equivilent.
+ * equivalent.
  *
  * If your system does not define the above, then you can do so by
  * hand like this:
@@ -552,7 +553,9 @@ void SHA256_Update(SHA256_CTX* context, const sha2_byte *data, size_t len) {
 	}
 	while (len >= SHA256_BLOCK_LENGTH) {
 		/* Process as many complete blocks as we can */
-		SHA256_Transform(context, (sha2_word32*)data);
+		sha2_byte buffer[SHA256_BLOCK_LENGTH];
+		MEMCPY_BCOPY(buffer, data, SHA256_BLOCK_LENGTH);
+		SHA256_Transform(context, (sha2_word32*)buffer);
 		context->bitcount += SHA256_BLOCK_LENGTH << 3;
 		len -= SHA256_BLOCK_LENGTH;
 		data += SHA256_BLOCK_LENGTH;
@@ -630,7 +633,7 @@ void SHA256_Final(sha2_byte digest[], SHA256_CTX* context) {
 	}
 
 	/* Clean up state data: */
-	MEMSET_BZERO(context, sizeof(context));
+	MEMSET_BZERO(context, sizeof(*context));
 	usedspace = 0;
 }
 
@@ -651,7 +654,7 @@ char *SHA256_End(SHA256_CTX* context, char buffer[]) {
 		}
 		*buffer = (char)0;
 	} else {
-		MEMSET_BZERO(context, sizeof(context));
+		MEMSET_BZERO(context, sizeof(*context));
 	}
 	MEMSET_BZERO(digest, SHA256_DIGEST_LENGTH);
 	return buffer;
@@ -879,7 +882,9 @@ void SHA512_Update(SHA512_CTX* context, const sha2_byte *data, size_t len) {
 	}
 	while (len >= SHA512_BLOCK_LENGTH) {
 		/* Process as many complete blocks as we can */
-		SHA512_Transform(context, (sha2_word64*)data);
+		sha2_byte buffer[SHA512_BLOCK_LENGTH];
+		MEMCPY_BCOPY(buffer, data, SHA512_BLOCK_LENGTH);
+		SHA512_Transform(context, (sha2_word64*)buffer);
 		ADDINC128(context->bitcount, SHA512_BLOCK_LENGTH << 3);
 		len -= SHA512_BLOCK_LENGTH;
 		data += SHA512_BLOCK_LENGTH;
@@ -965,7 +970,7 @@ void SHA512_Final(sha2_byte digest[], SHA512_CTX* context) {
 	}
 
 	/* Zero out state data */
-	MEMSET_BZERO(context, sizeof(context));
+	MEMSET_BZERO(context, sizeof(*context));
 }
 
 char *SHA512_End(SHA512_CTX* context, char buffer[]) {
@@ -985,7 +990,7 @@ char *SHA512_End(SHA512_CTX* context, char buffer[]) {
 		}
 		*buffer = (char)0;
 	} else {
-		MEMSET_BZERO(context, sizeof(context));
+		MEMSET_BZERO(context, sizeof(*context));
 	}
 	MEMSET_BZERO(digest, SHA512_DIGEST_LENGTH);
 	return buffer;
@@ -1040,7 +1045,7 @@ void SHA384_Final(sha2_byte digest[], SHA384_CTX* context) {
 	}
 
 	/* Zero out state data */
-	MEMSET_BZERO(context, sizeof(context));
+	MEMSET_BZERO(context, sizeof(*context));
 }
 
 char *SHA384_End(SHA384_CTX* context, char buffer[]) {
@@ -1060,7 +1065,7 @@ char *SHA384_End(SHA384_CTX* context, char buffer[]) {
 		}
 		*buffer = (char)0;
 	} else {
-		MEMSET_BZERO(context, sizeof(context));
+		MEMSET_BZERO(context, sizeof(*context));
 	}
 	MEMSET_BZERO(digest, SHA384_DIGEST_LENGTH);
 	return buffer;

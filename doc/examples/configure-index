@@ -90,7 +90,7 @@ APT
 
   Authentication
   {
-     TrustCDROM "false";            // consider the CDROM always trusted
+     TrustCDROM "false";            // consider the CD-ROM always trusted
   };
 
   // Some general options
@@ -142,14 +142,14 @@ APT
     // APT::Archives::MinAge "2"; (old, deprecated)
     MinAge "2"; // (new)
     // - Set minimum age of a package file. If a file is younger it
-    //   will not be deleted (0=disable). Usefull to prevent races 
+    //   will not be deleted (0=disable). Useful to prevent races
     //   and to keep backups of the packages for emergency.
 
     // APT::Archives::MaxSize "0"; (old, deprecated)
     MaxSize "0"; // (new)
     // - Set maximum size of the cache in MB (0=disable). If the cache
     //   is bigger, cached package files are deleted until the size
-    //   requirement is met (the biggest packages will be deleted 
+    //   requirement is met (the oldest packages will be deleted 
     //   first).
 
     Update-Package-Lists "0";
@@ -225,7 +225,7 @@ Acquire
 	Verify-Peer "false";
 	SslCert "/etc/apt/some.pem";
 	CaPath  "/etc/ssl/certs";
-	Verify-Host" "true";
+	Verify-Host "true";
 	AllowRedirect  "true";
 
 	Timeout "120";
@@ -414,8 +414,8 @@ DPkg
    FlushSTDIN "true";
 
    // Control the size of the command line passed to dpkg.
-   MaxBytes 1024;
-   MaxArgs 350;
+   MaxArgBytes 32768;
+   MaxArgs 8192;
 
    // controls if apt will apport on the first dpkg error or if it 
    // tries to install as many packages as possible
@@ -450,7 +450,7 @@ Debug
   aptcdrom "false";        // Show found package files
   IdentCdrom "false";
   acquire::netrc "false";  // netrc parser
-  
+  RunScripts "false";      // debug invocation of external scripts  
 }
 
 pkgCacheGen::Essential "native"; // other modes: all, none, installed

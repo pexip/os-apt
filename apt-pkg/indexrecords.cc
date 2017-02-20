@@ -12,50 +12,67 @@
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/hashes.h>
+#include <apt-pkg/gpgv.h>
 
-#include <sys/stat.h>
+#include <stdlib.h>
+#include <time.h>
 #include <clocale>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include <apti18n.h>
 									/*}}}*/
 
 using std::string;
 
-string indexRecords::GetDist() const
+APT_PURE string indexRecords::GetDist() const
 {
    return this->Dist;
 }
 
-bool indexRecords::CheckDist(const string MaybeDist) const
+APT_PURE string indexRecords::GetSuite() const
+{
+   return this->Suite;
+}
+
+APT_PURE bool indexRecords::CheckDist(const string MaybeDist) const
 {
    return (this->Dist == MaybeDist
 	   || this->Suite == MaybeDist);
 }
 
-string indexRecords::GetExpectedDist() const
+APT_PURE string indexRecords::GetExpectedDist() const
 {
    return this->ExpectedDist;
 }
 
-time_t indexRecords::GetValidUntil() const
+APT_PURE time_t indexRecords::GetValidUntil() const
 {
    return this->ValidUntil;
 }
 
-const indexRecords::checkSum *indexRecords::Lookup(const string MetaKey)
+APT_PURE const indexRecords::checkSum *indexRecords::Lookup(const string MetaKey)
 {
-   return Entries[MetaKey];
+   std::map<std::string, indexRecords::checkSum* >::const_iterator sum = Entries.find(MetaKey);
+   if (sum == Entries.end())
+      return NULL;
+   return sum->second;
 }
 
-bool indexRecords::Exists(string const &MetaKey) const
+APT_PURE bool indexRecords::Exists(string const &MetaKey) const
 {
    return Entries.count(MetaKey) == 1;
 }
 
 bool indexRecords::Load(const string Filename)				/*{{{*/
 {
-   FileFd Fd(Filename, FileFd::ReadOnly);
-   pkgTagFile TagFile(&Fd, Fd.Size() + 256); // XXX
+   FileFd Fd;
+   if (OpenMaybeClearSignedFile(Filename, Fd) == false)
+      return false;
+
+   pkgTagFile TagFile(&Fd, Fd.Size());
    if (_error->PendingError() == true)
    {
       strprintf(ErrorText, _("Unable to parse Release file %s"),Filename.c_str());
@@ -64,16 +81,11 @@ bool indexRecords::Load(const string Filename)				/*{{{*/
 
    pkgTagSection Section;
    const char *Start, *End;
-   // Skip over sections beginning with ----- as this is an idicator for clearsigns
-   do {
-      if (TagFile.Step(Section) == false)
-      {
-	 strprintf(ErrorText, _("No sections in Release file %s"), Filename.c_str());
-	 return false;
-      }
-
-      Section.Get (Start, End, 0);
-   } while (End - Start > 5 && strncmp(Start, "-----", 5) == 0);
+   if (TagFile.Step(Section) == false)
+   {
+      strprintf(ErrorText, _("No sections in Release file %s"), Filename.c_str());
+      return false;
+   }
 
    Suite = Section.FindS("Suite");
    Dist = Section.FindS("Codename");
@@ -122,10 +134,10 @@ bool indexRecords::Load(const string Filename)				/*{{{*/
    // get the user settings for this archive and use what expires earlier
    int MaxAge = _config->FindI("Acquire::Max-ValidTime", 0);
    if (Label.empty() == false)
-      MaxAge = _config->FindI(string("Acquire::Max-ValidTime::" + Label).c_str(), MaxAge);
+      MaxAge = _config->FindI(("Acquire::Max-ValidTime::" + Label).c_str(), MaxAge);
    int MinAge = _config->FindI("Acquire::Min-ValidTime", 0);
    if (Label.empty() == false)
-      MinAge = _config->FindI(string("Acquire::Min-ValidTime::" + Label).c_str(), MinAge);
+      MinAge = _config->FindI(("Acquire::Min-ValidTime::" + Label).c_str(), MinAge);
 
    if(MaxAge == 0 &&
       (MinAge == 0 || ValidUntil == 0)) // No user settings, use the one from the Release file
@@ -170,7 +182,7 @@ bool indexRecords::parseSumData(const char *&Start, const char *End,	/*{{{*/
    Hash = "";
    Size = 0;
    /* Skip over the first blank */
-   while ((*Start == '\t' || *Start == ' ' || *Start == '\n')
+   while ((*Start == '\t' || *Start == ' ' || *Start == '\n' || *Start == '\r')
 	  && Start < End)
       Start++;
    if (Start >= End)
@@ -212,7 +224,8 @@ bool indexRecords::parseSumData(const char *&Start, const char *End,	/*{{{*/
    
    EntryEnd = Start;
    /* Find the end of the third entry (the filename) */
-   while ((*EntryEnd != '\t' && *EntryEnd != ' ' && *EntryEnd != '\n')
+   while ((*EntryEnd != '\t' && *EntryEnd != ' ' && 
+           *EntryEnd != '\n' && *EntryEnd != '\r')
 	  && EntryEnd < End)
       EntryEnd++;
 

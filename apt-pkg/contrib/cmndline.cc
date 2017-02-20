@@ -18,6 +18,11 @@
 #include <apt-pkg/error.h>
 #include <apt-pkg/strutl.h>
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+
 #include <apti18n.h>
 									/*}}}*/
 using namespace std;
@@ -36,6 +41,45 @@ CommandLine::CommandLine(Args *AList,Configuration *Conf) : ArgList(AList),
 CommandLine::~CommandLine()
 {
    delete [] FileList;
+}
+									/*}}}*/
+// CommandLine::GetCommand - return the first non-option word		/*{{{*/
+char const * CommandLine::GetCommand(Dispatch const * const Map,
+      unsigned int const argc, char const * const * const argv)
+{
+   // if there is a -- on the line there must be the word we search for either
+   // before it (as -- marks the end of the options) or right after it (as we can't
+   // decide if the command is actually an option, given that in theory, you could
+   // have parameters named like commands)
+   for (size_t i = 1; i < argc; ++i)
+   {
+      if (strcmp(argv[i], "--") != 0)
+	 continue;
+      // check if command is before --
+      for (size_t k = 1; k < i; ++k)
+	 for (size_t j = 0; Map[j].Match != NULL; ++j)
+	    if (strcmp(argv[k], Map[j].Match) == 0)
+	       return Map[j].Match;
+      // see if the next token after -- is the command
+      ++i;
+      if (i < argc)
+	 for (size_t j = 0; Map[j].Match != NULL; ++j)
+	    if (strcmp(argv[i], Map[j].Match) == 0)
+	       return Map[j].Match;
+      // we found a --, but not a command
+      return NULL;
+   }
+   // no --, so search for the first word matching a command
+   // FIXME: How like is it that an option parameter will be also a valid Match ?
+   for (size_t i = 1; i < argc; ++i)
+   {
+      if (*(argv[i]) == '-')
+	 continue;
+      for (size_t j = 0; Map[j].Match != NULL; ++j)
+	 if (strcmp(argv[i], Map[j].Match) == 0)
+	    return Map[j].Match;
+   }
+   return NULL;
 }
 									/*}}}*/
 // CommandLine::Parse - Main action member				/*{{{*/
@@ -92,8 +136,9 @@ bool CommandLine::Parse(int argc,const char **argv)
       // Match up to a = against the list
       Args *A;
       const char *OptEnd = strchrnul(Opt, '=');
-      for (A = ArgList; A->end() == false && 
-	   stringcasecmp(Opt,OptEnd,A->LongOpt) != 0; A++);
+      for (A = ArgList; A->end() == false &&
+	   (A->LongOpt == 0 || stringcasecmp(Opt,OptEnd,A->LongOpt) != 0);
+	   ++A);
       
       // Failed, look for a word after the first - (no-foo)
       bool PreceedMatch = false;
@@ -105,7 +150,8 @@ bool CommandLine::Parse(int argc,const char **argv)
 	 Opt++;
 	 
 	 for (A = ArgList; A->end() == false &&
-	      stringcasecmp(Opt,OptEnd,A->LongOpt) != 0; A++);
+	      (A->LongOpt == 0 || stringcasecmp(Opt,OptEnd,A->LongOpt) != 0);
+	      ++A);
 
 	 // Failed again..
 	 if (A->end() == true && OptEnd - Opt != 1)
@@ -255,7 +301,7 @@ bool CommandLine::HandleOpt(int &I,int argc,const char *argv[],
    // Look for an argument.
    while (1)
    {
-      // Look at preceeding text
+      // Look at preceding text
       char Buffer[300];
       if (Argument == 0)
       {
@@ -359,6 +405,7 @@ bool CommandLine::DispatchArg(Dispatch *Map,bool NoMatch)
 void CommandLine::SaveInConfig(unsigned int const &argc, char const * const * const argv)
 {
    char cmdline[100 + argc * 50];
+   memset(cmdline, 0, sizeof(cmdline));
    unsigned int length = 0;
    bool lastWasOption = false;
    bool closeQuote = false;
@@ -386,5 +433,17 @@ void CommandLine::SaveInConfig(unsigned int const &argc, char const * const * co
    }
    cmdline[--length] = '\0';
    _config->Set("CommandLine::AsString", cmdline);
+}
+									/*}}}*/
+CommandLine::Args CommandLine::MakeArgs(char ShortOpt, char const *LongOpt, char const *ConfName, unsigned long Flags)/*{{{*/
+{
+   /* In theory, this should be a constructor for CommandLine::Args instead,
+      but this breaks compatibility as gcc thinks this is a c++11 initializer_list */
+   CommandLine::Args arg;
+   arg.ShortOpt = ShortOpt;
+   arg.LongOpt = LongOpt;
+   arg.ConfName = ConfName;
+   arg.Flags = Flags;
+   return arg;
 }
 									/*}}}*/

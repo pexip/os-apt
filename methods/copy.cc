@@ -18,9 +18,10 @@
 #include <apt-pkg/hashes.h>
 #include <apt-pkg/configuration.h>
 
+#include <string>
 #include <sys/stat.h>
-#include <utime.h>
-#include <unistd.h>
+#include <sys/time.h>
+
 #include <apti18n.h>
 									/*}}}*/
 
@@ -28,23 +29,20 @@ class CopyMethod : public pkgAcqMethod
 {
    virtual bool Fetch(FetchItem *Itm);
    void CalculateHashes(FetchResult &Res);
-
+   
    public:
    
-   CopyMethod() : pkgAcqMethod("1.0",SingleInstance|SendConfig) {};
+   CopyMethod() : pkgAcqMethod("1.0",SingleInstance | SendConfig) {};
 };
 
 void CopyMethod::CalculateHashes(FetchResult &Res)
 {
-   // For gzip indexes we need to look inside the gzip for the hash
-   // We can not use the extension here as its not used in partial 
-   // on a IMS hit
-   FileFd::OpenMode OpenMode = FileFd::ReadOnly;
-   if (_config->FindB("Acquire::GzipIndexes", false) == true)
-      OpenMode = FileFd::ReadOnlyGzip;
-
    Hashes Hash;
-   FileFd Fd(Res.Filename, OpenMode);
+   FileFd::CompressMode CompressMode = FileFd::None;
+   if (_config->FindB("Acquire::GzipIndexes", false) == true)
+      CompressMode = FileFd::Extension;
+
+   FileFd Fd(Res.Filename, FileFd::ReadOnly, CompressMode);
    Hash.AddFD(Fd);
    Res.TakeHashes(Hash);
 }
@@ -54,8 +52,8 @@ void CopyMethod::CalculateHashes(FetchResult &Res)
 /* */
 bool CopyMethod::Fetch(FetchItem *Itm)
 {
-   URI Get = Itm->Uri;
-   std::string File = Get.Host + Get.Path; // To account for relative paths
+   // this ensures that relative paths work in copy
+   std::string File = Itm->Uri.substr(Itm->Uri.find(':')+1);
 
    // Stat the file and send a start message
    struct stat Buf;
@@ -69,9 +67,9 @@ bool CopyMethod::Fetch(FetchItem *Itm)
    Res.LastModified = Buf.st_mtime;
    Res.IMSHit = false;      
    URIStart(Res);
-
-   // when the files are identical, just compute the hashes
-   if(File == Itm->DestFile)
+   
+   // just calc the hashes if the source and destination are identical
+   if (File == Itm->DestFile)
    {
       CalculateHashes(Res);
       URIDone(Res);
@@ -97,17 +95,15 @@ bool CopyMethod::Fetch(FetchItem *Itm)
 
    From.Close();
    To.Close();
-   
+
    // Transfer the modification times
-   struct utimbuf TimeBuf;
-   TimeBuf.actime = Buf.st_atime;
-   TimeBuf.modtime = Buf.st_mtime;
-   if (utime(Itm->DestFile.c_str(),&TimeBuf) != 0)
-   {
-      To.OpFail();
-      return _error->Errno("utime",_("Failed to set modification time"));
-   }
-   
+   struct timeval times[2];
+   times[0].tv_sec = Buf.st_atime;
+   times[1].tv_sec = Buf.st_mtime;
+   times[0].tv_usec = times[1].tv_usec = 0;
+   if (utimes(Res.Filename.c_str(), times) != 0)
+      return _error->Errno("utimes",_("Failed to set modification time"));
+
    CalculateHashes(Res);
 
    URIDone(Res);

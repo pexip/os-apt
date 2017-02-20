@@ -27,14 +27,17 @@
 #include <apt-pkg/arfile.h>
 #include <apt-pkg/dirstream.h>
 #include <apt-pkg/tagfile.h>
-#include <apt-pkg/pkgcache.h>
+
+#include <string>
 
 #ifndef APT_8_CLEANER_HEADERS
-#include <apt-pkg/database.h>
+#include <apt-pkg/md5.h>
+#endif
+#ifndef APT_10_CLEANER_HEADERS
+#include <apt-pkg/pkgcache.h>
 #endif
 
 class FileFd;
-class pkgDataBase;
 
 class debDebFile
 {
@@ -46,13 +49,11 @@ class debDebFile
    bool CheckMember(const char *Name);
    
    public:
-
    class ControlExtract;
    class MemControlExtract;
-   
-   bool ExtractControl(pkgDataBase &DB);
+
+   bool ExtractTarMember(pkgDirStream &Stream, const char *Name);
    bool ExtractArchive(pkgDirStream &Stream);
-   pkgCache::VerIterator MergeControl(pkgDataBase &DB);
    const ARArchive::Member *GotoMember(const char *Name);
    inline FileFd &GetFile() {return File;};
    

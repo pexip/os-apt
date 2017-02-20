@@ -6,7 +6,7 @@
    AR File - Handle an 'AR' archive
    
    AR Archives have plain text headers at the start of each file
-   section. The headers are aligned on a 2 byte boundry.
+   section. The headers are aligned on a 2 byte boundary.
    
    Information about the structure of AR files can be found in ar(5)
    on a BSD system, or in the binutils source.
@@ -21,7 +21,9 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/error.h>
 
-#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <string>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -64,7 +66,7 @@ ARArchive::~ARArchive()
    byte plain text header then the file data, another header, data, etc */
 bool ARArchive::LoadHeaders()
 {
-   signed long Left = File.Size();
+   off_t Left = File.Size();
    
    // Check the magic byte
    char Magic[8];
@@ -106,7 +108,10 @@ bool ARArchive::LoadHeaders()
 	    return _error->Error(_("Invalid archive member header"));
 	 }
 	 if (File.Read(S,Len) == false)
+	 {
+	    delete Memb;
 	    return false;
+	 }
 	 S[Len] = 0;
 	 Memb->Name = S;
 	 Memb->Size -= Len;
@@ -120,7 +125,7 @@ bool ARArchive::LoadHeaders()
       }
 
       // Account for the AR header alignment 
-      unsigned Skip = Memb->Size % 2;
+      off_t Skip = Memb->Size % 2;
       
       // Add it to the list
       Memb->Next = List;
@@ -128,7 +133,7 @@ bool ARArchive::LoadHeaders()
       Memb->Start = File.Tell();
       if (File.Skip(Memb->Size + Skip) == false)
 	 return false;
-      if (Left < (signed)(Memb->Size + Skip))
+      if (Left < (off_t)(Memb->Size + Skip))
 	 return _error->Error(_("Archive is too short"));
       Left -= Memb->Size + Skip;
    }   

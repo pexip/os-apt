@@ -10,15 +10,20 @@
 
 #include <apt-pkg/edspindexfile.h>
 #include <apt-pkg/edsplistparser.h>
-#include <apt-pkg/sourcelist.h>
-#include <apt-pkg/configuration.h>
-#include <apt-pkg/progress.h>
 #include <apt-pkg/error.h>
-#include <apt-pkg/strutl.h>
 #include <apt-pkg/fileutl.h>
-#include <apt-pkg/acquire-item.h>
+#include <apt-pkg/progress.h>
+#include <apt-pkg/debindexfile.h>
+#include <apt-pkg/indexfile.h>
+#include <apt-pkg/mmap.h>
+#include <apt-pkg/pkgcache.h>
+#include <apt-pkg/cacheiterators.h>
+#include <apt-pkg/pkgcachegen.h>
+#include <apt-pkg/pkgrecords.h>
 
-#include <sys/stat.h>
+#include <stddef.h>
+#include <unistd.h>
+#include <string>
 									/*}}}*/
 
 // edspIndex::edspIndex - Constructor					/*{{{*/
@@ -51,7 +56,8 @@ bool edspIndex::Merge(pkgCacheGenerator &Gen,OpProgress *Prog) const
    pkgCache::PkgFileIterator CFile = Gen.GetCurFile();
    CFile->Size = Pkg.FileSize();
    CFile->mtime = Pkg.ModificationTime();
-   CFile->Archive = Gen.WriteUniqString("edsp::scenario");
+   map_ptrloc const storage = Gen.WriteUniqString("edsp::scenario");
+   CFile->Archive = storage;
 
    if (Gen.MergeList(Parser) == false)
       return _error->Error("Problem with MergeList %s",File.c_str());
@@ -62,7 +68,7 @@ bool edspIndex::Merge(pkgCacheGenerator &Gen,OpProgress *Prog) const
 class edspIFType: public pkgIndexFile::Type
 {
    public:
-   virtual pkgRecords::Parser *CreatePkgParser(pkgCache::PkgFileIterator File) const
+   virtual pkgRecords::Parser *CreatePkgParser(pkgCache::PkgFileIterator) const
    {
       // we don't have a record parser for this type as the file is not presistent
       return NULL;

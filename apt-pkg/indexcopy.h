@@ -14,13 +14,18 @@
 #include <string>
 #include <stdio.h>
 
+#include <apt-pkg/macros.h>
+
+#ifndef APT_10_CLEANER_HEADERS
+#include <apt-pkg/gpgv.h>
+class FileFd;
+#endif
 #ifndef APT_8_CLEANER_HEADERS
 using std::string;
 using std::vector;
 #endif
 
 class pkgTagSection;
-class FileFd;
 class indexRecords;
 class pkgCdromStatus;
 
@@ -96,14 +101,10 @@ class SigVerify								/*{{{*/
    bool CopyAndVerify(std::string CDROM,std::string Name,std::vector<std::string> &SigList,
 		      std::vector<std::string> PkgList,std::vector<std::string> SrcList);
 
-   /** \brief generates and run the command to verify a file with gpgv */
-   static bool RunGPGV(std::string const &File, std::string const &FileOut,
+   APT_DEPRECATED static bool RunGPGV(std::string const &File, std::string const &FileOut,
 		       int const &statusfd, int fd[2]);
-   inline static bool RunGPGV(std::string const &File, std::string const &FileOut,
-			      int const &statusfd = -1) {
-      int fd[2];
-      return RunGPGV(File, FileOut, statusfd, fd);
-   };
+   APT_DEPRECATED static bool RunGPGV(std::string const &File, std::string const &FileOut,
+			      int const &statusfd = -1);
 };
 									/*}}}*/
 

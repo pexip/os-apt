@@ -15,7 +15,7 @@
    
    This structure is important to support the readonly status of the cache 
    file. When the data is saved the cache will be refereshed from our 
-   internal rep and written to disk. Then the actual persistant data 
+   internal rep and written to disk. Then the actual persistent data
    files will be put on the disk.
 
    Each dependency is compared against 3 target versions to produce to
@@ -40,18 +40,27 @@
 
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/pkgcache.h>
+#include <apt-pkg/cacheiterators.h>
+#include <apt-pkg/macros.h>
 
-#include <vector>
+#include <stddef.h>
+
 #include <memory>
-#include <set>
 #include <list>
+#include <string>
+#include <utility>
 
 #ifndef APT_8_CLEANER_HEADERS
 #include <apt-pkg/progress.h>
 #include <apt-pkg/error.h>
 #endif
+#ifndef APT_10_CLEANER_HEADERS
+#include <set>
+#include <vector>
+#endif
 
 class OpProgress;
+class pkgVersioningSystem;
 
 class pkgDepCache : protected pkgCache::Namespace
 {
@@ -61,7 +70,7 @@ class pkgDepCache : protected pkgCache::Namespace
    class InRootSetFunc
    {
    public:
-     virtual bool InRootSet(const pkgCache::PkgIterator &pkg) {return false;};
+     virtual bool InRootSet(const pkgCache::PkgIterator &/*pkg*/) {return false;};
      virtual ~InRootSetFunc() {};
    };
 
@@ -128,7 +137,7 @@ class pkgDepCache : protected pkgCache::Namespace
    enum InternalFlags {AutoKept = (1 << 0), Purge = (1 << 1), ReInstall = (1 << 2), Protected = (1 << 3)};
       
    enum VersionTypes {NowVersion, InstallVersion, CandidateVersion};
-   enum ModeList {ModeDelete = 0, ModeKeep = 1, ModeInstall = 2};
+   enum ModeList {ModeDelete = 0, ModeKeep = 1, ModeInstall = 2, ModeGarbage = 3};
 
    /** \brief Represents an active action group.
     *
@@ -231,7 +240,7 @@ class pkgDepCache : protected pkgCache::Namespace
       unsigned char DepState;          // DepState Flags
 
       // Update of candidate version
-      const char *StripEpoch(const char *Ver);
+      const char *StripEpoch(const char *Ver) APT_PURE;
       void Update(PkgIterator Pkg,pkgCache &Cache);
       
       // Various test members for the current status of the package
@@ -381,8 +390,8 @@ class pkgDepCache : protected pkgCache::Namespace
    /** \brief Update the Marked and Garbage fields of all packages.
     *
     *  This routine is implicitly invoked after all state manipulators
-    *  and when an ActionGroup is destroyed.  It invokes #MarkRequired
-    *  and #Sweep to do its dirty work.
+    *  and when an ActionGroup is destroyed.  It invokes the private
+    *  MarkRequired() and Sweep() to do its dirty work.
     *
     *  \param rootFunc A predicate that returns \b true for packages
     *  that should be added to the root set.
@@ -442,16 +451,15 @@ class pkgDepCache : protected pkgCache::Namespace
    /** \return \b true if it's OK for MarkInstall to install
     *  the given package.
     *
-    *  See the default implementation for a simple example how this
-    *  method can be used.
-    *  Overriding implementations should use the hold-state-flag to cache
-    *  results from previous checks of this package - also it should
-    *  be used if the default resolver implementation is also used to
-    *  ensure that these packages are handled like "normal" dpkg holds.
+    *  The default implementation simply calls all IsInstallOk*
+    *  method mentioned below.
+    *
+    *  Overriding implementations should use the hold-state-flag to
+    *  cache results from previous checks of this package - if possible.
     *
     *  The parameters are the same as in the calling MarkInstall:
     *  \param Pkg       the package that MarkInstall wants to install.
-    *  \param AutoInst  needs a previous MarkInstall this package?
+    *  \param AutoInst  install this and all its dependencies
     *  \param Depth     recursive deep of this Marker call
     *  \param FromUser  was the install requested by the user?
     */
@@ -461,16 +469,12 @@ class pkgDepCache : protected pkgCache::Namespace
    /** \return \b true if it's OK for MarkDelete to remove
     *  the given package.
     *
-    *  See the default implementation for a simple example how this
-    *  method can be used.
-    *  Overriding implementations should use the hold-state-flag to cache
-    *  results from previous checks of this package - also it should
-    *  be used if the default resolver implementation is also used to
-    *  ensure that these packages are handled like "normal" dpkg holds.
+    *  The default implementation simply calls all IsDeleteOk*
+    *  method mentioned below, see also #IsInstallOk.
     *
     *  The parameters are the same as in the calling MarkDelete:
     *  \param Pkg       the package that MarkDelete wants to remove.
-    *  \param Purge     should we purge instead of "only" remove?
+    *  \param MarkPurge should we purge instead of "only" remove?
     *  \param Depth     recursive deep of this Marker call
     *  \param FromUser  was the remove requested by the user?
     */
@@ -497,6 +501,17 @@ class pkgDepCache : protected pkgCache::Namespace
 
    pkgDepCache(pkgCache *Cache,Policy *Plcy = 0);
    virtual ~pkgDepCache();
+
+   protected:
+   // methods call by IsInstallOk
+   bool IsInstallOkMultiArchSameVersionSynced(PkgIterator const &Pkg,
+	 bool const AutoInst, unsigned long const Depth, bool const FromUser);
+   bool IsInstallOkDependenciesSatisfiableByCandidates(PkgIterator const &Pkg,
+      bool const AutoInst, unsigned long const Depth, bool const FromUser);
+
+   // methods call by IsDeleteOk
+   bool IsDeleteOkProtectInstallRequests(PkgIterator const &Pkg,
+	 bool const rPurge, unsigned long const Depth, bool const FromUser);
 
    private:
    bool IsModeChangeOk(ModeList const mode, PkgIterator const &Pkg,

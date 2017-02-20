@@ -15,14 +15,25 @@
 #include <apt-pkg/debsrcrecords.h>
 #include <apt-pkg/deblistparser.h>
 #include <apt-pkg/debrecords.h>
-#include <apt-pkg/sourcelist.h>
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/progress.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/acquire-item.h>
 #include <apt-pkg/debmetaindex.h>
+#include <apt-pkg/gpgv.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/indexfile.h>
+#include <apt-pkg/mmap.h>
+#include <apt-pkg/pkgcache.h>
+#include <apt-pkg/cacheiterators.h>
+#include <apt-pkg/pkgcachegen.h>
+#include <apt-pkg/pkgrecords.h>
+#include <apt-pkg/srcrecords.h>
 
+#include <stdio.h>
+#include <iostream>
+#include <string>
 #include <sys/stat.h>
 									/*}}}*/
 
@@ -69,14 +80,18 @@ pkgSrcRecords::Parser *debSourcesIndex::CreateSrcParser() const
 {
    string SourcesURI = _config->FindDir("Dir::State::lists") + 
       URItoFileName(IndexURI("Sources"));
-   string SourcesURIgzip = SourcesURI + ".gz";
 
-   if (!FileExists(SourcesURI) && !FileExists(SourcesURIgzip))
-      return NULL;
-   else if (!FileExists(SourcesURI) && FileExists(SourcesURIgzip))
-      SourcesURI = SourcesURIgzip;
-
-   return new debSrcRecordParser(SourcesURI,this);
+   std::vector<std::string> types = APT::Configuration::getCompressionTypes();
+   for (std::vector<std::string>::const_iterator t = types.begin(); t != types.end(); ++t)
+   {
+      string p;
+      p = SourcesURI + '.' + *t;
+      if (FileExists(p))
+         return new debSrcRecordParser(p, this);
+   }
+   if (FileExists(SourcesURI))
+      return new debSrcRecordParser(SourcesURI, this);
+   return NULL;
 }
 									/*}}}*/
 // SourcesIndex::Describe - Give a descriptive path to the index	/*{{{*/
@@ -118,11 +133,15 @@ string debSourcesIndex::Info(const char *Type) const
 inline string debSourcesIndex::IndexFile(const char *Type) const
 {
    string s = URItoFileName(IndexURI(Type));
-   string sgzip = s + ".gz";
-   if (!FileExists(s) && FileExists(sgzip))
-       return sgzip;
-   else
-       return s;
+
+   std::vector<std::string> types = APT::Configuration::getCompressionTypes();
+   for (std::vector<std::string>::const_iterator t = types.begin(); t != types.end(); ++t)
+   {
+      string p = s + '.' + *t;
+      if (FileExists(p))
+         return p;
+   }
+   return s;
 }
 
 string debSourcesIndex::IndexURI(const char *Type) const
@@ -161,7 +180,7 @@ unsigned long debSourcesIndex::Size() const
    /* we need to ignore errors here; if the lists are absent, just return 0 */
    _error->PushToStack();
 
-   FileFd f = FileFd (IndexFile("Sources"), FileFd::ReadOnly, FileFd::Extension);
+   FileFd f(IndexFile("Sources"), FileFd::ReadOnly, FileFd::Extension);
    if (!f.Failed())
       size = f.Size();
 
@@ -248,11 +267,15 @@ string debPackagesIndex::Info(const char *Type) const
 inline string debPackagesIndex::IndexFile(const char *Type) const
 {
    string s =_config->FindDir("Dir::State::lists") + URItoFileName(IndexURI(Type));
-   string sgzip = s + ".gz";
-   if (!FileExists(s) && FileExists(sgzip))
-       return sgzip;
-   else
-       return s;
+
+   std::vector<std::string> types = APT::Configuration::getCompressionTypes();
+   for (std::vector<std::string>::const_iterator t = types.begin(); t != types.end(); ++t)
+   {
+      string p = s + '.' + *t;
+      if (FileExists(p))
+         return p;
+   }
+   return s;
 }
 string debPackagesIndex::IndexURI(const char *Type) const
 {
@@ -290,7 +313,7 @@ unsigned long debPackagesIndex::Size() const
    /* we need to ignore errors here; if the lists are absent, just return 0 */
    _error->PushToStack();
 
-   FileFd f = FileFd (IndexFile("Packages"), FileFd::ReadOnly, FileFd::Extension);
+   FileFd f(IndexFile("Packages"), FileFd::ReadOnly, FileFd::Extension);
    if (!f.Failed())
       size = f.Size();
 
@@ -337,7 +360,12 @@ bool debPackagesIndex::Merge(pkgCacheGenerator &Gen,OpProgress *Prog) const
 
    if (releaseExists == true || FileExists(ReleaseFile) == true)
    {
-      FileFd Rel(ReleaseFile,FileFd::ReadOnly);
+      FileFd Rel;
+      // Beware: The 'Release' file might be clearsigned in case the
+      // signature for an 'InRelease' file couldn't be checked
+      if (OpenMaybeClearSignedFile(ReleaseFile, Rel) == false)
+	 return false;
+
       if (_error->PendingError() == true)
 	 return false;
       Parser.LoadReleaseInfo(File,Rel,Section);
@@ -395,11 +423,15 @@ debTranslationsIndex::debTranslationsIndex(string URI,string Dist,string Section
 inline string debTranslationsIndex::IndexFile(const char *Type) const
 {
    string s =_config->FindDir("Dir::State::lists") + URItoFileName(IndexURI(Type));
-   string sgzip = s + ".gz";
-   if (!FileExists(s) && FileExists(sgzip))
-       return sgzip;
-   else
-       return s;
+
+   std::vector<std::string> types = APT::Configuration::getCompressionTypes();
+   for (std::vector<std::string>::const_iterator t = types.begin(); t != types.end(); ++t)
+   {
+      string p = s + '.' + *t;
+      if (FileExists(p))
+         return p;
+   }
+   return s;
 }
 string debTranslationsIndex::IndexURI(const char *Type) const
 {
@@ -488,7 +520,7 @@ unsigned long debTranslationsIndex::Size() const
    /* we need to ignore errors here; if the lists are absent, just return 0 */
    _error->PushToStack();
 
-   FileFd f = FileFd (IndexFile(Language), FileFd::ReadOnly, FileFd::Extension);
+   FileFd f(IndexFile(Language), FileFd::ReadOnly, FileFd::Extension);
    if (!f.Failed())
       size = f.Size();
 
@@ -509,7 +541,7 @@ bool debTranslationsIndex::Merge(pkgCacheGenerator &Gen,OpProgress *Prog) const
    if (FileExists(TranslationFile))
    {
      FileFd Trans(TranslationFile,FileFd::ReadOnly, FileFd::Extension);
-     debListParser TransParser(&Trans);
+     debTranslationsParser TransParser(&Trans);
      if (_error->PendingError() == true)
        return false;
      
@@ -589,7 +621,7 @@ bool debStatusIndex::Merge(pkgCacheGenerator &Gen,OpProgress *Prog) const
    FileFd Pkg(File,FileFd::ReadOnly, FileFd::Extension);
    if (_error->PendingError() == true)
       return false;
-   debListParser Parser(&Pkg);
+   debStatusListParser Parser(&Pkg);
    if (_error->PendingError() == true)
       return false;
 
@@ -602,7 +634,8 @@ bool debStatusIndex::Merge(pkgCacheGenerator &Gen,OpProgress *Prog) const
    pkgCache::PkgFileIterator CFile = Gen.GetCurFile();
    CFile->Size = Pkg.FileSize();
    CFile->mtime = Pkg.ModificationTime();
-   CFile->Archive = Gen.WriteUniqString("now");
+   map_ptrloc const storage = Gen.WriteUniqString("now");
+   CFile->Archive = storage;
    
    if (Gen.MergeList(Parser) == false)
       return _error->Error("Problem with MergeList %s",File.c_str());   
@@ -643,7 +676,7 @@ pkgCache::PkgFileIterator debStatusIndex::FindInCache(pkgCache &Cache) const
 // StatusIndex::Exists - Check if the index is available		/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-bool debStatusIndex::Exists() const
+APT_CONST bool debStatusIndex::Exists() const
 {
    // Abort if the file does not exist.
    return true;

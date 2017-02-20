@@ -9,10 +9,12 @@
 									/*}}}*/
 #ifndef CONTENTS_H
 #define CONTENTS_H
-    
-#include <stdlib.h>
-#include <stdio.h>
+
 #include <apt-pkg/dirstream.h>
+
+#include <stddef.h>
+#include <stdio.h>
+#include <string>
 
 class debDebFile;
 
@@ -83,8 +85,8 @@ class ContentsExtract : public pkgDirStream
    bool TakeContents(const void *Data,unsigned long long Length);
    void Add(GenContents &Contents,std::string const &Package);
    
-   ContentsExtract() : Data(0), MaxSize(0), CurSize(0) {};
-   virtual ~ContentsExtract() {delete [] Data;};
+   ContentsExtract();
+   virtual ~ContentsExtract();
 };
 
 #endif

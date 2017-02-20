@@ -74,8 +74,22 @@ class Configuration
    std::string Find(std::string const &Name, std::string const &Default) const {return Find(Name.c_str(),Default.c_str());};
    std::string FindFile(const char *Name,const char *Default = 0) const;
    std::string FindDir(const char *Name,const char *Default = 0) const;
+   /** return a list of child options
+    *
+    * Options like Acquire::Languages are handled as lists which
+    * can be overridden and have a default. For the later two a comma
+    * separated list of values is supported.
+    *
+    * \param Name of the parent node
+    * \param Default list of values separated by commas */
+   std::vector<std::string> FindVector(const char *Name, std::string const &Default) const;
+   std::vector<std::string> FindVector(std::string const &Name, std::string const &Default) const { return FindVector(Name.c_str(), Default); };
+#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
+   std::vector<std::string> FindVector(const char *Name) const { return FindVector(Name, ""); };
+#else
    std::vector<std::string> FindVector(const char *Name) const;
-   std::vector<std::string> FindVector(std::string const &Name) const { return FindVector(Name.c_str()); };
+#endif
+   std::vector<std::string> FindVector(std::string const &Name) const { return FindVector(Name.c_str(), ""); };
    int FindI(const char *Name,int const &Default = 0) const;
    int FindI(std::string const &Name,int const &Default = 0) const {return FindI(Name.c_str(),Default);};
    bool FindB(const char *Name,bool const &Default = false) const;
@@ -94,6 +108,7 @@ class Configuration
 
    // clear a whole tree
    void Clear(const std::string &Name);
+   void Clear();
 
    // remove a certain value from a list (e.g. the list of "APT::Keep-Fds")
    void Clear(std::string const &List, std::string const &Value);
@@ -103,6 +118,8 @@ class Configuration
 
    inline void Dump() { Dump(std::clog); };
    void Dump(std::ostream& str);
+   void Dump(std::ostream& str, char const * const root,
+	     char const * const format, bool const emptyValue);
 
    Configuration(const Item *Root);
    Configuration();

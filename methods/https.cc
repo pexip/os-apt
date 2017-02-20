@@ -3,7 +3,7 @@
 // $Id: http.cc,v 1.59 2004/05/08 19:42:35 mdz Exp $
 /* ######################################################################
 
-   HTTPS Acquire Method - This is the HTTPS aquire method for APT.
+   HTTPS Acquire Method - This is the HTTPS acquire method for APT.
    
    It uses libcurl
 
@@ -18,50 +18,107 @@
 #include <apt-pkg/hashes.h>
 #include <apt-pkg/netrc.h>
 #include <apt-pkg/configuration.h>
+#include <apt-pkg/macros.h>
+#include <apt-pkg/strutl.h>
+#include <apt-pkg/proxy.h>
 
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <utime.h>
 #include <unistd.h>
-#include <signal.h>
 #include <stdio.h>
-#include <errno.h>
-#include <string.h>
 #include <iostream>
 #include <sstream>
+#include <ctype.h>
+#include <stdlib.h>
 
-#include "config.h"
 #include "https.h"
+
 #include <apti18n.h>
 									/*}}}*/
 using namespace std;
+
+size_t
+HttpsMethod::parse_header(void *buffer, size_t size, size_t nmemb, void *userp)
+{
+   size_t len = size * nmemb;
+   HttpsMethod *me = (HttpsMethod *)userp;
+   std::string line((char*) buffer, len);
+   for (--len; len > 0; --len)
+      if (isspace(line[len]) == 0)
+      {
+	 ++len;
+	 break;
+      }
+   line.erase(len);
+
+   if (line.empty() == true)
+   {
+      if (me->Server->Result != 416 && me->Server->StartPos != 0)
+	 ;
+      else if (me->Server->Result == 416 && me->Server->Size == me->File->FileSize())
+      {
+         me->Server->Result = 200;
+	 me->Server->StartPos = me->Server->Size;
+	 // the actual size is not important for https as curl will deal with it
+	 // by itself and e.g. doesn't bother us with transport-encoding…
+	 me->Server->JunkSize = std::numeric_limits<unsigned long long>::max();
+      }
+      else
+	 me->Server->StartPos = 0;
+
+      me->File->Truncate(me->Server->StartPos);
+      me->File->Seek(me->Server->StartPos);
+
+      me->Res.Size = me->Server->Size;
+   }
+   else if (me->Server->HeaderLine(line) == false)
+      return 0;
+
+   return size*nmemb;
+}
 
 size_t 
 HttpsMethod::write_data(void *buffer, size_t size, size_t nmemb, void *userp)
 {
    HttpsMethod *me = (HttpsMethod *)userp;
+   size_t buffer_size = size * nmemb;
+   // we don't need to count the junk here, just drop anything we get as
+   // we don't always know how long it would be, e.g. in chunked encoding.
+   if (me->Server->JunkSize != 0)
+      return buffer_size;
 
-   if(me->File->Write(buffer, size*nmemb) != true)
+   if (me->ReceivedData == false)
+   {
+      me->URIStart(me->Res);
+      me->ReceivedData = true;
+   }
+
+   if(me->File->Write(buffer, buffer_size) != true)
       return false;
 
-   return size*nmemb;
+   return buffer_size;
 }
 
-int 
-HttpsMethod::progress_callback(void *clientp, double dltotal, double dlnow, 
-			      double ultotal, double ulnow)
+// HttpsServerState::HttpsServerState - Constructor			/*{{{*/
+HttpsServerState::HttpsServerState(URI Srv,HttpsMethod * /*Owner*/) : ServerState(Srv, NULL)
 {
-   HttpsMethod *me = (HttpsMethod *)clientp;
-   if(dltotal > 0 && me->Res.Size == 0) {
-      me->Res.Size = (unsigned long long)dltotal;
-      me->URIStart(me->Res);
-   }
-   return 0;
+   TimeOut = _config->FindI("Acquire::https::Timeout",TimeOut);
+   Reset();
 }
+									/*}}}*/
 
 void HttpsMethod::SetupProxy()  					/*{{{*/
 {
    URI ServerName = Queue->Uri;
+
+   // Determine the proxy setting
+   AutoDetectProxy(ServerName);
+
+   // Curl should never read proxy settings from the environment, as
+   // we determine which proxy to use.  Do this for consistency among
+   // methods and prevent an environment variable overriding a
+   // no-proxy ("DIRECT") setting in apt.conf.
+   curl_easy_setopt(curl, CURLOPT_PROXY, "");
 
    // Determine the proxy setting - try https first, fallback to http and use env at last
    string UseProxy = _config->Find("Acquire::https::Proxy::" + ServerName.Host,
@@ -81,7 +138,14 @@ void HttpsMethod::SetupProxy()  					/*{{{*/
       if (getenv("no_proxy") != 0 && CheckDomainList(ServerName.Host,getenv("no_proxy")) == true)
 	 return;
    } else {
-      const char* result = getenv("http_proxy");
+      const char* result = getenv("https_proxy");
+      // FIXME: Fall back to http_proxy is to remain compatible with
+      // existing setups and behaviour of apt.conf.  This should be
+      // deprecated in the future (including apt.conf).  Most other
+      // programs do not fall back to http proxy settings and neither
+      // should Apt.
+      if (result == NULL)
+         result = getenv("http_proxy");
       UseProxy = result == NULL ? "" : result;
    }
 
@@ -92,6 +156,11 @@ void HttpsMethod::SetupProxy()  					/*{{{*/
       if (Proxy.Port != 1)
 	 curl_easy_setopt(curl, CURLOPT_PROXYPORT, Proxy.Port);
       curl_easy_setopt(curl, CURLOPT_PROXY, Proxy.Host.c_str());
+      if (Proxy.User.empty() == false || Proxy.Password.empty() == false)
+      {
+         curl_easy_setopt(curl, CURLOPT_PROXYUSERNAME, Proxy.User.c_str());
+         curl_easy_setopt(curl, CURLOPT_PROXYPASSWORD, Proxy.Password.c_str());
+      }
    }
 }									/*}}}*/
 // HttpsMethod::Fetch - Fetch an item					/*{{{*/
@@ -103,9 +172,9 @@ bool HttpsMethod::Fetch(FetchItem *Itm)
    struct stat SBuf;
    struct curl_slist *headers=NULL;  
    char curl_errorstr[CURL_ERROR_SIZE];
-   long curl_responsecode;
    URI Uri = Itm->Uri;
    string remotehost = Uri.Host;
+   ReceivedData = false;
 
    // TODO:
    //       - http::Pipeline-Depth
@@ -119,12 +188,16 @@ bool HttpsMethod::Fetch(FetchItem *Itm)
 
    // callbacks
    curl_easy_setopt(curl, CURLOPT_URL, static_cast<string>(Uri).c_str());
+   curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, parse_header);
+   curl_easy_setopt(curl, CURLOPT_WRITEHEADER, this);
    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
    curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
-   curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress_callback);
-   curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, this);
-   curl_easy_setopt(curl, CURLOPT_NOPROGRESS, false);
+   // options
+   curl_easy_setopt(curl, CURLOPT_NOPROGRESS, true);
    curl_easy_setopt(curl, CURLOPT_FILETIME, true);
+   // only allow curl to handle https, not the other stuff it supports
+   curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+   curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTPS);
 
    // SSL parameters are set by default to the common (non mirror-specific) value
    // if available (or a default one) and gets overload by mirror-specific ones.
@@ -218,7 +291,7 @@ bool HttpsMethod::Fetch(FetchItem *Itm)
    curl_easy_setopt(curl, CURLOPT_USERAGENT,
 	_config->Find("Acquire::https::User-Agent",
 		_config->Find("Acquire::http::User-Agent",
-			"Debian APT-CURL/1.0 ("VERSION")").c_str()).c_str());
+			"Debian APT-CURL/1.0 (" PACKAGE_VERSION ")").c_str()).c_str());
 
    // set timeout
    int const timeout = _config->FindI("Acquire::https::Timeout",
@@ -243,7 +316,7 @@ bool HttpsMethod::Fetch(FetchItem *Itm)
    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_errorstr);
 
    // If we ask for uncompressed files servers might respond with content-
-   // negotation which lets us end up with compressed files we do not support,
+   // negotiation which lets us end up with compressed files we do not support,
    // see 657029, 657560 and co, so if we have no extension on the request
    // ask for text only. As a sidenote: If there is nothing to negotate servers
    // seem to be nice and ignore it.
@@ -258,11 +331,11 @@ bool HttpsMethod::Fetch(FetchItem *Itm)
    // if we have the file send an if-range query with a range header
    if (stat(Itm->DestFile.c_str(),&SBuf) >= 0 && SBuf.st_size > 0)
    {
-      char Buf[1000];
-      sprintf(Buf, "Range: bytes=%li-", (long) SBuf.st_size - 1);
-      headers = curl_slist_append(headers, Buf);
-      sprintf(Buf, "If-Range: %s", TimeRFC1123(SBuf.st_mtime).c_str());
-      headers = curl_slist_append(headers, Buf);
+      std::string Buf;
+      strprintf(Buf, "Range: bytes=%lli-", (long long) SBuf.st_size);
+      headers = curl_slist_append(headers, Buf.c_str());
+      strprintf(Buf, "If-Range: %s", TimeRFC1123(SBuf.st_mtime).c_str());
+      headers = curl_slist_append(headers, Buf.c_str());
    }
    else if(Itm->LastModified > 0)
    {
@@ -272,18 +345,14 @@ bool HttpsMethod::Fetch(FetchItem *Itm)
 
    // go for it - if the file exists, append on it
    File = new FileFd(Itm->DestFile, FileFd::WriteAny);
-   if (File->Size() > 0)
-      File->Seek(File->Size() - 1);
-   
+   Server = new HttpsServerState(Itm->Uri, this);
+   Res = FetchResult();
+
    // keep apt updated
    Res.Filename = Itm->DestFile;
 
    // get it!
    CURLcode success = curl_easy_perform(curl);
-   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &curl_responsecode);
-
-   long curl_servdate;
-   curl_easy_getinfo(curl, CURLINFO_FILETIME, &curl_servdate);
 
    // If the server returns 200 OK but the If-Modified-Since condition is not
    // met, CURLINFO_CONDITION_UNMET will be set to 1
@@ -291,60 +360,87 @@ bool HttpsMethod::Fetch(FetchItem *Itm)
    curl_easy_getinfo(curl, CURLINFO_CONDITION_UNMET, &curl_condition_unmet);
 
    File->Close();
+   curl_slist_free_all(headers);
 
    // cleanup
-   if(success != 0 || (curl_responsecode != 200 && curl_responsecode != 304))
+   if (success != 0)
    {
       _error->Error("%s", curl_errorstr);
+      unlink(File->Name().c_str());
+      return false;
+   }
+
+   // server says file not modified
+   if (Server->Result == 304 || curl_condition_unmet == 1)
+   {
+      unlink(File->Name().c_str());
+      Res.IMSHit = true;
+      Res.LastModified = Itm->LastModified;
+      Res.Size = 0;
+      URIDone(Res);
+      return true;
+   }
+   Res.IMSHit = false;
+
+   if (Server->Result != 200 && // OK
+	 Server->Result != 206 && // Partial
+	 Server->Result != 416) // invalid Range
+   {
+      char err[255];
+      snprintf(err, sizeof(err) - 1, "HttpError%i", Server->Result);
+      SetFailReason(err);
+      _error->Error("%s", err);
       // unlink, no need keep 401/404 page content in partial/
       unlink(File->Name().c_str());
-      Fail();
+      return false;
+   }
+
+   struct stat resultStat;
+   if (unlikely(stat(File->Name().c_str(), &resultStat) != 0))
+   {
+      _error->Errno("stat", "Unable to access file %s", File->Name().c_str());
+      return false;
+   }
+   Res.Size = resultStat.st_size;
+
+   // invalid range-request
+   if (Server->Result == 416)
+   {
+      unlink(File->Name().c_str());
+      Res.Size = 0;
+      delete File;
+      Redirect(Itm->Uri);
       return true;
    }
 
    // Timestamp
-   struct utimbuf UBuf;
-   if (curl_servdate != -1) {
-       UBuf.actime = curl_servdate;
-       UBuf.modtime = curl_servdate;
-       utime(File->Name().c_str(),&UBuf);
-   }
-
-   // check the downloaded result
-   struct stat Buf;
-   if (stat(File->Name().c_str(),&Buf) == 0)
+   curl_easy_getinfo(curl, CURLINFO_FILETIME, &Res.LastModified);
+   if (Res.LastModified != -1)
    {
-      Res.Filename = File->Name();
-      Res.LastModified = Buf.st_mtime;
-      Res.IMSHit = false;
-      if (curl_responsecode == 304 || curl_condition_unmet)
-      {
-	 unlink(File->Name().c_str());
-	 Res.IMSHit = true;
-	 Res.LastModified = Itm->LastModified;
-	 Res.Size = 0;
-	 URIDone(Res);
-	 return true;
-      }
-      Res.Size = Buf.st_size;
+      struct timeval times[2];
+      times[0].tv_sec = Res.LastModified;
+      times[1].tv_sec = Res.LastModified;
+      times[0].tv_usec = times[1].tv_usec = 0;
+      utimes(File->Name().c_str(), times);
    }
+   else
+      Res.LastModified = resultStat.st_mtime;
 
    // take hashes
    Hashes Hash;
    FileFd Fd(Res.Filename, FileFd::ReadOnly);
    Hash.AddFD(Fd);
    Res.TakeHashes(Hash);
-   
+
    // keep apt updated
    URIDone(Res);
 
    // cleanup
    Res.Size = 0;
    delete File;
-   curl_slist_free_all(headers);
 
    return true;
-};
+}
 
 int main()
 {
@@ -355,5 +451,4 @@ int main()
 
    return Mth.Run();
 }
-
 

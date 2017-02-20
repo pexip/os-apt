@@ -18,15 +18,20 @@
 // Include Files							/*{{{*/
 #include<config.h>
 
-#include <apt-pkg/database.h>
 #include <apt-pkg/debfile.h>
 #include <apt-pkg/extracttar.h>
 #include <apt-pkg/error.h>
-#include <apt-pkg/deblistparser.h>
 #include <apt-pkg/aptconfiguration.h>
+#include <apt-pkg/arfile.h>
+#include <apt-pkg/dirstream.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/tagfile.h>
 
+#include <string.h>
+#include <string>
+#include <vector>
 #include <sys/stat.h>
-#include <unistd.h>
+
 #include <apti18n.h>
 									/*}}}*/
 
@@ -43,17 +48,19 @@ debDebFile::debDebFile(FileFd &File) : File(File), AR(File)
       return;
    }
 
-   if (!CheckMember("control.tar.gz")) {
-      _error->Error(_("This is not a valid DEB archive, missing '%s' member"), "control.tar.gz");
+   if (!CheckMember("control.tar") &&
+       !CheckMember("control.tar.gz") &&
+       !CheckMember("control.tar.xz")) {
+      _error->Error(_("This is not a valid DEB archive, missing '%s' member"), "control.tar");
       return;
    }
 
-   if (!CheckMember("data.tar.gz") &&
+   if (!CheckMember("data.tar") &&
+       !CheckMember("data.tar.gz") &&
        !CheckMember("data.tar.bz2") &&
        !CheckMember("data.tar.lzma") &&
        !CheckMember("data.tar.xz")) {
-      // FIXME: add data.tar.xz here - adding it now would require a Translation round for a very small gain
-      _error->Error(_("This is not a valid DEB archive, it has no '%s', '%s' or '%s' member"), "data.tar.gz", "data.tar.bz2", "data.tar.lzma");
+      _error->Error(_("This is not a valid DEB archive, missing '%s' member"), "data.tar");
       return;
    }
 }
@@ -90,57 +97,20 @@ const ARArchive::Member *debDebFile::GotoMember(const char *Name)
    return Member;
 }
 									/*}}}*/
-// DebFile::ExtractControl - Extract Control information		/*{{{*/
-// ---------------------------------------------------------------------
-/* Extract the control information into the Database's temporary 
-   directory. */
-bool debDebFile::ExtractControl(pkgDataBase &DB)
-{
-   // Get the archive member and positition the file
-   const ARArchive::Member *Member = GotoMember("control.tar.gz");
-   if (Member == 0)
-      return false;
-      
-   // Prepare Tar
-   ControlExtract Extract;
-   ExtractTar Tar(File,Member->Size,"gzip");
-   if (_error->PendingError() == true)
-      return false;
-   
-   // Get into the temporary directory
-   std::string Cwd = SafeGetCWD();
-   std::string Tmp;
-   if (DB.GetMetaTmp(Tmp) == false)
-      return false;
-   if (chdir(Tmp.c_str()) != 0)
-      return _error->Errno("chdir",_("Couldn't change to %s"),Tmp.c_str());
-   
-   // Do extraction
-   if (Tar.Go(Extract) == false)
-      return false;
-   
-   // Switch out of the tmp directory.
-   if (chdir(Cwd.c_str()) != 0)
-      chdir("/");
-   
-   return true;
-}
-									/*}}}*/
-// DebFile::ExtractArchive - Extract the archive data itself		/*{{{*/
+// DebFile::ExtractTarMember - Extract the contents of a tar member	/*{{{*/
 // ---------------------------------------------------------------------
 /* Simple wrapper around tar.. */
-bool debDebFile::ExtractArchive(pkgDirStream &Stream)
+bool debDebFile::ExtractTarMember(pkgDirStream &Stream,const char *Name)
 {
    // Get the archive member
    const ARArchive::Member *Member = NULL;
    std::string Compressor;
 
-   std::string const data = "data.tar";
    std::vector<APT::Configuration::Compressor> compressor = APT::Configuration::getCompressors();
    for (std::vector<APT::Configuration::Compressor>::const_iterator c = compressor.begin();
 	c != compressor.end(); ++c)
    {
-      Member = AR.FindMember(std::string(data).append(c->Extension).c_str());
+      Member = AR.FindMember(std::string(Name).append(c->Extension).c_str());
       if (Member == NULL)
 	 continue;
       Compressor = c->Binary;
@@ -148,11 +118,16 @@ bool debDebFile::ExtractArchive(pkgDirStream &Stream)
    }
 
    if (Member == NULL)
+      Member = AR.FindMember(std::string(Name).c_str());
+
+   if (Member == NULL)
    {
-      std::string ext = "data.tar.{";
+      std::string ext = std::string(Name) + ".{";
       for (std::vector<APT::Configuration::Compressor>::const_iterator c = compressor.begin();
-	   c != compressor.end(); ++c)
-	 ext.append(c->Extension.substr(1));
+	   c != compressor.end(); ++c) {
+	 if (!c->Extension.empty())
+	    ext.append(c->Extension.substr(1));
+      }
       ext.append("}");
       return _error->Error(_("Internal error, could not locate member %s"), ext.c_str());
    }
@@ -167,30 +142,12 @@ bool debDebFile::ExtractArchive(pkgDirStream &Stream)
    return Tar.Go(Stream);
 }
 									/*}}}*/
-// DebFile::MergeControl - Merge the control information		/*{{{*/
+// DebFile::ExtractArchive - Extract the archive data itself		/*{{{*/
 // ---------------------------------------------------------------------
-/* This reads the extracted control file into the cache and returns the
-   version that was parsed. All this really does is select the correct
-   parser and correct file to parse. */
-pkgCache::VerIterator debDebFile::MergeControl(pkgDataBase &DB)
+/* Simple wrapper around DebFile::ExtractTarMember. */
+bool debDebFile::ExtractArchive(pkgDirStream &Stream)
 {
-   // Open the control file
-   std::string Tmp;
-   if (DB.GetMetaTmp(Tmp) == false)
-      return pkgCache::VerIterator(DB.GetCache());
-   FileFd Fd(Tmp + "control",FileFd::ReadOnly);
-   if (_error->PendingError() == true)
-      return pkgCache::VerIterator(DB.GetCache());
-   
-   // Parse it
-   debListParser Parse(&Fd);
-   pkgCache::VerIterator Ver(DB.GetCache());
-   if (DB.GetGenerator().MergeList(Parse,&Ver) == false)
-      return pkgCache::VerIterator(DB.GetCache());
-   
-   if (Ver.end() == true)
-      _error->Error(_("Failed to locate a valid control file"));
-   return Ver;
+   return ExtractTarMember(Stream, "data.tar");
 }
 									/*}}}*/
 
@@ -245,7 +202,7 @@ bool debDebFile::MemControlExtract::DoItem(Item &Itm,int &Fd)
 // ---------------------------------------------------------------------
 /* Just memcopy the block from the tar extractor and put it in the right
    place in the pre-allocated memory block. */
-bool debDebFile::MemControlExtract::Process(Item &Itm,const unsigned char *Data,
+bool debDebFile::MemControlExtract::Process(Item &/*Itm*/,const unsigned char *Data,
 			     unsigned long Size,unsigned long Pos)
 {
    memcpy(Control + Pos, Data,Size);
@@ -258,14 +215,7 @@ bool debDebFile::MemControlExtract::Process(Item &Itm,const unsigned char *Data,
    it parses it into a tag section parser. */
 bool debDebFile::MemControlExtract::Read(debDebFile &Deb)
 {
-   // Get the archive member and positition the file 
-   const ARArchive::Member *Member = Deb.GotoMember("control.tar.gz");
-   if (Member == 0)
-      return false;
-
-   // Extract it.
-   ExtractTar Tar(Deb.GetFile(),Member->Size,"gzip");
-   if (Tar.Go(*this) == false)
+   if (Deb.ExtractTarMember(*this, "control.tar") == false)
       return false;
 
    if (Control == 0)

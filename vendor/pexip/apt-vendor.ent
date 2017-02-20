@@ -1,0 +1,7 @@
+<!-- details about the keys used by the distribution -->
+<!ENTITY keyring-distro "Pexip">
+<!ENTITY keyring-package "<package>pexip-keyring</package>">
+<!ENTITY keyring-filename "<filename>/usr/share/keyrings/pexip-archive-keyring.gpg</filename>">
+<!ENTITY keyring-removed-filename "<filename>/usr/share/keyrings/pexip-archive-removed-keys.gpg</filename>">
+<!ENTITY keyring-master-filename "/usr/share/keyrings/pexip-master-keyring.gpg">
+<!ENTITY keyring-uri "">

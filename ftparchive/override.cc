@@ -12,13 +12,17 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
-#include <apti18n.h>
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/error.h>
 
 #include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <utility>
 
 #include "override.h"
+
+#include <apti18n.h>
 									/*}}}*/
 
 // Override::ReadOverride - Read the override file			/*{{{*/
@@ -48,48 +52,44 @@ bool Override::ReadOverride(string const &File,bool const &Source)
       // Strip space leading up to the package name, skip blank lines
       char *Pkg = Line;
       for (; isspace(*Pkg) && *Pkg != 0;Pkg++);
-      if (Pkg == 0)
+      if (*Pkg == 0)
 	 continue;
 
+#define APT_FIND_NEXT_FIELD \
+      for (End++; isspace(*End) != 0 && *End != 0; ++End) \
+	 /* skip spaces */ ; \
+      Start = End; \
+      for (; isspace(*End) == 0 && *End != 0; ++End) \
+	 /* find end of word */ ;
+
+#define APT_WARNING_MALFORMED_LINE(FIELD) \
+      if (*End == 0) \
+      { \
+	 _error->Warning(_("Malformed override %s line %llu (%s)"),File.c_str(), \
+			 Counter, FIELD ); \
+	 continue; \
+      } \
+      *End = 0;
+
       // Find the package and zero..
-      char *Start = Pkg;
+      char *Start;
       char *End = Pkg;
       for (; isspace(*End) == 0 && *End != 0; End++);
-      if (*End == 0)
-      {
-	 _error->Warning(_("Malformed override %s line %llu #1"),File.c_str(),
-			 Counter);
-	 continue;
-      }      
-      *End = 0;
+      APT_WARNING_MALFORMED_LINE("pkgname");
+
+      APT_FIND_NEXT_FIELD;
 
       // Find the priority
       if (Source == false)
       {
-	 for (End++; isspace(*End) != 0 && *End != 0; End++);
-	 Start = End;
-	 for (; isspace(*End) == 0 && *End != 0; End++);
-	 if (*End == 0)
-	 {
-	    _error->Warning(_("Malformed override %s line %llu #2"),File.c_str(),
-			    Counter);
-	    continue;
-	 }
-	 *End = 0;
+	 APT_WARNING_MALFORMED_LINE("priority");
 	 Itm.Priority = Start;
+
+	 APT_FIND_NEXT_FIELD;
       }
-      
+
       // Find the Section
-      for (End++; isspace(*End) != 0 && *End != 0; End++);
-      Start = End;
-      for (; isspace(*End) == 0 && *End != 0; End++);
-      if (*End == 0)
-      {
-	 _error->Warning(_("Malformed override %s line %llu #3"),File.c_str(),
-			 Counter);
-	 continue;
-      }      
-      *End = 0;
+      APT_WARNING_MALFORMED_LINE("section");
       Itm.FieldOverride["Section"] = Start;
 
       // Source override files only have the two columns
@@ -98,7 +98,7 @@ bool Override::ReadOverride(string const &File,bool const &Source)
 	 Mapping[Pkg] = Itm;
 	 continue;
       }
-      
+
       // Find the =>
       for (End++; isspace(*End) != 0 && *End != 0; End++);
       if (*End != 0)
@@ -132,7 +132,7 @@ bool Override::ReadOverride(string const &File,bool const &Source)
 // Override::ReadExtraOverride - Read the extra override file		/*{{{*/
 // ---------------------------------------------------------------------
 /* This parses the extra override file and reads it into the map */
-bool Override::ReadExtraOverride(string const &File,bool const &Source)
+bool Override::ReadExtraOverride(string const &File,bool const &/*Source*/)
 {
    if (File.empty() == true)
       return true;
@@ -204,7 +204,7 @@ bool Override::ReadExtraOverride(string const &File,bool const &Source)
 }
 									/*}}}*/
 
-// Override::GetItem - Get a architecture specific item 	/*{{{*/
+// Override::GetItem - Get a architecture specific item			/*{{{*/
 // ---------------------------------------------------------------------
 /* Returns a override item for the given package and the given architecture.
  * Treats "all" special
@@ -235,10 +235,10 @@ Override::Item* Override::GetItem(string const &Package, string const &Architect
          {
 	    result->FieldOverride[foI->first] = foI->second;
 	 }
-      } 
-   } 
+      }
+   }
    return result;
-};
+}
 
 
 // Override::Item::SwapMaint - Swap the maintainer field if necessary	/*{{{*/

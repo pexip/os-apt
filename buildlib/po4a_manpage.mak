@@ -11,35 +11,47 @@
 
 # generate a list of accepted man page translations
 SOURCE = $(patsubst %.xml,%,$(wildcard *.$(LC).?.xml))
-INCLUDES = apt.ent apt-verbatim.ent
+INCLUDES = apt.ent apt-verbatim.ent apt-vendor.ent
+
+manpages:
+
+%.xsl: ../%.xsl
+	cp -a $< .
 
 # Do not use XMLTO, build the manpages directly with XSLTPROC
 ifdef XSLTPROC
 
-STYLESHEET=../manpage-style.xsl
+STYLESHEET=manpage-style.xsl
 
 LOCAL := po4a-manpage-$(firstword $(SOURCE))
 $(LOCAL)-LIST := $(SOURCE)
 
 # Install generation hooks
-doc: $($(LOCAL)-LIST)
+manpages: $($(LOCAL)-LIST)
+clean: clean/$(LOCAL)
 veryclean: veryclean/$(LOCAL)
 
 apt-verbatim.ent: ../apt-verbatim.ent
-	cp ../apt-verbatim.ent .
+	cp -a ../apt-verbatim.ent .
 
-$($(LOCAL)-LIST) :: % : %.xml $(INCLUDES)
+apt-vendor.ent: ../apt-vendor.ent
+	cp -a ../apt-vendor.ent .
+
+$($(LOCAL)-LIST) :: % : %.xml $(STYLESHEET) $(INCLUDES)
 	echo Creating man page $@
-	$(XSLTPROC) -o $@ $(STYLESHEET) $< || exit 200 # why xsltproc doesn't respect the -o flag here???
-	test -f $(subst .$(LC),,$@) || echo FIXME: xsltproc respect the -o flag now, workaround can be removed
+	$(XSLTPROC) \
+		--stringparam l10n.gentext.default.language $(LC) \
+		-o $@ $(STYLESHEET) $< || exit 200 # why xsltproc doesn't respect the -o flag here???
+	test -f $(subst .$(LC),,$@) || echo 'FIXME: xsltproc respects the -o flag now, workaround can be removed'
 	mv -f $(subst .$(LC),,$@) $@
 
 # Clean rule
-.PHONY: veryclean/$(LOCAL)
+.PHONY: clean/$(LOCAL) veryclean/$(LOCAL)
+clean/$(LOCAL):
+	rm -f $($(@F)-LIST) apt.ent apt-verbatim.ent
 veryclean/$(LOCAL):
-	-rm -rf $($(@F)-LIST) apt.ent apt-verbatim.ent apt.$(LC).8 \
-		$(addsuffix .xml,$($(@F)-LIST)) \
-		offline.$(LC).sgml guide.$(LC).sgml
+	# we are nuking the directory we are working in as it is auto-generated
+	rm -rf $(shell readlink -f .)
 
 HAVE_PO4A=yes
 endif
@@ -58,7 +70,6 @@ ifneq ($(words $(SOURCE)),0)
 include $(MANPAGE_H)
 endif
 
-# Debian Doc SGML Documents
-SOURCE := $(wildcard *.$(LC).sgml)
-DEBIANDOC_HTML_OPTIONS=-l $(LC).UTF-8
-include $(DEBIANDOC_H)
+# DocBook XML Documents
+SOURCE := $(wildcard *.$(LC).dbk)
+include $(DOCBOOK_H)
