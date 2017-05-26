@@ -1,3 +1,9 @@
+apt (1.0.9.8.4pexip2) pexip; urgency=low
+
+  * debian/apt.maintscript: fix removal of 20changelog
+
+ -- John-Mark Bell <jmb@pexip.com>  Fri, 26 May 2017 13:49:25 +0100
+
 apt (1.0.9.8.4pexip1) pexip; urgency=low
 
   * Migrate to Jessie
