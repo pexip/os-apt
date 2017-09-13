@@ -31,6 +31,8 @@
 #include <unistd.h>
 
 #include <apt-private/private-cmndline.h>
+#include <apt-private/private-output.h>
+#include <apt-private/private-main.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -43,12 +45,12 @@ protected:
    OpTextProgress Progress;
    void Prompt(const char *Text);
    string PromptLine(const char *Text);
-   bool AskCdromName(string &name);
+   bool AskCdromName(string &name) APT_OVERRIDE;
 
 public:
-   virtual void Update(string text, int current);
-   virtual bool ChangeCdrom();
-   virtual OpProgress* GetOpProgress();
+   virtual void Update(string text, int current) APT_OVERRIDE;
+   virtual bool ChangeCdrom() APT_OVERRIDE;
+   virtual OpProgress* GetOpProgress() APT_OVERRIDE;
 };
 
 void pkgCdromTextStatus::Prompt(const char *Text)
@@ -88,7 +90,7 @@ void pkgCdromTextStatus::Update(string text, int /*current*/)
 
 bool pkgCdromTextStatus::ChangeCdrom()
 {
-   Prompt(_("Please insert a Disc in the drive and press enter"));
+   Prompt(_("Please insert a Disc in the drive and press [Enter]"));
    return true;
 }
 
@@ -201,79 +203,34 @@ static bool DoIdent(CommandLine &)
    return AddOrIdent(false);
 }
 									/*}}}*/
-// ShowHelp - Show the help screen					/*{{{*/
-static bool ShowHelp(CommandLine &)
+static bool ShowHelp(CommandLine &)					/*{{{*/
 {
-   ioprintf(cout,_("%s %s for %s compiled on %s %s\n"),PACKAGE,PACKAGE_VERSION,
-	    COMMON_ARCH,__DATE__,__TIME__);
-   if (_config->FindB("version") == true)
-      return true;
-   
-   cout << 
-      "Usage: apt-cdrom [options] command\n"
+   std::cout <<
+      _("Usage: apt-cdrom [options] command\n"
       "\n"
-      "apt-cdrom is a tool to add CDROM's to APT's source list. The\n"
-      "CDROM mount point and device information is taken from apt.conf\n"
-      "and /etc/fstab.\n"
-      "\n"
-      "Commands:\n"
-      "   add - Add a CDROM\n"
-      "   ident - Report the identity of a CDROM\n"
-      "\n"
-      "Options:\n"
-      "  -h   This help text\n"
-      "  -d   CD-ROM mount point\n"
-      "  -r   Rename a recognized CD-ROM\n"
-      "  -m   No mounting\n"
-      "  -f   Fast mode, don't check package files\n"
-      "  -a   Thorough scan mode\n"
-      "  --no-auto-detect Do not try to auto detect drive and mount point\n"
-      "  -c=? Read this configuration file\n"
-      "  -o=? Set an arbitrary configuration option, eg -o dir::cache=/tmp\n"
-      "See fstab(5)\n";
+      "apt-cdrom is used to add CDROM's, USB flashdrives and other removable\n"
+      "media types as package sources to APT. The mount point and device\n"
+      "information is taken from apt.conf(5), udev(7) and fstab(5).\n");
    return true;
+}
+									/*}}}*/
+static std::vector<aptDispatchWithHelp> GetCommands()			/*{{{*/
+{
+   return {
+      {"add", &DoAdd, "Add a CDROM"},
+      {"ident", &DoIdent, "Report the identity of a CDROM"},
+      {nullptr, nullptr, nullptr}
+   };
 }
 									/*}}}*/
 int main(int argc,const char *argv[])					/*{{{*/
 {
-   CommandLine::Dispatch Cmds[] = {
-      {"add",&DoAdd},
-      {"ident",&DoIdent},
-      {"help",&ShowHelp},
-      {0,0}};
-
-   std::vector<CommandLine::Args> Args = getCommandArgs("apt-cdrom", CommandLine::GetCommand(Cmds, argc, argv));
-
-   // Set up gettext support
-   setlocale(LC_ALL,"");
-   textdomain(PACKAGE);
-
    // Parse the command line and initialize the package library
-   CommandLine CmdL(Args.data(),_config);
-   if (pkgInitConfig(*_config) == false ||
-       CmdL.Parse(argc,argv) == false ||
-       pkgInitSystem(*_config,_system) == false)
-   {
-      _error->DumpErrors();
-      return 100;
-   }
+   CommandLine CmdL;
+   auto const Cmds = ParseCommandLine(CmdL, APT_CMD::APT_CDROM, &_config, &_system, argc, argv, &ShowHelp, &GetCommands);
 
-   // See if the help should be shown
-   if (_config->FindB("help") == true || _config->FindB("version") == true ||
-       CmdL.FileSize() == 0)
-      return ShowHelp(CmdL);
+   InitOutput();
 
-   // Deal with stdout not being a tty
-   if (isatty(STDOUT_FILENO) && _config->FindI("quiet", -1) == -1)
-      _config->Set("quiet","1");
-   
-   // Match the operation
-   bool returned = CmdL.DispatchArg(Cmds);
-
-   if (_config->FindI("quiet",0) > 0)
-      _error->DumpErrors();
-   else
-      _error->DumpErrors(GlobalError::DEBUG);
-   return returned == true ? 0 : 100;
+   return DispatchCommandLine(CmdL, Cmds);
 }
 									/*}}}*/

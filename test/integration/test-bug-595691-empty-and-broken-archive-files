@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 setupenvironment
 configarchitecture "i386"
 
@@ -10,96 +10,55 @@ buildaptarchive
 touch aptarchive/Packages
 setupflataptarchive
 
-testaptgetupdate() {
+failureupdate() {
 	rm -rf rootdir/var/lib/apt
-	aptget update 2>> testaptgetupdate.diff >> testaptgetupdate.diff || true
-	sed -i -e '/^Fetched / d' -e '/Ign / d' -e '/Release/ d' -e 's#Get:[0-9]\+ #Get: #' -e 's#\[[0-9]* [kMGTPY]*B\]#\[\]#' testaptgetupdate.diff
-	GIVEN="$1"
-	shift
-	msgtest "Test for correctness of" "apt-get update with $*"
-	if [ -z "$GIVEN" ]; then
-		echo -n "" | checkdiff - testaptgetupdate.diff && msgpass || msgfail
-	else
-		echo "$GIVEN" | checkdiff - testaptgetupdate.diff && msgpass || msgfail
-	fi
-	rm testaptgetupdate.diff
+	testfailure aptget update --allow-insecure-repositories
+	testsuccess grep "^E: Failed to fetch store:${1}  Empty files can't be valid archives$" rootdir/tmp/testfailure.output
+}
+successupdate() {
+	rm -rf rootdir/var/lib/apt
+	testwarning aptget update --allow-insecure-repositories
 }
 
 createemptyarchive() {
 	find aptarchive/ \( -name "Packages*" -o -name "en*" \) -type f -delete
-	if [ "en" = "$1" ]; then
-		echo -n "" | $COMPRESSOR_CMD > aptarchive/Packages.$COMPRESS
-	fi
 	touch aptarchive/Packages
 	echo -n "" | $COMPRESSOR_CMD > aptarchive/${1}.$COMPRESS
-	generatereleasefiles
-	signreleasefiles
+	find aptarchive -name '*Release*' -delete
 	rm -f aptarchive/Packages
 }
 
 createemptyfile() {
 	find aptarchive/ \( -name "Packages*" -o -name "en*" \) -type f -delete
-	if [ "en" = "$1" ]; then
-		echo -n "" | $COMPRESSOR_CMD > aptarchive/Packages.$COMPRESS
-	fi
 	touch aptarchive/Packages aptarchive/${1}.$COMPRESS
-	generatereleasefiles
-	signreleasefiles
+	find aptarchive -name '*Release*' -delete
 	rm -f aptarchive/Packages
 }
 
 testoverfile() {
+	local APTARCHIVE="$(readlink -f ./aptarchive)"
 	forcecompressor "$1"
 
-	createemptyfile 'en'
-	testaptgetupdate 'Reading package lists...' "empty file en.$COMPRESS over file"
-
-	createemptyarchive 'en'
-	testaptgetupdate 'Reading package lists...' "empty archive en.$COMPRESS over file"
-
+	msgmsg 'archive over file' "Packages.$COMPRESS"
 	createemptyarchive 'Packages'
-	# FIXME: Why omits the file transport the Packages Get line?
-	#Get:3 file:  Packages []
-	testaptgetupdate 'Reading package lists...' "empty archive Packages.$COMPRESS over file"
-
+	successupdate
 	createemptyfile 'Packages'
-	testaptgetupdate "Err file:  Packages
-  Empty files can't be valid archives
-W: Failed to fetch ${COMPRESSOR}:$(readlink -f aptarchive/Packages.$COMPRESS)  Empty files can't be valid archives
-
-E: Some index files failed to download. They have been ignored, or old ones used instead." "empty file Packages.$COMPRESS over file"
+	failureupdate "$(readlink -f rootdir/var/lib/apt/lists/partial/$(echo "$APTARCHIVE" | sed -e 's#/#_#g')_Packages.${COMPRESS})"
 }
 
 testoverhttp() {
 	forcecompressor "$1"
 
-	createemptyfile 'en'
-	testaptgetupdate "Get: http://localhost:8080  Packages []
-Get: http://localhost:8080  Translation-en
-Reading package lists..." "empty file en.$COMPRESS over http"
-
-	createemptyarchive 'en'
-	testaptgetupdate "Get: http://localhost:8080  Packages []
-Get: http://localhost:8080  Translation-en []
-Reading package lists..." "empty archive en.$COMPRESS over http"
-
+	msgmsg 'archive over http' "Packages.$COMPRESS"
 	createemptyarchive 'Packages'
-	testaptgetupdate "Get: http://localhost:8080  Packages []
-Reading package lists..." "empty archive Packages.$COMPRESS over http"
-
+	successupdate
 	createemptyfile 'Packages'
-	#FIXME: we should response with a good error message instead
-	testaptgetupdate "Get: http://localhost:8080  Packages
-Err http://localhost:8080  Packages
-  Empty files can't be valid archives
-W: Failed to fetch ${COMPRESSOR}:$(readlink -f rootdir/var/lib/apt/lists/partial/localhost:8080_Packages.${COMPRESS})  Empty files can't be valid archives
-
-E: Some index files failed to download. They have been ignored, or old ones used instead." "empty file Packages.$COMPRESS over http"
+	failureupdate "$(readlink -f rootdir/var/lib/apt/lists/partial/localhost:${APTHTTPPORT}_Packages.${COMPRESS})"
 }
 
-for COMPRESSOR in 'gzip' 'bzip2' 'lzma' 'xz'; do testoverfile $COMPRESSOR; done
+forallsupportedcompressors testoverfile
 
 # do the same again with http instead of file
 changetowebserver
 
-for COMPRESSOR in 'gzip' 'bzip2' 'lzma' 'xz'; do testoverhttp $COMPRESSOR; done
+forallsupportedcompressors testoverhttp

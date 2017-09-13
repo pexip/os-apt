@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 
 setupenvironment
 configarchitecture "i386"
@@ -17,9 +17,9 @@ prepare() {
 		DATE='now + 6 days'
 	fi
 	for release in $(find rootdir/var/lib/apt/lists 2> /dev/null); do
-		touch -d 'now - 6 hours' $release
+		touch -d 'now - 6 hours' "$release"
 	done
-	cp $1 aptarchive/Packages
+	cp "$1" aptarchive/Packages
 	find aptarchive -name 'Release' -delete
 	compressfile aptarchive/Packages
         # create Release file with incorret checksums
@@ -44,35 +44,31 @@ SHA256:
  xb306e66e5e6a7169c8d281a888539d1fdca9cecc99ae605717df579d5b9c166              527 Packages.lzma
  x9585d0e66b74c9385727fbea11fea9ab33c716b18a32f3036f037a2b9b57120              572 Packages.xz
 EOF
-        cp aptarchive/Release aptarchive/InRelease
 }
-
-# fake our downloadable file
-touch aptarchive/apt.deb
 
 PKGFILE="${TESTDIR}/$(echo "$(basename $0)" | sed 's#^test-#Packages-#')"
 
 runtest() {
-	prepare ${PKGFILE}
+	prepare "${PKGFILE}"
 	rm -rf rootdir/var/lib/apt/lists
 	signreleasefiles 'Joe Sixpack'
-	find aptarchive/ -name "$DELETEFILE" -delete
 
-        # test signed release file
-        msgtest 'apt-get update gets the expected hashsum mismatch'
-	aptget update 2>&1 | grep "Hash Sum mismatch" > /dev/null && msgpass || msgfail
-        msgtest 'No package from the source available'
-        [ "$(aptcache show apt 2>&1)" = "E: No packages found" ] && msgpass || msgfail
-        msgtest 'No Packages file in /var/lib/apt/lists'
-        [ "$(ls rootdir/var/lib/apt/lists/*Package* 2>/dev/null | grep -v FAILED 2>/dev/null)" = "" ] && msgpass || msgfail 
-        
+	# test signed release file
+	msgtest 'apt-get update gets the expected hashsum mismatch'
+	testfailure aptget update
+	testsuccess grep "Hash Sum mismatch" rootdir/tmp/testfailure.output
+	msgtest 'No package from the source available'
+	testfailureequal --nomsg 'N: Unable to locate package apt
+E: No packages found' aptcache show apt
+	msgtest 'No Packages file in /var/lib/apt/lists'
+	testempty find rootdir/var/lib/apt/lists -maxdepth 1 -name '*Package*'
+
         # now with the unsigned Release file
         rm -rf rootdir/var/lib/apt/lists
-        rm aptarchive/InRelease aptarchive/Release.gpg
-        msgtest 'unsigned apt-get update gets the expected hashsum mismatch'
-	aptget update 2>&1 | grep "Hash Sum mismatch" > /dev/null && msgpass || msgfail
-
-
+        rm -f aptarchive/InRelease aptarchive/Release.gpg
+	msgtest 'unsigned apt-get update gets the expected hashsum mismatch'
+	testfailure --nomsg aptget update --allow-insecure-repositories
+	testsuccess grep "Hash Sum mismatch" rootdir/tmp/testfailure.output
 }
 
 for COMPRESSEDINDEXES in 'false' 'true'; do
@@ -82,6 +78,5 @@ for COMPRESSEDINDEXES in 'false' 'true'; do
 	else
 		msgmsg 'Run tests with GzipIndexes disabled'
 	fi
- 
         runtest
 done

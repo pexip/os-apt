@@ -18,6 +18,7 @@
 
 #include <list>
 #include <string>
+#include <vector>
 
 #ifndef APT_8_CLEANER_HEADERS
 #include <apt-pkg/depcache.h>
@@ -27,24 +28,18 @@
 class pkgDepCache;
 class OpProgress;
 
-class EDSP								/*{{{*/
+namespace EDSP								/*{{{*/
 {
-	// we could use pkgCache::DepType and ::Priority, but these would be localized strings…
-	static const char * const PrioMap[];
-	static const char * const DepMap[];
-
-	APT_HIDDEN bool static ReadLine(int const input, std::string &line);
-	APT_HIDDEN bool static StringToBool(char const *answer, bool const defValue);
-
-	APT_HIDDEN void static WriteScenarioVersion(pkgDepCache &Cache, FILE* output,
-					 pkgCache::PkgIterator const &Pkg,
-					 pkgCache::VerIterator const &Ver);
-	APT_HIDDEN void static WriteScenarioDependency(FILE* output,
-					    pkgCache::VerIterator const &Ver);
-	APT_HIDDEN void static WriteScenarioLimitedDependency(FILE* output,
-						   pkgCache::VerIterator const &Ver,
-						   APT::PackageSet const &pkgset);
-public:
+	namespace Request
+	{
+	   enum Flags
+	   {
+	      AUTOREMOVE = (1 << 0), /*!< removal of unneeded packages should be performed */
+	      UPGRADE_ALL = (1 << 1), /*!< upgrade all installed packages, like 'apt-get full-upgrade' without forbid flags */
+	      FORBID_NEW_INSTALL = (1 << 2), /*!< forbid the resolver to install new packages */
+	      FORBID_REMOVE = (1 << 3), /*!< forbid the resolver to remove packages */
+	   };
+	}
 	/** \brief creates the EDSP request stanza
 	 *
 	 *  In the EDSP protocol the first thing send to the resolver is a stanza
@@ -54,18 +49,19 @@ public:
 	 *
 	 *  \param Cache in which the request is encoded
 	 *  \param output is written to this "file"
-	 *  \param upgrade is true if it is an request like apt-get upgrade
-	 *  \param distUpgrade is true if it is a request like apt-get dist-upgrade
-	 *  \param autoRemove is true if removal of unneeded packages should be performed
+	 *  \param flags effecting the request documented in #EDSP::Request::Flags
 	 *  \param Progress is an instance to report progress to
 	 *
 	 *  \return true if request was composed successfully, otherwise false
 	 */
-	bool static WriteRequest(pkgDepCache &Cache, FILE* output,
+	bool WriteRequest(pkgDepCache &Cache, FileFd &output,
+				 unsigned int const flags = 0,
+				OpProgress *Progress = NULL);
+	bool WriteRequest(pkgDepCache &Cache, FILE* output,
 				 bool const upgrade = false,
 				 bool const distUpgrade = false,
 				 bool const autoRemove = false,
-				OpProgress *Progress = NULL);
+				OpProgress *Progress = NULL) APT_DEPRECATED_MSG("Use FileFd-based interface instead");
 
 	/** \brief creates the scenario representing the package universe
 	 *
@@ -76,7 +72,7 @@ public:
 	 *  it doesn't make sense from an APT resolver point of view like versions
 	 *  with a negative pin to enable the solver to propose even that as a
 	 *  solution or at least to be able to give a hint what can be done to
-	 *  statisfy a request.
+	 *  satisfy a request.
 	 *
 	 *  \param Cache is the known package universe
 	 *  \param output is written to this "file"
@@ -84,7 +80,8 @@ public:
 	 *
 	 *  \return true if universe was composed successfully, otherwise false
 	 */
-	bool static WriteScenario(pkgDepCache &Cache, FILE* output, OpProgress *Progress = NULL);
+	bool WriteScenario(pkgDepCache &Cache, FileFd &output, OpProgress *Progress = NULL);
+	bool WriteScenario(pkgDepCache &Cache, FILE* output, OpProgress *Progress = NULL) APT_DEPRECATED_MSG("Use FileFd-based interface instead");
 
 	/** \brief creates a limited scenario representing the package universe
 	 *
@@ -101,16 +98,20 @@ public:
 	 *
 	 *  \return true if universe was composed successfully, otherwise false
 	 */
-	bool static WriteLimitedScenario(pkgDepCache &Cache, FILE* output,
-					 APT::PackageSet const &pkgset,
+	bool WriteLimitedScenario(pkgDepCache &Cache, FileFd &output,
+					 std::vector<bool> const &pkgset,
 					 OpProgress *Progress = NULL);
+	bool WriteLimitedScenario(pkgDepCache &Cache, FILE* output,
+					 APT::PackageSet const &pkgset,
+					 OpProgress *Progress = NULL) APT_DEPRECATED_MSG("Use FileFd-based interface instead");
 
 	/** \brief waits and acts on the information returned from the solver
 	 *
 	 *  This method takes care of interpreting whatever the solver sends
 	 *  through the standard output like a solution, progress or an error.
-	 *  The main thread should handle his control over to this method to
-	 *  wait for the solver to finish the given task
+	 *  The main thread should hand his control over to this method to
+	 *  wait for the solver to finish the given task. The file descriptor
+	 *  used as input is completely consumed and closed by the method.
 	 *
 	 *  \param input file descriptor with the response from the solver
 	 *  \param Cache the solution should be applied on if any
@@ -118,7 +119,7 @@ public:
 	 *
 	 *  \return true if a solution is found and applied correctly, otherwise false
 	 */
-	bool static ReadResponse(int const input, pkgDepCache &Cache, OpProgress *Progress = NULL);
+	bool ReadResponse(int const input, pkgDepCache &Cache, OpProgress *Progress = NULL);
 
 	/** \brief search and read the request stanza for action later
 	 *
@@ -132,11 +133,13 @@ public:
 	 *  \param[out] remove is a list which gets populated with requested removals
 	 *  \param[out] upgrade is true if it is a request like apt-get upgrade
 	 *  \param[out] distUpgrade is true if it is a request like apt-get dist-upgrade
-	 *  \param[out] autoRemove is true if removal of uneeded packages should be performed
+	 *  \param[out] autoRemove is true if removal of unneeded packages should be performed
 	 *
 	 *  \return true if the request could be found and worked on, otherwise false
 	 */
-	bool static ReadRequest(int const input, std::list<std::string> &install,
+	bool ReadRequest(int const input, std::list<std::string> &install,
+			std::list<std::string> &remove, unsigned int &flags);
+	APT_DEPRECATED_MSG("use the flag-based version instead") bool ReadRequest(int const input, std::list<std::string> &install,
 			std::list<std::string> &remove, bool &upgrade,
 			bool &distUpgrade, bool &autoRemove);
 
@@ -152,23 +155,24 @@ public:
 	 *
 	 *  \return false if the request couldn't be applied, true otherwise
 	 */
-	bool static ApplyRequest(std::list<std::string> const &install,
+	bool ApplyRequest(std::list<std::string> const &install,
 				 std::list<std::string> const &remove,
 				 pkgDepCache &Cache);
 
-	/** \brief encodes the changes in the Cache as a EDSP solution
+	/** \brief formats a solution stanza for the given version
 	 *
-	 *  The markers in the Cache are observed and send to given
-	 *  file. The solution isn't checked for consistency or alike,
-	 *  so even broken solutions can be written successfully,
-	 *  but the front-end revicing it will properly fail then.
+	 *  EDSP uses a simple format for reporting solutions:
+	 *  A single required field name with an ID as value.
+	 *  Additional fields might appear as debug aids.
 	 *
-	 *  \param Cache which represents the solution
-	 *  \param output to write the stanzas forming the solution to
+	 *  \param output to write the stanza forming the solution to
+	 *  \param Type of the stanza, used as field name
+	 *  \param Ver this stanza applies to
 	 *
-	 *  \return true if solution could be written, otherwise false
+	 *  \return true if stanza could be written, otherwise false
 	 */
-	bool static WriteSolution(pkgDepCache &Cache, FILE* output);
+	bool WriteSolutionStanza(FileFd &output, char const * const Type, pkgCache::VerIterator const &Ver);
+	bool WriteSolution(pkgDepCache &Cache, FILE* output) APT_DEPRECATED_MSG("Use FileFd-based single-stanza interface instead");
 
 	/** \brief sends a progress report
 	 *
@@ -176,7 +180,8 @@ public:
 	 *  \param message the solver wants the user to see
 	 *  \param output the front-end listens for progress report
 	 */
-	bool static WriteProgress(unsigned short const percent, const char* const message, FILE* output);
+	bool WriteProgress(unsigned short const percent, const char* const message, FileFd &output);
+	bool WriteProgress(unsigned short const percent, const char* const message, FILE* output) APT_DEPRECATED_MSG("Use FileFd-based interface instead");
 
 	/** \brief sends an error report
 	 *
@@ -193,7 +198,8 @@ public:
 	 *  \param message is free form text to describe the error
 	 *  \param output the front-end listens for error messages
 	 */
-	bool static WriteError(char const * const uuid, std::string const &message, FILE* output);
+	bool WriteError(char const * const uuid, std::string const &message, FileFd &output);
+	bool WriteError(char const * const uuid, std::string const &message, FILE* output) APT_DEPRECATED_MSG("Use FileFd-based interface instead");
 
 
 	/** \brief executes the given solver and returns the pipe ends
@@ -207,8 +213,8 @@ public:
 	 *
 	 *  \return PID of the started solver or 0 if failure occurred
 	 */
-	pid_t static ExecuteSolver(const char* const solver, int * const solver_in, int * const solver_out, bool /*overload*/);
-	APT_DEPRECATED bool static ExecuteSolver(const char* const solver, int *solver_in, int *solver_out);
+	pid_t ExecuteSolver(const char* const solver, int * const solver_in, int * const solver_out, bool /*overload*/);
+	APT_DEPRECATED_MSG("add a dummy bool parameter to use the overload returning a pid_t") bool ExecuteSolver(const char* const solver, int *solver_in, int *solver_out);
 
 	/** \brief call an external resolver to handle the request
 	 *
@@ -216,17 +222,55 @@ public:
 	 *
 	 *  \param solver to execute
 	 *  \param Cache with the problem and as universe to work in
-	 *  \param upgrade is true if it is a request like apt-get upgrade
-	 *  \param distUpgrade is true if it is a request like apt-get dist-upgrade
-	 *  \param autoRemove is true if unneeded packages should be removed
+	 *  \param flags effecting the request documented in #EDSP::Request::Flags
 	 *  \param Progress is an instance to report progress to
 	 *
 	 *  \return true if the solver has successfully solved the problem,
 	 *  otherwise false
 	 */
-	bool static ResolveExternal(const char* const solver, pkgDepCache &Cache,
+	bool ResolveExternal(const char* const solver, pkgDepCache &Cache,
+				    unsigned int const flags = 0,
+				    OpProgress *Progress = NULL);
+	APT_DEPRECATED_MSG("use the flag-based version instead") bool ResolveExternal(const char* const solver, pkgDepCache &Cache,
 				    bool const upgrade, bool const distUpgrade,
 				    bool const autoRemove, OpProgress *Progress = NULL);
-};
+}
+									/*}}}*/
+class pkgPackageManager;
+namespace EIPP								/*{{{*/
+{
+   namespace Request
+   {
+      enum Flags
+      {
+	 IMMEDIATE_CONFIGURATION_ALL = (1 << 0), /*!< try to keep the least amount of packages unconfigured as possible at all times */
+	 NO_IMMEDIATE_CONFIGURATION = (1 << 1), /*!< do not perform immediate configuration at all */
+	 ALLOW_TEMPORARY_REMOVE_OF_ESSENTIALS = (1 << 2), /*!< just as the name suggests, very special case and dangerous! */
+      };
+   }
+
+   APT_HIDDEN bool WriteRequest(pkgDepCache &Cache, FileFd &output,
+	 unsigned int const flags, OpProgress * const Progress);
+   APT_HIDDEN bool WriteScenario(pkgDepCache &Cache, FileFd &output,
+	 OpProgress * const Progress);
+
+   APT_HIDDEN bool OrderInstall(char const * const planner, pkgPackageManager * const PM,
+	 unsigned int const version, OpProgress * const Progress);
+   APT_HIDDEN bool ReadResponse(int const input, pkgPackageManager * const PM,
+	 OpProgress * const Progress);
+
+   enum class PKG_ACTION
+   {
+      NOOP,
+      INSTALL,
+      REINSTALL,
+      REMOVE
+   };
+   bool ReadRequest(int const input,
+	 std::list<std::pair<std::string,PKG_ACTION>> &actions,
+	 unsigned int &flags);
+   bool ApplyRequest(std::list<std::pair<std::string,PKG_ACTION>> &actions,
+	 pkgDepCache &Cache);
+}
 									/*}}}*/
 #endif

@@ -1,3 +1,68 @@
+apt (1.4.2) unstable; urgency=medium
+
+  If periodic updates and unattended upgrades are enabled, the start of
+  periodic updates are now distributed over 24 hour intervals (as in 1.2
+  to 1.4), whereas starting unattended-upgrade has been restricted to a
+  time between 6 and 7 am. This only affects systems using systemd, other
+  systems still use the classical hourly cron job.
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 04 May 2017 22:54:02 +0200
+
+apt (1.4~beta1) unstable; urgency=medium
+
+  Support for GPG signatures using the SHA1 or RIPE-MD/160 hash
+  algorithms has been disabled. Repositories using Release files
+  signed in such a way will stop working. This change has been made
+  due to security considerations, especially with regards to possible
+  further breakthroughs in SHA1 breaking during the lifetime
+  of this APT release series.
+
+  It is possible (but STRONGLY ADVISED AGAINST) to revert to the previous
+  behaviour by setting the options
+    APT::Hashes::SHA1::Weak "yes";
+    APT::Hashes::RIPE-MD/160::Weak "yes";
+  Note that setting these options only affects the verification of the overall
+  repository signature.
+
+ -- Julian Andres Klode <jak@debian.org>  Fri, 25 Nov 2016 13:19:32 +0100
+
+apt (1.2~exp1) experimental; urgency=medium
+
+  [ Automatic removal of debs after install ]
+  After packages are successfully installed by apt(8),
+  the corresponding .deb package files will be
+  removed from the /var/cache/apt/archives cache directory.
+
+  This can be changed by setting the apt configuration option
+    "Binary::apt::APT::Keep-Downloaded-Packages" to "true". E.g:
+
+  # echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' \
+      > /etc/apt/apt.conf.d/01keep-debs
+
+  Please note that the behavior of apt-get is unchanged. The
+  downloaded debs will be kept in the cache directory after they
+  are installed. To enable the behavior for other tools, you can set
+  "APT::Keep-Downloaded-Packages" to false.
+
+  [ Compressed indices ]
+  If you use Acquire::gzipIndexes, or any other compressed index targets,
+  those will now be compressed with the fastest supported algorithm,
+  currently lz4.
+
+ -- Michael Vogt <mvo@debian.org>  Tue, 05 Jan 2016 19:22:16 +0100
+
+apt (1.1~exp9) experimental; urgency=medium
+
+  A new algorithm for pinning has been implemented, it now assigns a
+  pin priority to a version instead of assigning a pin to a package.
+
+  This might break existing corner cases of pinning, if they use multiple
+  pins involving the same package name or patterns matching the same
+  package name, but should overall lead to pinning that actually works
+  as intended and documented.
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 17 Aug 2015 14:45:17 +0200
+
 apt (0.8.11) unstable; urgency=low
 
   * apt-get install pkg/experimental will now not only switch the

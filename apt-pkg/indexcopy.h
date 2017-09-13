@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: indexcopy.h,v 1.3 2001/05/27 04:46:54 jgg Exp $
 /* ######################################################################
 
    Index Copying - Aid for copying and verifying the index files
@@ -11,8 +10,10 @@
 #define INDEXCOPY_H
 
 #include <vector>
+#ifndef APT_11_CLEAN_HEADERS
 #include <string>
 #include <stdio.h>
+#endif
 
 #include <apt-pkg/macros.h>
 
@@ -26,13 +27,14 @@ using std::vector;
 #endif
 
 class pkgTagSection;
-class indexRecords;
 class pkgCdromStatus;
+class FileFd;
+class metaIndex;
 
 class IndexCopy								/*{{{*/
 {
    /** \brief dpointer placeholder (for later in case we need it) */
-   void *d;
+   void * const d;
 
    protected:
    
@@ -45,7 +47,7 @@ class IndexCopy								/*{{{*/
    void ConvertToSourceList(std::string CD,std::string &Path);
    bool GrabFirst(std::string Path,std::string &To,unsigned int Depth);
    virtual bool GetFile(std::string &Filename,unsigned long long &Size) = 0;
-   virtual bool RewriteEntry(FILE *Target,std::string File) = 0;
+   virtual bool RewriteEntry(FileFd &Target, std::string const &File) = 0;
    virtual const char *GetFileName() = 0;
    virtual const char *Type() = 0;
    
@@ -53,58 +55,74 @@ class IndexCopy								/*{{{*/
 
    bool CopyPackages(std::string CDROM,std::string Name,std::vector<std::string> &List,
 		     pkgCdromStatus *log);
-   virtual ~IndexCopy() {};
+   IndexCopy();
+   virtual ~IndexCopy();
 };
 									/*}}}*/
 class PackageCopy : public IndexCopy					/*{{{*/
 {
+   void * const d;
    protected:
-   
-   virtual bool GetFile(std::string &Filename,unsigned long long &Size);
-   virtual bool RewriteEntry(FILE *Target,std::string File);
-   virtual const char *GetFileName() {return "Packages";};
-   virtual const char *Type() {return "Package";};
-   
+
+   virtual bool GetFile(std::string &Filename,unsigned long long &Size) APT_OVERRIDE;
+   virtual bool RewriteEntry(FileFd &Target, std::string const &File) APT_OVERRIDE;
+   virtual const char *GetFileName() APT_OVERRIDE {return "Packages";};
+   virtual const char *Type() APT_OVERRIDE {return "Package";};
+
+   public:
+   PackageCopy();
+   virtual ~PackageCopy();
 };
 									/*}}}*/
 class SourceCopy : public IndexCopy					/*{{{*/
 {
+   void * const d;
    protected:
    
-   virtual bool GetFile(std::string &Filename,unsigned long long &Size);
-   virtual bool RewriteEntry(FILE *Target,std::string File);
-   virtual const char *GetFileName() {return "Sources";};
-   virtual const char *Type() {return "Source";};
-   
+   virtual bool GetFile(std::string &Filename,unsigned long long &Size) APT_OVERRIDE;
+   virtual bool RewriteEntry(FileFd &Target, std::string const &File) APT_OVERRIDE;
+   virtual const char *GetFileName() APT_OVERRIDE {return "Sources";};
+   virtual const char *Type() APT_OVERRIDE {return "Source";};
+
+   public:
+   SourceCopy();
+   virtual ~SourceCopy();
 };
 									/*}}}*/
 class TranslationsCopy							/*{{{*/
 {
+   void * const d;
    protected:
    pkgTagSection *Section;
 
    public:
    bool CopyTranslations(std::string CDROM,std::string Name,std::vector<std::string> &List,
 			 pkgCdromStatus *log);
+
+   TranslationsCopy();
+   virtual ~TranslationsCopy();
 };
 									/*}}}*/
 class SigVerify								/*{{{*/
 {
    /** \brief dpointer placeholder (for later in case we need it) */
-   void *d;
+   void * const d;
 
-   bool Verify(std::string prefix,std::string file, indexRecords *records);
-   bool CopyMetaIndex(std::string CDROM, std::string CDName, 
+   APT_HIDDEN bool Verify(std::string prefix,std::string file, metaIndex *records);
+   APT_HIDDEN bool CopyMetaIndex(std::string CDROM, std::string CDName,
 		      std::string prefix, std::string file);
 
  public:
    bool CopyAndVerify(std::string CDROM,std::string Name,std::vector<std::string> &SigList,
 		      std::vector<std::string> PkgList,std::vector<std::string> SrcList);
 
-   APT_DEPRECATED static bool RunGPGV(std::string const &File, std::string const &FileOut,
+   APT_DEPRECATED_MSG("Use ExecGPGV instead") static bool RunGPGV(std::string const &File, std::string const &FileOut,
 		       int const &statusfd, int fd[2]);
-   APT_DEPRECATED static bool RunGPGV(std::string const &File, std::string const &FileOut,
+   APT_DEPRECATED_MSG("Use ExecGPGV instead") static bool RunGPGV(std::string const &File, std::string const &FileOut,
 			      int const &statusfd = -1);
+
+   SigVerify();
+   virtual ~SigVerify();
 };
 									/*}}}*/
 

@@ -35,25 +35,34 @@ Our bugtracker as well as a general overview can be found at the [Debian Tracker
 Contributing
 ------------
 APT is maintained in git, the official repository being located at
-`git://anonscm.debian.org/apt/apt.git` ([webgit](http://anonscm.debian.org/gitweb/?p=apt/apt.git)),
+`git://anonscm.debian.org/apt/apt.git` ([webgit](https://anonscm.debian.org/git/apt/apt.git)),
 but also available at other locations like [GitHub](https://github.com/Debian/apt).
 
-The default branch is `debian/sid`, other branches targeted at different
+The default branch is `master`, other branches targeted at different
 derivatives and releases being used as needed. Various topic branches in
 different stages of completion might be branched of from those, which you
 are encouraged to do as well.
 
 ### Coding
 
-APT uses its own autoconf based build system, see [README.make](http://anonscm.debian.org/gitweb/?p=apt/apt.git;a=blob;f=README.make)
-for the glory details, but to get started, just run:
+APT uses cmake. To start building, you need to run
 
-	$ make
+	cmake <path to source directory>
 
-from a fresh git checkout.
+from a build directory. For example, if you want to build in the source tree,
+run:
+
+	cmake .
+
+Then you can use make as you normally would (pass -j <count> to perform <count>
+jobs in parallel).
+
+You can also use the Ninja generator of cmake, to do that pass
+	-G Ninja
+to the cmake invocation, and then use ninja instead of make.
 
 The source code uses in most parts a relatively uncommon indent convention,
-namely 3 spaces with 8 space tab (see [doc/style.txt](http://anonscm.debian.org/gitweb/?p=apt/apt.git;a=blob;f=doc/style.txt) for more on this).
+namely 3 spaces with 8 space tab (see [doc/style.txt](https://anonscm.debian.org/git/apt/apt.git/tree/doc/style.txt) for more on this).
 Adhering to it avoids unnecessary code-churn destroying history (aka: `git blame`)
 and you are therefore encouraged to write patches in this style.
 Your editor can surely help you with this, for vim the settings would be
@@ -86,22 +95,30 @@ Testing
 
 ### Manual execution
 
-When you make changes and want to run them manually, make sure your
-`$LD_LIBRARY_PATH` points to the libraries you have built, e.g. via:
+When you make changes and want to run them manually, you can just do so. CMake
+automatically inserts an rpath so the binaries find the correct libraries.
 
-	$ export LD_LIBRARY_PATH=$(pwd)/build/bin
-	$ ./build/bin/apt-get moo
-
+Note that you have to invoke CMake with the right install prefix set (e.g.
+`-DCMAKE_INSTALL_PREFIX=/usr`) to have your build find and use the right files
+by default or alternatively set the locations at runtime via an `APT_CONFIG`
+configuration file.
 
 ### Integration tests
 
-There is a extensive integration testsuite available which can be run via:
+There is an extensive integration testsuite available which can be run via:
 
 	$ ./test/integration/run-tests
 
-While these tests are not executed at package build-time as they require additional
-dependencies, the repository contains the configuration needed to run them on [Travis CI](https://travis-ci.org/)
-as well as via autopkgtests e.g. on [Debian Continuous Integration](http://ci.debian.net/?q=apt#package/apt).
+Each test can also be run individually as well. The tests are very noisy by
+default, especially so while running all of them it might be beneficial to
+enabling quiet (`-q`) or very quiet (`-qq`) mode. The tests can also be run in
+parallel via `-j X` where `X` is the number of jobs to run.
+
+While these tests are not executed at package build-time as they require
+additional dependencies, the repository contains the configuration needed to
+run them on [Travis CI](https://travis-ci.org/) and
+[Shippable](https://shippable.com/) as well as via autopkgtests e.g. on
+[Debian Continuous Integration](https://ci.debian.net/packages/a/apt/).
 
 A testcase here is a shellscript embedded in a framework creating an environment in which
 apt tools can be used naturally without root-rights to test every aspect of its behavior
@@ -110,8 +127,10 @@ itself as well as in conjunction with dpkg and other tools while working with pa
 
 ### Unit tests
 
-These tests are gtest-dev based, reside in `./test/libapt` and can be run with `make test`.
-They are executed at package build-time, but not by `make`.
+These tests are gtest-dev based, executed by ctest, reside in `./test/libapt`
+and can be run with `make test`. They are executed at package build-time, but
+not by `make`. CTest by default does not show the output of tests, even if they
+failed, so to see more details you can also run them with `ctest --verbose`.
 
 Debugging
 ---------
@@ -122,7 +141,7 @@ in certain areas. The following describes some common scenarios and generally
 useful options, but is in no way exhaustive.
 
 Note that you should *NEVER* use these settings as root to avoid accidents.
-Similation mode (`-s`) is usually sufficient to help you run apt as a non-root user.
+Simulation mode (`-s`) is usually sufficient to help you run apt as a non-root user.
 
 ### Using different state files
 

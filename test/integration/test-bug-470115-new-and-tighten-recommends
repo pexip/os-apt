@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 setupenvironment
 configarchitecture 'i386'
 
@@ -47,9 +47,9 @@ insertpackage 'unstable' 'now-satisfiable' 'all' '2' 'Recommends: cool (>= 2)'
 
 setupaptarchive
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   cool
 The following packages will be upgraded:
   cool tighten-cool
@@ -59,9 +59,9 @@ Inst tighten-cool [1] (2 unstable [all])
 Conf cool (2 unstable [all])
 Conf tighten-cool (2 unstable [all])' aptget install tighten-cool -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   stuff
 The following packages will be upgraded:
   stuff tighten-coolorstuff
@@ -71,9 +71,9 @@ Inst tighten-coolorstuff [1] (2 unstable [all])
 Conf stuff (2 unstable [all])
 Conf tighten-coolorstuff (2 unstable [all])' aptget install tighten-coolorstuff -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   cool
 The following packages will be upgraded:
   cool tighten-coolorstuff2
@@ -83,9 +83,9 @@ Inst tighten-coolorstuff2 [1] (2 unstable [all])
 Conf cool (2 unstable [all])
 Conf tighten-coolorstuff2 (2 unstable [all])' aptget install tighten-coolorstuff2 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   cool
 The following packages will be upgraded:
   cool newrec-cool
@@ -95,9 +95,9 @@ Inst newrec-cool [1] (2 unstable [all])
 Conf cool (2 unstable [all])
 Conf newrec-cool (2 unstable [all])' aptget install newrec-cool -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   super
 The following NEW packages will be installed:
   super
@@ -109,9 +109,9 @@ Inst super (2 unstable [all])
 Conf newrec-super (2 unstable [all])
 Conf super (2 unstable [all])' aptget install newrec-super -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   cool
 The following packages will be upgraded:
   cool newrec-coolorstuff
@@ -121,9 +121,9 @@ Inst newrec-coolorstuff [1] (2 unstable [all])
 Conf cool (2 unstable [all])
 Conf newrec-coolorstuff (2 unstable [all])' aptget install newrec-coolorstuff -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   stuff
 The following packages will be upgraded:
   cool-gone stuff
@@ -133,9 +133,9 @@ Inst stuff [1] (2 unstable [all])
 Conf cool-gone (2 unstable [all])
 Conf stuff (2 unstable [all])' aptget install cool-gone -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   super
 The following NEW packages will be installed:
   super
@@ -149,9 +149,9 @@ Conf super-overtake (2 unstable [all])' aptget install super-overtake -s
 
 # if super would be in front, we would get a new here as it is new and
 # the first option in an or-group should be the preferred one…
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   cool
 The following packages will be upgraded:
   cool upgrade-over-new
@@ -163,8 +163,10 @@ Conf upgrade-over-new (2 unstable [all])' aptget install upgrade-over-new -s
 
 # the recommends wasn't used before so while we could do it now,
 # the user doesn't seem to need it so avoid upgrading it
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
+Recommended packages:
+  cool
 The following packages will be upgraded:
   now-satisfiable
 1 upgraded, 0 newly installed, 0 to remove and 12 not upgraded.

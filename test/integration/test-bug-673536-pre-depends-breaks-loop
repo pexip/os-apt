@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 setupenvironment
 configarchitecture 'native'
 
@@ -11,7 +11,7 @@ buildsimplenativepackage 'advanced' 'native' '2' 'unstable' 'Pre-Depends: basic'
 buildsimplenativepackage 'basic' 'native' '2' 'unstable' 'Pre-Depends: common'
 
 buildsimplenativepackage 'common' 'native' '2~conflict' 'unstable-conflict' 'Conflicts: advanced (<= 1)'
-buildsimplenativepackage 'common' 'native' '2~break' 'unstable-break' 'Conflicts: advanced (<= 1)'
+buildsimplenativepackage 'common' 'native' '2~break' 'unstable-break' 'Breaks: advanced (<= 1)'
 
 setupaptarchive
 
@@ -24,12 +24,11 @@ testloopbreak() {
 	cp -a dpkg.status.backup rootdir/var/lib/dpkg/status
 	rm -f rootdir/var/lib/apt/extended_states
 
-
-	testsuccess aptget install advanced=1 -y -t "$1" -o Debug::pkgPackageManager=1
+	testsuccess aptget install advanced=1 -y -t "$1"
 	testdpkginstalled advanced
 	testdpkgnotinstalled basic common
 
-	testsuccess aptget dist-upgrade -y -t "$1" -o Debug::pkgPackageManager=1
+	testsuccess aptget dist-upgrade -y -t "$1"
 	testdpkginstalled advanced basic common
 }
 

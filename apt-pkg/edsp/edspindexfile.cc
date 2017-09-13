@@ -12,13 +12,8 @@
 #include <apt-pkg/edsplistparser.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
-#include <apt-pkg/progress.h>
-#include <apt-pkg/debindexfile.h>
 #include <apt-pkg/indexfile.h>
-#include <apt-pkg/mmap.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
-#include <apt-pkg/pkgcachegen.h>
 #include <apt-pkg/pkgrecords.h>
 
 #include <stddef.h>
@@ -26,59 +21,108 @@
 #include <string>
 									/*}}}*/
 
-// edspIndex::edspIndex - Constructor					/*{{{*/
-// ---------------------------------------------------------------------
-/* */
-edspIndex::edspIndex(std::string File) : debStatusIndex(File)
+// EDSP-like Index							/*{{{*/
+edspLikeIndex::edspLikeIndex(std::string const &File) : pkgDebianIndexRealFile(File, true)
 {
 }
-									/*}}}*/
-// StatusIndex::Merge - Load the index file into a cache		/*{{{*/
-bool edspIndex::Merge(pkgCacheGenerator &Gen,OpProgress *Prog) const
+std::string edspLikeIndex::GetArchitecture() const
 {
-   FileFd Pkg;
-   if (File != "stdin")
-      Pkg.Open(File, FileFd::ReadOnly);
-   else
-      Pkg.OpenDescriptor(STDIN_FILENO, FileFd::ReadOnly);
-   if (_error->PendingError() == true)
-      return false;
-   edspListParser Parser(&Pkg);
-   if (_error->PendingError() == true)
-      return false;
-
-   if (Prog != NULL)
-      Prog->SubProgress(0,File);
-   if (Gen.SelectFile(File,std::string(),*this) == false)
-      return _error->Error("Problem with SelectFile %s",File.c_str());
-
-   // Store the IMS information
-   pkgCache::PkgFileIterator CFile = Gen.GetCurFile();
-   CFile->Size = Pkg.FileSize();
-   CFile->mtime = Pkg.ModificationTime();
-   map_ptrloc const storage = Gen.WriteUniqString("edsp::scenario");
-   CFile->Archive = storage;
-
-   if (Gen.MergeList(Parser) == false)
-      return _error->Error("Problem with MergeList %s",File.c_str());
+   return std::string();
+}
+bool edspLikeIndex::HasPackages() const
+{
+   return true;
+}
+bool edspLikeIndex::Exists() const
+{
+   return true;
+}
+uint8_t edspLikeIndex::GetIndexFlags() const
+{
+   return 0;
+}
+bool edspLikeIndex::OpenListFile(FileFd &Pkg, std::string const &FileName)
+{
+   if (FileName.empty() == false && FileName != "/nonexistent/stdin")
+      return pkgDebianIndexRealFile::OpenListFile(Pkg, FileName);
+   if (Pkg.OpenDescriptor(STDIN_FILENO, FileFd::ReadOnly) == false)
+      return _error->Error("Problem opening %s",FileName.c_str());
    return true;
 }
 									/*}}}*/
+// EDSP Index								/*{{{*/
+edspIndex::edspIndex(std::string const &File) : edspLikeIndex(File)
+{
+}
+std::string edspIndex::GetComponent() const
+{
+   return "edsp";
+}
+pkgCacheListParser * edspIndex::CreateListParser(FileFd &Pkg)
+{
+   if (Pkg.IsOpen() == false)
+      return NULL;
+   _error->PushToStack();
+   pkgCacheListParser * const Parser = new edspListParser(&Pkg);
+   bool const newError = _error->PendingError();
+   _error->MergeWithStack();
+   return newError ? NULL : Parser;
+}
+									/*}}}*/
+// EIPP Index								/*{{{*/
+eippIndex::eippIndex(std::string const &File) : edspLikeIndex(File)
+{
+}
+std::string eippIndex::GetComponent() const
+{
+   return "eipp";
+}
+pkgCacheListParser * eippIndex::CreateListParser(FileFd &Pkg)
+{
+   if (Pkg.IsOpen() == false)
+      return NULL;
+   _error->PushToStack();
+   pkgCacheListParser * const Parser = new eippListParser(&Pkg);
+   bool const newError = _error->PendingError();
+   _error->MergeWithStack();
+   return newError ? NULL : Parser;
+}
+									/*}}}*/
+
 // Index File types for APT						/*{{{*/
-class edspIFType: public pkgIndexFile::Type
+class APT_HIDDEN edspIFType: public pkgIndexFile::Type
 {
    public:
-   virtual pkgRecords::Parser *CreatePkgParser(pkgCache::PkgFileIterator) const
+   virtual pkgRecords::Parser *CreatePkgParser(pkgCache::PkgFileIterator const &) const APT_OVERRIDE
    {
       // we don't have a record parser for this type as the file is not presistent
       return NULL;
    };
    edspIFType() {Label = "EDSP scenario file";};
 };
-static edspIFType _apt_Universe;
-
+APT_HIDDEN edspIFType _apt_Edsp;
 const pkgIndexFile::Type *edspIndex::GetType() const
 {
-   return &_apt_Universe;
+   return &_apt_Edsp;
+}
+
+class APT_HIDDEN eippIFType: public pkgIndexFile::Type
+{
+   public:
+   virtual pkgRecords::Parser *CreatePkgParser(pkgCache::PkgFileIterator const &) const APT_OVERRIDE
+   {
+      // we don't have a record parser for this type as the file is not presistent
+      return NULL;
+   };
+   eippIFType() {Label = "EIPP scenario file";};
+};
+APT_HIDDEN eippIFType _apt_Eipp;
+const pkgIndexFile::Type *eippIndex::GetType() const
+{
+   return &_apt_Eipp;
 }
 									/*}}}*/
+
+edspLikeIndex::~edspLikeIndex() {}
+edspIndex::~edspIndex() {}
+eippIndex::~eippIndex() {}

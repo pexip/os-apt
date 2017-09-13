@@ -7,12 +7,13 @@
 
 #include <config.h>
 
+#include <apt-pkg/init.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/error.h>
-#include <apt-pkg/acquire-method.h>
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/hashes.h>
 #include <apt-pkg/configuration.h>
+#include "aptmethod.h"
 
 #include <stddef.h>
 #include <iostream>
@@ -21,6 +22,7 @@
 #include <vector>
 
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,9 +37,9 @@ class MemBlock {
    char *start;
    size_t size;
    char *free;
-   struct MemBlock *next;
+   MemBlock *next;
 
-   MemBlock(size_t size) : size(size), next(NULL)
+   explicit MemBlock(size_t size) : size(size), next(NULL)
    {
       free = start = new char[size];
    }
@@ -116,7 +118,7 @@ struct Change {
    size_t add_len; /* bytes */
    char *add;
 
-   Change(int off)
+   explicit Change(size_t off)
    {
       offset = off;
       del_cnt = add_cnt = add_len = 0;
@@ -150,11 +152,11 @@ class FileChanges {
    std::list<struct Change>::iterator where;
    size_t pos; // line number is as far left of iterator as possible
 
-   bool pos_is_okay(void)
+   bool pos_is_okay(void) const
    {
 #ifdef POSDEBUG
       size_t cpos = 0;
-      std::list<struct Change>::iterator x;
+      std::list<struct Change>::const_iterator x;
       for (x = changes.begin(); x != where; ++x) {
 	 assert(x != changes.end());
 	 cpos += x->offset + x->add_cnt;
@@ -333,83 +335,93 @@ class Patch {
    FileChanges filechanges;
    MemBlock add_text;
 
-   static bool retry_fwrite(char *b, size_t l, FILE *f, Hashes *hash)
+   static bool retry_fwrite(char *b, size_t l, FileFd &f, Hashes * const start_hash, Hashes * const end_hash = nullptr) APT_NONNULL(1)
    {
-      size_t r = 1;
-      while (r > 0 && l > 0)
-      {
-         r = fwrite(b, 1, l, f);
-	 if (hash)
-	    hash->Add((unsigned char*)b, r);
-	 l -= r;
-	 b += r;
-      }
-      return l == 0;
+      if (f.Write(b, l) == false)
+	 return false;
+      if (start_hash)
+	 start_hash->Add((unsigned char*)b, l);
+      if (end_hash)
+	 end_hash->Add((unsigned char*)b, l);
+      return true;
    }
 
-   static void dump_rest(FILE *o, FILE *i, Hashes *hash)
+   static void dump_rest(FileFd &o, FileFd &i,
+	 Hashes * const start_hash, Hashes * const end_hash)
    {
       char buffer[BLOCK_SIZE];
-      size_t l;
-      while (0 < (l = fread(buffer, 1, sizeof(buffer), i))) {
-	 if (!retry_fwrite(buffer, l, o, hash))
+      unsigned long long l = 0;
+      while (i.Read(buffer, sizeof(buffer), &l)) {
+	 if (l ==0  || !retry_fwrite(buffer, l, o, start_hash, end_hash))
 	    break;
       }
    }
 
-   static void dump_lines(FILE *o, FILE *i, size_t n, Hashes *hash)
+   static void dump_lines(FileFd &o, FileFd &i, size_t n,
+	 Hashes * const start_hash, Hashes * const end_hash)
    {
       char buffer[BLOCK_SIZE];
       while (n > 0) {
-	 if (fgets(buffer, sizeof(buffer), i) == 0)
+	 if (i.ReadLine(buffer, sizeof(buffer)) == NULL)
 	    buffer[0] = '\0';
 	 size_t const l = strlen(buffer);
 	 if (l == 0 || buffer[l-1] == '\n')
 	    n--;
-	 retry_fwrite(buffer, l, o, hash);
+	 retry_fwrite(buffer, l, o, start_hash, end_hash);
       }
    }
 
-   static void skip_lines(FILE *i, int n)
+   static void skip_lines(FileFd &i, int n, Hashes * const start_hash)
    {
       char buffer[BLOCK_SIZE];
       while (n > 0) {
-	 if (fgets(buffer, sizeof(buffer), i) == 0)
+	 if (i.ReadLine(buffer, sizeof(buffer)) == NULL)
 	    buffer[0] = '\0';
 	 size_t const l = strlen(buffer);
 	 if (l == 0 || buffer[l-1] == '\n')
 	    n--;
+	 if (start_hash)
+	    start_hash->Add((unsigned char*)buffer, l);
       }
    }
 
-   static void dump_mem(FILE *o, char *p, size_t s, Hashes *hash) {
-      retry_fwrite(p, s, o, hash);
+   static void dump_mem(FileFd &o, char *p, size_t s, Hashes *hash) APT_NONNULL(2) {
+      retry_fwrite(p, s, o, nullptr, hash);
    }
 
    public:
 
-   void read_diff(FileFd &f)
+   bool read_diff(FileFd &f, Hashes * const h)
    {
       char buffer[BLOCK_SIZE];
       bool cmdwanted = true;
 
-      Change ch(0);
-      while(f.ReadLine(buffer, sizeof(buffer)))
-      {
+      Change ch(std::numeric_limits<size_t>::max());
+      if (f.ReadLine(buffer, sizeof(buffer)) == NULL)
+	 return _error->Error("Reading first line of patchfile %s failed", f.Name().c_str());
+      do {
+	 if (h != NULL)
+	    h->Add(buffer);
 	 if (cmdwanted) {
 	    char *m, *c;
 	    size_t s, e;
-	    s = strtol(buffer, &m, 10);
-	    if (m == buffer) {
-	       s = e = ch.offset + ch.add_cnt;
-	       c = buffer;
-	    } else if (*m == ',') {
-	       m++;
+	    errno = 0;
+	    s = strtoul(buffer, &m, 10);
+	    if (unlikely(m == buffer || s == std::numeric_limits<unsigned long>::max() || errno != 0))
+	       return _error->Error("Parsing patchfile %s failed: Expected an effected line start", f.Name().c_str());
+	    else if (*m == ',') {
+	       ++m;
 	       e = strtol(m, &c, 10);
+	       if (unlikely(m == c || e == std::numeric_limits<unsigned long>::max() || errno != 0))
+		  return _error->Error("Parsing patchfile %s failed: Expected an effected line end", f.Name().c_str());
+	       if (unlikely(e < s))
+		  return _error->Error("Parsing patchfile %s failed: Effected lines end %lu is before start %lu", f.Name().c_str(), e, s);
 	    } else {
 	       e = s;
 	       c = m;
 	    }
+	    if (s > ch.offset)
+	       return _error->Error("Parsing patchfile %s failed: Effected line is after previous effected line", f.Name().c_str());
 	    switch(*c) {
 	       case 'a':
 		  cmdwanted = false;
@@ -420,6 +432,8 @@ class Patch {
 		  ch.del_cnt = 0;
 		  break;
 	       case 'c':
+		  if (unlikely(s == 0))
+		     return _error->Error("Parsing patchfile %s failed: Change command can't effect line zero", f.Name().c_str());
 		  cmdwanted = false;
 		  ch.add = NULL;
 		  ch.add_cnt = 0;
@@ -428,6 +442,8 @@ class Patch {
 		  ch.del_cnt = e - s + 1;
 		  break;
 	       case 'd':
+		  if (unlikely(s == 0))
+		     return _error->Error("Parsing patchfile %s failed: Delete command can't effect line zero", f.Name().c_str());
 		  ch.offset = s - 1;
 		  ch.del_cnt = e - s + 1;
 		  ch.add = NULL;
@@ -435,9 +451,11 @@ class Patch {
 		  ch.add_len = 0;
 		  filechanges.add_change(ch);
 		  break;
+	       default:
+		  return _error->Error("Parsing patchfile %s failed: Unknown command", f.Name().c_str());
 	    }
 	 } else { /* !cmdwanted */
-	    if (buffer[0] == '.' && buffer[1] == '\n') {
+	    if (strcmp(buffer, ".\n") == 0) {
 	       cmdwanted = true;
 	       filechanges.add_change(ch);
 	    } else {
@@ -463,10 +481,11 @@ class Patch {
 	       }
 	    }
 	 }
-      }
+      } while(f.ReadLine(buffer, sizeof(buffer)));
+      return true;
    }
 
-   void write_diff(FILE *f)
+   void write_diff(FileFd &f)
    {
       unsigned long long line = 0;
       std::list<struct Change>::reverse_iterator ch;
@@ -477,51 +496,84 @@ class Patch {
       for (ch = filechanges.rbegin(); ch != filechanges.rend(); ++ch) {
 	 std::list<struct Change>::reverse_iterator mg_i, mg_e = ch;
 	 while (ch->del_cnt == 0 && ch->offset == 0)
+	 {
 	    ++ch;
+	    if (unlikely(ch == filechanges.rend()))
+	       return;
+	 }
 	 line -= ch->del_cnt;
+	 std::string buf;
 	 if (ch->add_cnt > 0) {
 	    if (ch->del_cnt == 0) {
-	       fprintf(f, "%llua\n", line);
+	       strprintf(buf, "%llua\n", line);
 	    } else if (ch->del_cnt == 1) {
-	       fprintf(f, "%lluc\n", line+1);
+	       strprintf(buf, "%lluc\n", line+1);
 	    } else {
-	       fprintf(f, "%llu,%lluc\n", line+1, line+ch->del_cnt);
+	       strprintf(buf, "%llu,%lluc\n", line+1, line+ch->del_cnt);
 	    }
+	    f.Write(buf.c_str(), buf.length());
 
 	    mg_i = ch;
 	    do {
 	       dump_mem(f, mg_i->add, mg_i->add_len, NULL);
 	    } while (mg_i-- != mg_e);
 
-	    fprintf(f, ".\n");
+	    buf = ".\n";
+	    f.Write(buf.c_str(), buf.length());
 	 } else if (ch->del_cnt == 1) {
-	    fprintf(f, "%llud\n", line+1);
+	    strprintf(buf, "%llud\n", line+1);
+	    f.Write(buf.c_str(), buf.length());
 	 } else if (ch->del_cnt > 1) {
-	    fprintf(f, "%llu,%llud\n", line+1, line+ch->del_cnt);
+	    strprintf(buf, "%llu,%llud\n", line+1, line+ch->del_cnt);
+	    f.Write(buf.c_str(), buf.length());
 	 }
 	 line -= ch->offset;
       }
    }
 
-   void apply_against_file(FILE *out, FILE *in, Hashes *hash = NULL)
+   void apply_against_file(FileFd &out, FileFd &in,
+	 Hashes * const start_hash = nullptr, Hashes * const end_hash = nullptr)
    {
       std::list<struct Change>::iterator ch;
       for (ch = filechanges.begin(); ch != filechanges.end(); ++ch) {
-	 dump_lines(out, in, ch->offset, hash);
-	 skip_lines(in, ch->del_cnt);
-	 dump_mem(out, ch->add, ch->add_len, hash);
+	 dump_lines(out, in, ch->offset, start_hash, end_hash);
+	 skip_lines(in, ch->del_cnt, start_hash);
+	 if (ch->add_len != 0)
+	    dump_mem(out, ch->add, ch->add_len, end_hash);
       }
-      dump_rest(out, in, hash);
+      dump_rest(out, in, start_hash, end_hash);
+      out.Flush();
    }
 };
 
-class RredMethod : public pkgAcqMethod {
+class RredMethod : public aptMethod {
    private:
       bool Debug;
 
+      struct PDiffFile {
+	 std::string FileName;
+	 HashStringList ExpectedHashes;
+	 PDiffFile(std::string const &FileName, HashStringList const &ExpectedHashes) :
+	    FileName(FileName), ExpectedHashes(ExpectedHashes) {}
+      };
+
+      HashStringList ReadExpectedHashesForPatch(unsigned int const patch, std::string const &Message)
+      {
+	 HashStringList ExpectedHashes;
+	 for (char const * const * type = HashString::SupportedHashes(); *type != NULL; ++type)
+	 {
+	    std::string tagname;
+	    strprintf(tagname, "Patch-%d-%s-Hash", patch, *type);
+	    std::string const hashsum = LookupTag(Message, tagname.c_str());
+	    if (hashsum.empty() == false)
+	       ExpectedHashes.push_back(HashString(*type, hashsum));
+	 }
+	 return ExpectedHashes;
+      }
+
    protected:
-      virtual bool Fetch(FetchItem *Itm) {
-	 Debug = _config->FindB("Debug::pkgAcquire::RRed", false);
+      virtual bool URIAcquire(std::string const &Message, FetchItem *Itm) APT_OVERRIDE {
+	 Debug = DebugEnabled();
 	 URI Get = Itm->Uri;
 	 std::string Path = Get.Host + Get.Path; // rred:/path - no host
 
@@ -534,11 +586,27 @@ class RredMethod : public pkgAcqMethod {
 	 } else
 	    URIStart(Res);
 
-	 std::vector<std::string> patchpaths;
+	 std::vector<PDiffFile> patchfiles;
 	 Patch patch;
 
+	 HashStringList StartHashes;
+	 for (char const * const * type = HashString::SupportedHashes(); *type != nullptr; ++type)
+	 {
+	    std::string tagname;
+	    strprintf(tagname, "Start-%s-Hash", *type);
+	    std::string const hashsum = LookupTag(Message, tagname.c_str());
+	    if (hashsum.empty() == false)
+	       StartHashes.push_back(HashString(*type, hashsum));
+	 }
+
 	 if (FileExists(Path + ".ed") == true)
-	    patchpaths.push_back(Path + ".ed");
+	 {
+	    HashStringList const ExpectedHashes = ReadExpectedHashesForPatch(0, Message);
+	    std::string const FileName = Path + ".ed";
+	    if (ExpectedHashes.usable() == false)
+	       return _error->Error("No hashes found for uncompressed patch: %s", FileName.c_str());
+	    patchfiles.push_back(PDiffFile(FileName, ExpectedHashes));
+	 }
 	 else
 	 {
 	    _error->PushToStack();
@@ -546,31 +614,44 @@ class RredMethod : public pkgAcqMethod {
 	    _error->RevertToStack();
 
 	    std::string const baseName = Path + ".ed.";
+	    unsigned int seen_patches = 0;
 	    for (std::vector<std::string>::const_iterator p = patches.begin();
 		  p != patches.end(); ++p)
+	    {
 	       if (p->compare(0, baseName.length(), baseName) == 0)
-		  patchpaths.push_back(*p);
+	       {
+		  HashStringList const ExpectedHashes = ReadExpectedHashesForPatch(seen_patches, Message);
+		  if (ExpectedHashes.usable() == false)
+		     return _error->Error("No hashes found for uncompressed patch %d: %s", seen_patches, p->c_str());
+		  patchfiles.push_back(PDiffFile(*p, ExpectedHashes));
+		  ++seen_patches;
+	       }
+	    }
 	 }
 
 	 std::string patch_name;
-	 for (std::vector<std::string>::iterator I = patchpaths.begin();
-	       I != patchpaths.end();
+	 for (std::vector<PDiffFile>::iterator I = patchfiles.begin();
+	       I != patchfiles.end();
 	       ++I)
 	 {
-	    patch_name = *I;
+	    patch_name = I->FileName;
 	    if (Debug == true)
 	       std::clog << "Patching " << Path << " with " << patch_name
 		  << std::endl;
 
 	    FileFd p;
+	    Hashes patch_hash(I->ExpectedHashes);
 	    // all patches are compressed, even if the name doesn't reflect it
-	    if (p.Open(patch_name, FileFd::ReadOnly, FileFd::Gzip) == false) {
-	       std::cerr << "Could not open patch file " << patch_name << std::endl;
-	       _error->DumpErrors(std::cerr);
-	       abort();
+	    if (p.Open(patch_name, FileFd::ReadOnly, FileFd::Gzip) == false ||
+		  patch.read_diff(p, &patch_hash) == false)
+	    {
+	       _error->DumpErrors(std::cerr, GlobalError::DEBUG, false);
+	       return false;
 	    }
-	    patch.read_diff(p);
 	    p.Close();
+	    HashStringList const hsl = patch_hash.GetHashStringList();
+	    if (hsl != I->ExpectedHashes)
+	       return _error->Error("Hash Sum mismatch for uncompressed patch %s", patch_name.c_str());
 	 }
 
 	 if (Debug == true)
@@ -578,15 +659,39 @@ class RredMethod : public pkgAcqMethod {
 	       << " and writing results to " << Itm->DestFile
 	       << std::endl;
 
-	 FILE *inp = fopen(Path.c_str(), "r");
-	 FILE *out = fopen(Itm->DestFile.c_str(), "w");
+	 FileFd inp, out;
+	 if (inp.Open(Path, FileFd::ReadOnly, FileFd::Extension) == false)
+	 {
+	    if (Debug == true)
+	       std::clog << "FAILED to open inp " << Path << std::endl;
+	    return _error->Error("Failed to open inp %s", Path.c_str());
+	 }
+	 if (out.Open(Itm->DestFile, FileFd::WriteOnly | FileFd::Create | FileFd::Empty | FileFd::BufferedWrite, FileFd::Extension) == false)
+	 {
+	    if (Debug == true)
+	       std::clog << "FAILED to open out " << Itm->DestFile << std::endl;
+	    return _error->Error("Failed to open out %s", Itm->DestFile.c_str());
+	 }
 
-	 Hashes hash;
+	 Hashes end_hash(Itm->ExpectedHashes);
+	 if (StartHashes.usable())
+	 {
+	    Hashes start_hash(StartHashes);
+	    patch.apply_against_file(out, inp, &start_hash, &end_hash);
+	    if (start_hash.GetHashStringList() != StartHashes)
+	       _error->Error("The input file hadn't the expected hash!");
+	 }
+	 else
+	    patch.apply_against_file(out, inp, nullptr, &end_hash);
 
-	 patch.apply_against_file(out, inp, &hash);
+	 out.Close();
+	 inp.Close();
 
-	 fclose(out);
-	 fclose(inp);
+	 if (_error->PendingError() == true) {
+	    if (Debug == true)
+	       std::clog << "FAILED to read or write files" << std::endl;
+	    return false;
+	 }
 
 	 if (Debug == true) {
 	    std::clog << "rred: finished file patching of " << Path  << "." << std::endl;
@@ -595,7 +700,7 @@ class RredMethod : public pkgAcqMethod {
 	 struct stat bufbase, bufpatch;
 	 if (stat(Path.c_str(), &bufbase) != 0 ||
 	       stat(patch_name.c_str(), &bufpatch) != 0)
-	    return _error->Errno("stat", _("Failed to stat"));
+	    return _error->Errno("stat", _("Failed to stat %s"), Path.c_str());
 
 	 struct timeval times[2];
 	 times[0].tv_sec = bufbase.st_atime;
@@ -605,32 +710,39 @@ class RredMethod : public pkgAcqMethod {
 	    return _error->Errno("utimes",_("Failed to set modification time"));
 
 	 if (stat(Itm->DestFile.c_str(), &bufbase) != 0)
-	    return _error->Errno("stat", _("Failed to stat"));
+	    return _error->Errno("stat", _("Failed to stat %s"), Itm->DestFile.c_str());
 
 	 Res.LastModified = bufbase.st_mtime;
 	 Res.Size = bufbase.st_size;
-	 Res.TakeHashes(hash);
+	 Res.TakeHashes(end_hash);
 	 URIDone(Res);
 
 	 return true;
       }
 
    public:
-      RredMethod() : pkgAcqMethod("2.0",SingleInstance | SendConfig), Debug(false) {}
+      RredMethod() : aptMethod("rred", "2.0", SendConfig), Debug(false) {}
 };
 
 int main(int argc, char **argv)
 {
    int i;
    bool just_diff = true;
+   bool test = false;
    Patch patch;
 
    if (argc <= 1) {
-      RredMethod Mth;
-      return Mth.Run();
+      return RredMethod().Run();
    }
 
-   if (argc > 1 && strcmp(argv[1], "-f") == 0) {
+   // Usage: rred -t input output diff ...
+   if (argc > 1 && strcmp(argv[1], "-t") == 0) {
+      // Read config files so we see compressors.
+      pkgInitConfig(*_config);
+      just_diff = false;
+      test = true;
+      i = 4;
+   } else if (argc > 1 && strcmp(argv[1], "-f") == 0) {
       just_diff = false;
       i = 2;
    } else {
@@ -643,17 +755,31 @@ int main(int argc, char **argv)
 	 _error->DumpErrors(std::cerr);
 	 exit(1);
       }
-      patch.read_diff(p);
+      if (patch.read_diff(p, NULL) == false)
+      {
+	 _error->DumpErrors(std::cerr);
+	 exit(2);
+      }
    }
 
-   if (just_diff) {
-      patch.write_diff(stdout);
-   } else {
-      FILE *out, *inp;
-      out = stdout;
-      inp = stdin;
-
+   if (test) {
+      FileFd out, inp;
+      std::cerr << "Patching " << argv[2] << " into " << argv[3] << "\n";
+      inp.Open(argv[2], FileFd::ReadOnly,FileFd::Extension);
+      out.Open(argv[3], FileFd::WriteOnly | FileFd::Create | FileFd::Empty | FileFd::BufferedWrite, FileFd::Extension);
       patch.apply_against_file(out, inp);
+      out.Close();
+   } else if (just_diff) {
+      FileFd out;
+      out.OpenDescriptor(STDOUT_FILENO, FileFd::WriteOnly | FileFd::Create);
+      patch.write_diff(out);
+      out.Close();
+   } else {
+      FileFd out, inp;
+      out.OpenDescriptor(STDOUT_FILENO, FileFd::WriteOnly | FileFd::Create | FileFd::BufferedWrite);
+      inp.OpenDescriptor(STDIN_FILENO, FileFd::ReadOnly);
+      patch.apply_against_file(out, inp);
+      out.Close();
    }
    return 0;
 }

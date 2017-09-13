@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 setupenvironment
 configarchitecture "amd64"
 setupaptarchive
@@ -10,7 +10,7 @@ setupaptarchive
 # test success
 UPGRADE="Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   libdrm-intel1 libdrm-nouveau1 libmtdev1 libutouch-grail1 libx11-xcb1
   libxcb-aux0 libxcb-dri2-0 libxfont1 xserver-common xserver-xorg-core
   xserver-xorg-input-evdev xserver-xorg-input-mouse
@@ -55,5 +55,5 @@ The following packages will be upgraded:
 Need to get 0 B/5505 kB of archives.
 After this operation, 2294 kB disk space will be freed.
 E: Trivial Only specified but this is not a trivial operation."
-testequal "$UPGRADE" aptget install xserver-xorg --trivial-only
+testfailureequal "$UPGRADE" aptget install xserver-xorg --trivial-only
 

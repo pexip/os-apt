@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: algorithms.h,v 1.10 2001/05/22 04:17:41 jgg Exp $
 /* ######################################################################
 
    Algorithms - A set of misc algorithms
@@ -53,8 +52,10 @@ using std::ostream;
 #endif
 
 
+class pkgSimulatePrivate;
 class pkgSimulate : public pkgPackageManager				/*{{{*/
 {
+   pkgSimulatePrivate * const d;
    protected:
 
    class Policy : public pkgDepCache::Policy
@@ -62,12 +63,12 @@ class pkgSimulate : public pkgPackageManager				/*{{{*/
       pkgDepCache *Cache;
       public:
       
-      virtual VerIterator GetCandidateVer(PkgIterator const &Pkg)
+      virtual VerIterator GetCandidateVer(PkgIterator const &Pkg) APT_OVERRIDE
       {
 	 return (*Cache)[Pkg].CandidateVerIter(*Cache);
       }
       
-      Policy(pkgDepCache *Cache) : Cache(Cache) {};
+      explicit Policy(pkgDepCache *Cache) : Cache(Cache) {};
    };
    
    unsigned char *Flags;
@@ -75,27 +76,34 @@ class pkgSimulate : public pkgPackageManager				/*{{{*/
    Policy iPolicy;
    pkgDepCache Sim;
    pkgDepCache::ActionGroup group;
-   
-   // The Actuall installation implementation
-   virtual bool Install(PkgIterator Pkg,std::string File);
-   virtual bool Configure(PkgIterator Pkg);
-   virtual bool Remove(PkgIterator Pkg,bool Purge);
+
+   // The Actual installation implementation
+   virtual bool Install(PkgIterator Pkg,std::string File) APT_OVERRIDE;
+   virtual bool Configure(PkgIterator Pkg) APT_OVERRIDE;
+   virtual bool Remove(PkgIterator Pkg,bool Purge) APT_OVERRIDE;
+
+   // FIXME: trick to avoid ABI break for virtual reimplementation; fix on next ABI break
+public:
+   APT_HIDDEN bool Go2(APT::Progress::PackageManager * progress);
 
 private:
-   void ShortBreaks();
-   void Describe(PkgIterator iPkg,std::ostream &out,bool Current,bool Candidate);
-   
+   APT_HIDDEN void ShortBreaks();
+   APT_HIDDEN void Describe(PkgIterator iPkg,std::ostream &out,bool Current,bool Candidate);
+   APT_HIDDEN bool RealInstall(PkgIterator Pkg,std::string File);
+   APT_HIDDEN bool RealConfigure(PkgIterator Pkg);
+   APT_HIDDEN bool RealRemove(PkgIterator Pkg,bool Purge);
+
    public:
 
-   pkgSimulate(pkgDepCache *Cache);
-   ~pkgSimulate();
+   explicit pkgSimulate(pkgDepCache *Cache);
+   virtual ~pkgSimulate();
 };
 									/*}}}*/
 class pkgProblemResolver						/*{{{*/
 {
  private:
    /** \brief dpointer placeholder (for later in case we need it) */
-   void *d;
+   void * const d;
 
    pkgDepCache &Cache;
    typedef pkgCache::PkgIterator PkgIterator;
@@ -113,8 +121,7 @@ class pkgProblemResolver						/*{{{*/
    bool Debug;
    
    // Sort stuff
-   static pkgProblemResolver *This;
-   static int ScoreSort(const void *a,const void *b) APT_PURE;
+   APT_HIDDEN int ScoreSort(Package const *A, Package const *B) APT_PURE;
 
    struct PackageKill
    {
@@ -122,12 +129,9 @@ class pkgProblemResolver						/*{{{*/
       DepIterator Dep;
    };
 
-   void MakeScores();
-   bool DoUpgrade(pkgCache::PkgIterator Pkg);
+   APT_HIDDEN void MakeScores();
+   APT_HIDDEN bool DoUpgrade(pkgCache::PkgIterator Pkg);
 
-   bool ResolveInternal(bool const BrokenFix = false);
-   bool ResolveByKeepInternal();
-   
    protected:
    bool InstOrNewPolicyBroken(pkgCache::PkgIterator Pkg);
 
@@ -136,17 +140,19 @@ class pkgProblemResolver						/*{{{*/
    inline void Protect(pkgCache::PkgIterator Pkg) {Flags[Pkg->ID] |= Protected; Cache.MarkProtected(Pkg);};
    inline void Remove(pkgCache::PkgIterator Pkg) {Flags[Pkg->ID] |= ToRemove;};
    inline void Clear(pkgCache::PkgIterator Pkg) {Flags[Pkg->ID] &= ~(Protected | ToRemove);};
-   
-   // Try to intelligently resolve problems by installing and removing packages   
-   bool Resolve(bool BrokenFix = false);
-   
+
+   // Try to intelligently resolve problems by installing and removing packages
+   bool Resolve(bool BrokenFix = false, OpProgress * const Progress = NULL);
+   APT_HIDDEN bool ResolveInternal(bool const BrokenFix = false);
+
    // Try to resolve problems only by using keep
-   bool ResolveByKeep();
+   bool ResolveByKeep(OpProgress * const Progress = NULL);
+   APT_HIDDEN bool ResolveByKeepInternal();
 
-   APT_DEPRECATED void InstallProtect();
+   APT_DEPRECATED_MSG("NOOP as MarkInstall enforces not overriding FromUser markings") void InstallProtect();
 
-   pkgProblemResolver(pkgDepCache *Cache);
-   ~pkgProblemResolver();
+   explicit pkgProblemResolver(pkgDepCache *Cache);
+   virtual ~pkgProblemResolver();
 };
 									/*}}}*/
 bool pkgApplyStatus(pkgDepCache &Cache);

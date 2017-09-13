@@ -116,7 +116,7 @@ static int parsenetrc_string (char *host, std::string &login, std::string &passw
             state = NOTHING;
           break;
         case HOSTVALID:
-          /* we are now parsing sub-keywords concerning "our" host */
+          /* we are now parsing sub-keywords regarding "our" host */
           if (state_login) {
             if (specific_login)
               state_our_login = !strcasecmp (login.c_str(), tok);
@@ -152,18 +152,6 @@ static int parsenetrc_string (char *host, std::string &login, std::string &passw
 
   return retcode;
 }
-// for some unknown reason this method is exported so keep a compatible interface for now …
-int parsenetrc (char *host, char *login, char *password, char *netrcfile = NULL)
-{
-   std::string login_string, password_string;
-   int const ret = parsenetrc_string(host, login_string, password_string, netrcfile);
-   if (ret < 0)
-      return ret;
-   strncpy(login, login_string.c_str(), LOGINSIZE - 1);
-   strncpy(password, password_string.c_str(), PASSWORDSIZE - 1);
-   return ret;
-}
-
 
 void maybe_add_auth (URI &Uri, string NetRCFile)
 {

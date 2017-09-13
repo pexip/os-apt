@@ -37,28 +37,20 @@ struct PackageSortAlphabetic						/*{{{*/
        return (l_name < r_name);
     }
 };
-									/*}}}*/
-class PackageNameMatcher : public Matcher				/*{{{*/
+
+class PackageNameMatcher : public Matcher
 {
-#ifdef PACKAGE_MATCHER_ABI_COMPAT
-#define PackageMatcher PackageNameMatchesFnmatch
-#endif
   public:
-   PackageNameMatcher(const char **patterns)
+   explicit PackageNameMatcher(const char **patterns)
    {
       for(int i=0; patterns[i] != NULL; ++i)
       {
          std::string pattern = patterns[i];
-#ifdef PACKAGE_MATCHER_ABI_COMPAT
-            APT::CacheFilter::PackageNameMatchesFnmatch *cachefilter = NULL;
-            cachefilter = new APT::CacheFilter::PackageNameMatchesFnmatch(pattern);
-#else
          APT::CacheFilter::PackageMatcher *cachefilter = NULL;
          if(_config->FindB("APT::Cmd::Use-Regexp", false) == true)
             cachefilter = new APT::CacheFilter::PackageNameMatchesRegEx(pattern);
          else
             cachefilter = new APT::CacheFilter::PackageNameMatchesFnmatch(pattern);
-#endif
          filters.push_back(cachefilter);
       }
    }
@@ -67,7 +59,7 @@ class PackageNameMatcher : public Matcher				/*{{{*/
       for(J=filters.begin(); J != filters.end(); ++J)
          delete *J;
    }
-   virtual bool operator () (const pkgCache::PkgIterator &P) 
+   virtual bool operator () (const pkgCache::PkgIterator &P) APT_OVERRIDE
    {
       for(J=filters.begin(); J != filters.end(); ++J)
       {
@@ -101,8 +93,8 @@ static void ListAllVersions(pkgCacheFile &CacheFile, pkgRecords &records,/*{{{*/
 bool DoList(CommandLine &Cmd)
 {
    pkgCacheFile CacheFile;
-   pkgCache *Cache = CacheFile.GetPkgCache();
-   if (unlikely(Cache == NULL))
+   pkgCache * const Cache = CacheFile.GetPkgCache();
+   if (unlikely(Cache == nullptr || CacheFile.GetDepCache() == nullptr))
       return false;
    pkgRecords records(CacheFile);
 

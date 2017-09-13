@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 setupenvironment
 configarchitecture 'amd64'
 
@@ -12,7 +12,7 @@ aptget install --print-uris -y cdebconf-newt-terminal cdebconf-gtk-terminal 2>&1
 
 testfileequal filename.log "Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   cdebconf-gtk-udeb cdebconf-newt-udeb cdebconf-udeb libc6-udeb
   libglib2.0-udeb libgtk2.0-0-udeb libvte9-udeb
 The following NEW packages will be installed:

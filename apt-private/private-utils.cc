@@ -1,15 +1,17 @@
 #include <config.h>
 
 #include <apt-pkg/configuration.h>
+#include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
 
 #include <apt-private/private-utils.h>
 
 #include <cstdlib>
+#include <sstream>
 #include <unistd.h>
 
 // DisplayFileInPager - Display File with pager				/*{{{*/
-void DisplayFileInPager(std::string const &filename)
+bool DisplayFileInPager(std::string const &filename)
 {
    pid_t Process = ExecFork();
    if (Process == 0)
@@ -39,11 +41,11 @@ void DisplayFileInPager(std::string const &filename)
    }
 
    // Wait for the subprocess
-   ExecWait(Process, "pager", false);
+   return ExecWait(Process, "pager", false);
 }
 									/*}}}*/
 // EditFileInSensibleEditor - Edit File with editor			/*{{{*/
-void EditFileInSensibleEditor(std::string const &filename)
+bool EditFileInSensibleEditor(std::string const &filename)
 {
    pid_t Process = ExecFork();
    if (Process == 0)
@@ -71,6 +73,26 @@ void EditFileInSensibleEditor(std::string const &filename)
    }
 
    // Wait for the subprocess
-   ExecWait(Process, "editor", false);
+   return ExecWait(Process, "editor", false);
+}
+									/*}}}*/
+time_t GetSecondsSinceEpoch()						/*{{{*/
+{
+   auto const source_date_epoch = getenv("SOURCE_DATE_EPOCH");
+   if (source_date_epoch == nullptr)
+      return time(nullptr);
+
+   time_t epoch;
+   std::stringstream ss(source_date_epoch);
+   ss >> epoch;
+
+   if (ss.fail() || !ss.eof())
+   {
+      _error->Warning("Environment variable SOURCE_DATE_EPOCH was ignored as it has an invalid value: \"%s\"",
+            source_date_epoch);
+      return time(nullptr);
+   }
+
+   return epoch;
 }
 									/*}}}*/

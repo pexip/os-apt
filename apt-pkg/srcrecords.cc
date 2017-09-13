@@ -31,7 +31,7 @@
 // SrcRecords::pkgSrcRecords - Constructor				/*{{{*/
 // ---------------------------------------------------------------------
 /* Open all the source index files */
-pkgSrcRecords::pkgSrcRecords(pkgSourceList &List) : d(NULL), Files(0), Current(0)
+pkgSrcRecords::pkgSrcRecords(pkgSourceList &List) : d(NULL), Files(0)
 {
    for (pkgSourceList::const_iterator I = List.begin(); I != List.end(); ++I)
    {
@@ -39,11 +39,14 @@ pkgSrcRecords::pkgSrcRecords(pkgSourceList &List) : d(NULL), Files(0), Current(0
       for (std::vector<pkgIndexFile *>::const_iterator J = Indexes->begin();
 	   J != Indexes->end(); ++J)
       {
-         Parser* P = (*J)->CreateSrcParser();
-	 if (_error->PendingError() == true)
-            return;
-         if (P != 0)
-            Files.push_back(P);
+	 _error->PushToStack();
+	 Parser* P = (*J)->CreateSrcParser();
+	 bool const newError = _error->PendingError();
+	 _error->MergeWithStack();
+	 if (newError)
+	    return;
+	 if (P != 0)
+	    Files.push_back(P);
       }
    }
    
@@ -93,8 +96,6 @@ const pkgSrcRecords::Parser* pkgSrcRecords::Step()
    // Step to the next record, possibly switching files
    while ((*Current)->Step() == false)
    {
-      if (_error->PendingError() == true)
-         return 0;
       ++Current;
       if (Current == Files.end())
          return 0;
@@ -114,10 +115,6 @@ pkgSrcRecords::Parser *pkgSrcRecords::Find(const char *Package,bool const &SrcOn
    {
       if(Step() == 0)
          return 0;
-
-      // IO error somehow
-      if (_error->PendingError() == true)
-	 return 0;
 
       // Source name hit
       if ((*Current)->Package() == Package)
@@ -142,7 +139,9 @@ const char *pkgSrcRecords::Parser::BuildDepType(unsigned char const &Type)
    const char *fields[] = {"Build-Depends",
 			   "Build-Depends-Indep",
 			   "Build-Conflicts",
-			   "Build-Conflicts-Indep"};
+			   "Build-Conflicts-Indep",
+			   "Build-Depends-Arch",
+			   "Build-Conflicts-Arch"};
    if (unlikely(Type >= sizeof(fields)/sizeof(fields[0])))
       return "";
    return fields[Type];
@@ -178,3 +177,7 @@ bool pkgSrcRecords::Parser::Files2(std::vector<pkgSrcRecords::File2> &F2)/*{{{*/
    return true;
 }
 									/*}}}*/
+
+
+pkgSrcRecords::Parser::Parser(const pkgIndexFile *Index) : d(NULL), iIndex(Index) {}
+pkgSrcRecords::Parser::~Parser() {}

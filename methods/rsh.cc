@@ -17,7 +17,6 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/hashes.h>
 #include <apt-pkg/configuration.h>
-#include <apt-pkg/acquire-method.h>
 #include <apt-pkg/strutl.h>
 
 #include <stdlib.h>
@@ -34,7 +33,6 @@
 #include <apti18n.h>
 									/*}}}*/
 
-const char *Prog;
 unsigned long TimeOut = 120;
 Configuration::Item const *RshOptions = 0;
 time_t RSHMethod::FailTime = 0;
@@ -44,8 +42,8 @@ int RSHMethod::FailFd = -1;
 // RSHConn::RSHConn - Constructor					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-RSHConn::RSHConn(URI Srv) : Len(0), WriteFd(-1), ReadFd(-1),
-                            ServerName(Srv), Process(-1) {
+RSHConn::RSHConn(std::string const &pProg, URI Srv) : Len(0), WriteFd(-1), ReadFd(-1),
+                            ServerName(Srv), Prog(pProg), Process(-1) {
    Buffer[0] = '\0';
 }
 									/*}}}*/
@@ -84,7 +82,7 @@ bool RSHConn::Open()
    if (Process != -1)
       return true;
 
-   if (Connect(ServerName.Host,ServerName.User) == false)
+   if (Connect(ServerName.Host,ServerName.Port,ServerName.User) == false)
       return false;
 
    return true;
@@ -93,8 +91,15 @@ bool RSHConn::Open()
 // RSHConn::Connect - Fire up rsh and connect				/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-bool RSHConn::Connect(std::string Host, std::string User)
+bool RSHConn::Connect(std::string Host, unsigned int Port, std::string User)
 {
+   char *PortStr = NULL;
+   if (Port != 0)
+   {
+      if (asprintf (&PortStr, "%d", Port) == -1 || PortStr == NULL)
+         return _error->Errno("asprintf", _("Failed"));
+   }
+
    // Create the pipes
    int Pipes[4] = {-1,-1,-1,-1};
    if (pipe(Pipes) != 0 || pipe(Pipes+2) != 0)
@@ -121,7 +126,7 @@ bool RSHConn::Connect(std::string Host, std::string User)
       // Probably should do
       // dup2(open("/dev/null",O_RDONLY),STDERR_FILENO);
 
-      Args[i++] = Prog;
+      Args[i++] = Prog.c_str();
 
       // Insert user-supplied command line options
       Configuration::Item const *Opts = RshOptions;
@@ -140,6 +145,10 @@ bool RSHConn::Connect(std::string Host, std::string User)
          Args[i++] = "-l";
 	 Args[i++] = User.c_str();
       }
+      if (PortStr != NULL) {
+         Args[i++] = "-p";
+         Args[i++] = PortStr;
+      }
       if (Host.empty() == false) {
          Args[i++] = Host.c_str();
       }
@@ -149,6 +158,9 @@ bool RSHConn::Connect(std::string Host, std::string User)
       exit(100);
    }
 
+   if (PortStr != NULL)
+      free(PortStr);
+
    ReadFd = Pipes[0];
    WriteFd = Pipes[3];
    SetNonBlock(Pipes[0],true);
@@ -157,6 +169,10 @@ bool RSHConn::Connect(std::string Host, std::string User)
    close(Pipes[2]);
    
    return true;
+}
+bool RSHConn::Connect(std::string Host, std::string User)
+{
+   return Connect(Host, 0, User);
 }
 									/*}}}*/
 // RSHConn::ReadLine - Very simple buffered read with timeout		/*{{{*/
@@ -367,9 +383,7 @@ bool RSHConn::Get(const char *Path,FileFd &To,unsigned long long Resume,
 									/*}}}*/
 
 // RSHMethod::RSHMethod - Constructor					/*{{{*/
-// ---------------------------------------------------------------------
-/* */
-RSHMethod::RSHMethod() : pkgAcqMethod("1.0",SendConfig)
+RSHMethod::RSHMethod(std::string &&pProg) : aptMethod(std::move(pProg),"1.0",SendConfig)
 {
    signal(SIGTERM,SigTerm);
    signal(SIGINT,SigTerm);
@@ -381,15 +395,17 @@ RSHMethod::RSHMethod() : pkgAcqMethod("1.0",SendConfig)
 // ---------------------------------------------------------------------
 bool RSHMethod::Configuration(std::string Message)
 {
-   char ProgStr[100];
-  
-   if (pkgAcqMethod::Configuration(Message) == false)
+   // enabling privilege dropping for this method requires configuration…
+   // … which is otherwise lifted straight from root, so use it by default.
+   _config->Set(std::string("Binary::") + Binary + "::APT::Sandbox::User", "");
+
+   if (aptMethod::Configuration(Message) == false)
       return false;
 
-   snprintf(ProgStr, sizeof ProgStr, "Acquire::%s::Timeout", Prog);
-   TimeOut = _config->FindI(ProgStr,TimeOut);
-   snprintf(ProgStr, sizeof ProgStr, "Acquire::%s::Options", Prog);
-   RshOptions = _config->Tree(ProgStr);
+   std::string const timeconf = std::string("Acquire::") + Binary + "::Timeout";
+   TimeOut = _config->FindI(timeconf, TimeOut);
+   std::string const optsconf = std::string("Acquire::") + Binary + "::Options";
+   RshOptions = _config->Tree(optsconf.c_str());
 
    return true;
 }
@@ -427,7 +443,7 @@ bool RSHMethod::Fetch(FetchItem *Itm)
    // Connect to the server
    if (Server == 0 || Server->Comp(Get) == false) {
       delete Server;
-      Server = new RSHConn(Get);
+      Server = new RSHConn(Binary, Get);
    }
 
    // Could not connect is a transient error..
@@ -477,7 +493,7 @@ bool RSHMethod::Fetch(FetchItem *Itm)
    }
 
    // Open the file
-   Hashes Hash;
+   Hashes Hash(Itm->ExpectedHashes);
    {
       FileFd Fd(Itm->DestFile,FileFd::WriteAny);
       if (_error->PendingError() == true)
@@ -486,7 +502,7 @@ bool RSHMethod::Fetch(FetchItem *Itm)
       URIStart(Res);
 
       FailFile = Itm->DestFile;
-      FailFile.c_str();   // Make sure we dont do a malloc in the signal handler
+      FailFile.c_str();   // Make sure we don't do a malloc in the signal handler
       FailFd = Fd.Fd();
 
       bool Missing;
@@ -528,10 +544,5 @@ bool RSHMethod::Fetch(FetchItem *Itm)
 
 int main(int, const char *argv[])
 {
-   setlocale(LC_ALL, "");
-
-   RSHMethod Mth;
-   Prog = strrchr(argv[0],'/');
-   Prog++;
-   return Mth.Run();
+   return RSHMethod(flNotDir(argv[0])).Run();
 }

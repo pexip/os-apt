@@ -14,6 +14,7 @@
 #include <apt-pkg/deblistparser.h>
 #include <apt-pkg/md5.h>
 #include <apt-pkg/pkgcache.h>
+#include <apt-pkg/fileutl.h>
 
 #include <string>
 
@@ -23,25 +24,44 @@
 #include <apt-pkg/tagfile.h>
 #endif
 
-class FileFd;
-
-class edspListParser : public debListParser
+namespace APT {
+   class StringView;
+}
+class APT_HIDDEN edspLikeListParser : public debListParser
 {
    public:
-   virtual bool NewVersion(pkgCache::VerIterator &Ver);
-   virtual std::string Description();
-   virtual std::string DescriptionLanguage();
-   virtual MD5SumValue Description_md5();
-   virtual unsigned short VersionHash();
+   virtual bool NewVersion(pkgCache::VerIterator &Ver) APT_OVERRIDE;
+   virtual std::vector<std::string> AvailableDescriptionLanguages() APT_OVERRIDE;
+   virtual APT::StringView Description_md5() APT_OVERRIDE;
+   virtual unsigned short VersionHash() APT_OVERRIDE;
 
-   bool LoadReleaseInfo(pkgCache::PkgFileIterator &FileI,FileFd &File,
-			std::string section);
+   bool LoadReleaseInfo(pkgCache::RlsFileIterator &FileI,FileFd &File,
+			std::string const &section);
 
-   edspListParser(FileFd *File, std::string const &Arch = "");
-
-   protected:
-   virtual bool ParseStatus(pkgCache::PkgIterator &Pkg,pkgCache::VerIterator &Ver);
-
+   edspLikeListParser(FileFd *File);
+   virtual ~edspLikeListParser();
 };
 
+class APT_HIDDEN edspListParser : public edspLikeListParser
+{
+   FileFd extendedstates;
+   FileFd preferences;
+
+protected:
+   virtual bool ParseStatus(pkgCache::PkgIterator &Pkg,pkgCache::VerIterator &Ver) APT_OVERRIDE;
+
+public:
+   edspListParser(FileFd *File);
+   virtual ~edspListParser();
+};
+
+class APT_HIDDEN eippListParser : public edspLikeListParser
+{
+protected:
+   virtual bool ParseStatus(pkgCache::PkgIterator &Pkg,pkgCache::VerIterator &Ver) APT_OVERRIDE;
+
+public:
+   eippListParser(FileFd *File);
+   virtual ~eippListParser();
+};
 #endif

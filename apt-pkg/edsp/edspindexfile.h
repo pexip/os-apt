@@ -18,18 +18,45 @@
 class OpProgress;
 class pkgCacheGenerator;
 
-class edspIndex : public debStatusIndex
+class APT_HIDDEN edspLikeIndex : public pkgDebianIndexRealFile
 {
-   /** \brief dpointer placeholder (for later in case we need it) */
-   void *d;
+protected:
+   virtual bool OpenListFile(FileFd &Pkg, std::string const &File) APT_OVERRIDE;
+   virtual uint8_t GetIndexFlags() const APT_OVERRIDE;
+   virtual std::string GetArchitecture() const APT_OVERRIDE;
 
-   public:
+public:
+   virtual bool Exists() const APT_OVERRIDE;
+   virtual bool HasPackages() const APT_OVERRIDE;
 
-   virtual const Type *GetType() const APT_CONST;
+   edspLikeIndex(std::string const &File);
+   virtual ~edspLikeIndex();
+};
 
-   virtual bool Merge(pkgCacheGenerator &Gen,OpProgress *Prog) const;
+class APT_HIDDEN edspIndex : public edspLikeIndex
+{
+protected:
+   APT_HIDDEN virtual pkgCacheListParser * CreateListParser(FileFd &Pkg) APT_OVERRIDE;
+   virtual std::string GetComponent() const APT_OVERRIDE;
 
-   edspIndex(std::string File);
+public:
+   virtual const Type *GetType() const APT_OVERRIDE APT_CONST;
+
+   edspIndex(std::string const &File);
+   virtual ~edspIndex();
+};
+
+class APT_HIDDEN eippIndex : public edspLikeIndex
+{
+protected:
+   APT_HIDDEN virtual pkgCacheListParser * CreateListParser(FileFd &Pkg) APT_OVERRIDE;
+   virtual std::string GetComponent() const APT_OVERRIDE;
+
+public:
+   virtual const Type *GetType() const APT_OVERRIDE APT_CONST;
+
+   eippIndex(std::string const &File);
+   virtual ~eippIndex();
 };
 
 #endif

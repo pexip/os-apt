@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
-// Description								/*{{{*/// $Id: http.h,v 1.12 2002/04/18 05:09:38 jgg Exp $
-// $Id: http.h,v 1.12 2002/04/18 05:09:38 jgg Exp $
+// Description								/*{{{*/
 /* ######################################################################
 
    MIRROR Acquire Method - This is the MIRROR acquire method for APT.
@@ -10,8 +9,6 @@
 
 #ifndef APT_MIRROR_H
 #define APT_MIRROR_H
-
-#include <apt-pkg/acquire-method.h>
 
 #include <iostream>
 #include <string>
@@ -46,14 +43,14 @@ class MirrorMethod : public HttpMethod
    bool Clean(std::string dir);
    
    // we need to overwrite those to transform the url back
-   virtual void Fail(std::string Why, bool Transient = false);
-   virtual void URIStart(FetchResult &Res);
-   virtual void URIDone(FetchResult &Res,FetchResult *Alt = 0);
-   virtual bool Configuration(std::string Message);
+   virtual void Fail(std::string Why, bool Transient = false) APT_OVERRIDE;
+   virtual void URIStart(FetchResult &Res) APT_OVERRIDE;
+   virtual void URIDone(FetchResult &Res,FetchResult *Alt = 0) APT_OVERRIDE;
+   virtual bool Configuration(std::string Message) APT_OVERRIDE;
 
  public:
    MirrorMethod();
-   virtual bool Fetch(FetchItem *Itm);
+   virtual bool Fetch(FetchItem *Itm) APT_OVERRIDE;
 };
 
 

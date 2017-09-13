@@ -80,9 +80,20 @@ void pkgAcqMethod::Fail(bool Transient)
 {
    string Err = "Undetermined Error";
    if (_error->empty() == false)
-      _error->PopMessage(Err);   
-   _error->Discard();
-   Fail(Err,Transient);
+   {
+      Err.clear();
+      while (_error->empty() == false)
+      {
+	 std::string msg;
+	 if (_error->PopMessage(msg))
+	 {
+	    if (Err.empty() == false)
+	       Err.append("\n");
+	    Err.append(msg);
+	 }
+      }
+   }
+   Fail(Err, Transient);
 }
 									/*}}}*/
 // AcqMethod::Fail - A fetch has failed					/*{{{*/
@@ -102,7 +113,10 @@ void pkgAcqMethod::Fail(string Err,bool Transient)
    if (Queue != 0)
    {
       std::cout << "400 URI Failure\nURI: " << Queue->Uri << "\n"
-		<< "Message: " << Err << " " << IP << "\n";
+		<< "Message: " << Err;
+      if (IP.empty() == false && _config->FindB("Acquire::Failure::ShowIP", true) == true)
+	 std::cout << " " << IP;
+      std::cout << "\n";
       Dequeue();
    }
    else
@@ -119,6 +133,18 @@ void pkgAcqMethod::Fail(string Err,bool Transient)
    std::cout << "\n" << std::flush;
 }
 									/*}}}*/
+// AcqMethod::DropPrivsOrDie - Drop privileges or die		/*{{{*/
+// ---------------------------------------------------------------------
+/* */
+void pkgAcqMethod::DropPrivsOrDie()
+{
+   if (!DropPrivileges()) {
+      Fail(false);
+      exit(112);	/* call the european emergency number */
+   }
+}
+
+									/*}}}*/
 // AcqMethod::URIStart - Indicate a download is starting		/*{{{*/
 // ---------------------------------------------------------------------
 /* */
@@ -130,13 +156,13 @@ void pkgAcqMethod::URIStart(FetchResult &Res)
    std::cout << "200 URI Start\n"
 	     << "URI: " << Queue->Uri << "\n";
    if (Res.Size != 0)
-      std::cout << "Size: " << Res.Size << "\n";
+      std::cout << "Size: " << std::to_string(Res.Size) << "\n";
 
    if (Res.LastModified != 0)
-      std::cout << "Last-Modified: " << TimeRFC1123(Res.LastModified) << "\n";
+      std::cout << "Last-Modified: " << TimeRFC1123(Res.LastModified, true) << "\n";
 
    if (Res.ResumePoint != 0)
-      std::cout << "Resume-Point: " << Res.ResumePoint << "\n";
+      std::cout << "Resume-Point: " << std::to_string(Res.ResumePoint) << "\n";
 
    if (UsedMirror.empty() == false)
       std::cout << "UsedMirror: " << UsedMirror << "\n";
@@ -147,6 +173,16 @@ void pkgAcqMethod::URIStart(FetchResult &Res)
 // AcqMethod::URIDone - A URI is finished				/*{{{*/
 // ---------------------------------------------------------------------
 /* */
+static void printHashStringList(HashStringList const * const list)
+{
+      for (HashStringList::const_iterator hash = list->begin(); hash != list->end(); ++hash)
+      {
+	 // very old compatibility name for MD5Sum
+	 if (hash->HashType() == "MD5Sum")
+	    std::cout << "MD5-Hash: " << hash->HashValue() << "\n";
+	 std::cout << hash->HashType() << "-Hash: " << hash->HashValue() << "\n";
+      }
+}
 void pkgAcqMethod::URIDone(FetchResult &Res, FetchResult *Alt)
 {
    if (Queue == 0)
@@ -159,20 +195,13 @@ void pkgAcqMethod::URIDone(FetchResult &Res, FetchResult *Alt)
       std::cout << "Filename: " << Res.Filename << "\n";
 
    if (Res.Size != 0)
-      std::cout << "Size: " << Res.Size << "\n";
+      std::cout << "Size: " << std::to_string(Res.Size) << "\n";
 
    if (Res.LastModified != 0)
-      std::cout << "Last-Modified: " << TimeRFC1123(Res.LastModified) << "\n";
+      std::cout << "Last-Modified: " << TimeRFC1123(Res.LastModified, true) << "\n";
 
-   if (Res.MD5Sum.empty() == false)
-      std::cout << "MD5-Hash: " << Res.MD5Sum << "\n"
-		<< "MD5Sum-Hash: " << Res.MD5Sum << "\n";
-   if (Res.SHA1Sum.empty() == false)
-      std::cout << "SHA1-Hash: " << Res.SHA1Sum << "\n";
-   if (Res.SHA256Sum.empty() == false)
-      std::cout << "SHA256-Hash: " << Res.SHA256Sum << "\n";
-   if (Res.SHA512Sum.empty() == false)
-      std::cout << "SHA512-Hash: " << Res.SHA512Sum << "\n";
+   printHashStringList(&Res.Hashes);
+
    if (UsedMirror.empty() == false)
       std::cout << "UsedMirror: " << UsedMirror << "\n";
    if (Res.GPGVOutput.empty() == false)
@@ -184,7 +213,7 @@ void pkgAcqMethod::URIDone(FetchResult &Res, FetchResult *Alt)
    }
 
    if (Res.ResumePoint != 0)
-      std::cout << "Resume-Point: " << Res.ResumePoint << "\n";
+      std::cout << "Resume-Point: " << std::to_string(Res.ResumePoint) << "\n";
 
    if (Res.IMSHit == true)
       std::cout << "IMS-Hit: true\n";
@@ -195,20 +224,13 @@ void pkgAcqMethod::URIDone(FetchResult &Res, FetchResult *Alt)
 	 std::cout << "Alt-Filename: " << Alt->Filename << "\n";
 
       if (Alt->Size != 0)
-	 std::cout << "Alt-Size: " << Alt->Size << "\n";
+	 std::cout << "Alt-Size: " << std::to_string(Alt->Size) << "\n";
 
       if (Alt->LastModified != 0)
-	 std::cout << "Alt-Last-Modified: " << TimeRFC1123(Alt->LastModified) << "\n";
+	 std::cout << "Alt-Last-Modified: " << TimeRFC1123(Alt->LastModified, true) << "\n";
 
-      if (Alt->MD5Sum.empty() == false)
-	 std::cout << "Alt-MD5-Hash: " << Alt->MD5Sum << "\n";
-      if (Alt->SHA1Sum.empty() == false)
-	 std::cout << "Alt-SHA1-Hash: " << Alt->SHA1Sum << "\n";
-      if (Alt->SHA256Sum.empty() == false)
-	 std::cout << "Alt-SHA256-Hash: " << Alt->SHA256Sum << "\n";
-      if (Alt->SHA512Sum.empty() == false)
-         std::cout << "Alt-SHA512-Hash: " << Alt->SHA512Sum << "\n";
-     
+      printHashStringList(&Alt->Hashes);
+
       if (Alt->IMSHit == true)
 	 std::cout << "Alt-IMS-Hit: true\n";
    }
@@ -217,7 +239,7 @@ void pkgAcqMethod::URIDone(FetchResult &Res, FetchResult *Alt)
    Dequeue();
 }
 									/*}}}*/
-// AcqMethod::MediaFail - Syncronous request for new media		/*{{{*/
+// AcqMethod::MediaFail - Synchronous request for new media		/*{{{*/
 // ---------------------------------------------------------------------
 /* This sends a 403 Media Failure message to the APT and waits for it
    to be ackd */
@@ -355,6 +377,20 @@ int pkgAcqMethod::Run(bool Single)
 	       Tmp->LastModified = 0;
 	    Tmp->IndexFile = StringToBool(LookupTag(Message,"Index-File"),false);
 	    Tmp->FailIgnore = StringToBool(LookupTag(Message,"Fail-Ignore"),false);
+	    Tmp->ExpectedHashes = HashStringList();
+	    for (char const * const * t = HashString::SupportedHashes(); *t != NULL; ++t)
+	    {
+	       std::string tag = "Expected-";
+	       tag.append(*t);
+	       std::string const hash = LookupTag(Message, tag.c_str());
+	       if (hash.empty() == false)
+		  Tmp->ExpectedHashes.push_back(HashString(*t, hash));
+	    }
+            char *End;
+	    if (Tmp->ExpectedHashes.FileSize() > 0)
+	       Tmp->MaximumSize = Tmp->ExpectedHashes.FileSize();
+	    else
+	       Tmp->MaximumSize = strtoll(LookupTag(Message, "Maximum-Size", "0").c_str(), &End, 10);
 	    Tmp->Next = 0;
 	    
 	    // Append it to the list
@@ -363,14 +399,14 @@ int pkgAcqMethod::Run(bool Single)
 	    *I = Tmp;
 	    if (QueueBack == 0)
 	       QueueBack = Tmp;
-	    
+
 	    // Notify that this item is to be fetched.
-	    if (Fetch(Tmp) == false)
+	    if (URIAcquire(Message, Tmp) == false)
 	       Fail();
-	    
-	    break;					     
-	 }   
-      }      
+
+	    break;
+	 }
+      }
    }
 
    Exit();
@@ -378,8 +414,6 @@ int pkgAcqMethod::Run(bool Single)
 }
 									/*}}}*/
 // AcqMethod::PrintStatus - privately really send a log/status message	/*{{{*/
-// ---------------------------------------------------------------------
-/* */
 void pkgAcqMethod::PrintStatus(char const * const header, const char* Format,
 			       va_list &args) const
 {
@@ -434,7 +468,7 @@ void pkgAcqMethod::Redirect(const string &NewURI)
 // ---------------------------------------------------------------------
 /* */
 pkgAcqMethod::FetchResult::FetchResult() : LastModified(0),
-                                   IMSHit(false), Size(0), ResumePoint(0)
+                                   IMSHit(false), Size(0), ResumePoint(0), d(NULL)
 {
 }
 									/*}}}*/
@@ -442,12 +476,9 @@ pkgAcqMethod::FetchResult::FetchResult() : LastModified(0),
 // ---------------------------------------------------------------------
 /* This hides the number of hashes we are supporting from the caller. 
    It just deals with the hash class. */
-void pkgAcqMethod::FetchResult::TakeHashes(Hashes &Hash)
+void pkgAcqMethod::FetchResult::TakeHashes(class Hashes &Hash)
 {
-   MD5Sum = Hash.MD5.Result();
-   SHA1Sum = Hash.SHA1.Result();
-   SHA256Sum = Hash.SHA256.Result();
-   SHA512Sum = Hash.SHA512.Result();
+   Hashes = Hash.GetHashStringList();
 }
 									/*}}}*/
 void pkgAcqMethod::Dequeue() {						/*{{{*/
@@ -458,3 +489,12 @@ void pkgAcqMethod::Dequeue() {						/*{{{*/
    delete Tmp;
 }
 									/*}}}*/
+pkgAcqMethod::~pkgAcqMethod() {}
+
+pkgAcqMethod::FetchItem::FetchItem() :
+   Next(nullptr), DestFileFd(-1), LastModified(0), IndexFile(false),
+   FailIgnore(false), MaximumSize(0), d(nullptr)
+{}
+pkgAcqMethod::FetchItem::~FetchItem() {}
+
+pkgAcqMethod::FetchResult::~FetchResult() {}

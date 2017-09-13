@@ -19,7 +19,7 @@
    &apt-email;
    &apt-product;
    <!-- The last update date -->
-   <date>2012-06-09T00:00:00Z</date>
+   <date>2016-11-25T00:00:00Z</date>
  </refentryinfo>
  
  <refmeta>
@@ -54,6 +54,8 @@
 	 configuration list - in which case it will be silently ignored.</para></listitem>
       <listitem><para>the main configuration file specified by
 	 <literal>Dir::Etc::main</literal></para></listitem>
+      <listitem><para>all options set in the binary specific configuration
+	    subtree are moved into the root of the tree.</para></listitem>
       <listitem><para>the command line options are applied to override the
 	 configuration directives or to load even more configuration files.</para></listitem>
    </orderedlist>
@@ -171,6 +173,29 @@ DPkg::Pre-Install-Pkgs {"/usr/sbin/dpkg-preconfigure --apt";};
      </para></listitem>
      </varlistentry>
 
+     <varlistentry><term><option>Compressor</option></term>
+     <listitem><para>
+     This scope defines which compression formats are supported, how compression
+     and decompression can be performed if support for this format isn't built
+     into apt directly and a cost-value indicating how costly it is to compress
+     something in this format. As an example the following configuration stanza
+     would allow apt to download and uncompress as well as create and store
+     files with the low-cost <literal>.reversed</literal> file extension which
+     it will pass to the command <command>rev</command> without additional
+     commandline parameters for compression and uncompression:
+<informalexample><programlisting>
+APT::Compressor::rev {
+	Name "rev";
+	Extension ".reversed";
+	Binary "rev";
+	CompressArg {};
+	UncompressArg {};
+	Cost "10";
+};
+</programlisting></informalexample>
+     </para></listitem>
+     </varlistentry>
+
      <varlistentry><term><option>Build-Profiles</option></term>
      <listitem><para>
      List of all build profiles enabled for build-dependency resolution,
@@ -183,7 +208,7 @@ DPkg::Pre-Install-Pkgs {"/usr/sbin/dpkg-preconfigure --apt";};
      <varlistentry><term><option>Default-Release</option></term>
      <listitem><para>Default release to install packages from if more than one
      version is available. Contains release name, codename or release version. Examples: 'stable', 'testing',
-     'unstable', '&stable-codename;', '&testing-codename;', '4.0', '5.0*'. See also &apt-preferences;.</para></listitem>
+     'unstable', '&debian-stable-codename;', '&debian-testing-codename;', '4.0', '5.0*'. See also &apt-preferences;.</para></listitem>
      </varlistentry>
 
      <varlistentry><term><option>Ignore-Hold</option></term>
@@ -301,6 +326,8 @@ DPkg::Pre-Install-Pkgs {"/usr/sbin/dpkg-preconfigure --apt";};
      <literal>Valid-Until</literal> header, but if they don't or a
      stricter value is desired the <literal>Max-ValidTime</literal>
      option below can be used.
+     The <option>Check-Valid-Until</option> option of &sources-list; entries should be
+     preferred to disable the check selectively instead of using this global override.
      </para></listitem>
      </varlistentry>
 
@@ -312,7 +339,8 @@ DPkg::Pre-Install-Pkgs {"/usr/sbin/dpkg-preconfigure --apt";};
 	 the earlier date of the two is used as the expiration date.
 	 The default value is <literal>0</literal> which stands for "valid forever".
 	 Archive specific settings can be made by appending the label of the archive
-	 to the option name.
+	 to the option name. Preferably, the same can be achieved for specific
+	 &sources-list; entries by using the <option>Valid-Until-Max</option> option there.
 	 </para></listitem>
      </varlistentry>
 
@@ -324,20 +352,33 @@ DPkg::Pre-Install-Pkgs {"/usr/sbin/dpkg-preconfigure --apt";};
 	 frequently updated archive with a <literal>Valid-Until</literal> header
 	 instead of completely disabling the expiration date checking.
 	 Archive specific settings can and should be used by appending the label of
-	 the archive to the option name.
+	 the archive to the option name. Preferably, the same can be achieved for specific
+	 &sources-list; entries by using the <option>Valid-Until-Min</option> option there.
 	 </para></listitem>
      </varlistentry>
 
      <varlistentry><term><option>PDiffs</option></term>
 	 <listitem><para>Try to download deltas called <literal>PDiffs</literal> for
-	 indexes (like <filename>Packages</filename> files) instead of downloading
-	 whole ones. True by default.</para>
+	 indexes (like <filename>Packages</filename> files) instead of
+	 downloading whole ones. True by default. Preferably, this can be set
+	 for specific &sources-list; entries or index files by using the
+	 <option>PDiffs</option> option there.</para>
 	 <para>Two sub-options to limit the use of PDiffs are also available:
 	 <literal>FileLimit</literal> can be used to specify a maximum number of
 	 PDiff files should be downloaded to update a file. <literal>SizeLimit</literal>
 	 on the other hand is the maximum percentage of the size of all patches
 	 compared to the size of the targeted file. If one of these limits is
 	 exceeded the complete file is downloaded instead of the patches.
+	 </para></listitem>
+     </varlistentry>
+
+     <varlistentry><term><option>By-Hash</option></term>
+	 <listitem><para>Try to download indexes via an URI constructed from a
+	 hashsum of the expected file rather than downloaded via a well-known
+	 stable filename. True by default, but automatically disabled if the
+	 source indicates no support for it. Usage can be forced with the special
+	 value "force". Preferably, this can be set for specific &sources-list; entries
+	 or index files by using the <option>By-Hash</option> option there.
 	 </para></listitem>
      </varlistentry>
 
@@ -384,9 +425,9 @@ DPkg::Pre-Install-Pkgs {"/usr/sbin/dpkg-preconfigure --apt";};
      <para>The setting <literal>Acquire::http::Pipeline-Depth</literal> can be used to
      enable HTTP pipelining (RFC 2616 section 8.1.2.2) which can be beneficial e.g. on
      high-latency connections. It specifies how many requests are sent in a pipeline.
-     Previous APT versions had a default of 10 for this setting, but the default value
-     is now 0 (= disabled) to avoid problems with the ever-growing amount of webservers
-     and proxies which choose to not conform to the HTTP/1.1 specification.</para>
+     APT tries to detect and workaround misbehaving webservers and proxies at runtime, but
+     if you know that yours does not conform to the HTTP/1.1 specification pipelining can
+     be disabled by setting the value to 0. It is enabled by default with the value 10.</para>
 
      <para><literal>Acquire::http::AllowRedirect</literal> controls whether APT will follow
      redirects, which is enabled by default.</para>
@@ -403,15 +444,20 @@ DPkg::Pre-Install-Pkgs {"/usr/sbin/dpkg-preconfigure --apt";};
      only if the client uses a known identifier.</para>
 
      <para><literal>Acquire::http::Proxy-Auto-Detect</literal> can be used to
-     specify an external command to discover the http proxy to use. Apt expects
-     the command to output the proxy on stdout in the style
-     <literal>http://proxy:port/</literal>. This will override the
-     generic <literal>Acquire::http::Proxy</literal> but not any specific
-     host proxy configuration set via 
-     <literal>Acquire::http::Proxy::$HOST</literal>.
+     specify an external command to discover the http proxy to use. The first
+     and only parameter is an URI denoting the host to be contacted to allow
+     for host-specific configuration. APT expects the command to output the
+     proxy on stdout as a single line in the style <literal>http://proxy:port/</literal>
+     or the word <literal>DIRECT</literal> if no proxy should be used. No output
+     indicates that the generic proxy settings should be used.
+
+     Note that auto-detection will not be used for a host if a host-specific proxy
+     configuration is already set via <literal>Acquire::http::Proxy::<replaceable>HOST</replaceable></literal>.
 
      See the &squid-deb-proxy-client; package for an example implementation that
-     uses avahi. This option takes precedence over the legacy option name 
+     uses avahi.
+
+     This option takes precedence over the legacy option name
      <literal>ProxyAutoDetect</literal>.
      </para>
 
@@ -511,25 +557,25 @@ DPkg::Pre-Install-Pkgs {"/usr/sbin/dpkg-preconfigure --apt";};
      <varlistentry><term><option>CompressionTypes</option></term>
      <listitem><para>List of compression types which are understood by the acquire methods.
      Files like <filename>Packages</filename> can be available in various compression formats.
-     By default the acquire methods can decompress <command>bzip2</command>, <command>lzma</command>
-     and <command>gzip</command> compressed files; with this setting more formats can be added
-     on the fly or the used method can be changed. The syntax for this is:
+     By default the acquire methods can decompress and recompress many common formats like <command>xz</command> and
+     <command>gzip</command>; with this scope the supported formats can be queried, modified
+     as well as support for more formats added (see also <option>APT::Compressor</option>). The syntax for this is:
      <synopsis>Acquire::CompressionTypes::<replaceable>FileExtension</replaceable> "<replaceable>Methodname</replaceable>";</synopsis>
      </para><para>Also, the <literal>Order</literal> subgroup can be used to define in which order
      the acquire system will try to download the compressed files. The acquire system will try the first
      and proceed with the next compression type in this list on error, so to prefer one over the other type
-     simply add the preferred type first - default types not already added will be implicitly appended
+     simply add the preferred type first - types not already added will be implicitly appended
      to the end of the list, so e.g. <synopsis>Acquire::CompressionTypes::Order:: "gz";</synopsis> can
-     be used to prefer <command>gzip</command> compressed files over <command>bzip2</command> and <command>lzma</command>.
-     If <command>lzma</command> should be preferred over <command>gzip</command> and <command>bzip2</command> the
-     configure setting should look like this: <synopsis>Acquire::CompressionTypes::Order { "lzma"; "gz"; };</synopsis>
+     be used to prefer <command>gzip</command> compressed files over all other compression formats.
+     If <command>xz</command> should be preferred over <command>gzip</command> and <command>bzip2</command> the
+     configure setting should look like this: <synopsis>Acquire::CompressionTypes::Order { "xz"; "gz"; };</synopsis>
      It is not needed to add <literal>bz2</literal> to the list explicitly as it will be added automatically.</para>
      <para>Note that the
      <literal>Dir::Bin::<replaceable>Methodname</replaceable></literal>
-     will be checked at run time. If this option has been set, the
-     method will only be used if this file exists; e.g. for the
-     <literal>bzip2</literal> method (the inbuilt) setting is:
-     <literallayout>Dir::Bin::bzip2 "/bin/bzip2";</literallayout>
+     will be checked at run time. If this option has been set and support for
+     this format isn't directly built into apt, the method will only be used if
+     this file exists; e.g. for the <literal>bzip2</literal> method (the
+     inbuilt) setting is: <literallayout>Dir::Bin::bzip2 "/bin/bzip2";</literallayout>
      Note also that list entries specified on the command line will be added at the end of the list
      specified in the configuration files, but before the default entries. To prefer a type in this case
      over the ones specified in the configuration files you can set the option direct - not in list style.
@@ -586,7 +632,98 @@ DPkg::Pre-Install-Pkgs {"/usr/sbin/dpkg-preconfigure --apt";};
 	 </para></listitem>
      </varlistentry>
 
+     <varlistentry><term><option>MaxReleaseFileSize</option></term>
+	 <listitem><para>
+           The maximum file size of Release/Release.gpg/InRelease files.
+           The default is 10MB.
+	 </para></listitem>
+     </varlistentry>
+
+     <varlistentry><term><option>EnableSrvRecords</option></term>
+	 <listitem><para>
+           This option controls if apt will use the DNS SRV server record
+           as specified in RFC 2782 to select an alternative server to
+           connect to.
+           The default is "true".
+	 </para></listitem>
+     </varlistentry>
+
+     <varlistentry><term><option>AllowInsecureRepositories</option></term>
+	 <listitem><para>
+	   Allow update operations to load data files from
+	   repositories without sufficient security information.
+	   The default value is "<literal>false</literal>".
+	   Concept, implications as well as alternatives are detailed in &apt-secure;.
+	 </para></listitem>
+     </varlistentry>
+
+     <varlistentry><term><option>AllowWeakRepositories</option></term>
+	 <listitem><para>
+	   Allow update operations to load data files from
+	   repositories which provide security information, but these
+	   are deemed no longer cryptographically strong enough.
+	   The default value is "<literal>false</literal>".
+	   Concept, implications as well as alternatives are detailed in &apt-secure;.
+	 </para></listitem>
+     </varlistentry>
+
+     <varlistentry><term><option>AllowDowngradeToInsecureRepositories</option></term>
+	 <listitem><para>
+	   Allow that a repository that was previously gpg signed to become
+	   unsigned during an update operation. When there is no valid signature
+	   for a previously trusted repository apt will refuse the update. This
+	   option can be used to override this protection. You almost certainly
+	   never want to enable this. The default is <literal>false</literal>.
+	   Concept, implications as well as alternatives are detailed in &apt-secure;.
+	 </para></listitem>
+     </varlistentry>
+
+     <varlistentry><term><option>Changelogs::URI</option> scope</term>
+	<listitem><para>
+	  Acquiring changelogs can only be done if an URI is known from where to get them.
+	  Preferable the Release file indicates this in a 'Changelogs' field. If this isn't
+	  available the Label/Origin field of the Release file is used to check if a
+	  <literal>Acquire::Changelogs::URI::Label::<replaceable>LABEL</replaceable></literal> or
+	  <literal>Acquire::Changelogs::URI::Origin::<replaceable>ORIGIN</replaceable></literal> option
+	  exists and if so this value is taken. The value in the Release file can be overridden
+	  with <literal>Acquire::Changelogs::URI::Override::Label::<replaceable>LABEL</replaceable></literal>
+	  or <literal>Acquire::Changelogs::URI::Override::Origin::<replaceable>ORIGIN</replaceable></literal>.
+
+	  The value should be a normal URI to a text file, except that package specific data is
+	  replaced with the placeholder <literal>@CHANGEPATH@</literal>. The
+	  value for it is: 1. if the package is from a component (e.g. <literal>main</literal>)
+	  this is the first part otherwise it is omitted, 2. the first letter of source package name,
+	  except if the source package name starts with '<literal>lib</literal>' in which case it will
+	  be the first four letters. 3. The complete source package name. 4. the complete name again and
+	  5. the source version.
+	  The first (if present), second, third and fourth part are separated by a slash ('<literal>/</literal>')
+	  and between the fourth and fifth part is an underscore ('<literal>_</literal>').
+
+	  The special value '<literal>no</literal>' is available for this option indicating that
+	  this source can't be used to acquire changelog files from. Another source will be tried
+	  if available in this case.
+	</para></listitem>
+    </varlistentry>
+
    </variablelist>
+ </refsect1>
+
+ <refsect1><title>Binary specific configuration</title>
+    <para>Especially with the introduction of the <command>apt</command> binary
+       it can be useful to set certain options only for a specific binary as
+       even options which look like they would effect only a certain binary like
+       <option>APT::Get::Show-Versions</option> effect
+       <command>apt-get</command> as well as <command>apt</command>.
+    </para>
+    <para>Setting an option for a specific binary only can be achieved by
+       setting the option inside the
+       <option>Binary::<replaceable>specific-binary</replaceable></option>
+       scope. Setting the option <option>APT::Get::Show-Versions</option> for
+       the <command>apt</command> only can e.g. by done by setting
+       <option>Binary::apt::APT::Get::Show-Versions</option> instead.</para>
+    <para>Note that as seen in the DESCRIPTION section further above you can't
+       set binary-specific options on the commandline itself nor in
+       configuration files loaded via the commandline.</para>
  </refsect1>
 
  <refsect1><title>Directories</title>
@@ -627,7 +764,7 @@ DPkg::Pre-Install-Pkgs {"/usr/sbin/dpkg-preconfigure --apt";};
 
    <para>
      The configuration item <literal>RootDir</literal> has a special
-     meaning.  If set, all paths in <literal>Dir::</literal> will be
+     meaning.  If set, all paths will be
      relative to <literal>RootDir</literal>, <emphasis>even paths that
      are specified absolutely</emphasis>.  So, for instance, if
      <literal>RootDir</literal> is set to
@@ -636,6 +773,7 @@ DPkg::Pre-Install-Pkgs {"/usr/sbin/dpkg-preconfigure --apt";};
      <filename>/var/lib/dpkg/status</filename>, then the status file
      will be looked up in
      <filename>/tmp/staging/var/lib/dpkg/status</filename>.
+     If you want to prefix only relative paths, set <literal>Dir</literal> instead.
    </para>
 
    <para>
@@ -711,10 +849,35 @@ DPkg::Pre-Install-Pkgs {"/usr/sbin/dpkg-preconfigure --apt";};
      install to the commands, one per line on the requested file descriptor, defaulting
      to standard input.</para>
 
-     <para>Version 2 of this protocol dumps more information, including the
-     protocol version, the APT configuration space and the packages, files
-     and versions being changed. Version 3 adds the architecture and <literal>MultiArch</literal>
-     flag to each version being dumped.</para>
+     <para>Version 2 of this protocol sends more information through the requested
+     file descriptor: a line with the text <literal>VERSION 2</literal>,
+     the APT configuration space, and a list of package actions with filename
+     and version information.</para>
+
+     <para>Each configuration directive line has the form
+     <literal>key=value</literal>.  Special characters (equal signs, newlines,
+     nonprintable characters, quotation marks, and percent signs in
+     <literal>key</literal> and newlines, nonprintable characters, and percent
+     signs in <literal>value</literal>) are %-encoded. Lists are represented
+     by multiple <literal>key::=value</literal> lines with the same key. The
+     configuration section ends with a blank line.</para>
+
+     <para>Package action lines consist of five fields in Version 2: package
+     name (without architecture qualification even if foreign), old version,
+     direction of version change (&lt; for upgrades, &gt; for downgrades, = for
+     no change), new version, action. The version fields are "-" for no version
+     at all (for example when installing a package for the first time; no
+     version is treated as earlier than any real version, so that is an
+     upgrade, indicated as <literal>- &lt; 1.23.4</literal>). The action field
+     is "**CONFIGURE**" if the package is being configured, "**REMOVE**" if it
+     is being removed, or the filename of a .deb file if it is being
+     unpacked.</para>
+
+     <para>In Version 3 after each version field follows the architecture
+     of this version, which is "-" if there is no version, and a field showing
+     the MultiArch type "same", "foreign", "allowed" or "none". Note that "none"
+     is an incorrect typename which is just kept to remain compatible, it
+     should be read as "no" and users are encouraged to support both.</para>
 
      <para>The version of the protocol to be used for the command
      <literal><replaceable>cmd</replaceable></literal> can be chosen by setting
@@ -741,91 +904,21 @@ DPkg::Pre-Install-Pkgs {"/usr/sbin/dpkg-preconfigure --apt";};
      <listitem><para>These options are passed to &dpkg-buildpackage; when compiling packages;
      the default is to disable signing and produce all binaries.</para></listitem>
      </varlistentry>
+
+     <varlistentry><term><option>DPkg::ConfigurePending</option></term>
+     <listitem><para>If this option is set APT will call <command>dpkg --configure --pending</command>
+     to let &dpkg; handle all required configurations and triggers. This option is activated by default,
+     but deactivating it could be useful if you want to run APT multiple times in a row - e.g. in an installer.
+     In this scenario you could deactivate this option in all but the last run.</para></listitem>
+     </varlistentry>
    </variablelist>
-
-   <refsect2><title>dpkg trigger usage (and related options)</title>
-     <para>APT can call &dpkg; in such a way as to let it make aggressive use of triggers over
-     multiple calls of &dpkg;. Without further options &dpkg; will use triggers once each time it runs.
-     Activating these options can therefore decrease the time needed to perform the
-     install or upgrade. Note that it is intended to activate these options per default in the
-     future, but as it drastically changes the way APT calls &dpkg; it needs a lot more testing.
-     <emphasis>These options are therefore currently experimental and should not be used in
-     production environments.</emphasis> It also breaks progress reporting such that all front-ends will
-     currently stay around half (or more) of the time in the 100% state while it actually configures
-     all packages.</para>
-     <para>Note that it is not guaranteed that APT will support these options or that these options will
-     not cause (big) trouble in the future. If you have understand the current risks and problems with
-     these options, but are brave enough to help testing them, create a new configuration file and test a
-     combination of options. Please report any bugs, problems and improvements you encounter and make sure
-     to note which options you have used in your reports. Asking &dpkg; for help could also be useful for
-     debugging proposes, see e.g. <command>dpkg --audit</command>. A defensive option combination would be
-<literallayout>DPkg::NoTriggers "true";
-PackageManager::Configure "smart";
-DPkg::ConfigurePending "true";
-DPkg::TriggersPending "true";</literallayout></para>
-
-     <variablelist>
-       <varlistentry><term><option>DPkg::NoTriggers</option></term>
-       <listitem><para>Add the no triggers flag to all &dpkg; calls (except the ConfigurePending call).
-       See &dpkg; if you are interested in what this actually means. In short: &dpkg; will not run the
-       triggers when this flag is present unless it is explicitly called to do so in an extra call.
-       Note that this option exists (undocumented) also in older APT versions with a slightly different
-       meaning: Previously these option only append --no-triggers to the configure calls to &dpkg; -
-       now APT will also add this flag to the unpack and remove calls.</para></listitem>
-       </varlistentry>
-       <varlistentry><term><option>PackageManager::Configure</option></term>
-       <listitem><para>Valid values are "<literal>all</literal>",
-       "<literal>smart</literal>" and "<literal>no</literal>".
-       The default value is "<literal>all</literal>", which causes APT to
-       configure all packages. The "<literal>smart</literal>" way is to
-       configure only packages which need to be configured before another
-       package can be unpacked (Pre-Depends), and let the rest be configured
-       by &dpkg; with a call generated by the ConfigurePending option (see
-       below). On the other hand, "<literal>no</literal>" will not configure
-       anything, and totally relies on &dpkg; for configuration (which at the
-       moment will fail if a Pre-Depends is encountered). Setting this option
-       to any value other than <literal>all</literal> will implicitly also
-       activate the next option by default, as otherwise the system could end
-       in an unconfigured and potentially unbootable state.</para></listitem>
-       </varlistentry>
-       <varlistentry><term><option>DPkg::ConfigurePending</option></term>
-       <listitem><para>If this option is set APT will call <command>dpkg --configure --pending</command>
-       to let &dpkg; handle all required configurations and triggers. This option is activated automatically
-       per default if the previous option is not set to <literal>all</literal>, but deactivating it could be useful
-       if you want to run APT multiple times in a row - e.g. in an installer. In these sceneries you could
-       deactivate this option in all but the last run.</para></listitem>
-       </varlistentry>
-       <varlistentry><term><option>DPkg::TriggersPending</option></term>
-       <listitem><para>Useful for the <literal>smart</literal> configuration as a package which has pending
-       triggers is not considered as <literal>installed</literal>, and &dpkg; treats them as <literal>unpacked</literal>
-       currently which is a showstopper for Pre-Dependencies (see debbugs #526774). Note that this will
-       process all triggers, not only the triggers needed to configure this package.</para></listitem>
-       </varlistentry>
-       <varlistentry><term><option>OrderList::Score::Immediate</option></term>
-       <listitem><para>Essential packages (and their dependencies) should be configured immediately
-       after unpacking. It is a good idea to do this quite early in the upgrade process as these
-       configure calls also currently require <literal>DPkg::TriggersPending</literal> which
-       will run quite a few triggers (which may not be needed). Essentials get per default a high score
-       but the immediate flag is relatively low (a package which has a Pre-Depends is rated higher).
-       These option and the others in the same group can be used to change the scoring. The following
-       example shows the settings with their default values.
-       <literallayout>OrderList::Score {
-	Delete 500;
-	Essential 200;
-	Immediate 10;
-	PreDepends 50;
-};</literallayout>
-       </para></listitem>
-       </varlistentry>
-     </variablelist>
-   </refsect2>
  </refsect1>
 
  <refsect1>
    <title>Periodic and Archives options</title>
    <para><literal>APT::Periodic</literal> and <literal>APT::Archives</literal>
    groups of options configure behavior of apt periodic updates, which is
-   done by the <literal>/etc/cron.daily/apt</literal> script. See the top of
+   done by the <literal>/usr/lib/apt/apt.systemd.daily</literal> script. See the top of
    this script for the brief documentation of these options.
    </para>
  </refsect1>

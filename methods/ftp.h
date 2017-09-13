@@ -11,7 +11,9 @@
 #define APT_FTP_H
 
 #include <apt-pkg/strutl.h>
+#include "aptmethod.h"
 
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <time.h>
 #include <string>
@@ -62,16 +64,17 @@ class FTPConn
    bool Size(const char *Path,unsigned long long &Size);
    bool ModTime(const char *Path, time_t &Time);
    bool Get(const char *Path,FileFd &To,unsigned long long Resume,
-	    Hashes &MD5,bool &Missing);
+	    Hashes &MD5,bool &Missing, unsigned long long MaximumSize,
+            pkgAcqMethod *Owner);
    
-   FTPConn(URI Srv);
+   explicit FTPConn(URI Srv);
    ~FTPConn();
 };
 
-class FtpMethod : public pkgAcqMethod
+class FtpMethod : public aptMethod
 {
-   virtual bool Fetch(FetchItem *Itm);
-   virtual bool Configuration(std::string Message);
+   virtual bool Fetch(FetchItem *Itm) APT_OVERRIDE;
+   virtual bool Configuration(std::string Message) APT_OVERRIDE;
    
    FTPConn *Server;
    

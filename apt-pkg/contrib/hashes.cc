@@ -23,13 +23,14 @@
 #include <stddef.h>
 #include <algorithm>
 #include <unistd.h>
+#include <stdlib.h>
 #include <string>
 #include <iostream>
 									/*}}}*/
 
 const char * HashString::_SupportedHashes[] =
 {
-   "SHA512", "SHA256", "SHA1", "MD5Sum", NULL
+   "SHA512", "SHA256", "SHA1", "MD5Sum", "Checksum-FileSize", NULL
 };
 
 HashString::HashString()
@@ -111,6 +112,8 @@ std::string HashString::GetHashForFile(std::string filename) const      /*{{{*/
       SHA512.AddFD(Fd);
       fileHash = (std::string)SHA512.Result();
    }
+   else if (strcasecmp(Type.c_str(), "Checksum-FileSize") == 0)
+      strprintf(fileHash, "%llu", Fd.FileSize());
    Fd.Close();
 
    return fileHash;
@@ -124,6 +127,24 @@ const char** HashString::SupportedHashes()				/*{{{*/
 APT_PURE bool HashString::empty() const					/*{{{*/
 {
    return (Type.empty() || Hash.empty());
+}
+									/*}}}*/
+
+APT_PURE static bool IsConfigured(const char *name, const char *what)
+{
+   std::string option;
+   strprintf(option, "APT::Hashes::%s::%s", name, what);
+   return _config->FindB(option, false);
+}
+
+APT_PURE bool HashString::usable() const				/*{{{*/
+{
+   return (
+      (Type != "Checksum-FileSize") &&
+      (Type != "MD5Sum") &&
+      (Type != "SHA1") &&
+      !IsConfigured(Type.c_str(), "Untrusted")
+   );
 }
 									/*}}}*/
 std::string HashString::toStr() const					/*{{{*/
@@ -141,11 +162,27 @@ APT_PURE bool HashString::operator!=(HashString const &other) const
 }
 									/*}}}*/
 
+bool HashStringList::usable() const					/*{{{*/
+{
+   if (empty() == true)
+      return false;
+   std::string const forcedType = _config->Find("Acquire::ForceHash", "");
+   if (forcedType.empty() == true)
+   {
+      // See if there is at least one usable hash
+      for (auto const &hs: list)
+         if (hs.usable())
+            return true;
+      return false;
+   }
+   return find(forcedType) != NULL;
+}
+									/*}}}*/
 HashString const * HashStringList::find(char const * const type) const /*{{{*/
 {
    if (type == NULL || type[0] == '\0')
    {
-      std::string forcedType = _config->Find("Acquire::ForceHash", "");
+      std::string const forcedType = _config->Find("Acquire::ForceHash", "");
       if (forcedType.empty() == false)
 	 return find(forcedType.c_str());
       for (char const * const * t = HashString::SupportedHashes(); *t != NULL; ++t)
@@ -158,6 +195,22 @@ HashString const * HashStringList::find(char const * const type) const /*{{{*/
       if (strcasecmp(hs->HashType().c_str(), type) == 0)
 	 return &*hs;
    return NULL;
+}
+									/*}}}*/
+unsigned long long HashStringList::FileSize() const			/*{{{*/
+{
+   HashString const * const hsf = find("Checksum-FileSize");
+   if (hsf == NULL)
+      return 0;
+   std::string const hv = hsf->HashValue();
+   return strtoull(hv.c_str(), NULL, 10);
+}
+									/*}}}*/
+bool HashStringList::FileSize(unsigned long long const Size)		/*{{{*/
+{
+   std::string size;
+   strprintf(size, "%llu", Size);
+   return push_back(HashString("Checksum-FileSize", size));
 }
 									/*}}}*/
 bool HashStringList::supported(char const * const type)			/*{{{*/
@@ -186,16 +239,35 @@ bool HashStringList::push_back(const HashString &hashString)		/*{{{*/
 									/*}}}*/
 bool HashStringList::VerifyFile(std::string filename) const		/*{{{*/
 {
-   if (list.empty() == true)
+   if (usable() == false)
       return false;
-   HashString const * const hs = find(NULL);
-   if (hs == NULL || hs->VerifyFile(filename) == false)
-      return false;
-   return true;
+
+   Hashes hashes(*this);
+   FileFd file(filename, FileFd::ReadOnly);
+   HashString const * const hsf = find("Checksum-FileSize");
+   if (hsf != NULL)
+   {
+      std::string fileSize;
+      strprintf(fileSize, "%llu", file.FileSize());
+      if (hsf->HashValue() != fileSize)
+	 return false;
+   }
+   hashes.AddFD(file);
+   HashStringList const hsl = hashes.GetHashStringList();
+   return hsl == *this;
 }
 									/*}}}*/
 bool HashStringList::operator==(HashStringList const &other) const	/*{{{*/
 {
+   std::string const forcedType = _config->Find("Acquire::ForceHash", "");
+   if (forcedType.empty() == false)
+   {
+      HashString const * const hs = find(forcedType);
+      HashString const * const ohs = other.find(forcedType);
+      if (hs == NULL || ohs == NULL)
+	 return false;
+      return *hs == *ohs;
+   }
    short matches = 0;
    for (const_iterator hs = begin(); hs != end(); ++hs)
    {
@@ -216,11 +288,52 @@ bool HashStringList::operator!=(HashStringList const &other) const
 }
 									/*}}}*/
 
-// Hashes::AddFD - Add the contents of the FD				/*{{{*/
-// ---------------------------------------------------------------------
-/* */
-bool Hashes::AddFD(int const Fd,unsigned long long Size, bool const addMD5,
-		   bool const addSHA1, bool const addSHA256, bool const addSHA512)
+// PrivateHashes							/*{{{*/
+class PrivateHashes {
+public:
+   unsigned long long FileSize;
+   unsigned int CalcHashes;
+
+   explicit PrivateHashes(unsigned int const CalcHashes) : FileSize(0), CalcHashes(CalcHashes) {}
+   explicit PrivateHashes(HashStringList const &Hashes) : FileSize(0) {
+      unsigned int calcHashes = Hashes.usable() ? 0 : ~0;
+      if (Hashes.find("MD5Sum") != NULL)
+	 calcHashes |= Hashes::MD5SUM;
+      if (Hashes.find("SHA1") != NULL)
+	 calcHashes |= Hashes::SHA1SUM;
+      if (Hashes.find("SHA256") != NULL)
+	 calcHashes |= Hashes::SHA256SUM;
+      if (Hashes.find("SHA512") != NULL)
+	 calcHashes |= Hashes::SHA512SUM;
+      CalcHashes = calcHashes;
+   }
+};
+									/*}}}*/
+// Hashes::Add* - Add the contents of data or FD			/*{{{*/
+bool Hashes::Add(const unsigned char * const Data, unsigned long long const Size)
+{
+   if (Size == 0)
+      return true;
+   bool Res = true;
+APT_IGNORE_DEPRECATED_PUSH
+   if ((d->CalcHashes & MD5SUM) == MD5SUM)
+      Res &= MD5.Add(Data, Size);
+   if ((d->CalcHashes & SHA1SUM) == SHA1SUM)
+      Res &= SHA1.Add(Data, Size);
+   if ((d->CalcHashes & SHA256SUM) == SHA256SUM)
+      Res &= SHA256.Add(Data, Size);
+   if ((d->CalcHashes & SHA512SUM) == SHA512SUM)
+      Res &= SHA512.Add(Data, Size);
+APT_IGNORE_DEPRECATED_POP
+   d->FileSize += Size;
+   return Res;
+}
+bool Hashes::Add(const unsigned char * const Data, unsigned long long const Size, unsigned int const Hashes)
+{
+   d->CalcHashes = Hashes;
+   return Add(Data, Size);
+}
+bool Hashes::AddFD(int const Fd,unsigned long long Size)
 {
    unsigned char Buf[64*64];
    bool const ToEOF = (Size == UntilEOF);
@@ -234,19 +347,17 @@ bool Hashes::AddFD(int const Fd,unsigned long long Size, bool const addMD5,
       if (ToEOF && Res == 0) // EOF
 	 break;
       Size -= Res;
-      if (addMD5 == true)
-	 MD5.Add(Buf,Res);
-      if (addSHA1 == true)
-	 SHA1.Add(Buf,Res);
-      if (addSHA256 == true)
-	 SHA256.Add(Buf,Res);
-      if (addSHA512 == true)
-	 SHA512.Add(Buf,Res);
+      if (Add(Buf, Res) == false)
+	 return false;
    }
    return true;
 }
-bool Hashes::AddFD(FileFd &Fd,unsigned long long Size, bool const addMD5,
-		   bool const addSHA1, bool const addSHA256, bool const addSHA512)
+bool Hashes::AddFD(int const Fd,unsigned long long Size, unsigned int const Hashes)
+{
+   d->CalcHashes = Hashes;
+   return AddFD(Fd, Size);
+}
+bool Hashes::AddFD(FileFd &Fd,unsigned long long Size)
 {
    unsigned char Buf[64*64];
    bool const ToEOF = (Size == 0);
@@ -265,15 +376,36 @@ bool Hashes::AddFD(FileFd &Fd,unsigned long long Size, bool const addMD5,
       else if (a == 0) // EOF
 	 break;
       Size -= a;
-      if (addMD5 == true)
-	 MD5.Add(Buf, a);
-      if (addSHA1 == true)
-	 SHA1.Add(Buf, a);
-      if (addSHA256 == true)
-	 SHA256.Add(Buf, a);
-      if (addSHA512 == true)
-	 SHA512.Add(Buf, a);
+      if (Add(Buf, a) == false)
+	 return false;
    }
    return true;
 }
+bool Hashes::AddFD(FileFd &Fd,unsigned long long Size, unsigned int const Hashes)
+{
+   d->CalcHashes = Hashes;
+   return AddFD(Fd, Size);
+}
 									/*}}}*/
+HashStringList Hashes::GetHashStringList()
+{
+   HashStringList hashes;
+APT_IGNORE_DEPRECATED_PUSH
+   if ((d->CalcHashes & MD5SUM) == MD5SUM)
+      hashes.push_back(HashString("MD5Sum", MD5.Result().Value()));
+   if ((d->CalcHashes & SHA1SUM) == SHA1SUM)
+      hashes.push_back(HashString("SHA1", SHA1.Result().Value()));
+   if ((d->CalcHashes & SHA256SUM) == SHA256SUM)
+      hashes.push_back(HashString("SHA256", SHA256.Result().Value()));
+   if ((d->CalcHashes & SHA512SUM) == SHA512SUM)
+      hashes.push_back(HashString("SHA512", SHA512.Result().Value()));
+APT_IGNORE_DEPRECATED_POP
+   hashes.FileSize(d->FileSize);
+   return hashes;
+}
+APT_IGNORE_DEPRECATED_PUSH
+Hashes::Hashes() : d(new PrivateHashes(~0)) { }
+Hashes::Hashes(unsigned int const Hashes) : d(new PrivateHashes(Hashes)) {}
+Hashes::Hashes(HashStringList const &Hashes) : d(new PrivateHashes(Hashes)) {}
+Hashes::~Hashes() { delete d; }
+APT_IGNORE_DEPRECATED_POP

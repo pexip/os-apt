@@ -16,7 +16,7 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 #include <config.h>
 
 #include <apt-pkg/mmap.h>
@@ -38,7 +38,7 @@
 // ---------------------------------------------------------------------
 /* */
 MMap::MMap(FileFd &F,unsigned long Flags) : Flags(Flags), iSize(0),
-                     Base(0), SyncToFd(NULL)
+                     Base(nullptr), SyncToFd(nullptr)
 {
    if ((Flags & NoImmMap) != NoImmMap)
       Map(F);
@@ -48,7 +48,7 @@ MMap::MMap(FileFd &F,unsigned long Flags) : Flags(Flags), iSize(0),
 // ---------------------------------------------------------------------
 /* */
 MMap::MMap(unsigned long Flags) : Flags(Flags), iSize(0),
-                     Base(0), SyncToFd(NULL)
+                     Base(nullptr), SyncToFd(nullptr)
 {
 }
 									/*}}}*/
@@ -84,6 +84,8 @@ bool MMap::Map(FileFd &Fd)
       if ((Flags & ReadOnly) != ReadOnly)
 	 return _error->Error("Compressed file %s can only be mapped readonly", Fd.Name().c_str());
       Base = malloc(iSize);
+      if (unlikely(Base == nullptr))
+	 return _error->Errno("MMap-compressed-malloc", _("Couldn't make mmap of %llu bytes"), iSize);
       SyncToFd = new FileFd();
       if (Fd.Seek(0L) == false || Fd.Read(Base, iSize) == false)
 	 return _error->Error("Compressed file %s can't be read into mmap", Fd.Name().c_str());
@@ -92,7 +94,7 @@ bool MMap::Map(FileFd &Fd)
 
    // Map it.
    Base = (Flags & Fallback) ? MAP_FAILED : mmap(0,iSize,Prot,Map,Fd.Fd(),0);
-   if (Base == (void *)-1)
+   if (Base == MAP_FAILED)
    {
       if (errno == ENODEV || errno == EINVAL || (Flags & Fallback))
       {
@@ -102,6 +104,8 @@ bool MMap::Map(FileFd &Fd)
 	 {
 	    // for readonly, we don't need sync, so make it simple
 	    Base = malloc(iSize);
+	    if (unlikely(Base == nullptr))
+	       return _error->Errno("MMap-malloc", _("Couldn't make mmap of %llu bytes"), iSize);
 	    SyncToFd = new FileFd();
 	    return Fd.Read(Base, iSize);
 	 }
@@ -111,13 +115,14 @@ bool MMap::Map(FileFd &Fd)
 	    return _error->Errno("mmap", _("Couldn't duplicate file descriptor %i"), Fd.Fd());
 
 	 Base = calloc(iSize, 1);
+	 if (unlikely(Base == nullptr))
+	    return _error->Errno("MMap-calloc", _("Couldn't make mmap of %llu bytes"), iSize);
 	 SyncToFd = new FileFd (dupped_fd);
 	 if (!SyncToFd->Seek(0L) || !SyncToFd->Read(Base, iSize))
 	    return false;
       }
       else
-	 return _error->Errno("mmap",_("Couldn't make mmap of %llu bytes"),
-	                      iSize);
+	 return _error->Errno("MMap-mmap", _("Couldn't make mmap of %llu bytes"), iSize);
      }
 
    return true;
@@ -151,9 +156,9 @@ bool MMap::Close(bool DoSync)
    return true;
 }
 									/*}}}*/
-// MMap::Sync - Syncronize the map with the disk			/*{{{*/
+// MMap::Sync - Synchronize the map with the disk			/*{{{*/
 // ---------------------------------------------------------------------
-/* This is done in syncronous mode - the docs indicate that this will 
+/* This is done in synchronous mode - the docs indicate that this will 
    not return till all IO is complete */
 bool MMap::Sync()
 {
@@ -178,7 +183,7 @@ bool MMap::Sync()
    return true;
 }
 									/*}}}*/
-// MMap::Sync - Syncronize a section of the file to disk		/*{{{*/
+// MMap::Sync - Synchronize a section of the file to disk		/*{{{*/
 // ---------------------------------------------------------------------
 /* */
 bool MMap::Sync(unsigned long Start,unsigned long Stop)
@@ -215,9 +220,6 @@ DynamicMMap::DynamicMMap(FileFd &F,unsigned long Flags,unsigned long const &Work
 		MMap(F,Flags | NoImmMap), Fd(&F), WorkSpace(Workspace),
 		GrowFactor(Grow), Limit(Limit)
 {
-   if (_error->PendingError() == true)
-      return;
-
    // disable Moveable if we don't grow
    if (Grow == 0)
       this->Flags &= ~Moveable;
@@ -252,9 +254,6 @@ DynamicMMap::DynamicMMap(unsigned long Flags,unsigned long const &WorkSpace,
 		MMap(Flags | NoImmMap | UnMapped), Fd(0), WorkSpace(WorkSpace),
 		GrowFactor(Grow), Limit(Limit)
 {
-	if (_error->PendingError() == true)
-		return;
-
 	// disable Moveable if we don't grow
 	if (Grow == 0)
 		this->Flags &= ~Moveable;
@@ -390,12 +389,15 @@ unsigned long DynamicMMap::Allocate(unsigned long ItemSize)
       const unsigned long size = 20*1024;
       I->Count = size/ItemSize;
       Pool* oldPools = Pools;
+      _error->PushToStack();
       Result = RawAllocate(size,ItemSize);
+      bool const newError = _error->PendingError();
+      _error->MergeWithStack();
       if (Pools != oldPools)
 	 I += Pools - oldPools;
 
       // Does the allocation failed ?
-      if (Result == 0 && _error->PendingError())
+      if (Result == 0 && newError)
 	 return 0;
       I->Start = Result;
    }
@@ -409,17 +411,27 @@ unsigned long DynamicMMap::Allocate(unsigned long ItemSize)
 									/*}}}*/
 // DynamicMMap::WriteString - Write a string to the file		/*{{{*/
 // ---------------------------------------------------------------------
-/* Strings are not aligned to anything */
+/* Strings are aligned to 16 bytes */
 unsigned long DynamicMMap::WriteString(const char *String,
 				       unsigned long Len)
 {
    if (Len == (unsigned long)-1)
       Len = strlen(String);
 
-   unsigned long const Result = RawAllocate(Len+1,0);
+   _error->PushToStack();
+   unsigned long Result = RawAllocate(Len+1+sizeof(uint16_t),sizeof(uint16_t));
+   bool const newError = _error->PendingError();
+   _error->MergeWithStack();
 
-   if (Base == NULL || (Result == 0 && _error->PendingError()))
+   if (Base == NULL || (Result == 0 && newError))
       return 0;
+
+   if (Len >= std::numeric_limits<uint16_t>::max())
+      abort();
+
+   uint16_t LenToWrite = Len;
+   memcpy((char *)Base + Result, &LenToWrite, sizeof(LenToWrite));
+   Result += + sizeof(LenToWrite);
 
    memcpy((char *)Base + Result,String,Len);
    ((char *)Base)[Result + Len] = 0;

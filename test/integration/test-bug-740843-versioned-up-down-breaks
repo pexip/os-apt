@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 setupenvironment
 configarchitecture 'amd64' 'i386'
 
@@ -24,6 +24,7 @@ setupaptarchive
 
 testequalor2 'Reading package lists...
 Building dependency tree...
+Calculating upgrade...
 The following packages will be upgraded:
   foo-driver libfoo libfoo:i386 libgl1-foo-glx libgl1-foo-glx:i386
 5 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
@@ -32,12 +33,13 @@ Inst libgl1-foo-glx:i386 [1] (2 stable [i386]) [foo-driver:amd64 on libgl1-foo-g
 Inst foo-driver [1] (2 stable [amd64]) []
 Inst libfoo:i386 [1] (2 stable [i386]) [libfoo:amd64 on libfoo:i386] [libfoo:i386 on libfoo:amd64] [libfoo:amd64 ]
 Inst libfoo [1] (2 stable [amd64])
-Conf libfoo:i386 (2 stable [i386])
-Conf libfoo (2 stable [amd64])
-Conf libgl1-foo-glx:i386 (2 stable [i386])
 Conf libgl1-foo-glx (2 stable [amd64])
-Conf foo-driver (2 stable [amd64])' 'Reading package lists...
+Conf libgl1-foo-glx:i386 (2 stable [i386])
+Conf foo-driver (2 stable [amd64])
+Conf libfoo:i386 (2 stable [i386])
+Conf libfoo (2 stable [amd64])' 'Reading package lists...
 Building dependency tree...
+Calculating upgrade...
 The following packages will be upgraded:
   foo-driver libfoo libfoo:i386 libgl1-foo-glx libgl1-foo-glx:i386
 5 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
@@ -46,10 +48,10 @@ Inst libgl1-foo-glx:i386 [1] (2 stable [i386]) [foo-driver:amd64 on libgl1-foo-g
 Inst foo-driver [1] (2 stable [amd64]) []
 Inst libfoo:i386 [1] (2 stable [i386]) [libfoo:amd64 on libfoo:i386] [libfoo:i386 on libfoo:amd64] [libfoo:amd64 ]
 Inst libfoo [1] (2 stable [amd64])
-Conf libfoo:i386 (2 stable [i386])
-Conf libfoo (2 stable [amd64])
-Conf libgl1-foo-glx:i386 (2 stable [i386])
 Conf libgl1-foo-glx (2 stable [amd64])
-Conf foo-driver (2 stable [amd64])' aptget dist-upgrade -s
+Conf libgl1-foo-glx:i386 (2 stable [i386])
+Conf foo-driver (2 stable [amd64])
+Conf libfoo:i386 (2 stable [i386])
+Conf libfoo (2 stable [amd64])' aptget dist-upgrade -s
 
 testsuccess aptget dist-upgrade -y -o Debug::pkgPackageManager=1 -o Debug::pkgOrderList=1

@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 setupenvironment
 configarchitecture 'amd64' 'i386'
 
@@ -16,7 +16,7 @@ setupaptarchive
 
 testequalor2 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   apt:i386 libsame:i386
 The following NEW packages will be installed:
   libsame
@@ -30,7 +30,7 @@ Conf libsame (2 unstable [amd64]) [apt:i386 ]
 Inst apt:i386 [1] (2 unstable [i386])
 Conf apt:i386 (2 unstable [i386])' 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   apt:i386 libsame:i386
 The following NEW packages will be installed:
   libsame

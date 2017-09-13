@@ -29,9 +29,11 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 #include <string.h>
 
 #include <apt-private/private-cmndline.h>
+#include <apt-private/private-main.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -75,59 +77,30 @@ static bool DoDump(CommandLine &CmdL)
    return true;
 }
 									/*}}}*/
-// ShowHelp - Show the help screen					/*{{{*/
-// ---------------------------------------------------------------------
-/* */
-static bool ShowHelp(CommandLine &)
+static bool ShowHelp(CommandLine &)					/*{{{*/
 {
-   ioprintf(cout,_("%s %s for %s compiled on %s %s\n"),PACKAGE,PACKAGE_VERSION,
-	    COMMON_ARCH,__DATE__,__TIME__);
-   if (_config->FindB("version") == true)
-      return true;
-   
-   cout <<
-    _("Usage: apt-config [options] command\n"
+   std::cout <<
+      _("Usage: apt-config [options] command\n"
       "\n"
-      "apt-config is a simple tool to read the APT config file\n"
-      "\n"
-      "Commands:\n"
-      "   shell - Shell mode\n"
-      "   dump - Show the configuration\n"
-      "\n"
-      "Options:\n"
-      "  -h   This help text.\n" 
-      "  -c=? Read this configuration file\n" 
-      "  -o=? Set an arbitrary configuration option, eg -o dir::cache=/tmp\n");
+      "apt-config is an interface to the configuration settings used by\n"
+      "all APT tools, mainly intended for debugging and shell scripting.\n");
    return true;
+}
+									/*}}}*/
+static std::vector<aptDispatchWithHelp> GetCommands()			/*{{{*/
+{
+   return {
+      {"shell", &DoShell, _("get configuration values via shell evaluation")},
+      {"dump", &DoDump, _("show the active configuration setting")},
+      {nullptr, nullptr, nullptr}
+   };
 }
 									/*}}}*/
 int main(int argc,const char *argv[])					/*{{{*/
 {
-   CommandLine::Dispatch Cmds[] = {{"shell",&DoShell},
-                                   {"dump",&DoDump},
-				   {"help",&ShowHelp},
-                                   {0,0}};
-
-   std::vector<CommandLine::Args> Args = getCommandArgs("apt-config", CommandLine::GetCommand(Cmds, argc, argv));
-
-   // Set up gettext support
-   setlocale(LC_ALL,"");
-   textdomain(PACKAGE);
-
    // Parse the command line and initialize the package library
-   CommandLine CmdL(Args.data(),_config);
-   if (pkgInitConfig(*_config) == false ||
-       CmdL.Parse(argc,argv) == false ||
-       pkgInitSystem(*_config,_system) == false)
-   {
-      _error->DumpErrors();
-      return 100;
-   }
-
-   // See if the help should be shown
-   if (_config->FindB("help") == true ||
-       CmdL.FileSize() == 0)
-      return ShowHelp(CmdL);
+   CommandLine CmdL;
+   auto const Cmds = ParseCommandLine(CmdL, APT_CMD::APT_CONFIG, &_config, &_system, argc, argv, &ShowHelp, &GetCommands);
 
    std::vector<std::string> const langs = APT::Configuration::getLanguages(true);
    _config->Clear("Acquire::Languages");
@@ -139,12 +112,19 @@ int main(int argc,const char *argv[])					/*{{{*/
    for (std::vector<std::string>::const_iterator a = archs.begin(); a != archs.end(); ++a)
       _config->Set("APT::Architectures::", *a);
 
+   string const conf = "APT::Compressor::";
+   std::map<std::string,std::string> CompressorNames;
+   for (auto && key : _config->FindVector("APT::Compressor", "", true))
+   {
+      auto const comp = conf + key + "::Name";
+      CompressorNames.emplace(_config->Find(comp, key), key);
+   }
    std::vector<APT::Configuration::Compressor> const compressors = APT::Configuration::getCompressors();
    _config->Clear("APT::Compressor");
-   string conf = "APT::Compressor::";
    for (std::vector<APT::Configuration::Compressor>::const_iterator c = compressors.begin(); c != compressors.end(); ++c)
    {
-      string comp = conf + c->Name + "::";
+      auto const n = CompressorNames.find(c->Name);
+      string comp = conf + (n == CompressorNames.end() ? c->Name : n->second) + "::";
       _config->Set(comp + "Name", c->Name);
       _config->Set(comp + "Extension", c->Extension);
       _config->Set(comp + "Binary", c->Binary);
@@ -160,17 +140,6 @@ int main(int argc,const char *argv[])					/*{{{*/
    for (std::vector<std::string>::const_iterator p = profiles.begin(); p != profiles.end(); ++p)
       _config->Set("APT::Build-Profiles::", *p);
 
-   // Match the operation
-   CmdL.DispatchArg(Cmds);
-   
-   // Print any errors or warnings found during parsing
-   if (_error->empty() == false)
-   {
-      bool Errors = _error->PendingError();
-      _error->DumpErrors();
-      return Errors == true?100:0;
-   }
-   
-   return 0;
+   return DispatchCommandLine(CmdL, Cmds);
 }
 									/*}}}*/

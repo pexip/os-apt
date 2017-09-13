@@ -15,11 +15,12 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
-#include <apt-pkg/acquire-method.h>
+#include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/hashes.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/strutl.h>
+#include "aptmethod.h"
 
 #include <string>
 #include <sys/stat.h>
@@ -27,13 +28,12 @@
 #include <apti18n.h>
 									/*}}}*/
 
-class FileMethod : public pkgAcqMethod
+class FileMethod : public aptMethod
 {
-   virtual bool Fetch(FetchItem *Itm);
-   
+   virtual bool Fetch(FetchItem *Itm) APT_OVERRIDE;
+
    public:
-   
-   FileMethod() : pkgAcqMethod("1.0",SingleInstance | LocalOnly) {};
+   FileMethod() : aptMethod("file", "1.0", SingleInstance | SendConfig | LocalOnly) {};
 };
 
 // FileMethod::Fetch - Fetch a file					/*{{{*/
@@ -47,8 +47,28 @@ bool FileMethod::Fetch(FetchItem *Itm)
    if (Get.Host.empty() == false)
       return _error->Error(_("Invalid URI, local URIS must not start with //"));
 
-   // See if the file exists
    struct stat Buf;
+   // deal with destination files which might linger around
+   if (lstat(Itm->DestFile.c_str(), &Buf) == 0)
+   {
+      if ((Buf.st_mode & S_IFREG) != 0)
+      {
+	 if (Itm->LastModified == Buf.st_mtime && Itm->LastModified != 0)
+	 {
+	    HashStringList const hsl = Itm->ExpectedHashes;
+	    if (Itm->ExpectedHashes.VerifyFile(File))
+	    {
+	       Res.Filename = Itm->DestFile;
+	       Res.IMSHit = true;
+	    }
+	 }
+      }
+   }
+   if (Res.IMSHit != true)
+      RemoveFile("file", Itm->DestFile);
+
+   int olderrno = 0;
+   // See if the file exists
    if (stat(File.c_str(),&Buf) == 0)
    {
       Res.Size = Buf.st_size;
@@ -56,45 +76,57 @@ bool FileMethod::Fetch(FetchItem *Itm)
       Res.LastModified = Buf.st_mtime;
       Res.IMSHit = false;
       if (Itm->LastModified == Buf.st_mtime && Itm->LastModified != 0)
-	 Res.IMSHit = true;
-   }
-   
-   // See if we can compute a file without a .gz exentsion
-   std::string::size_type Pos = File.rfind(".gz");
-   if (Pos + 3 == File.length())
-   {
-      File = std::string(File,0,Pos);
-      if (stat(File.c_str(),&Buf) == 0)
       {
-	 FetchResult AltRes;
-	 AltRes.Size = Buf.st_size;
-	 AltRes.Filename = File;
-	 AltRes.LastModified = Buf.st_mtime;
-	 AltRes.IMSHit = false;
-	 if (Itm->LastModified == Buf.st_mtime && Itm->LastModified != 0)
-	    AltRes.IMSHit = true;
-	 
-	 URIDone(Res,&AltRes);
-	 return true;
-      }      
-   }
-   
-   if (Res.Filename.empty() == true)
-      return _error->Error(_("File not found"));
+	 unsigned long long const filesize = Itm->ExpectedHashes.FileSize();
+	 if (filesize != 0 && filesize == Res.Size)
+	    Res.IMSHit = true;
+      }
 
-   Hashes Hash;
-   FileFd Fd(Res.Filename, FileFd::ReadOnly);
-   Hash.AddFD(Fd);
-   Res.TakeHashes(Hash);
-   URIDone(Res);
+      CalculateHashes(Itm, Res);
+   }
+   else
+      olderrno = errno;
+   if (Res.IMSHit == false)
+      URIStart(Res);
+
+   // See if the uncompressed file exists and reuse it
+   FetchResult AltRes;
+   AltRes.Filename.clear();
+   std::vector<std::string> extensions = APT::Configuration::getCompressorExtensions();
+   for (std::vector<std::string>::const_iterator ext = extensions.begin(); ext != extensions.end(); ++ext)
+   {
+      if (APT::String::Endswith(File, *ext) == true)
+      {
+	 std::string const unfile = File.substr(0, File.length() - ext->length());
+	 if (stat(unfile.c_str(),&Buf) == 0)
+	 {
+	    AltRes.Size = Buf.st_size;
+	    AltRes.Filename = unfile;
+	    AltRes.LastModified = Buf.st_mtime;
+	    AltRes.IMSHit = false;
+	    if (Itm->LastModified == Buf.st_mtime && Itm->LastModified != 0)
+	       AltRes.IMSHit = true;
+	    break;
+	 }
+	 // no break here as we could have situations similar to '.gz' vs '.tar.gz' here
+      }
+   }
+
+   if (AltRes.Filename.empty() == false)
+      URIDone(Res,&AltRes);
+   else if (Res.Filename.empty() == false)
+      URIDone(Res);
+   else
+   {
+      errno = olderrno;
+      return _error->Errno(File.c_str(), _("File not found"));
+   }
+
    return true;
 }
 									/*}}}*/
 
 int main()
 {
-   setlocale(LC_ALL, "");
-
-   FileMethod Mth;
-   return Mth.Run();
+   return FileMethod().Run();
 }

@@ -6,7 +6,7 @@
    FTP Acquire Method - This is the FTP acquire method for APT.
 
    This is a very simple implementation that does not try to optimize
-   at all. Commands are sent syncronously with the FTP server (as the
+   at all. Commands are sent synchronously with the FTP server (as the
    rfc recommends, but it is not really necessary..) and no tricks are
    done to speed things along.
 			
@@ -18,7 +18,6 @@
 #include <config.h>
 
 #include <apt-pkg/fileutl.h>
-#include <apt-pkg/acquire-method.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/hashes.h>
 #include <apt-pkg/netrc.h>
@@ -39,7 +38,6 @@
 
 // Internet stuff
 #include <netinet/in.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 
@@ -75,9 +73,10 @@ time_t FtpMethod::FailTime = 0;
 // FTPConn::FTPConn - Constructor					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-FTPConn::FTPConn(URI Srv) : Len(0), ServerFd(-1), DataFd(-1), 
+FTPConn::FTPConn(URI Srv) : Len(0), ServerFd(-1), DataFd(-1),
                             DataListenFd(-1), ServerName(Srv),
-			    ForceExtended(false), TryPassive(true)
+			    ForceExtended(false), TryPassive(true),
+			    PeerAddrLen(0), ServerAddrLen(0)
 {
    Debug = _config->FindB("Debug::Acquire::Ftp",false);
    PasvAddr = 0;
@@ -258,19 +257,21 @@ bool FTPConn::Login()
       {
 	 if (Opts->Value.empty() == true)
 	    continue;
-	 
+
 	 // Substitute the variables into the command
-	 char SitePort[20];
-	 if (ServerName.Port != 0)
-	    sprintf(SitePort,"%u",ServerName.Port);
-	 else
-	    strcpy(SitePort,"21");
 	 string Tmp = Opts->Value;
 	 Tmp = SubstVar(Tmp,"$(PROXY_USER)",Proxy.User);
 	 Tmp = SubstVar(Tmp,"$(PROXY_PASS)",Proxy.Password);
 	 Tmp = SubstVar(Tmp,"$(SITE_USER)",User);
 	 Tmp = SubstVar(Tmp,"$(SITE_PASS)",Pass);
-	 Tmp = SubstVar(Tmp,"$(SITE_PORT)",SitePort);
+	 if (ServerName.Port != 0)
+	 {
+	    std::string SitePort;
+	    strprintf(SitePort, "%u", ServerName.Port);
+	    Tmp = SubstVar(Tmp,"$(SITE_PORT)", SitePort);
+	 }
+	 else
+	    Tmp = SubstVar(Tmp,"$(SITE_PORT)", "21");
 	 Tmp = SubstVar(Tmp,"$(SITE)",ServerName.Host);
 
 	 // Send the command
@@ -496,12 +497,25 @@ bool FTPConn::GoPasv()
    
    // Unsupported function
    string::size_type Pos = Msg.find('(');
-   if (Tag >= 400 || Pos == string::npos)
+   if (Tag >= 400)
+      return true;
+
+   //wu-2.6.2(1) ftp server, returns
+   //227 Entering Passive Mode 193,219,28,140,150,111
+   //without parentheses, let's try to cope with it.
+   //wget(1) and ftp(1) can.
+   if (Pos == string::npos)
+      Pos = Msg.rfind(' ');
+   else
+      ++Pos;
+
+   // Still unsupported function
+   if (Pos == string::npos)
       return true;
 
    // Scan it
    unsigned a0,a1,a2,a3,p0,p1;
-   if (sscanf(Msg.c_str() + Pos,"(%u,%u,%u,%u,%u,%u)",&a0,&a1,&a2,&a3,&p0,&p1) != 6)
+   if (sscanf(Msg.c_str() + Pos,"%u,%u,%u,%u,%u,%u",&a0,&a1,&a2,&a3,&p0,&p1) != 6)
       return true;
    
    /* Some evil servers return 0 to mean their addr. We can actually speak
@@ -743,7 +757,7 @@ bool FTPConn::CreateDataFd()
    }
    
    // Bind and listen
-   if (bind(DataListenFd,BindAddr->ai_addr,BindAddr->ai_addrlen) < 0)
+   if (::bind(DataListenFd,BindAddr->ai_addr,BindAddr->ai_addrlen) < 0)
    {
       freeaddrinfo(BindAddr);
       return _error->Errno("bind",_("Could not bind a socket"));
@@ -848,7 +862,8 @@ bool FTPConn::Finalize()
 /* This opens a data connection, sends REST and RETR and then
    transfers the file over. */
 bool FTPConn::Get(const char *Path,FileFd &To,unsigned long long Resume,
-		  Hashes &Hash,bool &Missing)
+		  Hashes &Hash,bool &Missing, unsigned long long MaximumSize,
+                  pkgAcqMethod *Owner)
 {
    Missing = false;
    if (CreateDataFd() == false)
@@ -921,7 +936,14 @@ bool FTPConn::Get(const char *Path,FileFd &To,unsigned long long Resume,
       {
 	 Close();
 	 return false;
-      }      
+      }
+
+      if (MaximumSize > 0 && To.Tell() > MaximumSize)
+      {
+         Owner->SetFailReason("MaximumSizeExceeded");
+         return _error->Error("Writing more data than expected (%llu > %llu)",
+                              To.Tell(), MaximumSize);
+      }
    }
 
    // All done
@@ -940,7 +962,7 @@ bool FTPConn::Get(const char *Path,FileFd &To,unsigned long long Resume,
 // FtpMethod::FtpMethod - Constructor					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-FtpMethod::FtpMethod() : pkgAcqMethod("1.0",SendConfig)
+FtpMethod::FtpMethod() : aptMethod("ftp","1.0",SendConfig)
 {
    signal(SIGTERM,SigTerm);
    signal(SIGINT,SigTerm);
@@ -952,7 +974,7 @@ FtpMethod::FtpMethod() : pkgAcqMethod("1.0",SendConfig)
 // FtpMethod::SigTerm - Handle a fatal signal				/*{{{*/
 // ---------------------------------------------------------------------
 /* This closes and timestamps the open file. This is necessary to get
-   resume behavoir on user abort */
+   resume behavior on user abort */
 void FtpMethod::SigTerm(int)
 {
    if (FailFd == -1)
@@ -975,10 +997,11 @@ void FtpMethod::SigTerm(int)
 /* We stash the desired pipeline depth */
 bool FtpMethod::Configuration(string Message)
 {
-   if (pkgAcqMethod::Configuration(Message) == false)
+   if (aptMethod::Configuration(Message) == false)
       return false;
-   
+
    TimeOut = _config->FindI("Acquire::Ftp::Timeout",TimeOut);
+
    return true;
 }
 									/*}}}*/
@@ -1049,7 +1072,7 @@ bool FtpMethod::Fetch(FetchItem *Itm)
    }
    
    // Open the file
-   Hashes Hash;
+   Hashes Hash(Itm->ExpectedHashes);
    {
       FileFd Fd(Itm->DestFile,FileFd::WriteAny);
       if (_error->PendingError() == true)
@@ -1058,11 +1081,11 @@ bool FtpMethod::Fetch(FetchItem *Itm)
       URIStart(Res);
       
       FailFile = Itm->DestFile;
-      FailFile.c_str();   // Make sure we dont do a malloc in the signal handler
+      FailFile.c_str();   // Make sure we don't do a malloc in the signal handler
       FailFd = Fd.Fd();
       
       bool Missing;
-      if (Server->Get(File,Fd,Res.ResumePoint,Hash,Missing) == false)
+      if (Server->Get(File,Fd,Res.ResumePoint,Hash,Missing,Itm->MaximumSize,this) == false)
       {
 	 Fd.Close();
 
@@ -1076,7 +1099,7 @@ bool FtpMethod::Fetch(FetchItem *Itm)
 	 // If the file is missing we hard fail and delete the destfile
 	 // otherwise transient fail
 	 if (Missing == true) {
-	    unlink(FailFile.c_str());
+	    RemoveFile("ftp", FailFile);
 	    return false;
 	 }
 	 Fail(true);
@@ -1104,9 +1127,7 @@ bool FtpMethod::Fetch(FetchItem *Itm)
 									/*}}}*/
 
 int main(int, const char *argv[])
-{ 
-   setlocale(LC_ALL, "");
-
+{
    /* See if we should be come the http client - we do this for http
       proxy urls */
    if (getenv("ftp_proxy") != 0)
@@ -1129,8 +1150,5 @@ int main(int, const char *argv[])
 	 exit(100);
       }      
    }
-   
-   FtpMethod Mth;
-   
-   return Mth.Run();
+   return FtpMethod().Run();
 }

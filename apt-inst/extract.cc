@@ -37,7 +37,7 @@
         is invoked. 
    
    As we unpack we record the file list differences in the FL cache. If
-   we need to unroll the the FL cache knows which files have been unpacked
+   we need to unroll the FL cache knows which files have been unpacked
    and can undo. When we need to erase then it knows which files have not 
    been unpacked.
    
@@ -279,7 +279,7 @@ bool pkgExtract::Aborted()
    map_ptrloc *Last = &FLPkg->Files;
    
    /* Loop over all files, restore those that have been unpacked from their
-      dpkg-tmp entires */
+      dpkg-tmp entries */
    while (Files.end() == false)
    {
       // Locate the hash bucket for the node and locate its group head
@@ -404,7 +404,7 @@ bool pkgExtract::HandleOverwrites(pkgFLCache::NodeIterator Nde,
       // Now see if this package matches one in a replace depends
       pkgCache::DepIterator Dep = Ver.DependsList();
       bool Ok = false;
-      for (; Dep.end() == false; Dep++)
+      for (; Dep.end() == false; ++Dep)
       {
 	 if (Dep->Type != pkgCache::Dep::Replaces)
 	    continue;

@@ -1,35 +1,1991 @@
-apt (1.0.9.8.4) jessie-security; urgency=high
+apt (1.4.8) stretch; urgency=medium
 
+  [ Balint Reczey ]
+  * Gracefully terminate process when stopping apt-daily-upgrade (LP: #1690980)
+
+  [ David Kalnischkies ]
+  * don't ask an uninit _system for supported archs, this
+    crashes the mirror method (LP: #1613184)
+
+  [ Julian Andres Klode ]
+  * Do not warn about duplicate "legacy" targets (Closes: #839259)
+    (LP: #1697120)
+  * apt-daily: Pull in network-online.target in service, not timer
+    - this can cause a severe boot performance regression / hang
+    (LP: #1716973)
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 13 Sep 2017 18:47:33 +0200
+
+apt (1.4.7) stretch; urgency=medium
+
+  * New release with important fixes up to 1.5~beta1; also see LP: #1702326
+
+  [ Robert Luberda ]
+  * fix a "critical" typo in old changelog entry (Closes: 866358)
+
+  [ David Kalnischkies ]
+  * test suite/travis CI: ignore profiling warning in progress lines
+  * use port from SRV record instead of initial port
+
+  [ Julian Andres Klode ]
+  * Reset failure reason when connection was successful, so later errors are
+    reported as such and not as "connection failure" warnings.
+  * debian/gbp.conf: Set debian-branch to 1.4.y
+  * http: A response with Content-Length: 0 has no content, so don't try to
+    read it - it will either timeout or the server closes the connection.
+  * travis CI: Migrate to Docker
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 13 Jul 2017 23:45:39 +0200
+
+apt (1.4.6) unstable; urgency=medium
+
+  * apt.systemd.daily: Do not pass -d to unattended-upgrade for the download
+  job. This actually enables debugging. Instead check if unattended-upgrade
+  supports an option --download-only (which is yet to be implemented) and use
+  that (Closes: #863859)
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 01 Jun 2017 10:50:26 +0200
+
+apt (1.4.5) unstable; urgency=medium
+
+  * Fix parsing of or groups in build-deps with ignored packages (LP: #1694697)
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 31 May 2017 14:52:25 +0200
+
+apt (1.4.4) unstable; urgency=medium
+
+  [ Alan Jenkins ]
+  * apt.systemd.daily: fix error from locking code (Closes: #862567)
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 16 May 2017 23:19:50 +0200
+
+apt (1.4.3) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Do not try to (re)start timers outside 'apt' package (Closes: #862001)
+
+  [ Miroslav Kure ]
+  * Updated Czech translation of apt (Closes: #861943)
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 11 May 2017 14:46:28 +0200
+
+apt (1.4.2) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Run unattended-upgrade -d in download part
+  * apt.systemd.daily: Add locking
+  * Split apt-daily timer into two (LP: #1686470)
+
+  [ Matt Kraai ]
+  * bash-completion: Fix spelling of autoclean (Closes: #861846)
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 04 May 2017 22:52:10 +0200
+
+apt (1.4.1) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * systemd: Rework timing and add After=network-online (LP: #1615482)
+  * debian/rules: Actually invoke dh_clean in override_dh_clean
+
+  [ Unit 193 ]
+  * apt-ftparchive: Support '.ddeb' dbgsym packages
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 24 Apr 2017 18:47:55 +0200
+
+apt (1.4) unstable; urgency=medium
+
+  * The April Fools' Release
+
+  [ Julian Andres Klode ]
+  * Ignore \.ucf-[a-z]+$ like we do for \.dpkg-[a-z]+$
+  * Fix mistake in CHANGEPATH comment example
+
+  [ Chris Lamb ]
+  * auto-removal: Ignore running kernel if attempting a reproducible build
+    (Closes: #857632)
+
+  [ Joe Dalton ]
+  * Danish program translation update (Closes: #856723)
+
+  [ David Kalnischkies ]
+  * Fix and avoid quoting in CommandLine::AsString (LP: #1672710)
+  * Ignore AutomaticRemove conffile option in upgrade (Closes: #855891)
+
+ -- Julian Andres Klode <jak@debian.org>  Sat, 01 Apr 2017 21:39:37 +0200
+
+apt (1.4~rc2) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * add Auto-Built-Package to tagfile-order
+  * don't test with "too early for 32bit" years
+
+  [ Julian Andres Klode ]
+  * Do not lowercase package names representing .dsc/.deb/... files (Closes: #854794)
+  * shippable: Perform CI on Debian stretch instead of Ubuntu xenial
+  * Don't use -1 fd and AT_SYMLINK_NOFOLLOW for faccessat()
+    Thanks to James Clarke for debugging these issues
+  * CMake: Install statvfs.h to include/sys, not just include/
+  * debian: Generate debian/copyright during clean
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 22 Feb 2017 16:02:10 +0100
+
+apt (1.4~rc1) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * don't show update stats if cache generation is disabled
+  * don't lock dpkg in 'apt-get clean'
+  * don't lock dpkg in update commands
+  * avoid validate/delete/load race in cache generation
+  * fix 'install --no-download' mode
+  * remove 'old' FAILED files in the next acquire call (Closes: 846476)
+  * stop rred from leaking debug messages on recovered errors (Closes: #850759)
+  * make the moo reproducible.
+    Thanks to Chris Lamb for initial patch and guru meditation (Closes: #848721)
+  * update release mappings in documentation
+  * avoid malloc if option whitelist is disabled (default)
+
+  [ Julian Andres Klode ]
+  * basehttp: Only read Content-Range on 416 and 206 responses (LP: #1657567)
+  * test suite: Do not exit 0 in trap for QUIT
+  * Only merge acquire items with the same meta key (Closes: #838441)
+
+  [ Zhou Mo ]
+  * po: update Simplified Chinese program translation
+
+  [ Jean-Pierre Giraud ]
+  * French manpages translation update (Closes: 852460)
+
+  [ victory ]
+  * Japanese manpages & program translation update
+
+  [ Frans Spiesschaert ]
+  * Dutch program translation update (Closes: #853761)
+  * Dutch manpage translation update (Closes: #853762)
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 06 Feb 2017 14:41:23 +0100
+
+apt (1.4~beta4) unstable; urgency=medium
+
+  * Read dpkg tables to handle architecture wildcards.
+    Thanks to James Clarke <jrtc27@jrtc27.com> for the initial patch
+    (Closes: #748936)
+  * https: Quote path in URL before passing it to curl (LP: #1651923)
+  * Update symbols file for changes in 1.3.1, 1.4~beta{1,3,4}
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 17 Jan 2017 15:18:27 +0100
+
+apt (1.4~beta3) unstable; urgency=medium
+
+  [ Lukasz Kawczynski ]
+  * Honour Acquire::ForceIPv4/6 in the https transport
+
+  [ David Kalnischkies ]
+  * reword "Can't drop priv" warning message (Closes: #813786) (LP: #1522675)
+  * let {dsc,tar,diff}-only implicitly enable download-only
+  * remove needless fork() in apt-get source
+  * default to --no-check for dpkg-source call (Closes: 724744)
+  * warn if clearsigned file has ignored content parts
+  * ensure generation of valid EDSP error stanzas
+  * add --indep-only for build-dep command (Closes: #845775)
+  * allow default build-essentials to be overridden
+  * expand -f to --fix-broken in error messages.
+    Thanks to Kristian Glass for initial patch! (Closes: #709092)
+  * separating state variables regarding server/request (Closes: #440057)
+  * fix minimum pkgs option for dpkg --recursive usage
+  * allow warning generation for non-whitelisted options
+
+  [ Oriol Debian ]
+  * Catalan program translation update (Closes: #846514)
+
+  [ Frans Spiesschaert ]
+  * Dutch manpages translation update (Closes: #849235)
+
+  [ Niels Thykier ]
+  * ParseDepends: Support passing the desired architecture (Closes: #845969)
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 05 Jan 2017 20:50:01 +0100
+
+apt (1.4~beta2) unstable; urgency=high
+
+  [ John R. Lenton ]
+  * bash-completion: Only complete understood file paths for install
+    (LP: #1645815)
+
+  [ Julian Andres Klode ]
   * SECURITY UPDATE: gpgv: Check for errors when splitting files (CVE-2016-1252)
     Thanks to Jann Horn, Google Project Zero for reporting the issue
     (LP: #1647467)
+  * gpgv: Flush the files before checking for errors
 
- -- Julian Andres Klode <jak@debian.org>  Thu, 08 Dec 2016 15:31:29 +0100
+ -- Julian Andres Klode <jak@debian.org>  Thu, 08 Dec 2016 15:21:16 +0100
 
-apt (1.0.9.8.3) jessie; urgency=medium
+apt (1.4~beta1) unstable; urgency=medium
 
-  * apt-pkg/algorithms.cc: Avoid stack buffer overflow in KillList
-    (Closes: #701069)
+  [ Chris Leick ]
+  * Updated German documentation translation
+  * fix three typos in sources & manpages
+  * German translation proof read by Helge Kreutzmann
 
- -- Julian Andres Klode <jak@debian.org>  Sat, 12 Mar 2016 13:14:21 +0000
-
-apt (1.0.9.8.2) jessie; urgency=medium
+  [ Frans Spiesschaert ]
+  * Dutch program translation update (Closes: #840552)
+  * Dutch manpages translation update (Closes: #840757)
 
   [ David Kalnischkies ]
-  * hide first pdiff merge failure debug message (Closes: 793444)
-  * mark again deps of pkgs in APT::Never-MarkAuto-Sections as manual.
-    Thanks to Raphaël Hertzog and Adam Conrad for detailed reports and initial patches
-    (Closes: 793360) (LP: 1479207)
+  * don't install new deps of candidates for kept back pkgs
+  * keep Release.gpg on untrusted to trusted IMS-Hit (Closes: 838779)
+  * fix testcase expecting incorrect remove log from dpkg
+  * reset HOME, USER(NAME), TMPDIR & SHELL in DropPrivileges (Closes: 842877)
+  * show the conflicting distribution warning again (Closes: 841874)
+  * rename Checksum-FileSize to Filesize in hashsum mismatch
+  * improve SOCKS error messages for http slightly
+  * support 'apt build-dep .' (aka: without /)
+  * add TMP/TEMP/TEMPDIR to the TMPDIR DropPrivileges dance
+  * http: skip connection cleanup if we close it anyhow
+  * add hidden config to set packages as Essential/Important.
+    Thanks to Anthony Towns for initial patch (Closes: 767891)
+  * don't warn if untransformed distribution matches.
+    Thanks to Lukas Anzinger for initial patch (Closes: 644610)
+  * show distribution mismatch for changed codenames
+  * react to trig-pend only if we have nothing else to do
+  * correct cross & disappear progress detection
+  * improve arch-unqualified dpkg-progress parsing
+  * don't perform implicit crossgrades involving M-A:same
+  * do not configure unconfigured to be removed packages
+  * skip unconfigure for unconfigured to-be removed pkgs
+  * report apt-key errors via status-fd messages (LP: #1522988)
+  * add apt-key support for armored GPG key files (*.asc)
+  * document which keyring formats are supported by apt-key (Closes: 844724)
+  * get pdiff files from the same mirror as the index
+  * follow the googletest merge in build-depends
+
+  [ Michael Vogt ]
+  * Do not (re)start "apt-daily.system"
+    Thanks to Alexandre Detiste (Closes: #841763)
+
+  [ Johannes Schauer ]
+  * add support for Build-Depends/Conflicts-Arch (Closes: #837395)
+
+  [ Edgar Fuß ]
+  * http: clear content before reporting the failure (Closes: #465572)
+
+  [ James Clarke ]
+  * apt-ftparchive: Support NotAutomatic and ButAutomaticUpgrades fields
+    (Closes: #272557)
 
   [ Julian Andres Klode ]
-  * Do not parse Status fields from remote sources
+  * TagSection: Split AlphaIndexes into AlphaIndexes and BetaIndexes
+  * TagSection: Extract Find() methods taking Pos instead of Key
+  * Squashed 'triehash/' content from commit 16f59e1
+  * TagSection: Introduce functions for looking up by key ids
+  * debListParser: Convert to use pkgTagSection::Key-based lookup
+  * Bump the cache major version for non-backportable changes
+  * Introduce tolower_ascii_unsafe() and use it for hashing
+  * Optimize VersionHash() to not need temporary copy of input
+  * Compare size before data when ordering cache bucket entries
+  * debListParser: Micro-optimize AvailableDescriptionLanguages()
+  * Do not use MD5SumValue for Description_md5()
+  * gpgv: Untrust SHA1, RIPE-MD/160, but allow downgrading to weak
+
+  [ Paul Wise ]
+  * show output as documented for APT::Periodic::Verbose 2 (Closes: 845599)
+
+ -- Julian Andres Klode <jak@debian.org>  Fri, 25 Nov 2016 23:49:54 +0100
+
+apt (1.3.1) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Do not read stderr from proxy autodetection scripts
+  * travis: Move codecov from after_success to after_script
+
+  [ victory ]
+  * Japanese manpages translation update
+
+  [ Mert Dirik ]
+  * Turkish program translation update (Closes: #838731)
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 04 Oct 2016 19:43:35 +0200
+
+apt (1.3) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * abort connection on '.' target replies in SRV
+  * edsp: try 2 to read responses even if writing failed
+
+  [ Julian Andres Klode ]
+  * test: Always install dpkg into our tests, regardless of MA
+  * CMake: Add coverage build type
+  * Coverage: Do not print messages from gcov
+  * VersionHash: Do not skip too long dependency lines
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 20 Sep 2016 23:53:51 +0200
+
+apt (1.3~rc4) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Fix segfault and out-of-bounds read in Binary fields
+  * TagFile: Fix off-by-one errors in comment stripping
+  * Base256ToNum: Fix uninitialized value
+  * test-apt-cdrom: Fix for gnupg 2.1.15
+  * CMake: test/libapt: Use a prebuilt GTest library if available
+  * CMake: apt-pkg: Use correct ICONV_INCLUDE_DIRS variable
+  * acquire: Use priority queues and a 3 stage pipeline design
+    => faster updates with better progress reporting
+  * debian: Move bugscript to old location for overlayfs xdev issue
+  * debian: Pass -O to make to get readable build logs
+
+  [ David Kalnischkies ]
+  * try not to call memcpy with length 0 in hash calculations
+  * re-add apt breaks/replaces apt-utils (<< 1.3~exp2~) (Closes: #836220)
+  * support long keyid and fingerprint in gpgv's GOODSIG
+
+ -- Julian Andres Klode <jak@debian.org>  Fri, 02 Sep 2016 20:26:36 +0200
+
+apt (1.3~rc3) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Ignore SIGINT and SIGQUIT for Pre-Install hooks
+    This basically fixes Bug #832593, as long as your /bin/sh
+    is not dash, as dash is evil.
+  * prepare-release: Use equivs and gdebi-core for travis deps
+  * install-progress: Call the real ::fork() in our fork() method
+  * Packaging cleanup:
+    - debian: Install etc/apt if present (e.g., on Ubuntu)
+    - tests/control: Handle the gpg1/gpg2 mess a bit better
+    - debian: Make better use of the tree installed by CMake
+    - debian: Switch to debhelper 10
+    - debian: Add more lintian overrides
+    - debian: Drop outdated stuff
+    - debian: Run wrap-and-sort
+    - Add new symbols to symbols file
+  * Build system fixes, including:
+   - CMake: Translations: Don't rebuild .mo for line number changes
+   - CMake: Translations: Pass --previous to msgmerge.
+     Thanks to Guillem Jover for the suggestion.
+   - CMake: Do not add po/ if USE_NLS is OFF
+   - CMake: Install config and logging directories
+   - CMake: Translations: Build byproduct before output
+   - CMake: Add Large File Support (Closes: #834767)
+  * Several portability fixes (full test suite passes on FreeBSD), including:
+   - CMake: Discover docbook stylesheet in other locations
+   - Add missing includes and external definitions
+   - Use C locale instead of C.UTF-8 for protocol strings
+   - Make directory paths configurable
+   - Lower-case uname -r output in kernel autoremove helper
+   - Make root group configurable via ROOT_GROUP
+  * Accept --autoremove as alias for --auto-remove
+  * apt-inst: debfile: Pass comp. Name to ExtractTar, not Binary
+  * changelog: Respect Dir setting for local changelog getting
+  * init: Add Dir::Bin::planners default entry
+  * Switch documentation from httpredir.d.o to deb.d.o
+
+  [ Zhou Mo ]
+  * zh_CN.po: update simplified Chinese translation
+
+  [ David Kalnischkies ]
+  * do dpkg --configure before --remove/--purge --pending (Closes: 835094)
+  * prevent C++ locale number formatting in text APIs (try 3) (LP: 1611010)
+  * do fail on weakhash/loop earlier in acquire (Closes: 835195)
+  * do not restore selections for already purged packages
+  * apt-key: warn instead of fail on unreadable keyrings
+  * show apt-key warnings in apt update (Closes: 834973)
+  * treat .ddeb files like .deb, especially for dpkg (LP: #1616909)
+  * randomize acquire order for same type index files
+  * don't loop on pinning pkgs from absolute debs by regex (Closes: 835818)
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 30 Aug 2016 22:20:28 +0200
+
+apt (1.3~rc2) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * debian/NEWS: Get rid of 1.3~pre3+cmake1 entry.
+    Thanks to Axel Beckert for reporting
+  * CMake: Use COPYONLY instead of @ONLY
+  * fileutl: empty file support: Avoid fstat() on -1 fd and check result
+  * Change anonscm.d.o links to /git/apt/apt.git and https
+
+  [ David Kalnischkies ]
+  * don't perform int<float in progress bar drawing
+  * ensure a good clock() value for usage and tests
+  * drop incorrect const attribute from DirectoryExists (LP: 1473674)
+  * http(s): allow empty values for header fields (Closes: 834048)
+  * don't sent Range requests if we know its not accepted
+  * don't try pipelining if server closes connections (Closes: #832113)
+  * log with the failed item description, not with next try
+  * retry without same redirection mirror on 404 errors
+  * support getting only-uncompressed files via by-hash
+  * support compression and by-hash for .diff/Index files (Closes: #824926)
+  * default to Dir=/ in dpkg/status file finding magic
+  * add the gpg-classic variant to the gpgv/gnupg or-group
+  * allow spaces in fingerprints for 'apt-key del'
+  * add --with-source option and Packages/Sources support
+  * don't count each Type as an individual deb822-sources stanza
+  * methods: read config in most to least specific order (Closes: 834642)
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 17 Aug 2016 23:31:07 +0200
+
+apt (1.3~rc1) unstable; urgency=medium
+
+  * Summary: CMake branch merged, socks5h (and tor) support, and fancy
+    installation ordering changes.
+
+  [ Julian Andres Klode ]
+  * Handle interrupt when running Pre-Install hooks (Closes: #832593)
+  * CMake: po: Add mirror method
+  * CMake: Translations: Add support for shell scripts
+  * debian: make autopkgtest run with CMake build dir
+  * CMake: Bump minimum required version to 3.4.0
+  * CMake: Check for ptsname_r() again (Closes: #833674)
+  * CMake: Rewrite existing Documentation support and add doxygen
+  * apt-private: Do not include apti18n.h in headers
+  * Get rid of the old buildsystem
+  * Fix some indentation issues in README.md
+
+  [ David Kalnischkies ]
+  * pass --force-remove-essential to dpkg only if needed
+  * use dpkg --unpack --recursive to avoid long cmdlines
+  * save and restore selection states before/after calling dpkg
+  * select remove/purge packages early on for dpkg
+  * call dpkg with --no-triggers by default (Closes: #626599)
+  * don't purge directly, but remove and do purge at the end
+  * ensure all configures are reported to hook scripts
+  * ensure all removes are reported to hook scripts
+  * support all socks-proxy known to curl in https method
+  * suggest transport-packages based on established namescheme
+  * fail on unsupported http/https proxy settings (Closes: #623443)
+  * detect redirection loops in acquire instead of workers
+  * use the same redirection handling for http and https
+  * implement generic config fallback for methods
+  * implement socks5h proxy support for http method (Closes: 744934)
+  * allow methods to be disabled and redirected via config
+  * allow user@host (aka: no password) in URI parsing
+  * try to avoid removal of crossgraded packages
+  * simulate all package manager actions explicitly
+  * disable explicit configuration of all packages at the end
+  * block direct connections to .onion domains (RFC7687)
+  * http: auto-configure for local Tor proxy if called as 'tor'
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 11 Aug 2016 14:10:22 +0200
+
+apt (1.3~pre3+cmake2) experimental; urgency=medium
+
+  * Build-depend on pkg-config
+
+ -- Julian Andres Klode <jak@debian.org>  Sat, 06 Aug 2016 23:18:37 +0200
+
+apt (1.3~pre3+cmake1) experimental; urgency=medium
+
+  [ Julian Andres Klode ]
+  * configure.ac: Re-enable pthread support for thread-local _error
+  * CMake: Add basic CMake build system
+  * CMake: Add support for building and installing .mo files
+  * CMake: Add initial support for documentation building
+  * CMake: Switch integration tests and travis over
+  * CMake: debian: Switch packaging over to CMake and dh 9
+
+  [ Jason Travis ]
+  * doc: update path to periodic options script
+
+ -- Julian Andres Klode <jak@debian.org>  Sat, 06 Aug 2016 22:37:30 +0200
+
+apt (1.3~pre3) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * ExecGPGV: Fork in all cases
+  * ExecGPGV: Pass current config state to apt-key via temp file (LP: #1607283)
+
+  [ David Kalnischkies ]
+  * tests: activate dpkg multi-arch even if test is single arch
+  * ensure Cnf::FindFile doesn't return files below /dev/null
+  * don't hardcode /var/lib/dpkg/status as dir::state::status
+  * allow arch=all to override No-Support-for-Architecture-all
+  * support "install ./foo.changes"
+  * clean up default-stanzas from extended_states on write
+  * report warnings&errors consistently in edit-sources
+  * create non-existent files in edit-sources with 644 instead of 640
+  * report progress for removing while purging pkgs
+  * use a configurable location for apport report storage
+  * report progress for triggered actions
+  * call flush on the wrapped writebuffered FileFd
+  * verify hash of input file in rred
+  * use proper warning for automatic pipeline disable
+  * http: skip requesting if pipeline is full
+  * rred: truncate result file before writing to it (Closes: #831762)
+  * eipp: avoid producing file warnings in simulation (Closes: 832614)
+  * if the FileFd failed already following calls should fail, too
+  * edsp: try to read responses even if writing failed
+  * prevent C++ locale number formatting in text APIs (try 2) (Closes: 832044)
+  * apt-key: kill gpg-agent explicitly in cleanup
+
+  [ Mert Dirik ]
+  * Turkish program translation update (Closes: 832039)
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 04 Aug 2016 10:23:49 +0200
+
+apt (1.3~pre2) unstable; urgency=medium
+
+  [ Andrew Patterson ]
+  * Add kernels with "+" in the package name to APT::NeverAutoRemove
+    (Closes: #830159)
+
+  [ David Kalnischkies ]
+  * add Testsuite-Triggers to tagfile-order
+  * tests: fix external solver/planner directory setup
+
+ -- Julian Andres Klode <jak@debian.org>  Fri, 08 Jul 2016 14:28:57 +0200
+
+apt (1.3~pre1) unstable; urgency=medium
+
+  Upload to unstable from the pub because Niels wanted it
+
+  [ David Kalnischkies ]
+  * show right binary name in simulation notice (Closes: 825216)
+  * imbue datetime parsing with C.UTF-8 locale (Closes: 828011)
+  * imbue .diff/Index parsing with C.UTF-8 as well
+  * close server if parsing of header field failed
+  * add myself to Uploaders
+  * eipp: implement version 0.1 of the protocol
+  * eipp: provide the internal planer as an external one
+  * eipp: make no difference between remove & purge
+  * eipp: properly handle arch-specific provides
+  * eipp: implement Immediate-Configuration flag
+  * eipp: add Allow-Temporary-Remove-of-Essentials
+  * eipp: rename stanza 'Install' to 'Unpack'
+  * eipp: enable xz-compressed scenario logging
+  * if conf unset, don't read / as conf/pref/sources dir
+  * don't do atomic overrides with failed files (Closes: 828908)
+  * if reading of autobit state failed, let write fail
+  * write auto-bits before calling dpkg & again after if needed
+  * protect only the latest same-source providers from autoremove
+  * reinstalling local deb file is no downgrade
+  * do not treat same-version local debs as downgrade
+  * alias apt-key list to finger (Closes: 829232)
+  * warn if apt-key is used in scripts/its output parsed
+  * deprecate 'apt-key update' and no-op it in Debian
+  * use +0000 instead of UTC by default as timezone in output
+  * avoid 416 response teardown binding to null pointer
+  * report write errors in EDSP/EIPP properly back to caller
+  * EIPP/EDSP log can't be written is a warning, not an error
+  * don't change owner/perms/times through file:// symlinks
+  * report all instead of first error up the acquire chain
+  * keep trying with next if connection to a SRV host failed
+
+  [ Zhou Mo ]
+  * zh_CN.po: update simplified chinese translation
+
+  [ Julian Andres Klode ]
+  * methods/ftp: Cope with weird PASV responses.
+    Thanks to Lukasz Stelmach for the initial patch (Closes: #420940)
+  * Fix buffer overflow in debListParser::VersionHash() (Closes: #828812)
+  * cache: Bump minor version to 6
+  * indextargets: Check that cache could be built before using it
+    (Closes: #829651)
+
+  [ Nicolas Le Cam ]
+  * Use the ConditionACPower feature of systemd in the apt-daily service
+    (Closes: #827930)
+  * Add a apt suggests powermgmt-base
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 07 Jul 2016 20:25:18 +0200
+
+apt (1.3~exp3) experimental; urgency=medium
+
+  [ Petter Reinholdtsen ]
+  * Norwegian Bokmål program translation update (Closes: 827067)
+
+  [ David Kalnischkies ]
+  * apt-key: don't search PATH if command is a path already
+  * don't use FindFile for external Dir::Bin commands
+  * http: don't hang on redirect with length + connection close
+  * merge sources.list lines based on Release filename (Closes: 826944)
+  * avoid std::get_time usage to sidestep libstdc++6 bug (LP: 1593583)
+  * do not error if auto-detect-proxy cmd has no output (Closes: 827713)
+  * implement and document DIRECT for auto-detect-proxy
+  * run update post-invokes even on (partial) failures
+  * handle weak-security repositories as unauthenticated (Closes: 827364)
+  * generalize secure->insecure downgrade protection
+  * forbid insecure repositories by default expect in apt-get (Closes: 808367)
+  * source: if download is skipped, don't try to unpack
+  * better error message for insufficient hashsums (Closes: 827758)
+  * add [weak] tag to hash errors to indicate insufficiency
+  * ensure filesize of deb is included in the hashes list
+  * add insecure (and weak) allow-options for sources.list
+
+  [ Dominic Benson ]
+  * Reinstate caching of file hashes in apt-ftparchive (Closes: #806924)
+
+  [ Zhou Mo ]
+  * zh_CN.po: update simplified chinese translation
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 22 Jun 2016 14:50:12 +0200
+
+apt (1.3~exp2) experimental; urgency=medium
+
+  [ Johannes 'josch' Schauer ]
+  * edsp: document unique package identifiers
+
+  [ David Kalnischkies ]
+  * edsp: warn if unexpected stanzas appear in the solution
+  * show globalerrors before asking for confirmation
+  * show final solution in --no-download --fix-missing mode
+  * document --no- as --show-upgraded is the default (Closes: 824456)
+  * fail instead of segfault on unreadable config files (Closes: 824503)
+  * convert EDSP to be based on FileFd instead of FILE*
+  * edsp: dump: support dumping into compressed file
+  * edsp: add Forbid-{New-Install,Remove} and Upgrade-All
+  * update symbols file
+  * no-change bump of Standards-Version to 3.9.8
+  * override lintian on doxygens embedded-javascript-library
+  * fix and document on the fly compressor config
+  * prevent C++ locale number formatting in text APIs (Closes: #825396)
+  * accept only the expected UTC timezones in date parsing (Closes: 819697)
+  * avoid changing the global LC_TIME for Release writing
+  * use de-localed std::put_time instead rolling our own
+  * use std::locale::global instead of setlocale
+  * look into the right textdomain for apt-utils again
+  * try to detect sudo spawned root-shell in prefixing (Closes: 825742)
+  * ignore std::locale exception on non-existent "" locale
+  * apt-key: change to / before find to satisfy its CWD needs.
+    Thanks to Samuel Thibault for 'finding' the culprit! (Closes: 826043)
+  * edsp: use an ID mapping for the internal solver
+  * edsp: use a stanza based interface for solution writing
+  * edsp: optionally store a compressed copy of the last scenario
+  * move 'dump' solver from apt-utils to apt package
+  * edsp: if internal is used, keep this decision
+  * edsp: if logging is requested, do it for internal, too
+  * edsp: drop privileges before executing solvers
+  * don't explicitly configure the last round of packages
+  * drop Dpkg::MaxArgs in favor of Dpkg::MaxArgsBytes
+  * do not hang on piped input in PipedFileFdPrivate
+  * don't leak an FD in lz4 (de)compression
+  * don't leak EDSP solver output fd
+  * don't leak FD in AutoProxyDetect command return parsing
+
+  [ Julian Andres Klode ]
+  * Provide complete apt bash completion.
+    Thanks to Elias Fröhner and Svyatoslav Gryaznov for the initial work
+    (LP: #1573547)
+  * apt.systemd.daily: Put opening brace of check_power on extra line
+    (LP: #1581985)
+  * Add conflicting Signed-By values to error message
+  * Normalize Signed-By values by removing trailing commas everywhere
+  * Pass -fvisibility-inlines-hidden to g++
+
+  [ Zhou Mo ]
+  * zh_CN.po: update simplified Chinese translation.
+
+  [ Yuri Kozlov ]
+  * Russian program translation update (Closes: 824702)
+
+  [ Takuma Yamada ]
+  * Japanese program translation update (Closes: 826291)
+
+ -- Julian Andres Klode <jak@debian.org>  Sat, 11 Jun 2016 17:23:19 +0200
+
+apt (1.3~exp1) experimental; urgency=medium
+
+  [ David Kalnischkies ]
+  * make random acquire queues work less random
+  * add dep11 files to default Release patterns
+  * don't ask server if we have entire file in partial/
+  * properly format multiline error messages
+  * format multiline errors properly in acquire progress
+  * show more details for "Hash Sum mismatch" errors
+  * show more details for "Writing more data" errors, too
+  * use the same redirection mirror for all index files
+  * edsp: ask policy engine for the pin of the version directly
+  * give rc-status packages a pin of -1
+  * respect user pinning in M-A:same version (un)screwing
+  * deprecate confusing Pkg.CandVersion() method
+  * factor out Pkg/DepIterator prettyprinters into own header
+  * gpgv: use EXPKEYSIG instead of KEYEXPIRED
+  * gpgv: handle expired sig as worthless
+  * don't show NO_PUBKEY warning if repo is signed by another key
+    (Closes: 618445)
+  * support multiple fingerprints in signed-by
+  * support Signed-By in Release files as a sort of HPKP
+  * bugscript: include all configuration fragment files (Closes: 820861)
+  * move gnupg|gnupg2 from apt Depends to Recommends
+  * warn if apt-key is run unconditionally in maintainerscript
+  * remove 100-levels config nesting limit
+  * let DPKG_COLORS default to our APT::Color setting
+  * allow redirection for items without a space in the desc again
+  * delay progress until Release files are downloaded
+  * download arch:all also for NATIVE_ARCHITECTURE indextargets
+  * implement Fallback-Of for IndexTargets
+  * implement Identifier field for IndexTargets
+  * gpgv: show always webportal error on NODATA (Closes: 823746)
+  * don't sent uninstallable rc-only versions via EDSP
+  * edsp: support generic and solver-specific configs (Closes: 823918)
+
+  [ Julian Andres Klode ]
+  * policy: Get rid of old (pre-1.1) GetCandidateVer algorithm
+  * private-show: Get rid of old policy support code
+  * ftparchive: Support writing Signed-By fields
+  * Strip trailing commas for created signed-by fingerprint lists
+  * update: Run Post-Invoke-Success if not all sources failed
+
+  [ Patrick Cable ]
+  * refactored no_proxy code to work regardless of where https proxy is set
+
+  [ James McCoy ]
+  * deb822: Restore support for <multivalue>-{Add,Remove}
+
+  [ Zhou Mo ]
+  * zh_TW.po: remove several fuzzy tags after review
+
+  [ Adrian Wielgosik ]
+  * Don't copy strings in Startswith, Endswith
+  * Speed up GetLocalitySortedVersionSet.
+
+  [ Frans Spiesschaert ]
+  * Dutch program translation update (Closes: 823976)
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 11 May 2016 10:48:27 +0200
+
+apt (1.2.11) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * ensure transaction states are changed only once
+  * stop handling items in doomed transactions.
+    Thanks to Barr Detwix & Vincent Lefevre for log files (Closes: 817240)
+  * do not require non-broken systems in 'upgrade'
+  * detect compressed status files on extension again
+  * recheck Pre-Depends satisfaction in SmartConfigure (LP: #1569099)
+  * fix Alt-Filename handling of file method
+  * allow uncompressed files to be empty in store again
+  * silently skip acquire of empty index files
+  * ensure outdated files are dropped without lists-cleanup
+
+  [ Kelemen Gábor ]
+  * Hungarian program translation update (Closes: 820638)
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 25 Apr 2016 15:23:49 +0200
+
+apt (1.2.10) unstable; urgency=medium
+
+  [ Zhou Mo ]
+  * zh_CN.po: update simplified Chinese translation. (100%)
+
+  [ Julian Andres Klode ]
+  * test-apt-download-progress: Use a larger file for testing
+  * Allow lowering trust level of a hash via config
+
+  [ Michael Vogt ]
+  * Use systemd.timer instead of a cron job (Closes: #600262, #709675, #663290)
+    (LP: #246381, #727685)
+
+  [ David Kalnischkies ]
+  * use buffered writing for InRelease splitting
+
+  [ Takuma Yamada ]
+  * Japanese program translation update (Closes: 819938)
+
+ -- Michael Vogt <mvo@debian.org>  Tue, 05 Apr 2016 20:23:47 +0200
+
+apt (1.2.9) unstable; urgency=high
+
+  [ David Kalnischkies ]
+  * drop confusing comma from no strong hash message
+
+  [ Julian Andres Klode ]
+  * Do not mark packages for keep that we want to remove (LP: #1562402)
+    (This fixes some upgrades involving renames where the old package
+     is removed)
+
+ -- Julian Andres Klode <jak@debian.org>  Sun, 27 Mar 2016 01:26:51 +0100
+
+apt (1.2.8) unstable; urgency=medium
+
+  [ Michael Vogt ]
+  * Get accurate progress reporting in apt update again
+
+  [ Julian Andres Klode ]
+  * Report non-transient errors as errors, not as warnings
+  * methods/gpgv: Rewrite error handling and message.
+    Thanks to Ron Lee for wording suggestions
+  * Use descriptive URIs in 104 Warning messages
+  * cachefile: Only set members that were initialized successfully
+    (Closes: #818628)
+  * Update symbols file
+
+  [ David Kalnischkies ]
+  * do not strip epochs from state version strings (Closes: 818162)
+  * properly check for "all good sigs are weak" (Closes: 818910)
+  * handle gpgv's weak-digests ERRSIG
+
+  [ Zhou Mo ]
+  * zh_CN.po: update simplified Chinese translation. (Closes: #818639)
+
+  [ Takuma Yamada ]
+  * Japanese manpage translation update (Closes: 818950)
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 24 Mar 2016 19:31:24 +0100
+
+apt (1.2.7) unstable; urgency=medium
+
+  "Caesar is dead"
+
+  [ Frans Spiesschaert ]
+  * Dutch program translation update (Closes: 817060)
+  * Dutch manpages translation update (Closes: 817062)
+
+  [ Julian Andres Klode ]
+  * Use native architecture instead of amd64 for build-dep-purge test
+  * Do not consider SHA1 usable
+  * Test that SHA1-only .diff/Index files are not used
+  * test: Use SHA512 digests for GPG, reject SHA1-based signatures
+  * methods/gpgv: Reject weak digest algorithms
+  * apt-pkg/acquire-worker.cc: Introduce 104 Warning message
+  * methods/gpgv: Warn about SHA1 (and RIPEMD-160)
+
+  [ David Kalnischkies ]
+  * require $(HASH)-Download field in .diff/Index files
+  * flush line-clearing on progress stop before post-invoke (Closes: 793672)
+  * enforce verify of filesize in 'apt-get source'
+
+  [ Manuel "Venturi" Porras Peralta ]
+  * Spanish apt-mark translation fix (Closes: 817999)
+
+  [ Zhou Mo ]
+  * zh_CN.po: fix translation bug. (Closes: #818177)
+
+  [ Michael Vogt ]
+  * Fix bug where the problemresolve can put a pkg into a heisenstate
+    (LP: #1550741)
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 15 Mar 2016 19:20:18 +0100
+
+apt (1.2.6) unstable; urgency=high
+
+  [ Veres Lajos ]
+  * Fix several typos
+
+  [ Julian Andres Klode ]
+  * apt-pkg/algorithms.cc: Avoid stack buffer overflow in KillList
+    (Closes: #701069)
+  * urgency=high because this fixes a stack overflow and the last
+    upload fixed several segfaults and has not migrated yet either.
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 07 Mar 2016 19:49:38 +0100
+
+apt (1.2.5) unstable; urgency=medium
+
+  [ Daniel Kahn Gillmor ]
+  * apt-key del should correctly handle keyids prefixed with 0x
+
+  [ David Kalnischkies ]
+  * support APT::Get::Build-Dep-Automatic again in build-dep
+  * add test for apt-key 0xKEY and use parameter expansion.
+    Thanks to James McCoy for the suggestion. (Closes: 816691)
+  * do not move not-failed pdiff-patches into CWD on failure (Closes: #816837)
+  * get group again after potential remap in Source: parse.
+    Thanks to Francesco Poli and Marc Haber for testdata. (Closes: 812251)
+
+  [ Colin Watson ]
+  * Fix lzma write support to handle "try again" case (Closes: #751688)
+
+  [ Julian Andres Klode ]
+  * Prevent double remapping of iterators and string views
+  * debian/control: Set Standards-Version to 3.9.7
+
+ -- Julian Andres Klode <jak@debian.org>  Sun, 06 Mar 2016 19:47:45 +0100
+
+apt (1.2.4) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * use local changelog from /usr/share/doc if possible
+  * always download changelogs into /tmp first
+  * pass versioned provides to external solvers in EDSP
+
+  [ Julian Andres Klode ]
+  * Fix maintscript to properly remove 20changelog (Closes: #814754)
+  * Fix crash with empty architecture list (LP: #1549819)
+  * Add missing numeric includes in files using std::accumulate()
+
+ -- Julian Andres Klode <jak@debian.org>  Sat, 27 Feb 2016 14:02:47 +0100
+
+apt (1.2.3) unstable; urgency=high
+
+  [ Julian Andres Klode ]
+  * Set seekpos to 0 after reopening files in Seek() (Closes: #812994, #813000)
+
+  [ David Kalnischkies ]
+  * get dpkg lock in build-dep if cache was invalid again (Closes: 814139)
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 10 Feb 2016 18:02:20 +0100
+
+apt (1.2.2) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * always create pkg at the time pkg:arch is created
+  * reimplement build-dep via apts normal resolver
+    (Closes: #137560, #444930, #489911, #583914, #728317, #812173)
+  * parse version correctly from binary Source field (Closes: 812492)
+  * get sources for packages in multiple releases again (Closes: 812497)
+  * only warn about missing/invalid Date field for now (Closes: 809329)
+  * support <libc>-<kernel>-<cpu> in architecture specs.
+    Thanks to Bálint Réczey for initial patch (Closes: #812212)
+  * avoid building dependency tree in 'source' command
+
+  [ Stefan Bühler ]
+  * fix "Mismatched free() / delete / delete []" in simple_buffer
+
+  [ Julian Andres Klode ]
+  * Do not buffer writes larger than the buffer if possible
+  * Drop the g++ build-dep, transition is done
+  * NEWS: Prefix the keep deb option with Binary::apt:: (Closes: #812111)
+  * rred: If there were I/O errors, fail
+  * Correctly report write errors when flushing buffered writer
+  * test: Fix apt-key tests to work with current gpg 2.1
+
+  [ Manuel "Venturi" Porras Peralta ]
+  * Spanish program translation update (Closes: 813467)
+
+  [ Adrian Wielgosik ]
+  * Try avoiding loading long package description
+  * Avoid temporary strings in SubstVar.
+
+  [ Fredrik Fornwall ]
+  * edspsystem.cc: include <stdlib.h> for mkdtemp (Closes: #807367)
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 04 Feb 2016 22:50:43 +0100
+
+apt (1.2.1) unstable; urgency=high
+
+  [ Zhou Mo ]
+  * po: update zh_CN programs translation
+
+  [ Julian Andres Klode ]
+  * Remap StringView instances pointing into the cache (Closes: #812251)
+
+  [ Michael Vogt ]
+  * Log calling SUDO_USER or PKEXEC_UID in history.log.
+    Thanks to Thomas Reusch
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 25 Jan 2016 18:03:50 +0100
+
+apt (1.2) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Do not break apt-file (<< 3.0~exp1~), 2.X works fine
+  * Version the build-depends on liblz4-dev to >= 0.0~r126
+  * search: Handle packages without description (Closes: #810622)
+  * Only enable pipelining if server is HTTP/1.1 (Closes: #810796)
+
+  [ Mattia Rizzolo ]
+  * Sort the list of sources to be built and linked (Closes: #810509)
+
+  [ Michael Vogt ]
+  * Do not show multiple identical apt-cache showsrc entries (Closes: #734922)
+
+  [ David Kalnischkies ]
+  * evaluate sourceslist-list-format entity in vendors sources.list.
+    Thanks to Niels Thykier for reporting on IRC
+  * update symbols file
+  * fix M-A:foreign provides creation for unknown archs
+  * revert file-hash based action-merging in acquire (Closes: 810046)
+  * return correct position in APT::StringView::(r)find
+
+  [ Zhou Mo ]
+  * po: update simplified chinese programs translation
+
+ -- Julian Andres Klode <jak@debian.org>  Fri, 15 Jan 2016 19:52:19 +0100
+
+apt (1.2~exp1) experimental; urgency=medium
+
+  [ Beatrice Torracca ]
+  * Italian manpages translation update (Closes: 809522)
+
+  [ David Kalnischkies ]
+  * add optional support for comments in pkgTagFile
+  * support comments in debian/control parsing (Closes: 806775)
+  * properly parse comments in apt_preferences and deb822-style sources
+  * include all compressed Packages/Sources files in Release file
+  * use one 'store' method to rule all (de)compressors
+  * ensure compression cleanup even without lists-cleanup
+  * allow pdiff bootstrap from all supported compressors
+  * keep compressed indexes in a low-cost format
+  * support '-' and no parameter for stdin in apt-helper cat-file
+  * tests: limit autotest-functionname generation to sane characters
+  * use filesize of compressed pdiffs for the limit if possible
+  * remove uncompressed leftover partial file before pdiff bootstrap
+
+  [ Michael Vogt ]
+  * Add support for APT::Periodic::CleanInterval.
+    Thanks to Martin-Éric Racine
+  * Add bash-completion support for the "apt" command (Closes: #747094)
+  * Add new APT::Keep-Downloaded-Packages option (Closes: #160743)
+
+  [ Julian Andres Klode ]
+  * Change compressor costs to be 100 apart
+  * apt-cache: stats: Average is over used, not all, buckets
+  * Increase APT::Cache-HashTableSize default to 50503
+  * travis: pull liblz4-dev from wily
+  * FileFd: (native) LZ4 support
+  * apt-helper: cat-file: Add -C/--compress option
+  * CopyFile: Use 64 * 1024 instead of 64000 as buffer size
+  * acquire: Allow parallelizing methods without hosts
+  * rred: Run in parallel
+  * Introduce internal APT::StringView class
+  * Switch performance critical code to use APT::StringView
+  * pkgCacheGenerator::StoreString: Get rid of std::string
+  * pkgCacheGenerator: CurMd5.Value() cannot be empty
+  * AvailableDescriptionLanguages: Use one string for all iterations
+  * NEWS: Document recompression of indices
+  * Store the size of strings in the cache
+  * libapt-pkg5.0: Add Breaks appstream (<< 0.9.0-3~)
+
+  [ Helmut Grohne ]
+  * Allow building without libgtest-dev under <nocheck> build profile
+    (Closes: #809726)
+
+ -- Julian Andres Klode <jak@debian.org>  Fri, 08 Jan 2016 21:41:10 +0100
+
+apt (1.1.10) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * deal with empty values properly in deb822 parser (Closes: 808102)
+
+  [ Beatrice Torracca ]
+  * fix 3 typos/omissions in apt.conf(5) (Closes: 809160)
+
+  [ Julian Andres Klode ]
+  * BufferedWriter: flushing: Check for written < size instead of <=
+  * aptconfiguration: Set default compression level to 6
+  * BufferedFileFdPrivate: Make InternalFlush() save against errors
+  * Switch to DJB hashing and use prime number as table size
+  * Turn tolower_ascii() and isspace_ascii() into inline functions
+  * Fix test case that was broken by switch of hash function
+  * pkgTagSection::Scan: Fix read of uninitialized value
+  * pkgCacheGenerator: Allow passing down an already created cache
+  * Add support for calculating hashes over the entire cache
+  * Do not sync the cache file
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 30 Dec 2015 00:40:53 +0100
+
+apt (1.1.9) unstable; urgency=medium
+
+  Highlights: buffered rred writes and slightly faster cache generation (~10%)
+
+  [ Julian Andres Klode ]
+  * Introduce isspace_ascii() for use by parsers
+  * Convert most callers of isspace() to isspace_ascii()
+  * pkgcachegen: Use std::unordered_map instead of std::map
+  * debListParser: ParseDepends: Only query native arch if needed
+  * debListParser: Do not validate Description-md5 for correctness twice
+  * ParseDepends: Mark branches for build-dep parsing as unlikely
+  * rred: Only call pkgInitConfig() in test mode
+  * FileFdPrivate: Add getter and setter for fields
+  * FildFd: Introduce a Flush() function and call it from Close()
+  * FileFd: Add a buffered writing mode
+  * rred: Use buffered writes
+  * pkgcachegen.h: Hack around unordered_map not existing before C++11
+  * doc/acquire-additional-files.txt: Mention apt-helper cat-file
+
+  [ Niels Thykier ]
+  * Hex2Digit: Do not use isxdigit()
+
+  [ David Kalnischkies ]
+  * allow repositories to forbid arch:all for specific index targets
+
+ -- Julian Andres Klode <jak@debian.org>  Sun, 27 Dec 2015 19:16:36 +0100
+
+apt (1.1.8) unstable; urgency=medium
+
+  * apt-helper: Add a cat-file command for concatening files
+  * Change InternalReadLine to always use buffer.read() return value
+
+ -- Julian Andres Klode <jak@debian.org>  Sat, 26 Dec 2015 23:23:02 +0100
+
+apt (1.1.7) unstable; urgency=medium
+
+  The real "speed up rred for uncompressed files" release
+
+  * Use a hardcoded buffer size of 4096 to fix performance
+  * rred: Allow passing files as arguments for compressor testing
+  * Get rid of memmove() in our read buffering
+
+ -- Julian Andres Klode <jak@debian.org>  Sat, 26 Dec 2015 19:10:14 +0100
+
+apt (1.1.6) unstable; urgency=medium
+
+  Merry Christmas from the APT Team
+
+  [ Pino Toscano ]
+  * Fix FileUtlTest.GetTempDir failure when run as root (Closes: #808383)
+  * CopyFile: fix BufSize to a sane value (Closes: #808381)
+  * CopyFile: avoid failing on EOF on some systems (Closes: #808381)
+
+  [ Julian Andres Klode ]
+  * Do nothing in FileFd::Write() if Size is 0 (Closes: #808381)
+
+  [ David Kalnischkies ]
+  * avoid evaluating shell in paths used in apt-key
+  * avoid triggering gpg2 migration in apt-key
+  * follow dpkg and xz and use CRC64 for xz compression
+  * parse xz-compression level from configuration
+  * implement a buffer system for FileFd::ReadLine (Closes: 808579)
+  * ensure we got a lock in clean operation (Closes: 808561)
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 24 Dec 2015 17:01:49 +0100
+
+apt (1.1.5) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Do not swap required and important in pkgCache::Priority()
+    Thanks to Manuel A. Fernandez Montecelo for discovering this
+    (Closes: #807523)
+  * Convert package names from Packages files to lower case (Closes: #807012)
+  * test framework: Correctly generate new paths in noopchroot
+  * debian/apt.auto-removal.sh: Adjust -dbg exclusion for multi-arch
+  * pkgcache: Make hash arch-independent using fixed size integer
+  * test-apt-download-progress: Run the https test multiple times
+
+  [ David Kalnischkies ]
+  * update symbols files to 1.1.4 state of affairs
+  * parse .diff/Index hashes in reverse order
+  * redirect which stderr to /dev/null for consistency (Closes: 807373)
+  * show a more descriptive error for weak Release files (Closes: 806459)
+  * support regex and co in 'apt-cache policy $pkg' again (Closes: 807870)
+  * non-existing directories don't need to be cleaned (Closes: 807477)
+
+  [ Seo Sanghyeon ]
+  * fix incorrect Korean translation of "manually" and "automatically"
+
+  [ Andreas Metzler ]
+  * mention APT::AutoRemove::{Recommends,Suggests}Important option
+    (Closes: 807413)
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 14 Dec 2015 16:56:11 +0100
+
+apt (1.1.4) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * defaults.mak: Set LC_COLLATE=C.UTF-8 for reproducible sort order
+  * Avoid overflow when summing up file sizes
+
+  [ David Kalnischkies ]
+  * add a apt breaks (apt-utils << 1.1.3) for partial-upgrades (Closes: 806765)
+  * require explicit paths to dsc/control as we do for deb files
+    (Closes: 806693)
+  * use @CHANGEPATH@ as placeholder in changelog URI templates
+  * replace "which" with "command -v" for portability.
+    Thanks to Mingye Wang for the suggestion. (Closes: 807144)
+  * replace run-parts with find|sort to avoid debianutils usage
+  * part revert, part redo 'which' replacement.
+    Thanks to Jakub Wilk for pointing out #747320
+
+  [ Fredrik Fornwall ]
+  * apt-helper.cc: include <stdlib.h> for atoi (Closes: 807031)
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 07 Dec 2015 15:31:31 +0100
+
+apt (1.1.3) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * use function pointers instead of weak symbols for cmdline parsing
+  * accept ../ on the cmdline as start for a deb file as well
+  * add apt-utils Depends apt (= ${binary:Version})
+
+  [ Andreas Cadhalpun ]
+  * do not override exact targetrelease matches with lesser matches
+    (Closes: 746412)
+
+ -- Michael Vogt <mvo@debian.org>  Mon, 30 Nov 2015 08:49:40 +0100
+
+apt (1.1.2) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * outsmart gcc -O3 over-optimization in pkgCdrom::FindPackages
+  * disable privilege-drop verification by default as fakeroot trips over it
+    (Closes: 806475)
+  * fix program name detection in rsh method
+  * disable privilege dropping for rsh/ssh method by default (Closes: 806511)
+
+  [ Michael Vogt ]
+  * do not use "-Wl,-Bsymbolic-functions" during the build to avoid breakage
+
+ -- Julian Andres Klode <jak@debian.org>  Sat, 28 Nov 2015 22:47:40 +0100
+
+apt (1.1.1) unstable; urgency=medium
+
+  [ Michael Vogt ]
+  * Deal with killed acquire methods properly instead of hanging
+    (Closes: #806406)
+  * Check if the Apt::Sandbox::User exists in CheckDropPrivsMustBeDisabled()
+    (Closes: #806406)
+
+  [ David Kalnischkies ]
+  * appease adequate with some weak symbols for -private (Closes: #806422)
+
+ -- Michael Vogt <mvo@debian.org>  Fri, 27 Nov 2015 16:04:59 +0100
+
+apt (1.1) unstable; urgency=medium
+
+  [ Justin B Rye ]
+  * review apt(8) manpage
+  * review apt-mark(8) manpage
+  * review apt-secure(8) manpage
+  * review sources.list(5) manpage
+
+  [ Michael Vogt ]
+  * upload ABI break version from experimental to unstable
+
+ -- Michael Vogt <mvo@debian.org>  Thu, 26 Nov 2015 12:33:44 +0100
+
+apt (1.1~exp16) experimental; urgency=medium
+
+  [ David Kalnischkies ]
+  * do not use _apt for file/copy sources if it isn't world-accessible
+    (Closes: 805069)
+  * support setting empty values (sanely) & removing support
+    for space-gapping: '-o option= value'
+    Thanks to Daniel Hartwig for initial patch. (Closes: 693092)
+  * ignore lost+found in private directory cleanup (Closes: 805424)
+  * update libapt-{pkg,inst} symbols files
+  * do not rerun ./configure causing FTCBFS with newer autotools-dev.
+    Thanks to Helmut Grohne for the detailed bugreport. (Closes: 804923)
+  * do not segfault in cache generation on mmap failure (Closes: 803417)
+  * do not sent Last-Modified if we expect a changed file
+  * show potentially arch-qualified fullname in 'apt show'
+
+  [ Frans Spiesschaert ]
+  * Dutch manpages translation (NEW) (Closes: 805474)
+
+  [ Justin B Rye ]
+  * review of new/changed translatable program strings
+
+ -- Michael Vogt <mvo@debian.org>  Tue, 24 Nov 2015 21:29:14 +0100
+
+apt (1.1~exp15) experimental; urgency=medium
+
+  [ Julian Andres Klode ]
+  * deblistparser: Make PrioList const
+  * srvrec: Do not expose C++11 tuple use in header
+  * cacheset: Fix compilation on new GCC in C++98 mode
+  * Provide tests for thread-safety
+
+  [ Mert Dirik ]
+  * Turkish program translation update (Closes: 802610)
+
+  [ David Kalnischkies ]
+  * implement a public pkgSystem::MultiArchSupported
+  * implement a public pkgSystem::ArchitecturesSupported
+  * implement operator* for cacheset iterators
+  * refactor dpkg execution in deb/debsystem
+  * provide public interface to hold/unhold packages
+  * allow all dpkg selections to be set via apt-mark and libapt
+  * drop privileges in file:// method as we do for decompressors
+  * unbreak the copy-method claiming hashsum mismatch since ~exp9
+    (Closes: 799158)
+  * show progress info while 'downloading' a local .deb file
+  * support .deb files in upgrade operations as well
+  * rework errors and warnings around insecure repositories (Closes: 796549)
+  * refer to apt-secure(8) in unsecure repositories warning
+  * suggest 'apt autoremove' to get right of unneeded packages (Closes: 801571)
+  * add binary-specific options via Binary scope
+  * revamp apt(8) to refer more instead of duplicating
+  * disable updating insecure repositories in apt by default
+  * new quiet level -qq for apt to hide progress output
+  * hidden support more apt-get/apt-cache commands in apt
+    (Closes: 778234, 780700, 781237)
+  * show version and type in "apt (r)depends" (Closes: 218995)
+  * revamp all tools help messages
+  * sanify API to get 'the' candidate version (Closes: #803471)
+  * support arch:all data e.g. in separate Packages file
+  * ignore newlines in dpkg-deb control output for installing debs
+    (Closes: 802553)
+  * allow acquire method specific options via Binary scope
+  * encode UTF-8 characters correctly in QuoteString (Closes: 799123)
+  * activate AI_IDN by default to support IDN domains (Closes: 763437)
+
+ -- Michael Vogt <mvo@debian.org>  Wed, 11 Nov 2015 17:04:43 +0100
+
+apt (1.1~exp14) experimental; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Revert "Fix select timeout to be 50msec instead of 0.5msec" for acquire
+  * .travis.yml: Add pinned vivid for gettext and clean up a bit
+  * Allow -i and -u as aliases for installed and upgradable in list
+
+ -- Michael Vogt <mvo@debian.org>  Tue, 20 Oct 2015 18:25:04 +0200
+
+apt (1.1~exp13) experimental; urgency=medium
 
   [ Michael Vogt ]
   * Use xgettext --no-location in make update-pot
+  * Fix select timeout to be 50msec instead of 0.5msec (Closes: #799857)
 
- -- Julian Andres Klode <jak@debian.org>  Tue, 15 Sep 2015 16:48:35 +0200
+  [ David Kalnischkies ]
+  * M-A: allowed pkgs of unconfigured archs do not satisfy :any
+  * implement dpkgs vision of interpreting pkg:<arch> dependencies
+  * add Source-Version field for EDSP
+  * fix insecure use of /tmp in EDSP solver 'dump' (Closes: 795600)
+  * select kernels to protect from autoremove based on Debian version
+    (Closes: 787827)
+  * implement autobit and pinning in EDSP solver 'apt'
+  * do not discard new manual-bits while applying EDSP solutions
+  * include debug information in the autoremove-kernels file
+  * avoid using global PendingError to avoid failing too often too soon
+  * implement apt-get source msg 'Please use: $vcs' for git
+  * do not ignore differently versioned self-provides
+  * do not generate bogus hashes if hash is disabled in apt-ftparchive
+  * use APT::FTPArchive hash settings as default for APT::FPArchive::$filetype
+  * add --sha512 option + documentation for apt-ftparchive
+  * deal with spaces in path, command and filepaths in apt-key
+  * add by-hash sources.list option and document all of by-hash
+  * fallback to well-known URI if by-hash fails (Closes: 798919)
 
-apt (1.0.9.8.1) stable; urgency=medium
+ -- Michael Vogt <mvo@debian.org>  Mon, 05 Oct 2015 18:27:22 +0200
+
+apt (1.1~exp12) experimental; urgency=medium
+
+  [ David Kalnischkies ]
+  * sources.list and indextargets option for pdiffs
+  * auto-prefix $(SITE) for indextargets Description field
+  * implement PDiff patching for compressed files
+  * implement indextargets option 'DefaultEnabled'
+  * try xz instead of bz2 first for compressed files
+  * implement $(NATIVE_ARCHITECTURE) substvar for indextargets
+  * detect and deal with indextarget duplicates
+  * ignore for _apt inaccessible TMPDIR in pkgAcqChangelog (Closes: 797270)
+  * if file is inaccessible for _apt, disable privilege drop in acquire
+  * remove Christian Perrier from Uploaders as requested.
+    Thanks to Christian for all the l10n, code & social contributions!
+    (Closes: #783337)
+  * use unusable-for-security hashes for integrity checks
+  * use clock() as source for SRV randomness
+
+  [ Miroslav Kure ]
+  * Czech program translation update (Closes: 797329)
+
+  [ Michael Vogt ]
+  * Consider md5sum no longer a usable hash
+  * Add support for writing by-hash dirs in apt-ftparchive
+
+  [ Julian Andres Klode ]
+  * apt-pkg/tagfile.h: Include stdint.h, fixes rdep build failures
+
+ -- Michael Vogt <mvo@debian.org>  Fri, 11 Sep 2015 23:31:34 +0200
+
+apt (1.1~exp11) experimental; urgency=medium
+
+  [ Julian Andres Klode ]
+  * pkgcachegen: Account for remapping when parsing depends from NewPackage.
+    Thanks to Jakub Wilk for the bug report and the backtraces (Closes: #796999)
+  * debian/rules: Only do parallel build if specified in DEB_BUILD_OPTIONS.
+    Thanks to Jakub Wilk for the suggestion
+  * cacheset: Prefer the depcache over the policy again
+  * install: Set a local deb as the candidate for that package
+  * Always close compressed files in FileFd
+  * Use compressor support from FileFd for ExtractTar instead of programs
+  * Do not parse Status fields from remote sources
+
+  [ David Kalnischkies ]
+  * just-in-time removal of broken essential packages (Closes: 796070)
+  * correct 'apt update' download summary line
+  * ignore AllowMem parameter in cache generation (Closes: 796459)
+  * add a libapt-pkg recommends apt
+  * fix various typos reported by codespell
+  * use always priv-dropping for changelog download as root
+  * allow explicit dis/enable of IndexTargets in sources options
+
+  [ Anders Jonsson ]
+  * Swedish program translation update (Closes: 796059)
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 27 Aug 2015 17:55:12 +0200
+
+apt (1.1~exp10) experimental; urgency=medium
+
+  [ Michael Vogt ]
+  * add support for SRV record lookup before connect
+  * Provide "apt-get full-upgrade" to match "apt full-upgrade"
+  * Add support for "apt-cache showsrc --only-source srcpkgname"
+    Thanks to Steve Slangasek for the suggestion (Closes: 695633)
+
+  [ Julian Andres Klode ]
+  * Support tabs in sources.list files (Closes: #796067)
+  * Re-indent GetCandidateVerNew() and make ConsiderFiles argument explicit
+  * postinst: Correctly pass --home instead of -home, and fixup old user.
+    Thanks to Niels Thykier for reporting this on IRC
+
+ -- Michael Vogt <mvo@debian.org>  Mon, 24 Aug 2015 10:12:15 +0200
+
+apt (1.1~exp9) experimental; urgency=medium
+
+  [ Michael Vogt ]
+  * Add "ca-certificates" recommends to apt-transport-https
+  * test/integration/test-apt-download-progress:
+    - fix test failure on fast hardware
+  * Rename "Size" in ServerState to TotalFileSize
+  * Make apt compile with clang++ again
+  * Cleanup includes (Thanks iwyu)
+
+  [ David Kalnischkies ]
+  * re-enable patchsize limit option for pdiffs
+  * better non-virtual metaIndex.LocalFileName() implementation
+  * mark internal interfaces as hidden
+  * restore ABI of pkgTagSection
+  * streamline display of --help in all tools
+  * allow uninstalled packages to be put on hold
+  * use 'best' hash for source authentication (LP: #1098738)
+  * re-enable support for -s (and co) in apt-get source (Closes: 742578)
+  * create directory for extended_states if needed
+  * create our cache and lib directory always with mode 755
+  * fix file ownership tests to work on kfreebsd
+  * use dpkg --merge-avail only if needed in apt-mark
+  * properly handle already reinstall pkgs in ordering (Closes: 770291)
+  * correct architecture detection for 'rc' packages for purge (Closes: 770898)
+  * derive more of https from http method
+  * properly implement pkgRecord::Parser for *.deb files
+  * improve https method queue progress reporting.
+    Thanks to Robert Edmonds and Anders Kaseorg for initial patchs
+    (Closes: 777565, 781509)
+  * calculate only expected hashes in methods
+  * calculate hashes while downloading in https
+  * ensure lists/ files have correct permissions after apt-cdrom add
+  * unsigned Release files can expire, too
+  * a hit on Release files means the indexes will be hits too
+  * remove "first package seen is native package" assumption.
+    Thanks to Axel Beckert for testing (Closes: 782777)
+  * improve partial/ cleanup in abort and failure cases
+  * a pin of 1000 always means downgrade allowed
+  * remove unused and strange default-value for pins
+  * show non-matching m-a:same versions in debug message
+  * fix 'Source' to 'Package' rename in apt-ftparchive
+  * sync TFRewrite*Order arrays with dpkg and dak
+  * stop depending on copy-on-write for std::string
+  * implement a more c++-style TFRewrite alternative
+  * rewrite all TFRewrite instances to use the new pkgTagSection::Write
+  * detect 416 complete file in partial by expected hash
+  * implement VerifyFile as all-hashes check
+  * detect Releasefile IMS hits even if the server doesn't
+  * treat older Release files than we already have as an IMSHit
+  * don't try other compressions on hashsum mismatch
+  * rework hashsum verification in the acquire system
+  * check patch hashes in rred worker instead of in the handler
+  * add more parsing error checking for rred
+  * support hashes for compressed pdiff files
+  * do not request files if we expect an IMS hit
+  * configurable acquire targets to download additional files
+  * show URI.Path in all acquire item descriptions
+  * implement 'apt-get files' to access index targets
+  * store Release files data in the Cache
+  * implement default apt-get file --release-info mode (Closes: 752702)
+  * populate the Architecture field for PackageFiles (Closes: 687255)
+  * hide Translation-* in 'apt-cache policy' output
+  * provide a public interface for acquiring changelogs
+    (Closes: 687147, 739854, 784027, 787190)
+  * ensure valid or remove destination file in file method
+  * deal better with acquiring the same URI multiple times
+  * call URIStart in cdrom and file method
+  * show item ID in Hit, Ign and Err lines as well
+  * condense parallel requests with the same hashes to one
+  * support lang= and target= sources.list options
+  * bring back deb822 sources.list entries as .sources
+  * detect and error out on conflicting Trusted settings
+  * merge indexRecords into metaIndex
+  * add sources.list Check-Valid-Until and Valid-Until-{Max,Min} options
+  * implement Signed-By option for sources.list
+  * remove the longtime deprecated vendor{,list} stuff
+  * allow individual targets to be kept compressed
+  * support gpg 2.1.x in apt-key (Closes: 781042)
+  * merge keyrings with cat instead of gpg in apt-key.
+    Thanks to Daniel Kahn Gillmor for the suggestion
+  * handle site-changing redirects as mirror changes
+  * disable locking even for root in --simulate
+  * rename 'apt-get files' to 'apt-get indextargets'
+  * enforce GCC5 C++11 ABI and usage
+  * show or-groups in not-installed recommends and suggests lists
+  * hide implicit deps in apt-cache again by default
+  * just-in-time creation for (explicit) negative deps
+  * add volatile sources support in libapt-pkg
+  * parse packages from all architectures into the cache
+  * enhance "hit paywall" error message to mention the probable cause
+  * drop extra newline in 'Failed to fetch' and 'GPG error' message
+  * mark again deps of pkgs in APT::Never-MarkAuto-Sections as manual.
+    Thanks to Raphaël Hertzog and Adam Conrad for detailed reports and
+    initial patches (Closes: 793360) (LP: #1479207)
+  * change to libapt-pkg abi 5.0 with versioned symbols
+  * move APT::Never-MarkAuto-Sections handling to MarkDelete
+  * move manual-bit from 'oldlibs' pkg to its dependencies
+  * remove Dir:: scope limit of RootDir in the documentation (Closes: 659387)
+  * add {contrib,non-free}/{metapackages,oldlibs} to section specialhandling
+    (Closes: 788320)
+
+  [ Frans Spiesschaert ]
+  * Dutch program translation update (Closes: 771039)
+
+  [ Julien Patriarca ]
+  * French program translation update (Closes: 766755)
+
+  [ Zhou Mo ]
+  * Chinese (simplified) program translation update (Closes: 766170)
+  * Chinese (simplified) program translation update (Closes: 771982)
+
+  [ Miroslav Kure ]
+  * Czech program translation update (Closes: 764055)
+
+  [ Mert Dirik ]
+  * Turkish program translation update (Closes: 763379)
+  * Turkish translation update for apt (Closes: #789491)
+
+  [ Kenshi Muto ]
+  * Japanese program translation update (Closes: 763033)
+  * Japanese program translation update (Closes: 772678)
+
+  [ James McCoy ]
+  * support long keyids in "apt-key del" instead of ignoring them
+    (Closes: 754436)
+  * tighten filtering of kernel images in apt.auto-removal (Closes: 772732)
+  * Use terminfo's typical save_cursor/restore_cursor sequences
+    (Closes: #772521)
+
+  [ Manuel "Venturi" Porras Peralta ]
+  * Spanish program translation update (Closes: 771815)
+
+  [ Jean-Pierre Giraud ]
+  * French manpages translation update (Closes: 771967)
+
+  [ Theppitak Karoonboonyanan ]
+  * Thai program translation update (Closes: 772913)
+
+  [ Tomasz Buchert ]
+  * Fix crash in the apt-transport-https when Owner is NULL (Closes: #778375)
+
+  [ Helmut Grohne ]
+  * parse arch-qualified Provides correctly (Closes: 777071)
+
+  [ Beatrice Torracca ]
+  * Italian manpage translation update (Closes: 776702)
+
+  [ Jérémy Bobbio ]
+  * stop displaying time of build in online help (Closes: 774342)
+
+  [ Robert Edmonds ]
+  * HttpsMethod::Fetch(): Zero the FetchResult object when leaving due to 404
+
+  [ Milo Casagrande ]
+  * Italian program translation update (Closes: 782122)
+
+  [ Julian Andres Klode ]
+  * pkgPolicy: Introduce storage and helpers for per-version pins
+  * versionmatch: Extract version match checking out of Find()
+  * policy: Assign per-version pins
+  * apt-cache: Change version pin output to use per-version pins
+  * fileutl_test.cc: Check for /etc/passwd instead of /bin/sh
+  * policy: Return highest file pin if version pin == 0 in GetPriority()
+  * Determine the candidate based on per-version pins, instead of old code
+    (Closes: #770017, #622237, #620249, #685215)
+  * policy: Fix the new policy implementation to handle downgrades correctly
+  * Fix test case breakage from the new policy implementation
+  * policy: Fix the handling of config-files states
+  * Replace INT_MIN with std::numeric_limits<int>::min
+  * Simply ignore cruft in the status files, do not treat it as prio 0
+  * Fix an obscure warning from GCC
+  * apt-get: Do not include apt-pkg/indexrecords.h
+  * Drop C++11 elements from headers
+  * Re-introduce None as a deprecated alias for No
+  * Make QItem a subclass of DescItem
+  * ExecFork: Use /proc/self/fd to determine which files to close
+    (Closes: #764204)
+  * Merge changelog entries from sid-gcc5
+  * Bump apt-inst SONAME to 2.0 to adjust for the ABI break in apt-pkg
+  * Annotate more methods with APT_OVERRIDE.
+    Thanks to g++ -Wsuggest-override
+  * debian/gbp.conf: Set multimaint-merge = True
+  * debian/control: Rename libapt-pkg4.15 -> libapt-pkg5.0
+  * apt.cron.daily: Reference 10periodic instead of 02periodic (LP: #1332106)
+  * Makefile: Add a make fast command for development
+  * Add a parameter ConsiderFiles to GetPriority(VerIterator)
+  * apt-cache: Modify policy output to use per-version pins
+  * Only make Upgradable() return true for packages with a candidate
+    (LP: #896689)
+  * apt-cache: Improve translateability of the "with priority" thing
+  * policy: Be more strict about parsing pin files, and document prio 0
+    (Closes: #429912)
+  * apt_preferences(5): Re-document how priorities are calculated
+    (Closes: #554773)
+  * Drop the Section field from pkgCache::Package again
+  * Fix integration tests for the removal of the Package pin output
+  * Remove an invalid fi from a testcase
+  * C++11: Switch from auto_ptr to unique_ptr
+  * Mark SPtr as deprecated, and convert users to std::unique_ptr
+  * Deprecate SPtrArray<T> and convert everyone to unique_ptr<T[]>
+  * Use setresuid() and setresgid() where available
+  * Accept --upgradeable as synonym for --upgradable (Closes: #787846)
+  * po/fr.po: Remove the unbreakable space before ! in the confirm string
+    (Closes: #727680)
+  * Replace --force-yes by various options starting with --allow
+  * Add integration test for Pin-Priority range checks
+  * Replace UINT_MAX with std::numeric_limits<unsigned int>::max()
+  * Mention that source order only matter per version (Closes: #617445)
+  * Say "in combination with the other options" if an option is not understood
+    (Closes: #762758)
+  * apt-cache: Show an error if stats gets any arguments (Closes: #153161)
+  * apt-cache(8): Mention that --names-only search provides (Closes: #618017)
+  * apt_preferences(5): Correct default pin assignment documentation
+    (Closes: #623706)
+  * apt_preferences(5): Mention overlapping of pin matches
+  * Make auto-remove and auto-clean aliases for the versions without -
+    (Closes: #274159)
+  * apt: Add autoremove and auto-remove commands
+  * changelog: Replace spelling typo for re-enable everywhere.
+    Thanks to Lintian
+  * debian/control: Replace debian by Debian.
+    Thanks to Lintian
+  * debian/control: Drop the versioned python-apt conflict.
+    Thanks to Lintian
+  * debian/control: Remove XS- from Testsuite and bump Standards-Version.
+    Thanks to Lintian
+  * Set Acquire::Changelogs::URI::Origin::Tanglu for Tanglu changelogs
+  * Also add 'in combination with the other options.' to another error
+  * apt-cache(8): Drop the #versions >= #package names comparison
+    (Closes: #691281)
+  * apt-get: allow non-root --print-uris build-dep (Closes: #283400)
+  * doc/files.dbk: Improve documentation for {src,}pkgcache.bin
+    (Closes: #465551)
+  * update: Check if the cache could be opened, don't just assume it
+    (Closes: #756162)
+  * cachefile.cc: Do not ignore return value of pkgDepCache::Init()
+  * Add GetPriority(VerIterator) to pkgDepCache::Policy
+  * Document the general effect of the comma operator (Closes: #574939)
+  * When looking if Provides match, OR them with the normal patches
+    (Closes: #760868)
+  * install: If package already is the newest version, display version
+    (Closes: #315149)
+  * Make pkgCache::Priority() static, it does not need the instance
+    (Closes: #448627)
+  * Replace "extra" in "the following extra packages [...]" by "additional"
+    (Closes: #82430)
+  * Do not crash in 'apt show' for non-installed packages
+  * debian/NEWS: Mention new pinning algorithm added in 2.0~exp1
+
+  [ Yuri Kozlov ]
+  * Russian program translation update (Closes: 789709)
+
+  [ Guillem Jover ]
+  * po-fixups: fill Project-Id-Version and Encoding correctly (Closes: 612996)
+  * Do not set unhonored DPKG_NO_TSTP variable for dpkg (Closes: #765366)
+
+  [ Daniel Hartwig ]
+  * support setting a port for rsh:// in sources.list (Closes: 624727)
+  * replace direct calls to egrep with grep -E.
+    Thanks to David Weinehall for initial patch (Closes: 255577)
+
+  [ Luca Bruno ]
+  * Replace all "press enter" occurrences with "press [Enter]"
+    Thanks to Andre Felipe Machado for initial patch (Closes: 414848)
+
+  [ Jonathan Nieder ]
+  * document VERSION 2 (and 3) pre-install-pkgs hook interface (Closes: 627188)
+
+  [ Tomas Pospisek ]
+  * document APT::Periodic::RandomSleep.
+    Thanks to Chris Bainbridge and Kees Cook for initial text (Closes: 776380)
+
+  [ Johannes Schauer ]
+  * use a=experimental instead n=experimental in pin documentation
+    (Closes: 783343)
+
+  [ Kusanagi Kouichi ]
+  * Show full package records in apt-cache search -f (Closes: #660851)
+
+ -- Michael Vogt <mvo@debian.org>  Tue, 18 Aug 2015 11:15:52 +0200
+
+apt (1.1~exp8) experimental; urgency=medium
+
+  [ Michael Vogt ]
+  * merge unstable upload version 1.0.9.3
+  * Ensure /etc/apt/auth.conf has _apt:root owner
+  * Use sysconf(_SC_ARG_MAX) to find the size of Dpkg::MaxArgBytes
+  * Only support Translation-* that are listed in the {In,}Release file
+  * Call "Dequeue()" for items in AbortTransaction() to fix race
+  * prepare ABI for feature/socketpair
+  * Bump ABI to 4.15
+
+  [ David Kalnischkies ]
+  * re-enable support for -s (and co) in apt-get source (Closes: 742578)
+  * run acquire transactions only once
+  * aborted reverify restores file owner and permission
+  * test if TMPDIR is accessible before using (Closes: 765951)
+  * chown finished partial files earlier
+  * promote filesize to a hashstring
+
+ -- Michael Vogt <mvo@debian.org>  Thu, 06 Nov 2014 10:01:21 +0100
+
+apt (1.1~exp7) experimental; urgency=medium
+
+  [ David Kalnischkies ]
+  * don't cleanup cdrom files in apt-get update (Closes: 765458)
+  * ignore Acquire::GzipIndexes for cdrom sources
+
+ -- David Kalnischkies <david@kalnischkies.de>  Wed, 15 Oct 2014 20:12:15 +0200
+
+apt (1.1~exp6) experimental; urgency=medium
+
+  [ josch ]
+  * implement the updated build profile spec
+
+  [ Michael Vogt ]
+  * methods/rsh.cc: replace strcat with std::string (Closes: #76442)
+  * Add new configallowinsecurerepositories to the test framework
+
+  [ Guillem Jover ]
+  * Update Status field values handling
+
+  [ David Kalnischkies ]
+  * don't drop privileges if _apt has not enough rights
+  * check for available space, excluding root reserved blocks
+
+ -- Michael Vogt <mvo@debian.org>  Wed, 15 Oct 2014 07:47:36 +0200
+
+apt (1.1~exp5) experimental; urgency=medium
+
+  [ Michael Vogt ]
+  * Only rename StatError files in AbortTransaction()
+  * Document Acquire{MaxReleaseFileSize,AllowInsecureRepositories,
+    AllowDowngradeToInsecureRepositories} and
+    --no-allow-insecure-repositories
+  * Fix backward compatibility of the new pkgAcquireMethod::DropPrivsOrDie()
+  * Change default of Acquire::AllowInsecureRepositories to "true"
+    so that this change is less disruptive, this will be switched
+    to "false" again after jessie
+
+  [ David Kalnischkies ]
+  * remove useless pdiff filename output (Closes: 764737)
+  * make --allow-insecure-repositories message an error
+  * display a warning for unsigned repos
+  * trusted=yes sources are secure, we just don't know why
+
+ -- Michael Vogt <mvo@debian.org>  Mon, 13 Oct 2014 16:15:22 +0200
+
+apt (1.1~exp4) experimental; urgency=medium
+
+  [ Michael Vogt ]
+  * Merge sid version 1.0.9.2
+  * feature/acq-trans:
+    - Make apt-get update more transactional by keeping all data from
+      a sources.list line in partial/ until all data is good and only
+      then move it into lists/ in one step
+    - add new -o Debug::Acquire::Transaction=1 debug option
+  * feature/expected-size:
+    Do not download more data in the mehotds than expected if we know
+    the size. For the InRelease/Release/Release.gpg add new 
+    Acquire::MaxReleaseFileSize that defaults to 10Mb for now
+  * Verify the hashes of the downloaded compressed files early
+  * Only load unauthenticated data into our parsers when the user
+    explicitly asked for it via --allow-insecure-repositories
+    (Acquire::AllowInsecureRepositories)
+  * Print warning when trying to use unauthenticated repositories
+  * Use /var/empty as the homedir for _apt
+  * Revert making pkgAcquire::Item::DescURI() "const" to not break
+    API
+  * Do not allow going from a authenticated to unauthenticated repository
+  * Add missing "adduser" dependency (for the new _apt user)
+    Thanks to Russ Allbery (Closes: #763004)
+  * Test if TMPDIR is a directory in apt-key and if not unset it
+  * add early verification for the .diff/Index download
+  * Bump library version to libapt-pkg4.14
+  * Rework pkgAcqMeta{Index,Sig,ClearSig}::{Done,Failed]() for readability
+  * Ignore EINVAL from prctl(PR_SET_NO_NEW_PRIVS) (closes: 764066)
+
+  [ David Kalnischkies ]
+  * deprecate Pkg->Name in favor of Grp->Name
+  * drop stored StringItems in favor of in-memory mappings
+  * de-duplicate version strings in the cache
+  * fix progress output for (dist-)upgrade calculation
+  * move PCI::From* methods into CacheSetHelper class (Closes: 686221)
+  * add a (hidden) --quiet option for apt-key
+  * only create new trusted.gpg if directory is writeable
+  * support (multiple) arguments properly in apt-key
+  * set a primary-keyring only if we have access to it
+  * merge fragment keyrings in apt-key to avoid hitting gpg limits
+    (Closes: 733028)
+  * use apt-key adv (+ gnupg) instead of gpgv for verify
+  * support gnupg2 as drop-in replacement for gnupg
+  * allows one to specify fingerprints in 'apt-key del'
+  * use only one --keyring in gpg interactions
+  * add and use 'apt-key verify' which prefers gpgv over gpg
+  * remove empty keyrings in trusted.gpg.d on upgrade
+  * store source name and version in binary cache
+  * allow fetcher setup without directory creation (Closes: 762898)
+  * cleanup partial directory of lists in apt-get clean (Closes: #762889)
+  * allow options between command and -- on commandline
+  * update symbols file
+  * support parsing of all hashes for pdiff
+  * ensure world-readability for trusted.gpg in postinst (Closes: 647001)
+  * ensure partial dirs are 0700 and owned by _apt:root
+  * use _apt:root only for partial directories
+  * display errortext for all Err
+  * set PR_SET_NO_NEW_PRIVS also if run as non-root
+
+  [ James McCoy ]
+  * ensure apt-key del handles 16-byte key ids (Closes: 754436)
+
+  [ Kenshi Muto ]
+  * Japanese program translation update (Closes: 763033)
+
+  [ Trần Ngọc Quân ]
+  * Set STRIP_FROM_PATH for doxygen
+
+  [ Mert Dirik ]
+  * Turkish program translation update (Closes: 763379)
+
+  [ Guillem Jover ]
+  * apt-get: Create the temporary downloaded changelog inside tmpdir
+
+  [ Miroslav Kure ]
+  * [l10n] Updated Czech translation of apt (Closes: #764055)
+
+ -- Michael Vogt <mvo@ubuntu.com>  Wed, 08 Oct 2014 09:37:35 +0200
+
+apt (1.1~exp3) experimental; urgency=medium
+
+  [ Michael Vogt ]
+  * merged changes from debian/sid up to 1.0.9.1
+  * Make /var/lib/apt/lists and /var/cache/apt/archives owned
+    by the new _apt user
+  * Drop Privileges in the following acquire methods:
+     copy, http, https, ftp, gpgv, gzip/bzip2/lzma/xz 
+  * DropPrivs: Improvements based on feedback from error@debian.org
+
+  [ Julian Andres Klode ]
+  * DropPriv: Really call seteuid and not setuid, and add more checks
+  * Use _apt as our unprivileged user name
+  * DropPrivs: Also check for saved set-user-ID and set-group-ID
+  * methods: Fail if we cannot drop privileges
+  * DropPrivs: Also check for saved set-user-ID and set-group-ID
+
+ -- Michael Vogt <mvo@debian.org>  Wed, 24 Sep 2014 22:30:09 +0200
+
+apt (1.1~exp2) experimental; urgency=medium
+
+  [ Guillem Jover ]
+  * Add new Base256ToNum long long overload function
+  * Fix ar and tar code to be LFS-safe (Closes: #742882)
+
+  [ Michael Vogt ]
+  * increase libapt-inst to version 1.6
+  * Only allow "apt-get build-dep path" when path starts with ./ or /
+  * Allow passing a full path to apt-get install /foo/bar.deb (CLoses: #752327)
+  * merge changes from the 1.0.6 upload
+
+ -- Michael Vogt <mvo@debian.org>  Thu, 10 Jul 2014 13:18:08 +0200
+
+apt (1.1~exp1) experimental; urgency=low
+
+  [ David Kalnischkies ]
+  * [API Break] change "std::string pkgAcquire::Item::DescURI()" to
+                       "std::string pkgAcquire::Item::DescURI() const"
+  * [ABI-Break] increase hashtable size for packages/groups by factor 5
+  * [ABI-Break] cleanup datatypes mix used in binary cache
+  * [internal API-Break] remove the Section member from package struct
+  * use 'best' hash for source authentication (LP: 1098738)
+  * use HashStringList in the acquire system
+  * deal with hashes in ftparchive more dynamic as well
+  * re-enable pipelining via hashsum reordering support
+  * parse and retrieve multiple Descriptions in one record
+  * improve pkgTagSection scanning and parsing
+  * invalid cache if architecture set doesn't match (Closes: 745036)
+
+  [ Michael Vogt ]
+  * add support for "apt-get build-dep foo.dsc"
+  * add support for "apt-get build-dep unpacked-source-dir"
+  * add support for "apt-get install foo_1.0_all.deb"
+  * make "apt-get update" progress much more accurate by loading the
+    sizes of the targets into the fetcher early
+  * Implement simple by-hash for apt update to improve reliability of
+    the update. Apt will try to fetch the Packages file via
+    /by-hash/$hash_type/$hash_value if the repo supports that.
+    - add APT::Acquire::$(host)::By-Hash=1 knob
+    - add Acquire-By-Hash=1 to Release file
+  * add Debug::Acquire::Progress debug option
+  * [ABI-Break] lp:~mvo/apt/source-hashes:
+    - use sha{512,256,1} for deb-src when available LP: #1098738
+  * [ABI-Break] stop exporting the accidentally exported parsenetrc() symbol
+  * [ABI-Break] remove the PACKAGE_MATCHER_ABI_COMPAT defines
+  * [ABI BREAK] apt-pkg/pkgcache.h:
+    - adjust pkgCache::State::VerPriority enum, to match reality
+  * test/integration/test-debsrc-hashes:
+    - add integration test, thanks to Daniel Hartwig
+  * [ABI-Break] remove the PACKAGE_MATCHER_ABI_COMPAT defines
+  * [ABI-Break] Pass struct IndexTarget/indexRecords to
+    pkgAcqIndex{,Merge}Diffs
+  * [internal API-Break] rename pkgCache::Package::NextPackage to
+    pkgCache::Package::Next
+  * Calculate Percent as part of pkgAcquireStatus to provide a weighted
+    percent for both items and bytes
+  * apt-pkg/contrib/macros.h: bump library version to 4.13
+  * apt-private/acqprogress.cc: do not show file size on IMSHit, it wasn't
+    fetched
+  * Fix warnings from clang -Wall/clang -fsanitize=address
+  * add DropPrivs() and drop privileges to nobody when running the
+    the buildin apt and dump solvers
+  * lp:~mvo/apt/webserver-simulate-broken-with-fix346386:
+    - fix invalid InRelease file download checking and add regression
+      test to server broken files to the buildin test webserver
+    - add regression test for LP: #34638
+
+ -- Michael Vogt <mvo@debian.org>  Thu, 19 Jun 2014 12:01:48 +0200
+
+apt (1.0.10.1) unstable; urgency=medium
+
+  * hide first pdiff merge failure debug message (Closes: 793444)
+  * mark again deps of pkgs in APT::Never-MarkAuto-Sections as manual.
+    Thanks to Raphaël Hertzog and Adam Conrad for detailed reports and
+    initial patches (Closes: 793360) (LP: #1479207)
+  * explicitly build-dep on g++ (>= 4:5.2) for gcc5 transition
+
+ -- David Kalnischkies <david@kalnischkies.de>  Mon, 03 Aug 2015 07:29:40 +0200
+
+apt (1.0.10) unstable; urgency=medium
+
+  [ Zhou Mo ]
+  * po: update zh_CN translation slightly
+  * po: Update Simplified Chinese programs translation
+
+  [ Mert Dirik ]
+  * Turkish translation update for apt (Closes: #789491)
+
+  [ Yuri Kozlov ]
+  * Russian program translation update (Closes: 789709)
+
+  [ Milo Casagrande ]
+  * Italian program translation update (Closes: 782122)
+
+  [ Beatrice Torracca ]
+  * Italian manpage translation update (Closes: 776702)
+
+  [ Julian Andres Klode ]
+  * ExecFork: Use /proc/self/fd to determine which files to close
+    (Closes: #764204)
+
+  [ Michael Vogt ]
+  * Prepare new 1.0.10 release with gcc5 abi transition
+
+  [ David Kalnischkies ]
+  * stop depending on copy-on-write for std::string
+  * bump next-abi check above gcc5-abi bump
+  * update symbols file to use gcc5 abi mangling
+
+ -- David Kalnischkies <david@kalnischkies.de>  Sat, 25 Jul 2015 12:11:08 +0200
+
+apt (1.0.9.10) unstable; urgency=medium
+
+  [ Michael Vogt ]
+  * Fix crash in pkgDPkgPM::WriteApportReport(() (LP: #1436626)
+  * Move sysconf(_SC_OPEN_MAX); out of the for() loop to avoid unneeded
+    syscalls
+  * Fix endless loop in apt-get update that can cause disk fillup
+    (LP: #1445239)
+
+  [ Helmut Grohne ]
+  * parse arch-qualified Provides correctly (Closes: 777071)
+
+ -- Michael Vogt <mvo@debian.org>  Fri, 22 May 2015 17:38:31 +0200
+
+apt (1.0.9.9) unstable; urgency=medium
 
   [ David Kalnischkies ]
   * parse specific-arch dependencies correctly on single-arch systems
@@ -37,11 +1993,7 @@ apt (1.0.9.8.1) stable; urgency=medium
   * remove "first package seen is native package" assumption.
     Thanks to Axel Beckert for testing (Closes: 782777)
 
-  [ Michael Vogt ]
-  * Fix endless loop in apt-get update that can cause disk fillup
-    (LP: #1445239)
-
- -- Michael Vogt <mvo@debian.org>  Wed, 10 Jun 2015 09:40:19 +0200
+ -- David Kalnischkies <david@kalnischkies.de>  Tue, 28 Apr 2015 16:11:27 +0200
 
 apt (1.0.9.8) unstable; urgency=medium
 
@@ -386,7 +2338,7 @@ apt (1.0.4) unstable; urgency=low
   * Never parse Version/Architecture tags in a Translation-$lang file
   * Show upgradable packages after apt update (Closes: 748389)
   * Fix various errors found by clang -fsanitize=address
-  * Fix various errors foudn by clang scan-build
+  * Fix various errors found by clang scan-build
   * Show unauthenticated warning for source packages as well (Closes: #749795)
   * Add compat mode for old (32bit FileSize) CacheDB (LP: #1274466)
   * cmdline/apt-helper.cc: use less generic description/short-description 
@@ -760,7 +2712,7 @@ apt (0.9.14.3~exp2) experimental; urgency=medium
   * correct IndexDiff vs DiffIndex in Debug output
 
   [ David Kalnischkies ]
-  * reenable unlimited pdiff files download
+  * re-enable unlimited pdiff files download
   * integrate Anthonys rred with POC for client-side merge
 
   [ Michael Vogt ]
@@ -882,8 +2834,8 @@ apt (0.9.13~exp1) experimental; urgency=low
 
   * Improve the API for APT::Upgrade::Upgrade()
   * Re-add "Calculating upgrade..." message
-  * move upgrade releated code into upgrade.{cc,h}
-  * Move ListUpdate/AquireUpdate into update.{cc,h}
+  * move upgrade related code into upgrade.{cc,h}
+  * Move ListUpdate/AcquireUpdate into update.{cc,h}
   * Add new apt-pkg/install-progress.h with APT::Progress::PackageManager
     progress reporting classes
   * Move the status-fd progress reporting out of the pkgDPkgPM class
@@ -1099,11 +3051,11 @@ apt (0.9.10) unstable; urgency=low
   * add missing Turkish (tr) to po/LINGUAS
   * correct management-typo in description found by lintian
   * implement debian/rules build-{arch,indep} as required by policy 3.9.4
-  * reenable automatic parallel build of APT
+  * re-enable automatic parallel build of APT
   * exclude config.{sub,guess} from source package
   * update the symbol files to reflect current state
   * unset LANGUAGE for showing [Y/n] answer hints
-  * fix some unitialized data members
+  * fix some uninitialized data members
   * specific pins below 1000 cause downgrades (Closes: 543966)
   * use pkgTagFile to parse "header" of Release files
   * fix: --print-uris removes authentication (Closes: 719263)
@@ -1211,7 +3163,7 @@ apt (0.9.9) unstable; urgency=low
   * rewrite pkgOrderList::DepRemove to stop incorrect immediate setting
     (Closes: 645713)
   * prefer Essentials over Removals in ordering score
-  * fix priority sorting by prefering higher in MarkInstall
+  * fix priority sorting by preferring higher in MarkInstall
   * try all providers in order if uninstallable in MarkInstall
   * do unpacks before configures in SmartConfigure (Closes: #707578)
   * fix support for multiple patterns in apt-cache search (Closes: #691453)
@@ -1265,7 +3217,7 @@ apt (0.9.8.1) unstable; urgency=low
   [ Michael Vogt ]
   * moved source to http://git.debian.org/apt/apt.git
   * updated gbp.conf to match what bzr-buildpackage is doing
-  * remove .bzr-buildpackage/default.conf (superseeded by gbp.conf)
+  * remove .bzr-buildpackage/default.conf (superseded by gbp.conf)
 
  -- Michael Vogt <mvo@debian.org>  Thu, 16 May 2013 14:50:43 +0200
 
@@ -1296,17 +3248,17 @@ apt (0.9.8) unstable; urgency=low
     - handle language tags for descriptions are unique strings to be shared
     - factor version string creation out of NewDepends, so we can easily reuse
       version strings e.g. for implicit multi-arch dependencies
-    - equal comparisions are used mostly in same-source relations,
+    - equal comparisons are used mostly in same-source relations,
       so use this to try to reuse some version strings
     - sort group and package names in the hashtable on insert
     - share version strings between same versions (of different architectures)
-      to save some space and allow quick comparisions later on
+      to save some space and allow quick comparisons later on
   * apt-pkg/pkgcache.cc:
     - assume sorted hashtable entries for groups/packages
   * apt-pkg/cacheiterators.h:
     - provide DepIterator::IsSatisfied as a nicer shorthand for DepCheck
   * apt-pkg/deb/debversion.cc:
-    - add a string-equal shortcut for equal version comparisions
+    - add a string-equal shortcut for equal version comparisons
 
   [ Marc Deslauriers ]
   * make apt-ftparchive generate missing deb-src hashes (LP: #1078697)
@@ -1369,7 +3321,7 @@ apt (0.9.7.9~exp2) experimental; urgency=low
     - keep the last good InRelease file around just as we do it with
       Release.gpg in case the new one we download isn't good for us
   * apt-pkg/deb/debmetaindex.cc:
-    - reenable InRelease by default
+    - re-enable InRelease by default
   * ftparchive/writer.cc,
     apt-pkg/deb/debindexfile.cc,
     apt-pkg/deb/deblistparser.cc:
@@ -1417,7 +3369,7 @@ apt (0.9.7.9~exp1) experimental; urgency=low
 
  -- Michael Vogt <mvo@debian.org>  Fri, 22 Mar 2013 21:57:08 +0100
 
-apt (0.9.7.8) unstable; urgency=criticial
+apt (0.9.7.8) unstable; urgency=critical
 
   * SECURITY UPDATE: InRelease verification bypass
     - CVE-2013-1051
@@ -1647,7 +3599,7 @@ apt (0.9.7.3) unstable; urgency=low
     - handle :all and :native correctly as architectures again
       in the commandline parsing (regression in 0.9.7)
   * apt-pkg/packagemanager.cc:
-    - do not segfault if nothing can be configured to statisfy
+    - do not segfault if nothing can be configured to satisfy
       a pre-depends (e.g. in a pre-depends loop) (Closes: #681958)
   * apt-pkg/contrib/mmap.cc:
     - trigger the usage of the fallback code for kfreebsd also in the
@@ -1746,7 +3698,7 @@ apt (0.9.7) unstable; urgency=low
     - add PackageContainerInterface::FromGroup to support
       architecture specifications with wildcards on the commandline
   * apt-pkg/pkgcache.cc:
-    - do a string comparision for architecture checking in IsMultiArchImplicit
+    - do a string comparison for architecture checking in IsMultiArchImplicit
       as 'unique' strings in the pkgcache aren't unique (Closes: #677454)
   * buildlib/configure.mak:
     - print a message detailing how to get config.guess and config.sub
@@ -1845,7 +3797,7 @@ apt (0.9.5.1) unstable; urgency=low
     - dup() given compressed fd in OpenDescriptor if AutoClose
       is disabled as otherwise gzclose() and co will close it
   * doc/*.xml:
-    - mark even more stuff as untranslateable and improve the
+    - mark even more stuff as untranslatable and improve the
       markup here and there (no real text change)
     - use docbook DTD 4.5 instead of 4.2 to have valid docs
 
@@ -1939,7 +3891,7 @@ apt (0.9.4) unstable; urgency=low
   [ Raphael Geissert ]
   * apt-pkg/acquire*.cc:
     - handle redirections in the worker with the right method instead of
-      in the method the redirection occured in (Closes: #668111)
+      in the method the redirection occurred in (Closes: #668111)
   * methods/http.cc:
     - forbid redirects to change protocol
   * methods/mirror.cc:
@@ -2200,7 +4152,7 @@ apt (0.8.16~exp13) experimental; urgency=low
   * methods/http{s,}.cc:
     - if a file without an extension is requested send an 'Accept: text/*'
       header to avoid that the server chooses unsupported compressed files
-      in a content-negotation attempt (Closes: #657560)
+      in a content-negotiation attempt (Closes: #657560)
     - remove the arbitrary MAXLEN limit for response lines (Closes: #658346)
   * apt-pkg/aptconfiguration.cc:
     - chroot if needed before calling dpkg --print-foreign-architectures
@@ -2383,7 +4335,7 @@ apt (0.8.16~exp8) experimental; urgency=low
     - show a debug why a package was kept by ResolveByKeep()
   * apt-pkg/packagemanager.cc:
     - do not fail on unpacked packages in SmartUnPack, just don't
-      shedule them for unpack, but do all checks and configure them
+      schedule them for unpack, but do all checks and configure them
     - do not enter an endless loop for (essential) pre-dependency loops
   * apt-pkg/contrib/sha2_internal.cc:
     - use a pointer-union to peace gcc strict-aliasing warning
@@ -2404,7 +4356,7 @@ apt (0.8.16~exp7) experimental; urgency=low
     - load the dpkg base arguments only one time and reuse them later
   * cmdline/apt-get.cc:
     - follow Provides in the evaluation of saving candidates, too, for
-      statisfying garbage package dependencies (Closes: #640590)
+      satisfying garbage package dependencies (Closes: #640590)
   * apt-pkg/algorithms.cc:
     - if a package is garbage, don't try to save it with FixByInstall
   * apt-pkg/deb/debsrcrecords.cc:
@@ -2635,7 +4587,7 @@ apt (0.8.15.9) unstable; urgency=low
     - load the dpkg base arguments only one time and reuse them later
   * cmdline/apt-get.cc:
     - follow Provides in the evaluation of saving candidates, too, for
-      statisfying garbage package dependencies (Closes: #640590)
+      satisfying garbage package dependencies (Closes: #640590)
   * apt-pkg/algorithms.cc:
     - if a package is garbage, don't try to save it with FixByInstall
   * apt-pkg/init.cc:
@@ -3236,7 +5188,7 @@ apt (0.8.13) unstable; urgency=low
   * mirror method:
     - when downloading data, show the mirror being used
     - randomize mirror list after download in a host specific way
-      to ensure that the load is evenly spreaded accross the mirrors
+      to ensure that the load is evenly spread across the mirrors
     - fix some missing "Fail-Ignore"
 
  -- Michael Vogt <mvo@debian.org>  Wed, 16 Mar 2011 08:04:42 +0100
@@ -3251,9 +5203,9 @@ apt (0.8.12) unstable; urgency=low
     - honor Dpkg::Chroot-Directory in the RunScripts*() methods
   * apt-pkg/contrib/cdromutl.{cc,h}, apt-pkg/cdrom.{cc,h}:
     - deal with missing FSTAB_DIR when using libudev to discover cdrom
-    - add experimental APT::cdrom::CdromOnly option (on by default). 
+    - add experimental APT::cdrom::CdromOnly option (on by default).
       When this is set to false apt-cdrom will handle any removable
-      deivce (like a usb-stick) as a "cdrom/dvd" source
+      device (like a usb-stick) as a "cdrom/dvd" source
 
   [ Christian Perrier ]
   * Fix error in French translation of manpages (apt_preferences(5)).
@@ -3566,7 +5518,7 @@ apt (0.8.9) unstable; urgency=low
       consider it as a candidate for FixByInstall
   * apt-pkg/depcache.cc:
     - don't install previously not installed providers in a try
-      to statisfy a "Breaks: provides" dependency by upgrade
+      to satisfy a "Breaks: provides" dependency by upgrade
   * cmdline/acqprogress.cc:
     - don't ask the user for media change if quiet >= 2, stdout is not
       a tty and assume-yes, force-yes or trivial-only option is set to
@@ -3676,7 +5628,7 @@ apt (0.8.5) unstable; urgency=low
   * apt-pkg/deb/deblistparser.cc:
     - overrule NotAutomatic in case of ButAutomaticUpgrades
   * debian/apt.cron.daily:
-    - handle absolut directory paths correctly by loading directories
+    - handle absolute directory paths correctly by loading directories
       directly instead of building the paths on our own (Closes: #596421)
   * debian/control:
     - build-depend on docbook-xml to ensure that the xml DTDs are always
@@ -3928,7 +5880,7 @@ apt (0.7.26~exp11) experimental; urgency=low
     - handle "circular" conflicts for "all" packages correctly
   * cmdline/apt-cache.cc:
     - be able to omit dependency types in (r)depends (Closes: #319006)
-    - show in (r)depends the canidate per default instead of newest
+    - show in (r)depends the candidate per default instead of newest
     - share the (r)depends code instead of codecopy
   * apt-pkg/cacheset.cc:
     - move them back to the library as they look stable now
@@ -4048,7 +6000,7 @@ apt (0.7.26~exp8) experimental; urgency=low
     - add another round of const& madness as the previous round accidentally
       NOT overrides the virtual GetCandidateVer() method (Closes: #587725)
   * apt-pkg/pkgcachegen.{cc,h}:
-    - make the used MMap moveable (and therefore dynamic resizeable) by
+    - make the used MMap moveable (and therefore dynamic resizable) by
       applying (some) mad pointer magic (Closes: #195018)
 
   [ Michael Vogt ]
@@ -4420,7 +6372,7 @@ apt (0.7.26~exp3) experimental; urgency=low
   * apt-pkg/deb/dpkgpm.cc:
     - fix backgrounding when dpkg runs (closes: #486222)
   * cmdline/apt-mark:
-    - show error on incorrect aguments (LP: #517917), thanks to
+    - show error on incorrect arguments (LP: #517917), thanks to
       Torsten Spindler
   * cmdline/apt-get.cc:
     - if apt-get source foo=version or foo/distro can not be found,
@@ -4629,7 +6581,7 @@ apt (0.7.25) unstable; urgency=low
     Thanks to Dann Frazier for the patch. Closes: #273100
   * po/LINGUAS. Re-disable Hebrew. Closes: #534992
   * po/LINGUAS. Enable Asturian and Lithuanian
-  * Fix typo in apt-cache.8.xml: nessasarily
+  * Fix typo in apt-cache.8.xml: necessarily
   * Fix "with with" in apt-get.8.xml
   * Fix some of the typos mentioned by the german team
     Closes: #479997
@@ -4707,7 +6659,7 @@ apt (0.7.25) unstable; urgency=low
     - add build-dependency on autotools-dev
     - bump policy to 3.8.3 as we have no outdated manpages anymore
   * debian/NEWS:
-    - fix a typo in 0.7.24: Allready -> Already (Closes: #557674)
+    - fix a typo in 0.7.24: Already -> Already (Closes: #557674)
   * ftparchive/writer.{cc,h}:
     - add APT::FTPArchive::LongDescription to be able to disable them
   * apt-pkg/deb/debsrcrecords.cc:
@@ -4784,7 +6736,7 @@ apt (0.7.24) unstable; urgency=low
     - when tcgetattr() returns non-zero skip all pty magic 
       (thanks to Simon Richter, closes: #509866)
   * apt-inst/contrib/arfile.cc:
-    - show propper error message for Invalid archive members
+    - show proper error message for Invalid archive members
 
   [ David Kalnischkies ]
   * doc/Doxyfile.in:
@@ -4838,7 +6790,7 @@ apt (0.7.23.1) unstable; urgency=low
 
   [ Michael Vogt ]
   * apt-pkg/pkgcache.cc:
-    - do not set internel "needs-configure" state for packages in 
+    - do not set internal "needs-configure" state for packages in 
       triggers-pending state. dpkg will deal with the trigger and
       it if does it before we trigger it, dpkg will error out
       (LP: #414631)
@@ -5027,7 +6979,7 @@ apt (0.7.22) unstable; urgency=low
   * doc/apt.conf.5.xml:
     - merged patch from Aurélien Couderc to improve the text
       (thanks!)
-  * [ABI] merged the libudev-dlopen branch, this allows to pass
+  * [ABI] merged the libudev-dlopen branch, this allows one to pass
     "apt-udev-auto" to Acquire::Cdrom::mount and the cdrom method will  
     dynamically find/mount the cdrom device (if libhal is available)
 
@@ -5058,7 +7010,7 @@ apt (0.7.22) unstable; urgency=low
   * Apply patch from Sami Liedes <sliedes@cc.hut.fi> to reduce the
     number of times we call progress bar updating and debugging
     configuration settings.
-  * Apply patch from Sami Liedes <sliedes@cc.hut.fi> to avoid unecessary
+  * Apply patch from Sami Liedes <sliedes@cc.hut.fi> to avoid unnecessary
     temporary allocations.
 
  -- Michael Vogt <mvo@debian.org>  Wed, 29 Jul 2009 19:16:22 +0200
@@ -5254,7 +7206,7 @@ apt (0.7.17) unstable; urgency=low
     - Bumped 'Standards-Version' to 3.8.0, no changes needed.
     - Actualized 'Uploaders' field.
   * doc/:
-    - Substituded 'apt-archive' with 'apt-ftparchive' in docs.
+    - Substituted 'apt-archive' with 'apt-ftparchive' in docs.
       Patch based on work of Andre Felipe Machado. (Closes: #350865)
     - Mentioned '/<release>' and '=<version>' for 'apt-get install' and
       '=<version>' for 'apt-get source' in apt-get manpage. Patch based on
@@ -5402,7 +7354,7 @@ apt (0.7.15~exp3) experimental; urgency=low
 
   [ Michael Vogt ]
   * apt-pkg/packagemanager.cc, apt-pkg/deb/dpkgpm.cc:
-    - move the state file writting into the Go() implementation
+    - move the state file writing into the Go() implementation
       of dpkgpm (closes: #498799)
   * apt-pkg/algorithms.cc:
     - fix simulation performance drop (thanks to Ferenc Wagner
@@ -5557,7 +7509,7 @@ apt (0.7.12) unstable; urgency=low
       so that it can correct any missing dependencies
   * debian/apt.cron.daily:
     - sleep random amount of time (default within 0-30min) before
-      starting the upate to hit the mirrors less hard
+      starting the update to hit the mirrors less hard
   * doc/apt_preferences.5.xml:
     - fix typo
   * added debian/README.source
@@ -5626,7 +7578,7 @@ apt (0.7.10) unstable; urgency=low
   * Applied patch from Mike O'Connor <stew@vireo.org> to add a manpage to
     apt-mark, closes: #430207.
   * Applied patch from Andrei Popescu <andreimpopescu@gmail.com> to add a
-    note about some frontends in apt.8 manpage, closes: #438545.
+    note about some front-ends in apt.8 manpage, closes: #438545.
   * Applied patch from Aurelien Jarno <aurel32@debian.org> to avoid CPU
     getting crazy when /dev/null is redirected to stdin (which breaks
     buildds), closes: #452858.
@@ -5678,7 +7630,7 @@ apt (0.7.10) unstable; urgency=low
   * debian/control:
     - build against libdb-dev (instead of libdb4.4-dev)
   * merged the apt--DoListUpdate branch, this provides a common interface
-    for "apt-get update" like operations for the frontends and also provides
+    for "apt-get update" like operations for the front-ends and also provides
     hooks to run stuff in APT::Update::{Pre,Post}-Invoke
 
   [ Chris Cheney ]
@@ -5712,7 +7664,7 @@ apt (0.7.9) unstable; urgency=low
     - Swedish updated.
 
   [ Otavio Salvador ]
-  * Fix configure script to check for CURL library and headers presense.
+  * Fix configure script to check for CURL library and headers presence.
   * Applied patch from Brian M. Carlson <sandals@crustytoothpaste.ath.cx>
     to add backward support for arches that lacks pselect support,
     closes: #448406.
@@ -6024,7 +7976,7 @@ apt (0.7.0) experimental; urgency=low
     - install new recommends on "upgrade" if --install-recommends is 
       given
     - new "--fix-policy" option to install all packages with unmet
-      important dependencies (usefull with --install-recommends to
+      important dependencies (useful with --install-recommends to
       see what not-installed recommends are on the system)
     - fix of recommended packages display (only show CandidateVersion
       fix or-group handling)
@@ -6048,7 +8000,7 @@ apt (0.6.46.4) unstable; urgency=high
     - added "Dpkg::StopOnError" variable that controls if apt
       will abort on errors from dpkg
   * apt-pkg/deb/debsrcrecords.{cc,h}:
-    - make the Buffer grow dynmaically (closes: #400874)
+    - make the Buffer grow dynamically (closes: #400874)
   * Merged from Christian Perrier bzr branch:
     - uk.po: New Ukrainian translation: 483t28f3u
     - el.po: Update to 503t9f2u
@@ -6233,7 +8185,7 @@ apt (0.6.44.2) unstable; urgency=low
   * apt-pkg/depcache.cc:
     - added Debug::pkgDepCache::AutoInstall (thanks to infinity)
   * apt-pkg/acquire-item.cc:
-    - fix missing chmod() in the new aquire code 
+    - fix missing chmod() in the new acquire code
       (thanks to Bastian Blank, Closes: #367425)
   * merged from 
     http://www.perrier.eu.org/debian/packages/d-i/level4/apt-main:
@@ -6288,13 +8240,13 @@ apt (0.6.44) unstable; urgency=low
   * Merge from http://www.perrier.eu.org/debian/packages/d-i/level4/apt-main:
   	* bg.po: Added, complete to 512t. Closes: #360262
   * doc/apt-ftparchive.1.xml:
-    - fix documentation for "SrcPackages" -> "Sources" 
+    - fix documentation for "SrcPackages" -> "Sources"
       (thanks to Bart Martens for the patch, closes: #307756)
   * debian/libapt-pkg-doc.doc-base.cache:
     - remove broken charackter from description (closes: #361129)
-  * apt-inst/deb/dpkgdb.cc, methods/gpgv.cc: 
+  * apt-inst/deb/dpkgdb.cc, methods/gpgv.cc:
     - i18n fixes (closes: #349298)
-  * debian/postinst: dont fail on not available
+  * debian/postinst: don't fail on not available
     /usr/share/doc/apt/examples/sources.list (closes: #361130)
   * methods/ftp.cc:
     - unlink empty file in partial if the download failed because
@@ -6303,7 +8255,7 @@ apt (0.6.44) unstable; urgency=low
     - treats a version string with explicit zero epoch equal
       than the same without epoch (Policy 5.6.12, closes: #363358)
       Thanks to Lionel Elie Mamane for the patch
-  
+
  -- Michael Vogt <mvo@debian.org>  Mon,  8 May 2006 22:28:53 +0200
 
 apt (0.6.43.3) unstable; urgency=low
@@ -6329,12 +8281,12 @@ apt (0.6.43.3) unstable; urgency=low
     - don't explode on a DepCompareOp in a Provides line, but warn about
       it and ignore it otherwise (thanks to James Troup for reporting it)
   * cmdline/apt-get.cc:
-    - don't lock the lists directory in DoInstall, breaks --print-uri 
+    - don't lock the lists directory in DoInstall, breaks --print-uri
       (thanks to James Troup for reporting it)
-  * debian/apt.dirs: create /etc/apt/sources.list.d 
+  * debian/apt.dirs: create /etc/apt/sources.list.d
   * make apt-cache madison work without deb-src entries (#352583)
-  * cmdline/apt-get.cc: only run the list-cleaner if a update was 
-    successfull
+  * cmdline/apt-get.cc: only run the list-cleaner if a update was
+    successful
 
  -- Michael Vogt <mvo@debian.org>  Wed, 22 Feb 2006 10:13:04 +0100
 
@@ -6435,13 +8387,13 @@ apt (0.6.42.2) unstable; urgency=high
  
 apt (0.6.42.1) unstable; urgency=low
 
-  * fix a incorrect example in the apt_prefrences man page
+  * fix a incorrect example in the apt_preferences man page
     (thanks to Filipus Klutiero, closes: #282918)
   * apt-pkg/pkgrecords.cc:
     - revert patch from last version, it causes trouble on alpha 
       and ia64 (closes: #335102, #335103)
   * cmdline/apt-get.cc:
-    - be extra carefull in FindSrc (closes: #335213)
+    - be extra careful in FindSrc (closes: #335213)
 
  -- Michael Vogt <mvo@debian.org>  Sat, 22 Oct 2005 23:44:35 +0200
 
@@ -6602,7 +8554,7 @@ apt (0.6.36) experimental; urgency=low
       added "Acquire::BrokenProxy" that will force apt to always 
       re-get the Release.gpg file (for broken proxies)
     - debian/apt.cron.daily:
-      MinAge is defaulting to 2 days now to prevent over-aggresive removal 
+      MinAge is defaulting to 2 days now to prevent over-aggressive removal
     - apt-pkg/cdrom.cc:
       honor "Acquire::gpgv::Options" when verifying the signature (Ubuntu #8496)
  
@@ -6641,7 +8593,7 @@ apt (0.6.33) hoary; urgency=low
     - patch-3: (doc) new config variables added configure-index
     - patch-4: pkgAcquire::Run() pulse intervall can be configured
     - patch-5: fix for apt-get update removing Release.gpg files (#6865)
-    - patch-6: change the path scoring in apt-cdrom, prefer pathes without
+    - patch-6: change the path scoring in apt-cdrom, prefer paths without
       symlinks
 
  -- Matt Zimmerman <mdz@ubuntu.com>  Sat, 26 Feb 2005 15:21:17 -0800
@@ -6663,7 +8615,7 @@ apt (0.6.31) hoary; urgency=low
     - Fix build/install of Polish offline documentation, based on patch from
       Christian Perrier (Closes: #270404)
   * Michael Vogt
-    - apt-cdrom.cc seperated into frontend (cmdline/apt-cdrom.cc and library
+    - apt-cdrom.cc separated into front-end (cmdline/apt-cdrom.cc and library
       apt-pkg/cdrom.{cc,h}) (Ubuntu #5668)
 
  -- Matt Zimmerman <mdz@ubuntu.com>  Fri,  4 Feb 2005 10:23:01 -0800
@@ -6698,7 +8650,7 @@ apt (0.6.27ubuntu4) hoary; urgency=low
     (see ubuntu #4769 for the rational)
   * added apt-key update method (uses ubuntu-keyring)
   * documented the "--allow-unauthenticated" switch
-  * added DEB_BUILD_PROG_OPTS to debian/rules (additonal options can be 
+  * added DEB_BUILD_PROG_OPTS to debian/rules (additional options can be
     passed to DEB_BUILD_PROG like "-S")
 
  -- Michael Vogt <mvo@debian.org>  Thu, 23 Dec 2004 11:12:51 +0100
@@ -6712,7 +8664,7 @@ apt (0.6.27ubuntu3) hoary; urgency=low
 
 apt (0.6.27ubuntu2) hoary; urgency=low
 
-  * fixed a bug in the rule file that happend during the big 0.5->0.6 merge
+  * fixed a bug in the rule file that happened during the big 0.5->0.6 merge
 
  -- Michael Vogt <mvo@debian.org>  Tue, 14 Dec 2004 12:14:25 +0100
 
@@ -7443,7 +9395,7 @@ apt (0.5.10) unstable; urgency=low
     binary package 'apt' in the man pages (Closes: #205290)
   * Updated Polish po file from Marcin Owsiany <porridge@debian.org>
     (Closes: #205950)
-  * Mention some of the available frontends in apt-get(8) (Closes: #205829)
+  * Mention some of the available front-ends in apt-get(8) (Closes: #205829)
   * Add apt-config to SEE ALSO section of apt-get (Closes: #205036)
   * Add missing "lang" attributes to refentry tags in French man pages
     (apt-cdrom, apt-extracttemplates, apt-sortpkgs)
@@ -7652,10 +9604,10 @@ apt (0.5.5) unstable; urgency=low
     ignore roots umask for these files. Closes: #108801
   * Support larger config spaces. Closes: #111914
   * 'apt-get update' no longer does 'Building Dependency Tree'.
-  * When matching regexs allways print a message. Change regex activation
+  * When matching regexs always print a message. Change regex activation
     charset. Closes: #147817
   * Don't die if lines in sources.list are too long. Closes: #146846
-  * Show file name on apt-extracttemplate error messges. Closes: #151835
+  * Show file name on apt-extracttemplate error messages. Closes: #151835
   * i18n gettext stuff, based on work from Michael Piefel: Closes: #95933
   * Some highly unlikely memory faults. Closes: #155842
   * C++ stuff for G++3.2. Closes: #162617, #165515,
@@ -7698,7 +9650,7 @@ apt (0.5.5) unstable; urgency=low
   * When installing build-deps, make sure the new version will
     satisfy build requirements. Closes: #178121
   * Split offline and guide documentation into apt-doc.  This was done so
-    that binary-arch builds do not require documention deps.  Note, that 
+    that binary-arch builds do not require documentation deps.  Note, that
     apt-doc is not installed on upgrades.
   * Use doc-base, instead of dhelp directly.  Closes: #110389
   * Change http message 'Waiting for file' to 'Waiting for headers'.
@@ -7715,7 +9667,7 @@ apt (0.5.5) unstable; urgency=low
   * Update es.po.  Closes: #183111.
   * Add pt_BR translation of apt_preferences(5).  Also, build fr manpages.
     Closes: #183904.
-  * Add a vcg command to apt-cache, similiar to dotty.  Closes: #150512.
+  * Add a vcg command to apt-cache, similar to dotty.  Closes: #150512.
   * Add option to apt-get to show versions of packages being
     upgraded/installed.
   * Be quiet in apt.post{inst,rm}.  Closes: #70685.
@@ -7763,7 +9715,7 @@ apt (0.5.4) unstable; urgency=low
   * Whatever. Closes: #89762
   * libstdc++ and HURD. Closes: #92025
   * More apt-utils verbage. Closes: #86954
-  * Fliped comparision operator. Closes: #94618
+  * Fliped comparison operator. Closes: #94618
   * Used the right copyright file. Closes: #65691
   * Randolph's G++3 patches.
   * Fixed no_proxy tokanizing. Closes: #100046
@@ -7773,7 +9725,7 @@ apt (0.5.4) unstable; urgency=low
   * Various changes to the locking metholodgy for --print-uris.
     Closes: #100590
   * Lame LD_LIBRARY_PATH thing. Closes: #98928
-  * apt-cache search searchs provide names too now. Closes: #98695
+  * apt-cache search searches provide names too now. Closes: #98695
   * Checksum and long lines problem. Closes: #106591
   * .aptignr and empty files are just a warning. Closes: #97364
 
@@ -7883,7 +9835,7 @@ apt (0.5.0) unstable; urgency=low
   * Caching can be turned off by setting the cache file names blank.
   * Ignores arches it does not know about when autocleaning. Closes: #72862
   * New function in apt-config to return dirs, files, bools and integers.
-  * Fixed an odd litle bug in MarkInstall and fixed it up to handle
+  * Fixed an odd little bug in MarkInstall and fixed it up to handle
     complex cases involving OR groups and provides.
     68754 describes confusing messages which are the result of this..
     Closes: #63149, #69394, #68754, #77683, #66806, #81486, #78712
@@ -7932,14 +9884,14 @@ apt (0.3.19) frozen unstable; urgency=low
   * Fixed hardcoded path. Closes: #59743
   * Fixed Jay's relative path bug
   * Allowed source only CDs. Closes: #58952
-  * Space check is supressed if --print-uris is given. Closes: #58965
-  * Clarified the documenation examples for non-us. Closes: #58646
+  * Space check is suppressed if --print-uris is given. Closes: #58965
+  * Clarified the documentation examples for non-us. Closes: #58646
   * Typo in the package description. Closes: #60230
   * Man Page typo. Closes: #60347
   * Typo in Algorithms.cc. Closes: #63577
   * Evil dotty function in apt-cache for generating dependency graphs
     with the as-yet-unpackaged GraphVis.
-  * Appears to have been fixed in Janurary.. Closes: #57981
+  * Appears to have been fixed in January.. Closes: #57981
   * New config.guess/sub for the new archs. Closes: #60874
   * Fixed error reporting for certain kinds of resolution failures.
     Closes: #61327
@@ -7984,7 +9936,7 @@ apt (0.3.16) unstable; urgency=low
   * Now compiles on OpenBSD, Solaris and HP-UX
   * Clarify segfault errors
   * More debhelper fixes. Closes: #52662, #54566, #52090, #53531, #54769
-  * Fix for Joel's discovery of glibc removal behavoir.
+  * Fix for Joel's discovery of glibc removal behavior.
   * Fix for Ben Collins file: uri from slink upgrade.
   * Fixed resume code in FTP. Closes: #54323
   * Take more precautions to prevent the corruption Joey Hess saw.
@@ -8110,7 +10062,7 @@ apt (0.3.7) unstable; urgency=low
   * Added a check for an empty cache directory. Closes: #37963
   * Return a failure code if -d is given and packages fail to download.
     Closes: #38127
-  * Arranged for an ftp proxy specifing an http server to work. See the
+  * Arranged for an ftp proxy specifying an http server to work. See the
     important note in the sources.list man page.
   * Accounted for resumed files in the cps calculation. Closes: #36787
   * Deal with duplicate same version different packages. Closes: #30237
@@ -8140,7 +10092,7 @@ apt (0.3.6) unstable; urgency=low
   * apt-get source support. Closes: #23934, #27190
   * Renames .debs that fail MD5 checking, provides automatic corruption
     recovery. Closes: #35931
-  * Fixed autoconf verison. Closes: #37305
+  * Fixed autoconf version. Closes: #37305
   * Random Segfaulting. Closes: #37312, #37530
   * Fixed apt-cache man page. Closes: #36904
   * Added a newline to apt-cache showpkg. Closes: #36903
@@ -8201,10 +10153,10 @@ apt (0.1.9) frozen unstable; urgency=low
   * apt-get dist-upgrade problems fixed
   * tiny patch for http method to fix an endless loop
   * nice fix from /usr/doc/lintian/ to remove rpath nastiness from
-    libtool and add proper shared lib dependancies
+    libtool and add proper shared lib dependencies
   * now dh_shlibdeps is called with LD_LIBRARY_PATH=debian/tmp/usr/lib
     in case an old libpkg is installed while building APT to prevent
-    spurious dependancies
+    spurious dependencies
 
  -- Ben Gertzfield <che@debian.org>  Thu,  5 Nov 1998 17:43:25 -0800
 
@@ -8234,7 +10186,7 @@ apt (0.1.5) unstable; urgency=low
 apt (0.1.3) unstable; urgency=low
 
   * New upstreamish version.
-  * ftp method rewritten in C. Removes dependancies on all perl/perl
+  * ftp method rewritten in C. Removes dependencies on all perl/perl
     related modules. This fixes many of the ftp method bugs.
 
  -- Ben Gertzfield <che@debian.org>  Thu, 16 Jul 1998 22:19:00 -0700
@@ -8325,7 +10277,7 @@ apt (0.0.12) experimental; urgency=low
 
 apt (0.0.11) experimental; urgency=low
 
-  * Change dependancies to pre-depends since breaking your packaging tools
+  * Change dependencies to pre-depends since breaking your packaging tools
     in the middle of an installation isn't very good.
   * Bug fixes to ftp method and general apt-get code
 
@@ -8346,7 +10298,7 @@ apt (0.0.9) experimental; urgency=low
 
   * Added ftp support.
   * Various other less visible bug fixes.
-  * Fixed problem with segfault when apt-get invoked in a non-existant
+  * Fixed problem with segfault when apt-get invoked in a non-existent
     directory (Bug #21863)
   * Bumped policy to 2.4.1
 
@@ -8398,7 +10350,7 @@ apt (0.0.4) experimental; urgency=low
 
   * New usage guide.
   * Various documentation updates and cleanup.
-  * Added '-f' option to apt-get attempt to fix broken dependancies.
+  * Added '-f' option to apt-get attempt to fix broken dependencies.
 
  -- Scott K. Ellis <scott@debian.org>  Sat,  4 Apr 1998 14:36:00 -0500
 
@@ -8408,7 +10360,7 @@ apt (0.0.3) experimental; urgency=low
   * Updates to how apt-get handles bad states in installed packages.
   * Updated rules to make sure build works from a freshly checked out source
     archive.  Building from CVS needs libtool/automake/autoconf, builds from
-    the distributed source package should have no such dependancy.
+    the distributed source package should have no such dependency.
 
  -- Scott K. Ellis <scott@debian.org>  Fri,  3 Apr 1998 11:49:47 -0500
 

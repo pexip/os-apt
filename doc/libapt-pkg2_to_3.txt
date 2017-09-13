@@ -1,8 +1,9 @@
-libapt-pkg v2 to v3 incorperates several source-incompatible changes that
-people need to be aware of.. Many of this changes are done so that most old
-source will continue to function, but perhaps at reduced functionality.
+libapt-pkg v2 to v3 incorporates several source-incompatible changes
+that people need to be aware of.. Many of this changes are done so that
+most old source will continue to function, but perhaps at reduced
+functionality.
 
-* pkgDepCache is no longer self initilizing, you have to call the Init
+* pkgDepCache is no longer self initializing, you have to call the Init
   method separately after constructing it. Users of pkgCacheFile do not
   need to worry about this
 * GetCandidateVer/etc is gone from the pkgCache. It exists only in the 
@@ -27,11 +28,11 @@ source will continue to function, but perhaps at reduced functionality.
   include the trailing \n.
 * GenCaches::SelectFile accepts a site parameter now too.
 * Global version compare functions are gone. If you 
-    #define APT_COMPATABILITY 1
+    #define APT_COMPATIBILITY 1
   They will come back as they were before. Code should be updated to 
   reference the compare functions to the VersioningSystem (VS) referenced
   by the Cache or _system structures.
-* Initialization is now two stage (define APT_COMPATABILITY..) The first
+* Initialization is now two stage (define APT_COMPATIBILITY..) The first
   stage, pkgInitConfig is called before commandline parsing, and
   pkgInitSystem is called after. This gives the user the oppertunity to
   override default settings from the config files before startup has been

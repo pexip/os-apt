@@ -6,7 +6,7 @@
    Package Manager - Abstacts the package manager
 
    More work is needed in the area of transitioning provides, ie exim
-   replacing smail. This can cause interesing side effects.
+   replacing smail. This can cause interesting side effects.
 
    Other cases involving conflicts+replaces should be tested. 
    
@@ -19,15 +19,17 @@
 #include <apt-pkg/orderlist.h>
 #include <apt-pkg/depcache.h>
 #include <apt-pkg/error.h>
+#include <apt-pkg/edsp.h>
 #include <apt-pkg/version.h>
 #include <apt-pkg/acquire-item.h>
 #include <apt-pkg/algorithms.h>
 #include <apt-pkg/configuration.h>
-#include <apt-pkg/sptr.h>
 #include <apt-pkg/macros.h>
 #include <apt-pkg/pkgcache.h>
 #include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/strutl.h>
+#include <apt-pkg/install-progress.h>
+#include <apt-pkg/prettyprinters.h>
 
 #include <stddef.h>
 #include <list>
@@ -44,7 +46,7 @@ bool pkgPackageManager::SigINTStop = false;
 // ---------------------------------------------------------------------
 /* */
 pkgPackageManager::pkgPackageManager(pkgDepCache *pCache) : Cache(*pCache),
-							    List(NULL), Res(Incomplete)
+							    List(NULL), Res(Incomplete), d(NULL)
 {
    FileNames = new string[Cache.Head().PackageCount];
    Debug = _config->FindB("Debug::pkgPackageManager",false);
@@ -133,10 +135,10 @@ bool pkgPackageManager::FixMissing()
    return Resolve.ResolveByKeep() == true && Cache.BrokenCount() == 0;   
 }
 									/*}}}*/
-// PM::ImmediateAdd - Add the immediate flag recursivly			/*{{{*/
+// PM::ImmediateAdd - Add the immediate flag recursively		/*{{{*/
 // ---------------------------------------------------------------------
 /* This adds the immediate flag to the pkg and recursively to the
-   dependendies 
+   dependencies
  */
 void pkgPackageManager::ImmediateAdd(PkgIterator I, bool UseInstallVer, unsigned const int &Depth)
 {
@@ -159,7 +161,7 @@ void pkgPackageManager::ImmediateAdd(PkgIterator I, bool UseInstallVer, unsigned
 	 if(!List->IsFlag(D.TargetPkg(), pkgOrderList::Immediate))
 	 {
 	    if(Debug)
-	       clog << OutputInDepth(Depth) << "ImmediateAdd(): Adding Immediate flag to " << D.TargetPkg() << " cause of " << D.DepType() << " " << I.FullName() << endl;
+	       clog << OutputInDepth(Depth) << "ImmediateAdd(): Adding Immediate flag to " << APT::PrettyPkg(&Cache, D.TargetPkg()) << " cause of " << D.DepType() << " " << I.FullName() << endl;
 	    List->Flag(D.TargetPkg(),pkgOrderList::Immediate);
 	    ImmediateAdd(D.TargetPkg(), UseInstallVer, Depth + 1);
 	 }
@@ -189,7 +191,7 @@ bool pkgPackageManager::CreateOrderList()
       if (I->VersionList == 0)
 	 continue;
       
-      // Mark the package and its dependends for immediate configuration
+      // Mark the package and its dependents for immediate configuration
       if ((((I->Flags & pkgCache::Flag::Essential) == pkgCache::Flag::Essential) &&
 	  NoImmConfigure == false) || ImmConfigureAll)
       {
@@ -268,6 +270,33 @@ bool pkgPackageManager::CheckRConflicts(PkgIterator Pkg,DepIterator D,
    return true;
 }
 									/*}}}*/
+// PM::CheckRBreaks - Look for reverse breaks				/*{{{*/
+bool pkgPackageManager::CheckRBreaks(PkgIterator const &Pkg, DepIterator D,
+				     const char * const Ver)
+{
+   for (;D.end() == false; ++D)
+   {
+      if (D->Type != pkgCache::Dep::DpkgBreaks)
+	 continue;
+
+      PkgIterator const DP = D.ParentPkg();
+      if (Cache[DP].Delete() == false)
+	 continue;
+
+      // Ignore self conflicts, ignore conflicts from irrelevant versions
+      if (D.IsIgnorable(Pkg) || D.ParentVer() != DP.CurrentVer())
+	 continue;
+
+      if (Cache.VS().CheckDep(Ver, D->CompareOp, D.TargetVer()) == false)
+	 continue;
+
+      // no earlyremove() here as user has already agreed to the permanent removal
+      if (SmartRemove(DP) == false)
+	 return _error->Error("Internal Error, Could not early remove %s (%d)",DP.FullName().c_str(), 4);
+   }
+   return true;
+}
+									/*}}}*/
 // PM::ConfigureAll - Run the all out configuration			/*{{{*/
 // ---------------------------------------------------------------------
 /* This configures every package. It is assumed they are all unpacked and
@@ -286,8 +315,8 @@ bool pkgPackageManager::ConfigureAll()
    if (OList.OrderConfigure() == false)
       return false;
 
-   std::string const conf = _config->Find("PackageManager::Configure","all");
-   bool const ConfigurePkgs = (conf == "all");
+   std::string const conf = _config->Find("PackageManager::Configure", "smart");
+   bool const ConfigurePkgs = (ImmConfigureAll || conf == "all");
 
    // Perform the configuring
    for (pkgOrderList::iterator I = OList.begin(); I != OList.end(); ++I)
@@ -381,7 +410,7 @@ bool pkgPackageManager::SmartConfigure(PkgIterator Pkg, int const Depth)
 	 pkgCache::DepIterator Start, End;
 	 D.GlobOr(Start,End);
 
-	 if (End->Type != pkgCache::Dep::Depends)
+	 if (End->Type != pkgCache::Dep::Depends && End->Type != pkgCache::Dep::PreDepends)
 	    continue;
 	 Bad = true;
 
@@ -389,9 +418,9 @@ bool pkgPackageManager::SmartConfigure(PkgIterator Pkg, int const Depth)
          // to do anything at all
 	 for (DepIterator Cur = Start; true; ++Cur)
 	 {
-	    SPtrArray<Version *> VList = Cur.AllTargets();
+	    std::unique_ptr<Version *[]> VList(Cur.AllTargets());
 
-	    for (Version **I = VList; *I != 0; ++I)
+	    for (Version **I = VList.get(); *I != 0; ++I)
 	    {
 	       VerIterator Ver(Cache,*I);
 	       PkgIterator DepPkg = Ver.ParentPkg();
@@ -399,7 +428,8 @@ bool pkgPackageManager::SmartConfigure(PkgIterator Pkg, int const Depth)
 	       // Check if the current version of the package is available and will satisfy this dependency
 	       if (DepPkg.CurrentVer() == Ver && List->IsNow(DepPkg) == true &&
 		   List->IsFlag(DepPkg,pkgOrderList::Removed) == false &&
-		   DepPkg.State() == PkgIterator::NeedsNothing)
+		   DepPkg.State() == PkgIterator::NeedsNothing &&
+		   (Cache[DepPkg].iFlags & pkgDepCache::ReInstall) != pkgDepCache::ReInstall)
 	       {
 		  Bad = false;
 		  break;
@@ -412,8 +442,13 @@ bool pkgPackageManager::SmartConfigure(PkgIterator Pkg, int const Depth)
 	       if (PkgLoop == true)
 	       {
 		  if (Debug)
-		     std::clog << OutputInDepth(Depth) << "Package " << Pkg << " loops in SmartConfigure" << std::endl;
-	          Bad = false;
+		     std::clog << OutputInDepth(Depth) << "Package " << APT::PrettyPkg(&Cache, Pkg) << " loops in SmartConfigure";
+		  if (List->IsFlag(DepPkg,pkgOrderList::UnPacked))
+		     Bad = false;
+		  else if (Debug)
+		     std::clog << ", but it isn't unpacked yet";
+		  if (Debug)
+		     std::clog << std::endl;
 	       }
 	    }
 
@@ -425,7 +460,7 @@ bool pkgPackageManager::SmartConfigure(PkgIterator Pkg, int const Depth)
          if (Bad == false)
          {
             if (Debug)
-               std::clog << OutputInDepth(Depth) << "Found ok dep " << D.TargetPkg() << std::endl;
+               std::clog << OutputInDepth(Depth) << "Found ok dep " << APT::PrettyPkg(&Cache, Start.TargetPkg()) << std::endl;
             continue;
          }
 
@@ -433,9 +468,9 @@ bool pkgPackageManager::SmartConfigure(PkgIterator Pkg, int const Depth)
          // probably due to loops.
 	 for (DepIterator Cur = Start; true; ++Cur)
 	 {
-	    SPtrArray<Version *> VList = Cur.AllTargets();
+	    std::unique_ptr<Version *[]> VList(Cur.AllTargets());
 
-	    for (Version **I = VList; *I != 0; ++I)
+	    for (Version **I = VList.get(); *I != 0; ++I)
 	    {
 	       VerIterator Ver(Cache,*I);
 	       PkgIterator DepPkg = Ver.ParentPkg();
@@ -443,7 +478,8 @@ bool pkgPackageManager::SmartConfigure(PkgIterator Pkg, int const Depth)
 	       // Check if the current version of the package is available and will satisfy this dependency
 	       if (DepPkg.CurrentVer() == Ver && List->IsNow(DepPkg) == true &&
 		   List->IsFlag(DepPkg,pkgOrderList::Removed) == false &&
-		   DepPkg.State() == PkgIterator::NeedsNothing)
+		   DepPkg.State() == PkgIterator::NeedsNothing &&
+		   (Cache[DepPkg].iFlags & pkgDepCache::ReInstall) != pkgDepCache::ReInstall)
                   continue;
 
 	       // Check if the version that is going to be installed will satisfy the dependency
@@ -453,13 +489,18 @@ bool pkgPackageManager::SmartConfigure(PkgIterator Pkg, int const Depth)
 	       if (PkgLoop == true)
 	       {
 		  if (Debug)
-		     std::clog << OutputInDepth(Depth) << "Package " << Pkg << " loops in SmartConfigure" << std::endl;
-	          Bad = false;
+		     std::clog << OutputInDepth(Depth) << "Package " << APT::PrettyPkg(&Cache, Pkg) << " loops in SmartConfigure";
+		  if (List->IsFlag(DepPkg,pkgOrderList::UnPacked))
+		     Bad = false;
+		  else if (Debug)
+		     std::clog << ", but it isn't unpacked yet";
+		  if (Debug)
+		     std::clog << std::endl;
 	       }
 	       else
 	       {
 		  if (Debug)
-		     clog << OutputInDepth(Depth) << "Unpacking " << DepPkg.FullName() << " to avoid loop " << Cur << endl;
+		     clog << OutputInDepth(Depth) << "Unpacking " << DepPkg.FullName() << " to avoid loop " << APT::PrettyDep(&Cache, Cur) << endl;
 		  if (NonLoopingSmart(UNPACK_IMMEDIATE, Pkg, DepPkg, Depth, PkgLoop, &Bad, &Changed) == false)
 		     return false;
 	       }
@@ -495,16 +536,16 @@ bool pkgPackageManager::SmartConfigure(PkgIterator Pkg, int const Depth)
 	    Discard.GlobOr(Start,End);
 	 }
 
-	 if (End->Type != pkgCache::Dep::Depends)
+	 if (End->Type != pkgCache::Dep::Depends && End->Type != pkgCache::Dep::PreDepends)
 	    continue;
 	 Bad = true;
 
 	 // Search for dependencies which are unpacked but aren't configured yet (maybe loops)
 	 for (DepIterator Cur = Start; true; ++Cur)
 	 {
-	    SPtrArray<Version *> VList = Cur.AllTargets();
+	    std::unique_ptr<Version *[]> VList(Cur.AllTargets());
 
-	    for (Version **I = VList; *I != 0; ++I)
+	    for (Version **I = VList.get(); *I != 0; ++I)
 	    {
 	       VerIterator Ver(Cache,*I);
 	       PkgIterator DepPkg = Ver.ParentPkg();
@@ -522,7 +563,7 @@ bool pkgPackageManager::SmartConfigure(PkgIterator Pkg, int const Depth)
 		    break;
 		  }
 		  if (Debug)
-		     std::clog << OutputInDepth(Depth) << "Configure already unpacked " << DepPkg << std::endl;
+		     std::clog << OutputInDepth(Depth) << "Configure already unpacked " << APT::PrettyPkg(&Cache, DepPkg) << std::endl;
 		  if (NonLoopingSmart(CONFIGURE, Pkg, DepPkg, Depth, PkgLoop, &Bad, &Changed) == false)
 		     return false;
 		  break;
@@ -540,7 +581,7 @@ bool pkgPackageManager::SmartConfigure(PkgIterator Pkg, int const Depth)
 
 
 	 if (Bad == true && Changed == false && Debug == true)
-	    std::clog << OutputInDepth(Depth) << "Could not satisfy " << *D << std::endl;
+	    std::clog << OutputInDepth(Depth) << "Could not satisfy " << APT::PrettyDep(&Cache, *D) << std::endl;
       }
       if (i++ > max_loops)
          return _error->Error("Internal error: MaxLoopCount reached in SmartUnPack (2) for %s, aborting", Pkg.FullName().c_str());
@@ -549,9 +590,17 @@ bool pkgPackageManager::SmartConfigure(PkgIterator Pkg, int const Depth)
    if (Bad == true)
       return _error->Error(_("Could not configure '%s'. "),Pkg.FullName().c_str());
 
+   // Check for reverse conflicts.
+   if (CheckRBreaks(Pkg,Pkg.RevDependsList(), instVer.VerStr()) == false)
+      return false;
+
+   for (PrvIterator P = instVer.ProvidesList(); P.end() == false; ++P)
+      if (Pkg->Group != P.OwnerPkg()->Group)
+	 CheckRBreaks(Pkg,P.ParentPkg().RevDependsList(),P.ProvideVersion());
+
    if (PkgLoop) return true;
 
-   static std::string const conf = _config->Find("PackageManager::Configure","all");
+   static std::string const conf = _config->Find("PackageManager::Configure", "smart");
    static bool const ConfigurePkgs = (conf == "all" || conf == "smart");
 
    if (List->IsFlag(Pkg,pkgOrderList::Configured))
@@ -713,15 +762,16 @@ bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int c
 	    // Look for easy targets: packages that are already okay
 	    for (DepIterator Cur = Start; Bad == true; ++Cur)
 	    {
-	       SPtrArray<Version *> VList = Cur.AllTargets();
-	       for (Version **I = VList; *I != 0; ++I)
+	       std::unique_ptr<Version *[]> VList(Cur.AllTargets());
+	       for (Version **I = VList.get(); *I != 0; ++I)
 	       {
 		  VerIterator Ver(Cache,*I);
 		  PkgIterator Pkg = Ver.ParentPkg();
 
 		  // See if the current version is ok
 		  if (Pkg.CurrentVer() == Ver && List->IsNow(Pkg) == true &&
-		      Pkg.State() == PkgIterator::NeedsNothing)
+		      Pkg.State() == PkgIterator::NeedsNothing &&
+		      (Cache[Pkg].iFlags & pkgDepCache::ReInstall) != pkgDepCache::ReInstall)
 		  {
 		     Bad = false;
 		     if (Debug)
@@ -736,15 +786,18 @@ bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int c
 	    // Look for something that could be configured.
 	    for (DepIterator Cur = Start; Bad == true && Cur.end() == false; ++Cur)
 	    {
-	       SPtrArray<Version *> VList = Cur.AllTargets();
-	       for (Version **I = VList; *I != 0; ++I)
+	       std::unique_ptr<Version *[]> VList(Cur.AllTargets());
+	       for (Version **I = VList.get(); *I != 0; ++I)
 	       {
 		  VerIterator Ver(Cache,*I);
 		  PkgIterator DepPkg = Ver.ParentPkg();
 
 		  // Not the install version
-		  if (Cache[DepPkg].InstallVer != *I ||
-		      (Cache[DepPkg].Keep() == true && DepPkg.State() == PkgIterator::NeedsNothing))
+		  if (Cache[DepPkg].InstallVer != *I)
+		     continue;
+
+		  if (Cache[DepPkg].Keep() == true && DepPkg.State() == PkgIterator::NeedsNothing &&
+			(Cache[DepPkg].iFlags & pkgDepCache::ReInstall) != pkgDepCache::ReInstall)
 		     continue;
 
 		  if (List->IsFlag(DepPkg,pkgOrderList::Configured))
@@ -753,9 +806,19 @@ bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int c
 		     break;
 		  }
 
-		  // check if it needs unpack or if if configure is enough
+		  // check if it needs unpack or if configure is enough
 		  if (List->IsFlag(DepPkg,pkgOrderList::UnPacked) == false)
 		  {
+		     // two packages pre-depending on each other can't be handled sanely
+		     if (List->IsFlag(DepPkg,pkgOrderList::Loop) && PkgLoop)
+		     {
+			// this isn't an error as there is potential for something else to satisfy it
+			// (like a provides or an or-group member)
+			if (Debug)
+			   clog << OutputInDepth(Depth) << "Unpack loop detected between " << DepPkg.FullName() << " and " << Pkg.FullName() << endl;
+			continue;
+		     }
+
 		     if (Debug)
 			clog << OutputInDepth(Depth) << "Trying to SmartUnpack " << DepPkg.FullName() << endl;
 		     if (NonLoopingSmart(UNPACK_IMMEDIATE, Pkg, DepPkg, Depth, PkgLoop, &Bad, &Changed) == false)
@@ -779,29 +842,29 @@ bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int c
 		  End->Type == pkgCache::Dep::Obsoletes ||
 		  End->Type == pkgCache::Dep::DpkgBreaks)
 	 {
-	    SPtrArray<Version *> VList = End.AllTargets();
-	    for (Version **I = VList; *I != 0; ++I)
+	    std::unique_ptr<Version *[]> VList(End.AllTargets());
+	    for (Version **I = VList.get(); *I != 0; ++I)
 	    {
 	       VerIterator Ver(Cache,*I);
 	       PkgIterator ConflictPkg = Ver.ParentPkg();
 	       if (ConflictPkg.CurrentVer() != Ver)
 	       {
 		  if (Debug)
-		     std::clog << OutputInDepth(Depth) << "Ignore not-installed version " << Ver.VerStr() << " of " << ConflictPkg.FullName() << " for " << End << std::endl;
+		     std::clog << OutputInDepth(Depth) << "Ignore not-installed version " << Ver.VerStr() << " of " << ConflictPkg.FullName() << " for " << APT::PrettyDep(&Cache, End) << std::endl;
 		  continue;
 	       }
 
 	       if (List->IsNow(ConflictPkg) == false)
 	       {
 		  if (Debug)
-		     std::clog << OutputInDepth(Depth) << "Ignore already dealt-with version " << Ver.VerStr() << " of " << ConflictPkg.FullName() << " for " << End << std::endl;
+		     std::clog << OutputInDepth(Depth) << "Ignore already dealt-with version " << Ver.VerStr() << " of " << ConflictPkg.FullName() << " for " << APT::PrettyDep(&Cache, End) << std::endl;
 		  continue;
 	       }
 
 	       if (List->IsFlag(ConflictPkg,pkgOrderList::Removed) == true)
 	       {
 		  if (Debug)
-		     clog << OutputInDepth(Depth) << "Ignoring " << End << " as " << ConflictPkg.FullName() << "was temporarily removed" << endl;
+		     clog << OutputInDepth(Depth) << "Ignoring " << APT::PrettyDep(&Cache, End) << " as " << ConflictPkg.FullName() << "was temporarily removed" << endl;
 		  continue;
 	       }
 
@@ -810,7 +873,7 @@ bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int c
 		  if (End->Type == pkgCache::Dep::DpkgBreaks && End.IsMultiArchImplicit() == true)
 		  {
 		     if (Debug)
-			clog << OutputInDepth(Depth) << "Because dependency is MultiArchImplicit we ignored looping on: " << ConflictPkg << endl;
+			clog << OutputInDepth(Depth) << "Because dependency is MultiArchImplicit we ignored looping on: " << APT::PrettyPkg(&Cache, ConflictPkg) << endl;
 		     continue;
 		  }
 		  if (Debug)
@@ -821,7 +884,7 @@ bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int c
 			clog << OutputInDepth(Depth) << "Because of conflict knot, removing " << ConflictPkg.FullName() << " temporarily" << endl;
 		  }
 		  if (EarlyRemove(ConflictPkg, &End) == false)
-		     return _error->Error("Internal Error, Could not early remove %s (2)",ConflictPkg.FullName().c_str());
+		     return _error->Error("Internal Error, Could not early remove %s (%d)",ConflictPkg.FullName().c_str(), 3);
 		  SomethingBad = true;
 		  continue;
 	       }
@@ -830,7 +893,7 @@ bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int c
 	       {
 		  if (Debug)
 		  {
-		     clog << OutputInDepth(Depth) << "Unpacking " << ConflictPkg.FullName() << " to avoid " << End;
+		     clog << OutputInDepth(Depth) << "Unpacking " << ConflictPkg.FullName() << " to avoid " << APT::PrettyDep(&Cache, End);
 		     if (PkgLoop == true)
 			clog << " (Looping)";
 		     clog << std::endl;
@@ -842,28 +905,28 @@ bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int c
 		     // but if it fails ignore this failure and look for alternative ways of solving
 		     if (Debug)
 		     {
-			clog << OutputInDepth(Depth) << "Avoidance unpack of " << ConflictPkg.FullName() << " failed for " << End << std::endl;
-			_error->DumpErrors(std::clog);
+			clog << OutputInDepth(Depth) << "Avoidance unpack of " << ConflictPkg.FullName() << " failed for " << APT::PrettyDep(&Cache, End) << " ignoring:" << std::endl;
+			_error->DumpErrors(std::clog, GlobalError::DEBUG, false);
 		     }
 		     _error->RevertToStack();
 		     // ignorance can only happen if a) one of the offenders is already gone
 		     if (List->IsFlag(ConflictPkg,pkgOrderList::Removed) == true)
 		     {
 			if (Debug)
-			   clog << OutputInDepth(Depth) << "But " << ConflictPkg.FullName() << " was temporarily removed in the meantime to satisfy " << End << endl;
+			   clog << OutputInDepth(Depth) << "But " << ConflictPkg.FullName() << " was temporarily removed in the meantime to satisfy " << APT::PrettyDep(&Cache, End) << endl;
 		     }
 		     else if (List->IsFlag(Pkg,pkgOrderList::Removed) == true)
 		     {
 			if (Debug)
-			   clog << OutputInDepth(Depth) << "But " << Pkg.FullName() << " was temporarily removed in the meantime to satisfy " << End << endl;
+			   clog << OutputInDepth(Depth) << "But " << Pkg.FullName() << " was temporarily removed in the meantime to satisfy " <<  APT::PrettyDep(&Cache, End) << endl;
 		     }
 		     // or b) we can make one go (removal or dpkg auto-deconfigure)
 		     else
 		     {
 			if (Debug)
-			   clog << OutputInDepth(Depth) << "So temprorary remove/deconfigure " << ConflictPkg.FullName() << " to satisfy " << End << endl;
+			   clog << OutputInDepth(Depth) << "So temprorary remove/deconfigure " << ConflictPkg.FullName() << " to satisfy " <<  APT::PrettyDep(&Cache, End) << endl;
 			if (EarlyRemove(ConflictPkg, &End) == false)
-			   return _error->Error("Internal Error, Could not early remove %s (2)",ConflictPkg.FullName().c_str());
+			   return _error->Error("Internal Error, Could not early remove %s (%d)",ConflictPkg.FullName().c_str(), 2);
 		     }
 		  }
 		  else
@@ -872,10 +935,10 @@ bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int c
 	       else
 	       {
 		  if (Debug)
-		     clog << OutputInDepth(Depth) << "Removing " << ConflictPkg.FullName() << " now to avoid " << End << endl;
+		     clog << OutputInDepth(Depth) << "Removing " << ConflictPkg.FullName() << " now to avoid " << APT::PrettyDep(&Cache, End) << endl;
 		  // no earlyremove() here as user has already agreed to the permanent removal
 		  if (SmartRemove(Pkg) == false)
-		     return _error->Error("Internal Error, Could not early remove %s (1)",ConflictPkg.FullName().c_str());
+		     return _error->Error("Internal Error, Could not early remove %s (%d)",ConflictPkg.FullName().c_str(), 1);
 	       }
 	    }
 	 }
@@ -890,7 +953,7 @@ bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int c
    if (couldBeTemporaryRemoved == true && List->IsFlag(Pkg,pkgOrderList::Removed) == true)
    {
       if (Debug)
-	 std::clog << OutputInDepth(Depth) << "Prevent unpack as " << Pkg << " is currently temporarily removed" << std::endl;
+	 std::clog << OutputInDepth(Depth) << "Prevent unpack as " << APT::PrettyPkg(&Cache, Pkg) << " is currently temporarily removed" << std::endl;
       return true;
    }
 
@@ -952,7 +1015,7 @@ bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int c
       return false;
 
    if (Immediate == true) {
-      // Perform immedate configuration of the package. 
+      // Perform immediate configuration of the package. 
          if (SmartConfigure(Pkg, Depth + 1) == false)
             _error->Error(_("Could not perform immediate configuration on '%s'. "
                "Please see man 5 apt.conf under APT::Immediate-Configure for details. (%d)"),Pkg.FullName().c_str(),2);
@@ -970,9 +1033,21 @@ pkgPackageManager::OrderResult pkgPackageManager::OrderInstall()
       return Failed;
 
    Reset();
-   
+
    if (Debug == true)
       clog << "Beginning to order" << endl;
+
+   std::string const planner = _config->Find("APT::Planner", "internal");
+   unsigned int flags = 0;
+   if (_config->FindB("APT::Immediate-Configure", true) == false)
+      flags |= EIPP::Request::NO_IMMEDIATE_CONFIGURATION;
+   else if (_config->FindB("APT::Immediate-Configure-All", false))
+      flags |= EIPP::Request::IMMEDIATE_CONFIGURATION_ALL;
+   else if (_config->FindB("APT::Force-LoopBreak", false))
+      flags |= EIPP::Request::ALLOW_TEMPORARY_REMOVE_OF_ESSENTIALS;
+   auto const ret = EIPP::OrderInstall(planner.c_str(), this, flags, nullptr);
+   if (planner != "internal")
+      return ret ? Completed : Failed;
 
    bool const ordering =
 	_config->FindB("PackageManager::UnpackAll",true) ?
@@ -982,7 +1057,7 @@ pkgPackageManager::OrderResult pkgPackageManager::OrderInstall()
       _error->Error("Internal ordering error");
       return Failed;
    }
-   
+
    if (Debug == true)
       clog << "Done ordering" << endl;
 
@@ -1058,7 +1133,6 @@ pkgPackageManager::OrderResult pkgPackageManager::OrderInstall()
 // PM::DoInstallPostFork - compat /*{{{*/
 // ---------------------------------------------------------------------
 									/*}}}*/
-#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
 pkgPackageManager::OrderResult
 pkgPackageManager::DoInstallPostFork(int statusFd)
 {
@@ -1074,28 +1148,21 @@ pkgPackageManager::DoInstallPostFork(int statusFd)
 pkgPackageManager::OrderResult 
 pkgPackageManager::DoInstallPostFork(APT::Progress::PackageManager *progress)
 {
-   bool goResult = Go(progress);
-   if(goResult == false) 
-      return Failed;
-   
-   return Res;
-};
-#else
-pkgPackageManager::OrderResult
-pkgPackageManager::DoInstallPostFork(int statusFd)
-{
-   bool goResult = Go(statusFd);
+   bool goResult;
+   auto simulation = dynamic_cast<pkgSimulate*>(this);
+   if (simulation == nullptr)
+      goResult = Go(progress);
+   else
+      goResult = simulation->Go2(progress);
    if(goResult == false) 
       return Failed;
    
    return Res;
 }
-#endif
 									/*}}}*/	
 // PM::DoInstall - Does the installation				/*{{{*/
 // ---------------------------------------------------------------------
 /* compat */
-#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
 pkgPackageManager::OrderResult 
 pkgPackageManager::DoInstall(int statusFd)
 {
@@ -1105,21 +1172,11 @@ pkgPackageManager::DoInstall(int statusFd)
     delete progress;
     return res;
  }
-#else
-pkgPackageManager::OrderResult pkgPackageManager::DoInstall(int statusFd)
-{
-   if(DoInstallPreFork() == Failed)
-      return Failed;
-
-   return DoInstallPostFork(statusFd);
-}
-#endif
 									/*}}}*/	
 // PM::DoInstall - Does the installation				/*{{{*/
 // ---------------------------------------------------------------------
 /* This uses the filenames in FileNames and the information in the
    DepCache to perform the installation of packages.*/
-#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
 pkgPackageManager::OrderResult 
 pkgPackageManager::DoInstall(APT::Progress::PackageManager *progress)
 {
@@ -1128,5 +1185,4 @@ pkgPackageManager::DoInstall(APT::Progress::PackageManager *progress)
    
    return DoInstallPostFork(progress);
 }
-#endif
 									/*}}}*/	      

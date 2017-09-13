@@ -1,14 +1,15 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 setupenvironment
 configarchitecture "i386"
 setupaptarchive
 
-testequal "Reading package lists...
+testfailureequal "Reading package lists...
 Building dependency tree...
+Calculating upgrade...
 The following packages will be upgraded:
   php5 php5-cgi
 2 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
@@ -23,3 +24,7 @@ if aptget dist-upgrade --trivial-only -o Debug::pkgProblemResolver=1 -o Debug::p
 else
 	msgpass
 fi
+
+# the Packages file includes only MD5
+testfailure aptget dist-upgrade -y
+testsuccess grep 'Insufficient information available to perform this download securely' rootdir/tmp/testfailure.output

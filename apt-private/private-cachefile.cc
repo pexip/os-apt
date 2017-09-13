@@ -7,7 +7,7 @@
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/depcache.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
+#include <apt-pkg/cacheset.h>
 
 #include <apt-private/private-output.h>
 #include <apt-private/private-cachefile.h>
@@ -21,37 +21,40 @@
 
 using namespace std;
 
-// CacheFile::NameComp - QSort compare by name				/*{{{*/
-// ---------------------------------------------------------------------
-/* */
-pkgCache *CacheFile::SortCache = 0;
-int CacheFile::NameComp(const void *a,const void *b)
+static bool SortPackagesByName(pkgCache * const Owner,
+      map_pointer_t const A, map_pointer_t const B)
 {
-   if (*(pkgCache::Package **)a == 0 || *(pkgCache::Package **)b == 0)
-      return *(pkgCache::Package **)a - *(pkgCache::Package **)b;
-   
-   const pkgCache::Package &A = **(pkgCache::Package **)a;
-   const pkgCache::Package &B = **(pkgCache::Package **)b;
-
-   return strcmp(SortCache->StrP + A.Name,SortCache->StrP + B.Name);
+   if (A == 0)
+      return false;
+   if (B == 0 || A == B)
+      return true;
+   pkgCache::Group const * const GA = Owner->GrpP + A;
+   pkgCache::Group const * const GB = Owner->GrpP + B;
+   return strcmp(Owner->StrP + GA->Name, Owner->StrP + GB->Name) <= 0;
 }
-									/*}}}*/
-// CacheFile::Sort - Sort by name					/*{{{*/
-// ---------------------------------------------------------------------
-/* */
-void CacheFile::Sort()
+SortedPackageUniverse::SortedPackageUniverse(CacheFile &Cache) :
+      PackageUniverse{Cache}, List(Cache.UniverseList)
 {
-   delete [] List;
-   List = new pkgCache::Package *[Cache->Head().PackageCount];
-   memset(List,0,sizeof(*List)*Cache->Head().PackageCount);
-   pkgCache::PkgIterator I = Cache->PkgBegin();
-   for (;I.end() != true; ++I)
-      List[I->ID] = I;
-
-   SortCache = *this;
-   qsort(List,Cache->Head().PackageCount,sizeof(*List),NameComp);
 }
-									/*}}}*/
+void SortedPackageUniverse::LazyInit() const
+{
+   if (List.empty() == false)
+      return;
+   pkgCache * const Owner = data();
+   // In Multi-Arch systems Grps are easier to sort than Pkgs
+   std::vector<map_pointer_t> GrpList;
+   List.reserve(Owner->Head().GroupCount);
+   for (pkgCache::GrpIterator I{Owner->GrpBegin()}; I.end() != true; ++I)
+      GrpList.emplace_back(I - Owner->GrpP);
+   std::stable_sort(GrpList.begin(), GrpList.end(), std::bind( &SortPackagesByName, Owner, std::placeholders::_1, std::placeholders::_2 ));
+   List.reserve(Owner->Head().PackageCount);
+   for (auto G : GrpList)
+   {
+      pkgCache::GrpIterator const Grp(*Owner, Owner->GrpP + G);
+      for (pkgCache::PkgIterator P = Grp.PackageList(); P.end() != true; P = Grp.NextPkg(P))
+	 List.emplace_back(P - Owner->PkgP);
+   }
+}
 // CacheFile::CheckDeps - Open the cache file				/*{{{*/
 // ---------------------------------------------------------------------
 /* This routine generates the caches and then opens the dependency cache
@@ -105,10 +108,9 @@ bool CacheFile::CheckDeps(bool AllowBroken)
    }
    else
    {
-      c1out << _("You might want to run 'apt-get -f install' to correct these.") << endl;
+      c1out << _("You might want to run 'apt --fix-broken install' to correct these.") << endl;
       ShowBroken(c1out,*this,true);
-
-      return _error->Error(_("Unmet dependencies. Try using -f."));
+      return _error->Error(_("Unmet dependencies. Try 'apt --fix-broken install' with no packages (or specify a solution)."));
    }
       
    return true;

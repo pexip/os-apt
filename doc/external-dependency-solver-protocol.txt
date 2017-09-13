@@ -58,17 +58,29 @@ configuration documentation for more, and more up to date, information.
 - **APT::Solver**: the name of the solver to be used for
   dependency solving. Defaults to `internal`
 
+- **Dir::Bin::Solvers**: absolute path of the directory where to look for
+  external solvers. Defaults to `/usr/lib/apt/solvers`.
+
 - **APT::Solver::Strict-Pinning**: whether pinning must be strictly
   respected (as the internal solver does) or can be slightly deviated
   from. Defaults to `yes`.
 
-- **APT::Solver::NAME::Preferences** (where NAME is a solver name):
-  solver-specific user preference string used during dependency solving,
-  when the solver NAME is in use. Check solver-specific documentation
-  for what is supported here. Defaults to the empty string.
+- **APT::Solver::Preferences**: user preference string used during
+  dependency solving by the requested solver. Check the documentation
+  of the solver you are using if and what is supported as a value here.
+  Defaults to the empty string.
 
-- **Dir::Bin::Solvers**: absolute path of the directory where to look for
-  external solvers. Defaults to `/usr/lib/apt/solvers`.
+- **APT::Solver::RunAsUser**: if APT itself is run as root it will
+  change to this user before executing the solver. Defaults to the value
+  of APT::Sandbox::User, which itself defaults to `_apt`. Can be
+  disabled by set this option to `root`.
+
+The options **Strict-Pinning** and **Preferences** can also be set for
+a specific solver only via **APT::Solver::NAME::Strict-Pinning** and
+**APT::Solver::NAME::Preferences** respectively where `NAME` is the name
+of the external solver this option should apply to. These options if set
+override the generic options; for simplicity the documentation will
+refer only to the generic options.
 
 
 ## Protocol
@@ -149,16 +161,25 @@ The following **action fields** are supported in request stanzas:
   Install. This field denotes a list of packages that the user wants to
   remove, usually via APT `remove` or `purge` requests.
 
-- **Upgrade:** (optional, defaults to `no`). Allowed values: `yes`,
+- **Upgrade-All:** (optional, defaults to `no`). Allowed values `yes`,
   `no`. When set to `yes`, an upgrade of all installed packages has been
-  requested, usually via an APT `upgrade` request.
-
-- **Dist-Upgrade:** (optional, defaults to `no`). Allowed values: `yes`,
-  `no`. Same as Upgrade, but for APT `dist-upgrade` requests.
+  requested, usually via an upgrade command like 'apt full-upgrade'.
 
 - **Autoremove:** (optional, defaults to `no`). Allowed values: `yes`,
   `no`. When set to `yes`, a clean up of unused automatically installed
   packages has been requested, usually via an APT `autoremove` request.
+
+- **Upgrade:** (deprecated, optional, defaults to `no`). Allowed values:
+  `yes`, `no`. When set to `yes`, an upgrade of all installed packages
+  has been requested, usually via an APT `upgrade` request. A value of
+  `yes` is equivalent to the fields `Upgrade-All`,
+  `Forbid-New-Install`and `Forbid-Remove` all set to `yes`.
+
+- **Dist-Upgrade:** (deprecated, optional, defaults to `no`). Allowed
+  values: `yes`, `no`. Same as Upgrade, but for APT `dist-upgrade`
+  requests. A value of `yes` is equivalent to the field `Upgrade-All`
+  set to `yes` and the fields `Forbid-New-Install`and `Forbid-Remove`
+  set to `no`.
 
 The following **preference fields** are supported in request stanzas:
 
@@ -171,8 +192,21 @@ The following **preference fields** are supported in request stanzas:
   field comes from the `APT::Solver::Strict-Pinning` configuration
   option.
 
-- **Preferences:** a solver-specific optimization string, usually coming
-  from the `APT::Solver::Preferences` configuration option.
+- **Forbid-New-Install:* (optional, defaults to `no`). Allowed values:
+  `yes`, `no`. When set to `yes` the resolver is forbidden to install
+  new packages in its returned solution.
+
+- **Forbid-Remove:* (optional, defaults to `no`). Allowed values: `yes`,
+  `no`.  When set to `yes` the resolver is forbidden to remove currently
+  installed packages in its returned solution.
+
+- **Solver:** (optional, defaults to the empty string) a purely
+  informational string specifying to which solver this request was send
+  initially.
+
+- **Preferences:** (optional, defaults to the empty string)
+  a solver-specific optimization string, usually coming from the
+  `APT::Solver::Preferences` configuration option.
 
 
 #### Package universe
@@ -195,8 +229,8 @@ field. The following fields are supported in package stanzas:
   
   Note: the Status field present in the dpkg database must not be passed
   to the external solver, as it's an internal dpkg field. Installed and
-  other fields permit to encode the most relevant aspects of Status in
-  communications with solvers.
+  other fields permit one to encode the most relevant aspects of Status
+  in communications with solvers.
 
 - **Hold:** (optional, defaults to `no`). Allowed values: `yes`,
   `no`. When set to `yes`, the corresponding package is marked as "on
@@ -227,6 +261,12 @@ field. The following fields are supported in package stanzas:
   Release file entry (Origin, Label, Codename, etc.) in the format of
   APT_PREFERENCES(5).
 
+- **Source:** (optional) The name of the source package the binary
+  package this record is for was built from.
+  This field does NOT include the version of the source package unlike
+  the Source field in the dpkg database. The version is optionally
+  available in the **Source-Version:** field.
+
 
 ### Answer
 
@@ -245,11 +285,11 @@ the user.
 
 #### Solution
 
-A solution is a list of Deb 822 stanzas. Each of them could be an
-install stanza (telling APT to install a specific package), a remove
-stanza (telling APT to remove one), or an autoremove stanza (telling APT
-about the *future* possibility of removing a package using the
-Autoremove action).
+A solution is a list of Deb 822 stanzas. Each of them could be an install
+stanza (telling APT to install a specific new package or to upgrade or
+downgrade a package to a specific version), a remove stanza (telling APT to
+remove one), or an autoremove stanza (telling APT about the *future*
+possibility of removing a package using the Autoremove action).
 
 An **install stanza** starts with an Install field and supports the
 following fields:
@@ -270,6 +310,16 @@ can now autoremove, as a consequence of the executed action. However,
 this protocol makes no assumption on the fact that a subsequent
 invocation of an Autoremove action will actually remove the very same
 packages indicated by Autoremove stanzas in the former solution.
+
+A package can't be installed in multiple versions at the same time, so
+for each package there can at most one version be selected either for
+installation or removal. This especially means that a solver is neither
+allowed to represent package upgrades as a remove of the installed
+version and the installation of another (the remove is implicit and must
+be omitted from the solution) nor is it supported to revert previous
+actions in the solution with later actions. APT is allowed to show
+warnings and might even misbehave in earlier versions if a solver is
+violating this assumption.
 
 In terms of expressivity, install and remove stanzas can carry one
 single field each, as APT-IDs are enough to pinpoint packages to be
@@ -302,8 +352,9 @@ information to APT using **progress stanzas**. A progress stanza starts
 with the Progress field and might contain the following fields:
 
 - **Progress:** (mandatory). The value of this field is a date and time
-  timestamp, in RFC 2822 format. The timestamp provides a time
-  annotation for the progress report.
+  timestamp from the UTC timezone, in RFC 2822 format (see 'date -uR' as
+  an example). The timestamp provides a time annotation for the
+  progress report.
 
 - **Percentage:** (optional). An integer from 0 to 100, representing the
   completion of the dependency solving process, as declared by the

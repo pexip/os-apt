@@ -19,13 +19,14 @@
 static bool UpgradeHelper(CommandLine &CmdL, int UpgradeFlags)
 {
    CacheFile Cache;
+   std::vector<std::string> VolatileCmdL;
+   Cache.GetSourceList()->AddVolatileFiles(CmdL, &VolatileCmdL);
+
    if (Cache.OpenForInstall() == false || Cache.CheckDeps() == false)
       return false;
 
-   c0out << _("Calculating upgrade... ") << std::flush;
-   if(!DoCacheManipulationFromCommandLine(CmdL, Cache, UpgradeFlags))
+   if(!DoCacheManipulationFromCommandLine(CmdL, VolatileCmdL,  Cache, UpgradeFlags))
       return false;
-   c0out << _("Done") << std::endl;
 
    return InstallPackages(Cache,true);
 }
@@ -35,7 +36,7 @@ static bool UpgradeHelper(CommandLine &CmdL, int UpgradeFlags)
 /* Intelligent upgrader that will install and remove packages at will */
 bool DoDistUpgrade(CommandLine &CmdL)
 {
-   return UpgradeHelper(CmdL, 0);
+   return UpgradeHelper(CmdL, APT::Upgrade::ALLOW_EVERYTHING);
 }
 									/*}}}*/
 bool DoUpgrade(CommandLine &CmdL)					/*{{{*/

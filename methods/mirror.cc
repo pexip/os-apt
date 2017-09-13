@@ -12,7 +12,6 @@
 
 #include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/fileutl.h>
-#include <apt-pkg/acquire-method.h>
 #include <apt-pkg/acquire-item.h>
 #include <apt-pkg/acquire.h>
 #include <apt-pkg/error.h>
@@ -58,7 +57,7 @@ using namespace std;
  */
 
 MirrorMethod::MirrorMethod()
-   : HttpMethod(), DownloadedMirrorFile(false), Debug(false)
+   : HttpMethod("mirror"), DownloadedMirrorFile(false), Debug(false)
 {
 }
 
@@ -69,7 +68,7 @@ bool MirrorMethod::Configuration(string Message)
 {
    if (pkgAcqMethod::Configuration(Message) == false)
       return false;
-   Debug = _config->FindB("Debug::Acquire::mirror",false);
+   Debug = DebugEnabled();
    
    return true;
 }
@@ -106,6 +105,7 @@ bool MirrorMethod::Clean(string Dir)
       // Skip some files..
       if (strcmp(Dir->d_name,"lock") == 0 ||
 	  strcmp(Dir->d_name,"partial") == 0 ||
+	  strcmp(Dir->d_name,"lost+found") == 0 ||
 	  strcmp(Dir->d_name,".") == 0 ||
 	  strcmp(Dir->d_name,"..") == 0)
 	 continue;
@@ -122,7 +122,7 @@ bool MirrorMethod::Clean(string Dir)
       }
       // nothing found, nuke it
       if (I == list.end())
-	 unlink(Dir->d_name);
+	 RemoveFile("mirror", Dir->d_name);
    }
 
    closedir(D);
@@ -464,11 +464,7 @@ void MirrorMethod::URIDone(FetchResult &Res,FetchResult *Alt)
 
 int main()
 {
-   setlocale(LC_ALL, "");
-
-   MirrorMethod Mth;
-
-   return Mth.Loop();
+   return MirrorMethod().Loop();
 }
 
 

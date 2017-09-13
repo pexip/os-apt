@@ -28,7 +28,6 @@
 #include <config.h>
 
 #include <apt-pkg/fileutl.h>
-#include <apt-pkg/acquire-method.h>
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/hashes.h>
@@ -45,6 +44,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
+#include <arpa/inet.h>
 #include <iostream>
 #include <sstream>
 
@@ -64,12 +64,13 @@ const unsigned int CircleBuf::BW_HZ=10;
 // CircleBuf::CircleBuf - Circular input buffer				/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-CircleBuf::CircleBuf(unsigned long long Size) : Size(Size), Hash(0)
+CircleBuf::CircleBuf(HttpMethod const * const Owner, unsigned long long Size)
+   : Size(Size), Hash(NULL), TotalWriten(0)
 {
    Buf = new unsigned char[Size];
    Reset();
 
-   CircleBuf::BwReadLimit = _config->FindI("Acquire::http::Dl-Limit",0)*1024;
+   CircleBuf::BwReadLimit = Owner->ConfigFindI("Dl-Limit", 0) * 1024;
 }
 									/*}}}*/
 // CircleBuf::Reset - Reset to the default state			/*{{{*/
@@ -80,12 +81,13 @@ void CircleBuf::Reset()
    InP = 0;
    OutP = 0;
    StrPos = 0;
+   TotalWriten = 0;
    MaxGet = (unsigned long long)-1;
    OutQueue = string();
-   if (Hash != 0)
+   if (Hash != NULL)
    {
       delete Hash;
-      Hash = new Hashes;
+      Hash = NULL;
    }
 }
 									/*}}}*/
@@ -150,9 +152,9 @@ bool CircleBuf::Read(int Fd)
 // CircleBuf::Read - Put the string into the buffer			/*{{{*/
 // ---------------------------------------------------------------------
 /* This will hold the string in and fill the buffer with it as it empties */
-bool CircleBuf::Read(string Data)
+bool CircleBuf::Read(string const &Data)
 {
-   OutQueue += Data;
+   OutQueue.append(Data);
    FillOut();
    return true;
 }
@@ -217,8 +219,10 @@ bool CircleBuf::Write(int Fd)
 	 
 	 return false;
       }
+
+      TotalWriten += Res;
       
-      if (Hash != 0)
+      if (Hash != NULL)
 	 Hash->Add(Buf + (OutP%Size),Res);
       
       OutP += Res;
@@ -284,15 +288,33 @@ CircleBuf::~CircleBuf()
 }
 
 // HttpServerState::HttpServerState - Constructor			/*{{{*/
-HttpServerState::HttpServerState(URI Srv,HttpMethod *Owner) : ServerState(Srv, Owner), In(64*1024), Out(4*1024)
+HttpServerState::HttpServerState(URI Srv,HttpMethod *Owner) : ServerState(Srv, Owner), In(Owner, 64*1024), Out(Owner, 4*1024)
 {
-   TimeOut = _config->FindI("Acquire::http::Timeout",TimeOut);
+   TimeOut = Owner->ConfigFindI("Timeout", TimeOut);
    Reset();
 }
 									/*}}}*/
 // HttpServerState::Open - Open a connection to the server		/*{{{*/
 // ---------------------------------------------------------------------
 /* This opens a connection to the server. */
+static bool TalkToSocksProxy(int const ServerFd, std::string const &Proxy,
+      char const * const type, bool const ReadWrite, uint8_t * const ToFrom,
+      unsigned int const Size, unsigned int const Timeout)
+{
+   if (WaitFd(ServerFd, ReadWrite, Timeout) == false)
+      return _error->Error("Waiting for the SOCKS proxy %s to %s timed out", URI::SiteOnly(Proxy).c_str(), type);
+   if (ReadWrite == false)
+   {
+      if (FileFd::Read(ServerFd, ToFrom, Size) == false)
+	 return _error->Error("Reading the %s from SOCKS proxy %s failed", type, URI::SiteOnly(Proxy).c_str());
+   }
+   else
+   {
+      if (FileFd::Write(ServerFd, ToFrom, Size) == false)
+	 return _error->Error("Writing the %s to SOCKS proxy %s failed", type, URI::SiteOnly(Proxy).c_str());
+   }
+   return true;
+}
 bool HttpServerState::Open()
 {
    // Use the already open connection if possible.
@@ -306,7 +328,7 @@ bool HttpServerState::Open()
    
    // Determine the proxy setting
    AutoDetectProxy(ServerName);
-   string SpecificProxy = _config->Find("Acquire::http::Proxy::" + ServerName.Host);
+   string SpecificProxy = Owner->ConfigFind("Proxy::" + ServerName.Host, "");
    if (!SpecificProxy.empty())
    {
 	   if (SpecificProxy == "DIRECT")
@@ -316,7 +338,7 @@ bool HttpServerState::Open()
    }
    else
    {
-	   string DefProxy = _config->Find("Acquire::http::Proxy");
+	   string DefProxy = Owner->ConfigFind("Proxy", "");
 	   if (!DefProxy.empty())
 	   {
 		   Proxy = DefProxy;
@@ -334,27 +356,191 @@ bool HttpServerState::Open()
       if (CheckDomainList(ServerName.Host,getenv("no_proxy")) == true)
 	 Proxy = "";
    }
-   
-   // Determine what host and port to use based on the proxy settings
-   int Port = 0;
-   string Host;   
-   if (Proxy.empty() == true || Proxy.Host.empty() == true)
+
+   if (Proxy.empty() == false)
+      Owner->AddProxyAuth(Proxy, ServerName);
+
+   if (Proxy.Access == "socks5h")
    {
-      if (ServerName.Port != 0)
-	 Port = ServerName.Port;
-      Host = ServerName.Host;
+      if (Connect(Proxy.Host, Proxy.Port, "socks", 1080, ServerFd, TimeOut, Owner) == false)
+	 return false;
+
+      /* We implement a very basic SOCKS5 client here complying mostly to RFC1928 expect
+       * for not offering GSSAPI auth which is a must (we only do no or user/pass auth).
+       * We also expect the SOCKS5 server to do hostname lookup (aka socks5h) */
+      std::string const ProxyInfo = URI::SiteOnly(Proxy);
+      Owner->Status(_("Connecting to %s (%s)"),"SOCKS5h proxy",ProxyInfo.c_str());
+      auto const Timeout = Owner->ConfigFindI("TimeOut", 120);
+      #define APT_WriteOrFail(TYPE, DATA, LENGTH) if (TalkToSocksProxy(ServerFd, ProxyInfo, TYPE, true, DATA, LENGTH, Timeout) == false) return false
+      #define APT_ReadOrFail(TYPE, DATA, LENGTH) if (TalkToSocksProxy(ServerFd, ProxyInfo, TYPE, false, DATA, LENGTH, Timeout) == false) return false
+      if (ServerName.Host.length() > 255)
+	 return _error->Error("Can't use SOCKS5h as hostname %s is too long!", ServerName.Host.c_str());
+      if (Proxy.User.length() > 255 || Proxy.Password.length() > 255)
+	 return _error->Error("Can't use user&pass auth as they are too long (%lu and %lu) for the SOCKS5!", Proxy.User.length(), Proxy.Password.length());
+      if (Proxy.User.empty())
+      {
+	 uint8_t greeting[] = { 0x05, 0x01, 0x00 };
+	 APT_WriteOrFail("greet-1", greeting, sizeof(greeting));
+      }
+      else
+      {
+	 uint8_t greeting[] = { 0x05, 0x02, 0x00, 0x02 };
+	 APT_WriteOrFail("greet-2", greeting, sizeof(greeting));
+      }
+      uint8_t greeting[2];
+      APT_ReadOrFail("greet back", greeting, sizeof(greeting));
+      if (greeting[0] != 0x05)
+	 return _error->Error("SOCKS proxy %s greets back with wrong version: %d", ProxyInfo.c_str(), greeting[0]);
+      if (greeting[1] == 0x00)
+	 ; // no auth has no method-dependent sub-negotiations
+      else if (greeting[1] == 0x02)
+      {
+	 if (Proxy.User.empty())
+	    return _error->Error("SOCKS proxy %s negotiated user&pass auth, but we had not offered it!", ProxyInfo.c_str());
+	 // user&pass auth sub-negotiations are defined by RFC1929
+	 std::vector<uint8_t> auth = {{ 0x01, static_cast<uint8_t>(Proxy.User.length()) }};
+	 std::copy(Proxy.User.begin(), Proxy.User.end(), std::back_inserter(auth));
+	 auth.push_back(static_cast<uint8_t>(Proxy.Password.length()));
+	 std::copy(Proxy.Password.begin(), Proxy.Password.end(), std::back_inserter(auth));
+	 APT_WriteOrFail("user&pass auth", auth.data(), auth.size());
+	 uint8_t authstatus[2];
+	 APT_ReadOrFail("auth report", authstatus, sizeof(authstatus));
+	 if (authstatus[0] != 0x01)
+	    return _error->Error("SOCKS proxy %s auth status response with wrong version: %d", ProxyInfo.c_str(), authstatus[0]);
+	 if (authstatus[1] != 0x00)
+	    return _error->Error("SOCKS proxy %s reported authorization failure: username or password incorrect? (%d)", ProxyInfo.c_str(), authstatus[1]);
+      }
+      else
+	 return _error->Error("SOCKS proxy %s greets back having not found a common authorization method: %d", ProxyInfo.c_str(), greeting[1]);
+      union { uint16_t * i; uint8_t * b; } portu;
+      uint16_t port = htons(static_cast<uint16_t>(ServerName.Port == 0 ? 80 : ServerName.Port));
+      portu.i = &port;
+      std::vector<uint8_t> request = {{ 0x05, 0x01, 0x00, 0x03, static_cast<uint8_t>(ServerName.Host.length()) }};
+      std::copy(ServerName.Host.begin(), ServerName.Host.end(), std::back_inserter(request));
+      request.push_back(portu.b[0]);
+      request.push_back(portu.b[1]);
+      APT_WriteOrFail("request", request.data(), request.size());
+      uint8_t response[4];
+      APT_ReadOrFail("first part of response", response, sizeof(response));
+      if (response[0] != 0x05)
+	 return _error->Error("SOCKS proxy %s response with wrong version: %d", ProxyInfo.c_str(), response[0]);
+      if (response[2] != 0x00)
+	 return _error->Error("SOCKS proxy %s has unexpected non-zero reserved field value: %d", ProxyInfo.c_str(), response[2]);
+      std::string bindaddr;
+      if (response[3] == 0x01) // IPv4 address
+      {
+	 uint8_t ip4port[6];
+	 APT_ReadOrFail("IPv4+Port of response", ip4port, sizeof(ip4port));
+	 portu.b[0] = ip4port[4];
+	 portu.b[1] = ip4port[5];
+	 port = ntohs(*portu.i);
+	 strprintf(bindaddr, "%d.%d.%d.%d:%d", ip4port[0], ip4port[1], ip4port[2], ip4port[3], port);
+      }
+      else if (response[3] == 0x03) // hostname
+      {
+	 uint8_t namelength;
+	 APT_ReadOrFail("hostname length of response", &namelength, 1);
+	 uint8_t hostname[namelength + 2];
+	 APT_ReadOrFail("hostname of response", hostname, sizeof(hostname));
+	 portu.b[0] = hostname[namelength];
+	 portu.b[1] = hostname[namelength + 1];
+	 port = ntohs(*portu.i);
+	 hostname[namelength] = '\0';
+	 strprintf(bindaddr, "%s:%d", hostname, port);
+      }
+      else if (response[3] == 0x04) // IPv6 address
+      {
+	 uint8_t ip6port[18];
+	 APT_ReadOrFail("IPv6+port of response", ip6port, sizeof(ip6port));
+	 portu.b[0] = ip6port[16];
+	 portu.b[1] = ip6port[17];
+	 port = ntohs(*portu.i);
+	 strprintf(bindaddr, "[%02X%02X:%02X%02X:%02X%02X:%02X%02X:%02X%02X:%02X%02X:%02X%02X:%02X%02X]:%d",
+	       ip6port[0], ip6port[1], ip6port[2], ip6port[3], ip6port[4], ip6port[5], ip6port[6], ip6port[7],
+	       ip6port[8], ip6port[9], ip6port[10], ip6port[11], ip6port[12], ip6port[13], ip6port[14], ip6port[15],
+	       port);
+      }
+      else
+	 return _error->Error("SOCKS proxy %s destination address is of unknown type: %d",
+	       ProxyInfo.c_str(), response[3]);
+      if (response[1] != 0x00)
+      {
+	 char const * errstr = nullptr;
+	 auto errcode = response[1];
+	 // Tor error reporting can be a bit arcane, lets try to detect & fix it up
+	 if (bindaddr == "0.0.0.0:0")
+	 {
+	    auto const lastdot = ServerName.Host.rfind('.');
+	    if (lastdot == std::string::npos || ServerName.Host.substr(lastdot) != ".onion")
+	       ;
+	    else if (errcode == 0x01)
+	    {
+	       auto const prevdot = ServerName.Host.rfind('.', lastdot - 1);
+	       if (lastdot == 16 && prevdot == std::string::npos)
+		  ; // valid .onion address
+	       else if (prevdot != std::string::npos && (lastdot - prevdot) == 17)
+		  ; // valid .onion address with subdomain(s)
+	       else
+	       {
+		  errstr = "Invalid hostname: onion service name must be 16 characters long";
+		  Owner->SetFailReason("SOCKS");
+	       }
+	    }
+	    // in all likelihood the service is either down or the address has
+	    // a typo and so "Host unreachable" is the better understood error
+	    // compared to the technically correct "TLL expired".
+	    else if (errcode == 0x06)
+	       errcode = 0x04;
+	 }
+	 if (errstr == nullptr)
+	 {
+	    switch (errcode)
+	    {
+	       case 0x01: errstr = "general SOCKS server failure"; Owner->SetFailReason("SOCKS"); break;
+	       case 0x02: errstr = "connection not allowed by ruleset"; Owner->SetFailReason("SOCKS"); break;
+	       case 0x03: errstr = "Network unreachable"; Owner->SetFailReason("ConnectionTimedOut"); break;
+	       case 0x04: errstr = "Host unreachable"; Owner->SetFailReason("ConnectionTimedOut"); break;
+	       case 0x05: errstr = "Connection refused"; Owner->SetFailReason("ConnectionRefused"); break;
+	       case 0x06: errstr = "TTL expired"; Owner->SetFailReason("Timeout"); break;
+	       case 0x07: errstr = "Command not supported"; Owner->SetFailReason("SOCKS"); break;
+	       case 0x08: errstr = "Address type not supported"; Owner->SetFailReason("SOCKS"); break;
+	       default: errstr = "Unknown error"; Owner->SetFailReason("SOCKS"); break;
+	    }
+	 }
+	 return _error->Error("SOCKS proxy %s could not connect to %s (%s) due to: %s (%d)",
+	       ProxyInfo.c_str(), ServerName.Host.c_str(), bindaddr.c_str(), errstr, response[1]);
+      }
+      else if (Owner->DebugEnabled())
+	 ioprintf(std::clog, "http: SOCKS proxy %s connection established to %s (%s)\n",
+	       ProxyInfo.c_str(), ServerName.Host.c_str(), bindaddr.c_str());
+
+      if (WaitFd(ServerFd, true, Timeout) == false)
+	 return _error->Error("SOCKS proxy %s reported connection to %s (%s), but timed out",
+	       ProxyInfo.c_str(), ServerName.Host.c_str(), bindaddr.c_str());
+      #undef APT_ReadOrFail
+      #undef APT_WriteOrFail
    }
    else
    {
-      if (Proxy.Port != 0)
-	 Port = Proxy.Port;
-      Host = Proxy.Host;
+      // Determine what host and port to use based on the proxy settings
+      int Port = 0;
+      string Host;
+      if (Proxy.empty() == true || Proxy.Host.empty() == true)
+      {
+	 if (ServerName.Port != 0)
+	    Port = ServerName.Port;
+	 Host = ServerName.Host;
+      }
+      else if (Proxy.Access != "http")
+	 return _error->Error("Unsupported proxy configured: %s", URI::SiteOnly(Proxy).c_str());
+      else
+      {
+	 if (Proxy.Port != 0)
+	    Port = Proxy.Port;
+	 Host = Proxy.Host;
+      }
+      return Connect(Host,Port,"http",80,ServerFd,TimeOut,Owner);
    }
-   
-   // Connect to the remote server
-   if (Connect(Host,Port,"http",80,ServerFd,TimeOut,Owner) == false)
-      return false;
-   
    return true;
 }
 									/*}}}*/
@@ -369,12 +555,12 @@ bool HttpServerState::Close()
 }
 									/*}}}*/
 // HttpServerState::RunData - Transfer the data from the socket		/*{{{*/
-bool HttpServerState::RunData(FileFd * const File)
+bool HttpServerState::RunData(RequestState &Req)
 {
-   State = Data;
+   Req.State = RequestState::Data;
    
    // Chunked transfer encoding is fun..
-   if (Encoding == Chunked)
+   if (Req.Encoding == RequestState::Chunked)
    {
       while (1)
       {
@@ -387,7 +573,7 @@ bool HttpServerState::RunData(FileFd * const File)
 	    if (In.WriteTillEl(Data,true) == true)
 	       break;
 	 }
-	 while ((Last = Go(false, File)) == true);
+	 while ((Last = Go(false, Req)) == true);
 
 	 if (Last == false)
 	    return false;
@@ -405,7 +591,7 @@ bool HttpServerState::RunData(FileFd * const File)
 	       if (In.WriteTillEl(Data,true) == true && Data.length() <= 2)
 		  break;
 	    }
-	    while ((Last = Go(false, File)) == true);
+	    while ((Last = Go(false, Req)) == true);
 	    if (Last == false)
 	       return false;
 	    return !_error->PendingError();
@@ -413,7 +599,7 @@ bool HttpServerState::RunData(FileFd * const File)
 	 
 	 // Transfer the block
 	 In.Limit(Len);
-	 while (Go(true, File) == true)
+	 while (Go(true, Req) == true)
 	    if (In.IsLimit() == true)
 	       break;
 	 
@@ -429,7 +615,7 @@ bool HttpServerState::RunData(FileFd * const File)
 	    if (In.WriteTillEl(Data,true) == true)
 	       break;
 	 }
-	 while ((Last = Go(false, File)) == true);
+	 while ((Last = Go(false, Req)) == true);
 	 if (Last == false)
 	    return false;
       }
@@ -438,12 +624,12 @@ bool HttpServerState::RunData(FileFd * const File)
    {
       /* Closes encoding is used when the server did not specify a size, the
          loss of the connection means we are done */
-      if (Encoding == Closes)
+      if (Req.JunkSize != 0)
+	 In.Limit(Req.JunkSize);
+      else if (Req.DownloadSize != 0)
+	 In.Limit(Req.DownloadSize);
+      else if (Persistent == false)
 	 In.Limit(-1);
-      else if (JunkSize != 0)
-	 In.Limit(JunkSize);
-      else
-	 In.Limit(DownloadSize);
       
       // Just transfer the whole block.
       do
@@ -454,10 +640,19 @@ bool HttpServerState::RunData(FileFd * const File)
 	 In.Limit(-1);
 	 return !_error->PendingError();
       }
-      while (Go(true, File) == true);
+      while (Go(true, Req) == true);
    }
 
-   return Owner->Flush() && !_error->PendingError();
+   return Flush(&Req.File) && !_error->PendingError();
+}
+									/*}}}*/
+bool HttpServerState::RunDataToDevNull(RequestState &Req)		/*{{{*/
+{
+   // no need to clean up if we discard the connection anyhow
+   if (Persistent == false)
+      return true;
+   Req.File.Open("/dev/null", FileFd::WriteOnly);
+   return RunData(Req);
 }
 									/*}}}*/
 bool HttpServerState::ReadHeaderLines(std::string &Data)		/*{{{*/
@@ -465,9 +660,9 @@ bool HttpServerState::ReadHeaderLines(std::string &Data)		/*{{{*/
    return In.WriteTillEl(Data);
 }
 									/*}}}*/
-bool HttpServerState::LoadNextResponse(bool const ToFile, FileFd * const File)/*{{{*/
+bool HttpServerState::LoadNextResponse(bool const ToFile, RequestState &Req)/*{{{*/
 {
-   return Go(ToFile, File);
+   return Go(ToFile, Req);
 }
 									/*}}}*/
 bool HttpServerState::WriteResponse(const std::string &Data)		/*{{{*/
@@ -480,36 +675,42 @@ APT_PURE bool HttpServerState::IsOpen()					/*{{{*/
    return (ServerFd != -1);
 }
 									/*}}}*/
-bool HttpServerState::InitHashes(FileFd &File)				/*{{{*/
+bool HttpServerState::InitHashes(HashStringList const &ExpectedHashes)	/*{{{*/
 {
    delete In.Hash;
-   In.Hash = new Hashes;
-
-   // Set the expected size and read file for the hashes
-   File.Truncate(StartPos);
-   return In.Hash->AddFD(File, StartPos);
+   In.Hash = new Hashes(ExpectedHashes);
+   return true;
 }
 									/*}}}*/
+void HttpServerState::Reset()						/*{{{*/
+{
+   ServerState::Reset();
+   ServerFd = -1;
+}
+									/*}}}*/
+
 APT_PURE Hashes * HttpServerState::GetHashes()				/*{{{*/
 {
    return In.Hash;
 }
 									/*}}}*/
 // HttpServerState::Die - The server has closed the connection.		/*{{{*/
-bool HttpServerState::Die(FileFd &File)
+bool HttpServerState::Die(RequestState &Req)
 {
    unsigned int LErrno = errno;
 
    // Dump the buffer to the file
-   if (State == ServerState::Data)
+   if (Req.State == RequestState::Data)
    {
+      if (Req.File.IsOpen() == false)
+	 return true;
       // on GNU/kFreeBSD, apt dies on /dev/null because non-blocking
       // can't be set
-      if (File.Name() != "/dev/null")
-	 SetNonBlock(File.Fd(),false);
+      if (Req.File.Name() != "/dev/null")
+	 SetNonBlock(Req.File.Fd(),false);
       while (In.WriteSpace() == true)
       {
-	 if (In.Write(File.Fd()) == false)
+	 if (In.Write(Req.File.Fd()) == false)
 	    return _error->Errno("write",_("Error writing to the file"));
 
 	 // Done
@@ -519,8 +720,8 @@ bool HttpServerState::Die(FileFd &File)
    }
 
    // See if this is because the server finished the data stream
-   if (In.IsLimit() == false && State != HttpServerState::Header &&
-       Encoding != HttpServerState::Closes)
+   if (In.IsLimit() == false && Req.State != RequestState::Header &&
+       Persistent == true)
    {
       Close();
       if (LErrno == 0)
@@ -550,7 +751,7 @@ bool HttpServerState::Die(FileFd &File)
    into the file */
 bool HttpServerState::Flush(FileFd * const File)
 {
-   if (File != NULL)
+   if (File != nullptr)
    {
       // on GNU/kFreeBSD, apt dies on /dev/null because non-blocking
       // can't be set
@@ -567,7 +768,7 @@ bool HttpServerState::Flush(FileFd * const File)
 	    return true;
       }
 
-      if (In.IsLimit() == true || Encoding == ServerState::Closes)
+      if (In.IsLimit() == true || Persistent == false)
 	 return true;
    }
    return false;
@@ -577,7 +778,7 @@ bool HttpServerState::Flush(FileFd * const File)
 // ---------------------------------------------------------------------
 /* This runs the select loop over the server FDs, Output file FDs and
    stdin. */
-bool HttpServerState::Go(bool ToFile, FileFd * const File)
+bool HttpServerState::Go(bool ToFile, RequestState &Req)
 {
    // Server has closed the connection
    if (ServerFd == -1 && (In.WriteSpace() == false || 
@@ -598,14 +799,14 @@ bool HttpServerState::Go(bool ToFile, FileFd * const File)
    
    // Add the file
    int FileFD = -1;
-   if (File != NULL)
-      FileFD = File->Fd();
+   if (Req.File.IsOpen())
+      FileFD = Req.File.Fd();
    
    if (In.WriteSpace() == true && ToFile == true && FileFD != -1)
       FD_SET(FileFD,&wfds);
 
    // Add stdin
-   if (_config->FindB("Acquire::http::DependOnSTDIN", true) == true)
+   if (Owner->ConfigFindB("DependOnSTDIN", true) == true)
       FD_SET(STDIN_FILENO,&rfds);
 	  
    // Figure out the max fd
@@ -628,7 +829,7 @@ bool HttpServerState::Go(bool ToFile, FileFd * const File)
    if (Res == 0)
    {
       _error->Error(_("Connection timed out"));
-      return Die(*File);
+      return Die(Req);
    }
    
    // Handle server IO
@@ -636,14 +837,14 @@ bool HttpServerState::Go(bool ToFile, FileFd * const File)
    {
       errno = 0;
       if (In.Read(ServerFd) == false)
-	 return Die(*File);
+	 return Die(Req);
    }
 	 
    if (ServerFd != -1 && FD_ISSET(ServerFd,&wfds))
    {
       errno = 0;
       if (Out.Write(ServerFd) == false)
-	 return Die(*File);
+	 return Die(Req);
    }
 
    // Send data to the file
@@ -651,6 +852,13 @@ bool HttpServerState::Go(bool ToFile, FileFd * const File)
    {
       if (In.Write(FileFD) == false)
 	 return _error->Errno("write",_("Error writing to output file"));
+   }
+
+   if (Req.MaximumSize > 0 && Req.File.IsOpen() && Req.File.Failed() == false && Req.File.Tell() > Req.MaximumSize)
+   {
+      Owner->SetFailReason("MaximumSizeExceeded");
+      return _error->Error("Writing more data than expected (%llu > %llu)",
+                           Req.File.Tell(), Req.MaximumSize);
    }
 
    // Handle commands from APT
@@ -670,6 +878,11 @@ bool HttpServerState::Go(bool ToFile, FileFd * const File)
 void HttpMethod::SendReq(FetchItem *Itm)
 {
    URI Uri = Itm->Uri;
+   {
+      auto const plus = Binary.find('+');
+      if (plus != std::string::npos)
+	 Uri.Access = Binary.substr(plus + 1);
+   }
 
    // The HTTP server expects a hostname with a trailing :port
    std::stringstream Req;
@@ -684,10 +897,10 @@ void HttpMethod::SendReq(FetchItem *Itm)
       but while its a must for all servers to accept absolute URIs,
       it is assumed clients will sent an absolute path for non-proxies */
    std::string requesturi;
-   if (Server->Proxy.empty() == true || Server->Proxy.Host.empty())
+   if (Server->Proxy.Access != "http" || Server->Proxy.empty() == true || Server->Proxy.Host.empty())
       requesturi = Uri.Path;
    else
-      requesturi = Itm->Uri;
+      requesturi = Uri;
 
    // The "+" is encoded as a workaround for a amazon S3 bug
    // see LP bugs #1003633 and #1086997.
@@ -699,17 +912,17 @@ void HttpMethod::SendReq(FetchItem *Itm)
       C.f. https://tools.ietf.org/wg/httpbis/trac/ticket/158 */
    Req << "GET " << requesturi << " HTTP/1.1\r\n";
    if (Uri.Port != 0)
-      Req << "Host: " << ProperHost << ":" << Uri.Port << "\r\n";
+      Req << "Host: " << ProperHost << ":" << std::to_string(Uri.Port) << "\r\n";
    else
       Req << "Host: " << ProperHost << "\r\n";
 
    // generate a cache control header (if needed)
-   if (_config->FindB("Acquire::http::No-Cache",false) == true)
+   if (ConfigFindB("No-Cache",false) == true)
       Req << "Cache-Control: no-cache\r\n"
 	 << "Pragma: no-cache\r\n";
    else if (Itm->IndexFile == true)
-      Req << "Cache-Control: max-age=" << _config->FindI("Acquire::http::Max-Age",0) << "\r\n";
-   else if (_config->FindB("Acquire::http::No-Store",false) == true)
+      Req << "Cache-Control: max-age=" << std::to_string(ConfigFindI("Max-Age", 0)) << "\r\n";
+   else if (ConfigFindB("No-Store", false) == true)
       Req << "Cache-Control: no-store\r\n";
 
    // If we ask for uncompressed files servers might respond with content-
@@ -717,7 +930,7 @@ void HttpMethod::SendReq(FetchItem *Itm)
    // see 657029, 657560 and co, so if we have no extension on the request
    // ask for text only. As a sidenote: If there is nothing to negotate servers
    // seem to be nice and ignore it.
-   if (_config->FindB("Acquire::http::SendAccept", true) == true)
+   if (ConfigFindB("SendAccept", true) == true)
    {
       size_t const filepos = Itm->Uri.find_last_of('/');
       string const file = Itm->Uri.substr(filepos + 1);
@@ -727,13 +940,14 @@ void HttpMethod::SendReq(FetchItem *Itm)
 
    // Check for a partial file and send if-queries accordingly
    struct stat SBuf;
-   if (stat(Itm->DestFile.c_str(),&SBuf) >= 0 && SBuf.st_size > 0)
-      Req << "Range: bytes=" << SBuf.st_size << "-\r\n"
-	 << "If-Range: " << TimeRFC1123(SBuf.st_mtime) << "\r\n";
+   if (Server->RangesAllowed && stat(Itm->DestFile.c_str(),&SBuf) >= 0 && SBuf.st_size > 0)
+      Req << "Range: bytes=" << std::to_string(SBuf.st_size) << "-\r\n"
+	 << "If-Range: " << TimeRFC1123(SBuf.st_mtime, false) << "\r\n";
    else if (Itm->LastModified != 0)
-      Req << "If-Modified-Since: " << TimeRFC1123(Itm->LastModified).c_str() << "\r\n";
+      Req << "If-Modified-Since: " << TimeRFC1123(Itm->LastModified, false).c_str() << "\r\n";
 
-   if (Server->Proxy.User.empty() == false || Server->Proxy.Password.empty() == false)
+   if (Server->Proxy.Access == "http" &&
+	 (Server->Proxy.User.empty() == false || Server->Proxy.Password.empty() == false))
       Req << "Proxy-Authorization: Basic "
 	 << Base64Encode(Server->Proxy.User + ":" + Server->Proxy.Password) << "\r\n";
 
@@ -742,7 +956,7 @@ void HttpMethod::SendReq(FetchItem *Itm)
       Req << "Authorization: Basic "
 	 << Base64Encode(Uri.User + ":" + Uri.Password) << "\r\n";
 
-   Req << "User-Agent: " << _config->Find("Acquire::http::User-Agent",
+   Req << "User-Agent: " << ConfigFind("User-Agent",
 		"Debian APT-HTTP/1.3 (" PACKAGE_VERSION ")") << "\r\n";
 
    Req << "\r\n";
@@ -753,29 +967,48 @@ void HttpMethod::SendReq(FetchItem *Itm)
    Server->WriteResponse(Req.str());
 }
 									/*}}}*/
-// HttpMethod::Configuration - Handle a configuration message		/*{{{*/
-// ---------------------------------------------------------------------
-/* We stash the desired pipeline depth */
-bool HttpMethod::Configuration(string Message)
+std::unique_ptr<ServerState> HttpMethod::CreateServerState(URI const &uri)/*{{{*/
 {
-   if (ServerMethod::Configuration(Message) == false)
-      return false;
-
-   AllowRedirect = _config->FindB("Acquire::http::AllowRedirect",true);
-   PipelineDepth = _config->FindI("Acquire::http::Pipeline-Depth",
-				  PipelineDepth);
-   Debug = _config->FindB("Debug::Acquire::http",false);
-
-   return true;
-}
-									/*}}}*/
-ServerState * HttpMethod::CreateServerState(URI uri)			/*{{{*/
-{
-   return new HttpServerState(uri, this);
+   return std::unique_ptr<ServerState>(new HttpServerState(uri, this));
 }
 									/*}}}*/
 void HttpMethod::RotateDNS()						/*{{{*/
 {
    ::RotateDNS();
+}
+									/*}}}*/
+BaseHttpMethod::DealWithHeadersResult HttpMethod::DealWithHeaders(FetchResult &Res, RequestState &Req)/*{{{*/
+{
+   auto ret = BaseHttpMethod::DealWithHeaders(Res, Req);
+   if (ret != BaseHttpMethod::FILE_IS_OPEN)
+      return ret;
+   if (Req.File.Open(Queue->DestFile, FileFd::WriteAny) == false)
+      return ERROR_NOT_FROM_SERVER;
+
+   FailFile = Queue->DestFile;
+   FailFile.c_str();   // Make sure we don't do a malloc in the signal handler
+   FailFd = Req.File.Fd();
+   FailTime = Req.Date;
+
+   if (Server->InitHashes(Queue->ExpectedHashes) == false || Req.AddPartialFileToHashes(Req.File) == false)
+   {
+      _error->Errno("read",_("Problem hashing file"));
+      return ERROR_NOT_FROM_SERVER;
+   }
+   if (Req.StartPos > 0)
+      Res.ResumePoint = Req.StartPos;
+
+   SetNonBlock(Req.File.Fd(),true);
+   return FILE_IS_OPEN;
+}
+									/*}}}*/
+HttpMethod::HttpMethod(std::string &&pProg) : BaseHttpMethod(pProg.c_str(), "1.2", Pipeline | SendConfig)/*{{{*/
+{
+   auto addName = std::inserter(methodNames, methodNames.begin());
+   if (Binary != "http")
+      addName = "http";
+   auto const plus = Binary.find('+');
+   if (plus != std::string::npos)
+      addName = Binary.substr(0, plus);
 }
 									/*}}}*/

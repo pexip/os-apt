@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <string>
 #include <cstring>
+#include <algorithm>
 
 									/*}}}*/
 
@@ -67,13 +68,12 @@ bool GlobalError::NAME (const char *Function, const char *Description,...) { \
 	va_list args; \
 	size_t msgSize = 400; \
 	int const errsv = errno; \
-	while (true) { \
+	bool retry; \
+	do { \
 		va_start(args,Description); \
-		bool const retry = InsertErrno(TYPE, Function, Description, args, errsv, msgSize); \
+		retry = InsertErrno(TYPE, Function, Description, args, errsv, msgSize); \
 		va_end(args); \
-		if (retry == false) \
-			break; \
-	} \
+	} while (retry); \
 	return false; \
 }
 GEMessage(FatalE, FATAL)
@@ -89,13 +89,12 @@ bool GlobalError::InsertErrno(MsgType const &type, const char *Function,
 	va_list args;
 	size_t msgSize = 400;
 	int const errsv = errno;
-	while (true) {
+	bool retry;
+	do {
 		va_start(args,Description);
-		bool const retry = InsertErrno(type, Function, Description, args, errsv, msgSize);
+		retry = InsertErrno(type, Function, Description, args, errsv, msgSize);
 		va_end(args);
-		if (retry == false)
-		   break;
-	}
+	} while (retry);
 	return false;
 }
 									/*}}}*/
@@ -126,12 +125,12 @@ bool GlobalError::InsertErrno(MsgType type, const char* Function,
 bool GlobalError::NAME (const char *Description,...) { \
 	va_list args; \
 	size_t msgSize = 400; \
-	while (true) { \
+	bool retry; \
+	do { \
 		va_start(args,Description); \
-		if (Insert(TYPE, Description, args, msgSize) == false) \
-			break; \
+		retry = Insert(TYPE, Description, args, msgSize); \
 		va_end(args); \
-	} \
+	} while (retry); \
 	return false; \
 }
 GEMessage(Fatal, FATAL)
@@ -146,12 +145,12 @@ bool GlobalError::Insert(MsgType const &type, const char *Description,...)
 {
 	va_list args;
 	size_t msgSize = 400;
-	while (true) {
+	bool retry;
+	do {
 		va_start(args,Description);
-		if (Insert(type, Description, args, msgSize) == false)
-			break;
+		retry = Insert(type, Description, args, msgSize);
 		va_end(args);
-	}
+	} while (retry);
 	return false;
 }
 									/*}}}*/
@@ -212,12 +211,13 @@ void GlobalError::DumpErrors(std::ostream &out, MsgType const &threshold,
 	if (mergeStack == true)
 		for (std::list<MsgStack>::const_reverse_iterator s = Stacks.rbegin();
 		     s != Stacks.rend(); ++s)
-			Messages.insert(Messages.begin(), s->Messages.begin(), s->Messages.end());
+			std::copy(s->Messages.begin(), s->Messages.end(), std::front_inserter(Messages));
 
-	for (std::list<Item>::const_iterator m = Messages.begin();
-	     m != Messages.end(); ++m)
-		if (m->Type >= threshold)
-			out << (*m) << std::endl;
+	std::for_each(Messages.begin(), Messages.end(), [&threshold, &out](Item const &m) {
+		if (m.Type >= threshold)
+			out << m << std::endl;
+	});
+
 	Discard();
 }
 									/*}}}*/
@@ -228,25 +228,21 @@ void GlobalError::Discard() {
 }
 									/*}}}*/
 // GlobalError::empty - does our error list include anything?		/*{{{*/
-bool GlobalError::empty(MsgType const &trashhold) const {
+bool GlobalError::empty(MsgType const &threshold) const {
 	if (PendingFlag == true)
 		return false;
 
 	if (Messages.empty() == true)
 		return true;
 
-	for (std::list<Item>::const_iterator m = Messages.begin();
-	     m != Messages.end(); ++m)
-		if (m->Type >= trashhold)
-			return false;
-
-	return true;
+	return std::find_if(Messages.begin(), Messages.end(), [&threshold](Item const &m) {
+		return m.Type >= threshold;
+	}) == Messages.end();
 }
 									/*}}}*/
 // GlobalError::PushToStack						/*{{{*/
 void GlobalError::PushToStack() {
-	MsgStack pack(Messages, PendingFlag);
-	Stacks.push_back(pack);
+	Stacks.emplace_back(Messages, PendingFlag);
 	Discard();
 }
 									/*}}}*/
@@ -262,7 +258,7 @@ void GlobalError::RevertToStack() {
 // GlobalError::MergeWithStack						/*{{{*/
 void GlobalError::MergeWithStack() {
 	MsgStack pack = Stacks.back();
-	Messages.insert(Messages.begin(), pack.Messages.begin(), pack.Messages.end());
+	Messages.splice(Messages.begin(), pack.Messages);
 	PendingFlag = PendingFlag || pack.PendingFlag;
 	Stacks.pop_back();
 }

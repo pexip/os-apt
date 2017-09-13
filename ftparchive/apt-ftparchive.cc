@@ -19,6 +19,10 @@
 #include <apt-pkg/init.h>
 #include <apt-pkg/fileutl.h>
 
+#include <apt-private/private-cmndline.h>
+#include <apt-private/private-output.h>
+#include <apt-private/private-main.h>
+
 #include <algorithm>
 #include <climits>
 #include <sys/time.h>
@@ -40,11 +44,7 @@
 #include <apti18n.h>
 									/*}}}*/
 
-using namespace std;    
-ostream c0out(0);
-ostream c1out(0);
-ostream c2out(0);
-ofstream devnull("/dev/null");
+using namespace std;
 unsigned Quiet = 0;
 
 // struct PackageMap - List of all package files in the config file	/*{{{*/
@@ -68,6 +68,7 @@ struct PackageMap
 
    // We generate for this given arch
    string Arch;
+   bool IncludeArchAll;
    
    // Stuff for the Source File
    string SrcFile;
@@ -122,9 +123,9 @@ struct PackageMap
 		    vector<PackageMap>::iterator End,
 		    unsigned long &Left);
    
-   PackageMap() : LongDesc(true), TransWriter(NULL), DeLinkLimit(0), Permissions(1),
-		  ContentsDone(false), PkgDone(false), SrcDone(false),
-		  ContentsMTime(0) {};
+   PackageMap() : IncludeArchAll(true), LongDesc(true), TransWriter(NULL),
+		  DeLinkLimit(0), Permissions(1), ContentsDone(false),
+		  PkgDone(false), SrcDone(false), ContentsMTime(0) {};
 };
 									/*}}}*/
 
@@ -136,7 +137,7 @@ void PackageMap::GetGeneral(Configuration &Setup,Configuration &Block)
    PathPrefix = Block.Find("PathPrefix");
    
    if (Block.FindB("External-Links",true) == false)
-      DeLinkLimit = Setup.FindI("Default::DeLinkLimit",UINT_MAX);
+      DeLinkLimit = Setup.FindI("Default::DeLinkLimit", std::numeric_limits<unsigned int>::max());
    else
       DeLinkLimit = 0;
    
@@ -179,10 +180,12 @@ bool PackageMap::GenPackages(Configuration &Setup,struct CacheDB::Stats &Stats)
    PkgDone = true;
    
    // Create a package writer object.
-   PackagesWriter Packages(flCombine(CacheDir,BinCacheDB),
+   MultiCompress Comp(flCombine(ArchiveDir,PkgFile),
+		      PkgCompress,Permissions);
+   PackagesWriter Packages(&Comp.Input, TransWriter, flCombine(CacheDir,BinCacheDB),
 			   flCombine(OverrideDir,BinOverride),
 			   flCombine(OverrideDir,ExtraOverride),
-			   Arch);
+			   Arch, IncludeArchAll);
    if (PkgExt.empty() == false && Packages.SetExts(PkgExt) == false)
       return _error->Error(_("Package extension list is too long"));
    if (_error->PendingError() == true)
@@ -192,16 +195,11 @@ bool PackageMap::GenPackages(Configuration &Setup,struct CacheDB::Stats &Stats)
    Packages.DirStrip = ArchiveDir;
    Packages.InternalPrefix = flCombine(ArchiveDir,InternalPrefix);
 
-   Packages.TransWriter = TransWriter;
    Packages.LongDescription = LongDesc;
 
    Packages.Stats.DeLinkBytes = Stats.DeLinkBytes;
    Packages.DeLinkLimit = DeLinkLimit;
 
-   // Create a compressor object
-   MultiCompress Comp(flCombine(ArchiveDir,PkgFile),
-		      PkgCompress,Permissions);
-   Packages.Output = Comp.Input;
    if (_error->PendingError() == true)
       return _error->Error(_("Error processing directory %s"),BaseDir.c_str());
    
@@ -273,7 +271,9 @@ bool PackageMap::GenSources(Configuration &Setup,struct CacheDB::Stats &Stats)
    SrcDone = true;
    
    // Create a package writer object.
-   SourcesWriter Sources(flCombine(CacheDir, SrcCacheDB),
+   MultiCompress Comp(flCombine(ArchiveDir,SrcFile),
+		      SrcCompress,Permissions);
+   SourcesWriter Sources(&Comp.Input, flCombine(CacheDir, SrcCacheDB),
 			 flCombine(OverrideDir,BinOverride),
 			 flCombine(OverrideDir,SrcOverride),
 			 flCombine(OverrideDir,SrcExtraOverride));
@@ -288,11 +288,7 @@ bool PackageMap::GenSources(Configuration &Setup,struct CacheDB::Stats &Stats)
 
    Sources.DeLinkLimit = DeLinkLimit;
    Sources.Stats.DeLinkBytes = Stats.DeLinkBytes;
-   
-   // Create a compressor object
-   MultiCompress Comp(flCombine(ArchiveDir,SrcFile),
-		      SrcCompress,Permissions);
-   Sources.Output = Comp.Input;
+
    if (_error->PendingError() == true)
       return _error->Error(_("Error processing directory %s"),BaseDir.c_str());
 
@@ -366,16 +362,15 @@ bool PackageMap::GenContents(Configuration &Setup,
    gettimeofday(&StartTime,0);   
    
    // Create a package writer object.
-   ContentsWriter Contents("", Arch);
+   MultiCompress Comp(flCombine(ArchiveDir,this->Contents),
+		      CntCompress,Permissions);
+   Comp.UpdateMTime = Setup.FindI("Default::ContentsAge",10)*24*60*60;
+   ContentsWriter Contents(&Comp.Input, "", Arch, IncludeArchAll);
    if (PkgExt.empty() == false && Contents.SetExts(PkgExt) == false)
       return _error->Error(_("Package extension list is too long"));
    if (_error->PendingError() == true)
       return false;
 
-   MultiCompress Comp(flCombine(ArchiveDir,this->Contents),
-		      CntCompress,Permissions);
-   Comp.UpdateMTime = Setup.FindI("Default::ContentsAge",10)*24*60*60;
-   Contents.Output = Comp.Input;
    if (_error->PendingError() == true)
       return false;
 
@@ -385,7 +380,7 @@ bool PackageMap::GenContents(Configuration &Setup,
       FileFd Head(flCombine(OverrideDir,ContentsHead),FileFd::ReadOnly);
       if (_error->PendingError() == true)
 	 return false;
-      
+
       unsigned long long Size = Head.Size();
       unsigned char Buf[4096];
       while (Size != 0)
@@ -393,17 +388,17 @@ bool PackageMap::GenContents(Configuration &Setup,
 	 unsigned long long ToRead = Size;
 	 if (Size > sizeof(Buf))
 	    ToRead = sizeof(Buf);
-	 
+
 	 if (Head.Read(Buf,ToRead) == false)
 	    return false;
-	 
-	 if (fwrite(Buf,1,ToRead,Comp.Input) != ToRead)
+
+	 if (Comp.Input.Write(Buf, ToRead) == false)
 	    return _error->Errno("fwrite",_("Error writing header to contents file"));
-	 
+
 	 Size -= ToRead;
-      }            
-   }  
-      
+      }
+   }
+
    /* Go over all the package file records and parse all the package
       files associated with this contents file into one great big honking
       memory structure, then dump the sorted version */
@@ -463,7 +458,7 @@ bool PackageMap::GenContents(Configuration &Setup,
 // ---------------------------------------------------------------------
 /* This populates the PkgList with all the possible permutations of the
    section/arch lists. */
-static void LoadTree(vector<PackageMap> &PkgList,Configuration &Setup)
+static void LoadTree(vector<PackageMap> &PkgList, std::vector<TranslationWriter*> &TransList, Configuration &Setup)
 {   
    // Load the defaults
    string DDir = Setup.Find("TreeDefault::Directory",
@@ -493,6 +488,8 @@ static void LoadTree(vector<PackageMap> &PkgList,Configuration &Setup)
    bool const LongDescription = Setup.FindB("Default::LongDescription",
 					_config->FindB("APT::FTPArchive::LongDescription", true));
    string const TranslationCompress = Setup.Find("Default::Translation::Compress",". gzip").c_str();
+   bool const ConfIncludeArchAllExists = _config->Exists("APT::FTPArchive::IncludeArchitectureAll");
+   bool const ConfIncludeArchAll = _config->FindB("APT::FTPArchive::IncludeArchitectureAll", true);
 
    // Process 'tree' type sections
    const Configuration::Item *Top = Setup.Tree("tree");
@@ -507,34 +504,32 @@ static void LoadTree(vector<PackageMap> &PkgList,Configuration &Setup)
       string Section;
       while (ParseQuoteWord(Sections,Section) == true)
       {
-	 string Arch;
-	 struct SubstVar const Vars[] = {{"$(DIST)",&Dist},
+	 struct SubstVar Vars[] = {{"$(DIST)",&Dist},
 					 {"$(SECTION)",&Section},
-					 {"$(ARCH)",&Arch},
-					 {NULL, NULL}};
+					 {"$(ARCH)",nullptr},
+					 {nullptr, nullptr}};
 	 mode_t const Perms = Block.FindI("FileMode", Permissions);
 	 bool const LongDesc = Block.FindB("LongDescription", LongDescription);
-	 TranslationWriter *TransWriter;
-	 if (DTrans.empty() == false && LongDesc == false)
-	 {
-	    string const TranslationFile = flCombine(Setup.FindDir("Dir::ArchiveDir"),
-			SubstVar(Block.Find("Translation", DTrans.c_str()), Vars));
-	    string const TransCompress = Block.Find("Translation::Compress", TranslationCompress);
-	    TransWriter = new TranslationWriter(TranslationFile, TransCompress, Perms);
-	 }
-	 else
-	    TransWriter = NULL;
+	 TranslationWriter *TransWriter = nullptr;
 
-	 string const Tmp2 = Block.Find("Architectures");
-	 const char *Archs = Tmp2.c_str();
-	 while (ParseQuoteWord(Archs,Arch) == true)
+	 std::string Tmp2 = Block.Find("Architectures");
+	 std::transform(Tmp2.begin(), Tmp2.end(), Tmp2.begin(), ::tolower);
+	 std::vector<std::string> const Archs = VectorizeString(Tmp2, ' ');
+	 bool IncludeArchAll;
+	 if (ConfIncludeArchAllExists == true)
+	    IncludeArchAll = ConfIncludeArchAll;
+	 else
+	    IncludeArchAll = std::find(Archs.begin(), Archs.end(), "all") == Archs.end();
+	 for (auto const& Arch: Archs)
 	 {
+	    if (Arch.empty()) continue;
+	    Vars[2].Contents = &Arch;
 	    PackageMap Itm;
 	    Itm.Permissions = Perms;
 	    Itm.BinOverride = SubstVar(Block.Find("BinOverride"),Vars);
 	    Itm.InternalPrefix = SubstVar(Block.Find("InternalPrefix",DIPrfx.c_str()),Vars);
 
-	    if (stringcasecmp(Arch,"source") == 0)
+	    if (Arch == "source")
 	    {
 	       Itm.SrcOverride = SubstVar(Block.Find("SrcOverride"),Vars);
 	       Itm.BaseDir = SubstVar(Block.Find("SrcDirectory",DSDir.c_str()),Vars);
@@ -551,28 +546,36 @@ static void LoadTree(vector<PackageMap> &PkgList,Configuration &Setup)
 	       Itm.PkgFile = SubstVar(Block.Find("Packages",DPkg.c_str()),Vars);
 	       Itm.Tag = SubstVar("$(DIST)/$(SECTION)/$(ARCH)",Vars);
 	       Itm.Arch = Arch;
+	       Itm.IncludeArchAll = IncludeArchAll;
 	       Itm.LongDesc = LongDesc;
-	       if (TransWriter != NULL)
+	       if (TransWriter == NULL && DTrans.empty() == false && LongDesc == false && DTrans != "/dev/null")
 	       {
-		  TransWriter->IncreaseRefCounter();
-		  Itm.TransWriter = TransWriter;
+		  string const TranslationFile = flCombine(Setup.FindDir("Dir::ArchiveDir"),
+			SubstVar(Block.Find("Translation", DTrans.c_str()), Vars));
+		  string const TransCompress = Block.Find("Translation::Compress", TranslationCompress);
+		  TransWriter = new TranslationWriter(TranslationFile, TransCompress, Perms);
+		  TransList.push_back(TransWriter);
 	       }
+	       Itm.TransWriter = TransWriter;
 	       Itm.Contents = SubstVar(Block.Find("Contents",DContents.c_str()),Vars);
 	       Itm.ContentsHead = SubstVar(Block.Find("Contents::Header",DContentsH.c_str()),Vars);
 	       Itm.FLFile = SubstVar(Block.Find("FileList",DFLFile.c_str()),Vars);
 	       Itm.ExtraOverride = SubstVar(Block.Find("ExtraOverride"),Vars);
 	    }
 
- 	    Itm.GetGeneral(Setup,Block);
+	    Itm.GetGeneral(Setup,Block);
 	    PkgList.push_back(Itm);
 	 }
-	 // we didn't use this TransWriter, so we can release it
-	 if (TransWriter != NULL && TransWriter->GetRefCounter() == 0)
-	    delete TransWriter;
       }
-      
+
       Top = Top->Next;
-   }      
+   }
+}
+									/*}}}*/
+static void UnloadTree(std::vector<TranslationWriter*> const &Trans)		/*{{{*/
+{
+   for (std::vector<TranslationWriter*>::const_reverse_iterator T = Trans.rbegin(); T != Trans.rend(); ++T)
+      delete *T;
 }
 									/*}}}*/
 // LoadBinDir - Load a 'bindirectory' section from the Generate Config	/*{{{*/
@@ -612,17 +615,9 @@ static void LoadBinDir(vector<PackageMap> &PkgList,Configuration &Setup)
 }
 									/*}}}*/
 
-// ShowHelp - Show the help text					/*{{{*/
-// ---------------------------------------------------------------------
-/* */
-static bool ShowHelp(CommandLine &)
+static bool ShowHelp(CommandLine &)					/*{{{*/
 {
-   ioprintf(cout,_("%s %s for %s compiled on %s %s\n"),PACKAGE,PACKAGE_VERSION,
-	    COMMON_ARCH,__DATE__,__TIME__);
-   if (_config->FindB("version") == true)
-      return true;
-
-   cout << 
+   std::cout <<
     _("Usage: apt-ftparchive [options] command\n"
       "Commands: packages binarypath [overridefile [pathprefix]]\n"
       "          sources srcpath [overridefile [pathprefix]]\n"
@@ -661,7 +656,6 @@ static bool ShowHelp(CommandLine &)
       "  --contents  Control contents file generation\n"
       "  -c=?  Read this configuration file\n"
       "  -o=?  Set an arbitrary configuration option") << endl;
-   
    return true;
 }
 									/*}}}*/
@@ -678,8 +672,9 @@ static bool SimpleGenPackages(CommandLine &CmdL)
       Override = CmdL.FileList[2];
    
    // Create a package writer object.
-   PackagesWriter Packages(_config->Find("APT::FTPArchive::DB"),
-			   Override, "", _config->Find("APT::FTPArchive::Architecture"));
+   PackagesWriter Packages(NULL, NULL, _config->Find("APT::FTPArchive::DB"),
+			   Override, "", _config->Find("APT::FTPArchive::Architecture"),
+			   _config->FindB("APT::FTPArchive::IncludeArchitectureAll", true));
    if (_error->PendingError() == true)
       return false;
    
@@ -706,7 +701,7 @@ static bool SimpleGenContents(CommandLine &CmdL)
       return ShowHelp(CmdL);
    
    // Create a package writer object.
-   ContentsWriter Contents(_config->Find("APT::FTPArchive::DB"), _config->Find("APT::FTPArchive::Architecture"));
+   ContentsWriter Contents(NULL, _config->Find("APT::FTPArchive::DB"), _config->Find("APT::FTPArchive::Architecture"));
    if (_error->PendingError() == true)
       return false;
    
@@ -739,7 +734,7 @@ static bool SimpleGenSources(CommandLine &CmdL)
 			     SOverride.c_str());
        
    // Create a package writer object.
-   SourcesWriter Sources(_config->Find("APT::FTPArchive::DB"),Override,SOverride);
+   SourcesWriter Sources(NULL, _config->Find("APT::FTPArchive::DB"),Override,SOverride);
    if (_error->PendingError() == true)
       return false;
    
@@ -766,7 +761,7 @@ static bool SimpleGenRelease(CommandLine &CmdL)
 
    string Dir = CmdL.FileList[1];
 
-   ReleaseWriter Release("");
+   ReleaseWriter Release(NULL, "");
    Release.DirStrip = Dir;
 
    if (_error->PendingError() == true)
@@ -824,12 +819,12 @@ static bool DoGeneratePackagesAndSources(Configuration &Setup,
       _error->DumpErrors();
       
       // Do the generation for Packages
-      for (End = List; End->Str != 0; End++)
+      for (End = List; End->Str != 0; ++End)
       {
 	 if (End->Hit == false)
 	    continue;
 	 
-	 PackageMap *I = (PackageMap *)End->UserData;
+	 PackageMap * const I = static_cast<PackageMap *>(End->UserData);
 	 if (I->PkgDone == true)
 	    continue;
 	 if (I->GenPackages(Setup,Stats) == false)
@@ -837,12 +832,12 @@ static bool DoGeneratePackagesAndSources(Configuration &Setup,
       }
       
       // Do the generation for Sources
-      for (End = List; End->Str != 0; End++)
+      for (End = List; End->Str != 0; ++End)
       {
 	 if (End->Hit == false)
 	    continue;
 	 
-	 PackageMap *I = (PackageMap *)End->UserData;
+	 PackageMap * const I = static_cast<PackageMap *>(End->UserData);
 	 if (I->SrcDone == true)
 	    continue;
 	 if (I->GenSources(Setup,SrcStats) == false)
@@ -851,12 +846,6 @@ static bool DoGeneratePackagesAndSources(Configuration &Setup,
       
       delete [] List;
    }
-
-   // close the Translation master files
-   for (vector<PackageMap>::reverse_iterator I = PkgList.rbegin(); I != PkgList.rend(); ++I)
-      if (I->TransWriter != NULL && I->TransWriter->DecreaseRefCounter() == 0)
-	 delete I->TransWriter;
-
    return true;
 }
 
@@ -887,7 +876,8 @@ static bool DoGenerateContents(Configuration &Setup,
       that describe the debs it indexes. Since the package files contain 
       hashes of the .debs this means they have not changed either so the 
       contents must be up to date. */
-   unsigned long MaxContentsChange = Setup.FindI("Default::MaxContentsChange",UINT_MAX)*1024;
+   unsigned long MaxContentsChange = Setup.FindI("Default::MaxContentsChange",
+                                                 std::numeric_limits<unsigned int>::max())*1024;
    for (vector<PackageMap>::iterator I = PkgList.begin(); I != PkgList.end(); ++I)
    {
       // This record is not relevant
@@ -947,7 +937,8 @@ static bool Generate(CommandLine &CmdL)
       return false;
 
    vector<PackageMap> PkgList;
-   LoadTree(PkgList,Setup);
+   std::vector<TranslationWriter*> TransList;
+   LoadTree(PkgList, TransList, Setup);
    LoadBinDir(PkgList,Setup);
 
    // Sort by cache DB to improve IO locality.
@@ -958,7 +949,10 @@ static bool Generate(CommandLine &CmdL)
    if (_config->FindB("APT::FTPArchive::ContentsOnly", false) == false)
    {
       if(DoGeneratePackagesAndSources(Setup, PkgList, SrcStats, Stats, CmdL) == false)
+      {
+	 UnloadTree(TransList);
          return false;
+      }
    } else {
       c1out << "Skipping Packages/Sources generation" << endl;
    }
@@ -966,7 +960,10 @@ static bool Generate(CommandLine &CmdL)
    // do Contents if needed
    if (_config->FindB("APT::FTPArchive::Contents", true) == true)
       if (DoGenerateContents(Setup, PkgList, CmdL) == false)
-         return false;
+      {
+	 UnloadTree(TransList);
+	 return false;
+      }
 
    struct timeval NewTime;
    gettimeofday(&NewTime,0);
@@ -975,6 +972,7 @@ static bool Generate(CommandLine &CmdL)
    c1out << "Done. " << SizeToStr(Stats.Bytes) << "B in " << Stats.Packages
          << " archives. Took " << TimeToStr((long)Delta) << endl;
 
+   UnloadTree(TransList);
    return true;
 }
 
@@ -991,9 +989,12 @@ static bool Clean(CommandLine &CmdL)
    Configuration Setup;
    if (ReadConfigFile(Setup,CmdL.FileList[1],true) == false)
       return false;
+   // we don't need translation creation here
+   Setup.Set("TreeDefault::Translation", "/dev/null");
 
    vector<PackageMap> PkgList;
-   LoadTree(PkgList,Setup);
+   std::vector<TranslationWriter*> TransList;
+   LoadTree(PkgList, TransList, Setup);
    LoadBinDir(PkgList,Setup);
 
    // Sort by cache DB to improve IO locality.
@@ -1014,14 +1015,13 @@ static bool Clean(CommandLine &CmdL)
 	 _error->DumpErrors();
       if (DB_SRC.Clean() == false)
 	 _error->DumpErrors();
-      
+
       string CacheDB = I->BinCacheDB;
       string SrcCacheDB = I->SrcCacheDB;
       while(I != PkgList.end() && 
             I->BinCacheDB == CacheDB && 
             I->SrcCacheDB == SrcCacheDB)
          ++I;
-
    }
 
   
@@ -1029,70 +1029,29 @@ static bool Clean(CommandLine &CmdL)
 }
 									/*}}}*/
 
-int main(int argc, const char *argv[])
+static std::vector<aptDispatchWithHelp> GetCommands()			/*{{{*/
 {
-   setlocale(LC_ALL, "");
-   CommandLine::Args Args[] = {
-      {'h',"help","help",0},
-      {0,"md5","APT::FTPArchive::MD5",0},
-      {0,"sha1","APT::FTPArchive::SHA1",0},
-      {0,"sha256","APT::FTPArchive::SHA256",0},
-      {'v',"version","version",0},
-      {'d',"db","APT::FTPArchive::DB",CommandLine::HasArg},
-      {'s',"source-override","APT::FTPArchive::SourceOverride",CommandLine::HasArg},
-      {'q',"quiet","quiet",CommandLine::IntLevel},
-      {'q',"silent","quiet",CommandLine::IntLevel},
-      {0,"delink","APT::FTPArchive::DeLinkAct",0},
-      {0,"readonly","APT::FTPArchive::ReadOnlyDB",0},
-      {0,"contents","APT::FTPArchive::Contents",0},
-      {'a',"arch","APT::FTPArchive::Architecture",CommandLine::HasArg},
-      {'c',"config-file",0,CommandLine::ConfigFile},
-      {'o',"option",0,CommandLine::ArbItem},
-      {0,0,0,0}};
-   CommandLine::Dispatch Cmds[] = {{"packages",&SimpleGenPackages},
-                                   {"contents",&SimpleGenContents},
-                                   {"sources",&SimpleGenSources},
-                                   {"release",&SimpleGenRelease},
-                                   {"generate",&Generate},
-                                   {"clean",&Clean},
-      				   {"help",&ShowHelp},
-                                   {0,0}};
-
-   // Parse the command line and initialize the package library
-   CommandLine CmdL(Args,_config);
-   if (pkgInitConfig(*_config) == false || CmdL.Parse(argc,argv) == false)
-   {
-      _error->DumpErrors();
-      return 100;
-   }
-   
-   // See if the help should be shown
-   if (_config->FindB("help") == true ||
-       _config->FindB("version") == true ||
-       CmdL.FileSize() == 0)
-   {
-      ShowHelp(CmdL);
-      return 0;
-   }
-   
-   // Setup the output streams
-   c0out.rdbuf(clog.rdbuf());
-   c1out.rdbuf(clog.rdbuf());
-   c2out.rdbuf(clog.rdbuf());
-   Quiet = _config->FindI("quiet",0);
-   if (Quiet > 0)
-      c0out.rdbuf(devnull.rdbuf());
-   if (Quiet > 1)
-      c1out.rdbuf(devnull.rdbuf());
- 
-   // Match the operation
-   CmdL.DispatchArg(Cmds);
-   
-   if (_error->empty() == false)
-   {
-      bool Errors = _error->PendingError();
-      _error->DumpErrors();
-      return Errors == true?100:0;
-   }
-   return 0;
+   return {
+      {"packages",&SimpleGenPackages, nullptr},
+      {"contents",&SimpleGenContents, nullptr},
+      {"sources",&SimpleGenSources, nullptr},
+      {"release",&SimpleGenRelease, nullptr},
+      {"generate",&Generate, nullptr},
+      {"clean",&Clean, nullptr},
+      {nullptr, nullptr, nullptr}
+   };
 }
+									/*}}}*/
+int main(int argc, const char *argv[])					/*{{{*/
+{
+   // Parse the command line and initialize the package library
+   CommandLine CmdL;
+   auto const Cmds = ParseCommandLine(CmdL, APT_CMD::APT_FTPARCHIVE, &_config, NULL, argc, argv, ShowHelp, &GetCommands);
+
+   _config->CndSet("quiet",0);
+   Quiet = _config->FindI("quiet",0);
+   InitOutput(clog.rdbuf());
+
+   return DispatchCommandLine(CmdL, Cmds);
+}
+									/*}}}*/

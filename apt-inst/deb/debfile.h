@@ -27,6 +27,7 @@
 #include <apt-pkg/arfile.h>
 #include <apt-pkg/dirstream.h>
 #include <apt-pkg/tagfile.h>
+#include <apt-pkg/macros.h>
 
 #include <string>
 
@@ -64,7 +65,7 @@ class debDebFile::ControlExtract : public pkgDirStream
 {
    public:
    
-   virtual bool DoItem(Item &Itm,int &Fd);
+   virtual bool DoItem(Item &Itm,int &Fd) APT_OVERRIDE;
 };
 
 class debDebFile::MemControlExtract : public pkgDirStream
@@ -79,15 +80,14 @@ class debDebFile::MemControlExtract : public pkgDirStream
    std::string Member;
    
    // Members from DirStream
-   virtual bool DoItem(Item &Itm,int &Fd);
+   virtual bool DoItem(Item &Itm,int &Fd) APT_OVERRIDE;
    virtual bool Process(Item &Itm,const unsigned char *Data,
-			unsigned long Size,unsigned long Pos);
-   
+			unsigned long long Size,unsigned long long Pos) APT_OVERRIDE;
 
    // Helpers
    bool Read(debDebFile &Deb);
-   bool TakeControl(const void *Data,unsigned long Size);
-      
+   bool TakeControl(const void *Data,unsigned long long Size);
+
    MemControlExtract() : IsControl(false), Control(0), Length(0), Member("control") {};
    MemControlExtract(std::string Member) : IsControl(false), Control(0), Length(0), Member(Member) {};
    ~MemControlExtract() {delete [] Control;};   

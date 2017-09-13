@@ -25,6 +25,7 @@
 #ifndef PKGLIB_DIRSTREAM_H
 #define PKGLIB_DIRSTREAM_H
 
+#include <apt-pkg/macros.h>
 
 class pkgDirStream
 { 
@@ -40,7 +41,7 @@ class pkgDirStream
       unsigned long Mode;
       unsigned long UID;
       unsigned long GID;
-      unsigned long Size;
+      unsigned long long Size;
       unsigned long MTime;
       unsigned long Major;
       unsigned long Minor;
@@ -50,8 +51,7 @@ class pkgDirStream
    virtual bool Fail(Item &Itm,int Fd);
    virtual bool FinishedFile(Item &Itm,int Fd);
    virtual bool Process(Item &/*Itm*/,const unsigned char * /*Data*/,
-			unsigned long /*Size*/,unsigned long /*Pos*/) {return true;};
-      
+			unsigned long long /*Size*/,unsigned long long /*Pos*/) {return true;};
    virtual ~pkgDirStream() {};   
 };
 

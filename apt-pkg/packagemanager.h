@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: packagemanager.h,v 1.14 2001/05/07 04:24:08 jgg Exp $
 /* ######################################################################
 
    Package Manager - Abstacts the package manager
@@ -8,7 +7,7 @@
    Three steps are 
      - Aquiration of archives (stores the list of final file names)
      - Sorting of operations
-     - Invokation of package manager
+     - Invocation of package manager
    
    This is the final stage when the package cache entities get converted
    into file names and the state stored in a DepCache is transformed
@@ -25,6 +24,7 @@
 
 #include <apt-pkg/pkgcache.h>
 #include <apt-pkg/init.h>
+#include <apt-pkg/edsp.h>
 #include <apt-pkg/macros.h>
 
 #include <string>
@@ -44,7 +44,13 @@ class pkgDepCache;
 class pkgSourceList;
 class pkgOrderList;
 class pkgRecords;
-
+class OpProgress;
+class pkgPackageManager;
+namespace APT {
+   namespace Progress {
+      class PackageManager;
+   }
+}
 
 class pkgPackageManager : protected pkgCache::Namespace
 {
@@ -64,7 +70,7 @@ class pkgPackageManager : protected pkgCache::Namespace
    /** \brief saves packages dpkg let disappear
 
        This way APT can retreat from trying to configure these
-       packages later on and a frontend can choose to display a
+       packages later on and a front-end can choose to display a
        notice to inform the user about these disappears.
    */
    std::set<std::string> disappearedPkgs;
@@ -72,6 +78,7 @@ class pkgPackageManager : protected pkgCache::Namespace
    void ImmediateAdd(PkgIterator P, bool UseInstallVer, unsigned const int &Depth = 0);
    virtual OrderResult OrderInstall();
    bool CheckRConflicts(PkgIterator Pkg,DepIterator Dep,const char *Ver);
+   bool CheckRBreaks(PkgIterator const &Pkg,DepIterator Dep,const char * const Ver);
    bool CreateOrderList();
    
    // Analysis helpers
@@ -91,11 +98,8 @@ class pkgPackageManager : protected pkgCache::Namespace
    virtual bool Install(PkgIterator /*Pkg*/,std::string /*File*/) {return false;};
    virtual bool Configure(PkgIterator /*Pkg*/) {return false;};
    virtual bool Remove(PkgIterator /*Pkg*/,bool /*Purge*/=false) {return false;};
-#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
    virtual bool Go(APT::Progress::PackageManager * /*progress*/) {return true;};
-#else
-   virtual bool Go(int /*statusFd*/=-1) {return true;};
-#endif
+   APT_DEPRECATED_MSG("Use overload with explicit progress manager") virtual bool Go(int /*statusFd*/=-1) {return true;};
 
    virtual void Reset() {};
 
@@ -108,14 +112,15 @@ class pkgPackageManager : protected pkgCache::Namespace
    bool GetArchives(pkgAcquire *Owner,pkgSourceList *Sources,
 		    pkgRecords *Recs);
 
-   // Do the installation 
-#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
+   // Do the installation
    OrderResult DoInstall(APT::Progress::PackageManager *progress);
    // compat
-   APT_DEPRECATED OrderResult DoInstall(int statusFd=-1);
-#else
-   OrderResult DoInstall(int statusFd=-1);
-#endif
+   APT_DEPRECATED_MSG("Use APT::Progress::PackageManager subclass instead of fd") OrderResult DoInstall(int statusFd=-1);
+
+   friend bool EIPP::OrderInstall(char const * const planner, pkgPackageManager * const PM,
+	 unsigned int const version, OpProgress * const Progress);
+   friend bool EIPP::ReadResponse(int const input, pkgPackageManager * const PM,
+	 OpProgress * const Progress);
 
    // stuff that needs to be done before the fork() of a library that
    // uses apt
@@ -123,14 +128,10 @@ class pkgPackageManager : protected pkgCache::Namespace
       Res = OrderInstall();
       return Res;
    };
-#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
    // stuff that needs to be done after the fork
    OrderResult DoInstallPostFork(APT::Progress::PackageManager *progress);
    // compat
-   APT_DEPRECATED OrderResult DoInstallPostFork(int statusFd=-1);
-#else
-   OrderResult DoInstallPostFork(int statusFd=-1);
-#endif
+   APT_DEPRECATED_MSG("Use APT::Progress::PackageManager subclass instead of fd") OrderResult DoInstallPostFork(int statusFd=-1);
 
    // ?
    bool FixMissing();
@@ -138,10 +139,11 @@ class pkgPackageManager : protected pkgCache::Namespace
    /** \brief returns all packages dpkg let disappear */
    inline std::set<std::string> GetDisappearedPackages() { return disappearedPkgs; };
 
-   pkgPackageManager(pkgDepCache *Cache);
+   explicit pkgPackageManager(pkgDepCache *Cache);
    virtual ~pkgPackageManager();
 
    private:
+   void * const d;
    enum APT_HIDDEN SmartAction { UNPACK_IMMEDIATE, UNPACK, CONFIGURE };
    APT_HIDDEN bool NonLoopingSmart(SmartAction const action, pkgCache::PkgIterator &Pkg,
       pkgCache::PkgIterator DepPkg, int const Depth, bool const PkgLoop,

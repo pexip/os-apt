@@ -57,6 +57,7 @@ class CommandLine
    public:
    struct Args;
    struct Dispatch;
+   struct DispatchWithHelp;
    
    protected:
    
@@ -83,7 +84,9 @@ class CommandLine
    bool Parse(int argc,const char **argv);
    void ShowHelp();
    unsigned int FileSize() const APT_PURE;
+   // FIXME: merge on next ABI break
    bool DispatchArg(Dispatch *List,bool NoMatch = true);
+   bool DispatchArg(Dispatch const * const List,bool NoMatch = true);
       
    static char const * GetCommand(Dispatch const * const Map,
 	 unsigned int const argc, char const * const * const argv) APT_PURE;
@@ -91,6 +94,7 @@ class CommandLine
    static CommandLine::Args MakeArgs(char ShortOpt, char const *LongOpt,
 	 char const *ConfName, unsigned long Flags) APT_CONST;
 
+   CommandLine();
    CommandLine(Args *AList,Configuration *Conf);
    ~CommandLine();
 };

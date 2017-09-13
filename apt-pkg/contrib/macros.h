@@ -72,16 +72,20 @@
 
 #if APT_GCC_VERSION >= 0x0300
 	#define APT_DEPRECATED	__attribute__ ((deprecated))
+	#define APT_DEPRECATED_MSG(X)	__attribute__ ((deprecated(X)))
 	#define APT_CONST	__attribute__((const))
 	#define APT_PURE	__attribute__((pure))
 	#define APT_NORETURN	__attribute__((noreturn))
 	#define APT_PRINTF(n)	__attribute__((format(printf, n, n + 1)))
+	#define APT_WEAK        __attribute__((weak));
 #else
 	#define APT_DEPRECATED
+	#define APT_DEPRECATED_MSG
 	#define APT_CONST
 	#define APT_PURE
 	#define APT_NORETURN
 	#define APT_PRINTF(n)
+	#define APT_WEAK
 #endif
 
 #if APT_GCC_VERSION > 0x0302
@@ -89,7 +93,7 @@
 	#define APT_MUSTCHECK		__attribute__((warn_unused_result))
 #else
 	#define APT_NONNULL(...)
-	#define APT_REQRET
+	#define APT_MUSTCHECK
 #endif
 
 #if APT_GCC_VERSION >= 0x0400
@@ -132,13 +136,36 @@
 #endif
 #endif
 
+#if __GNUC__ >= 4
+	#define APT_IGNORE_DEPRECATED_PUSH \
+		_Pragma("GCC diagnostic push") \
+		_Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+	#define APT_IGNORE_DEPRECATED_POP \
+		_Pragma("GCC diagnostic pop")
+	#define APT_IGNORE_DEPRECATED(XXX) \
+		APT_IGNORE_DEPRECATED_PUSH \
+		XXX \
+		APT_IGNORE_DEPRECATED_POP
+#else
+	#define APT_IGNORE_DEPRECATED_PUSH
+	#define APT_IGNORE_DEPRECATED_POP
+	#define APT_IGNORE_DEPRECATED(XXX) XXX
+#endif
+
+#if __cplusplus >= 201103L
+	#define APT_OVERRIDE override
+#else
+	#define APT_OVERRIDE /* no c++11 standard */
+#endif
+
 // These lines are extracted by the makefiles and the buildsystem
 // Increasing MAJOR or MINOR results in the need of recompiling all
 // reverse-dependencies of libapt-pkg against the new SONAME.
 // Non-ABI-Breaks should only increase RELEASE number.
 // See also buildlib/libversion.mak
-#define APT_PKG_MAJOR 4
-#define APT_PKG_MINOR 12
-#define APT_PKG_RELEASE 0
+#define APT_PKG_MAJOR 5
+#define APT_PKG_MINOR 0
+#define APT_PKG_RELEASE 1
+#define APT_PKG_ABI ((APT_PKG_MAJOR * 100) + APT_PKG_MINOR)
 
 #endif

@@ -17,24 +17,34 @@ class CLT: public CommandLine {
       }
 };
 
-#define EXPECT_CMD(x, ...) { const char * const argv[] = { __VA_ARGS__ }; EXPECT_EQ(x, CLT::AsString(argv, sizeof(argv)/sizeof(argv[0]))); }
-
 TEST(CommandLineTest,SaveInConfig)
 {
-   EXPECT_CMD("apt-get install -sf",
+#define APT_EXPECT_CMD(x, ...) { const char * const argv[] = { __VA_ARGS__ }; EXPECT_EQ(x, CLT::AsString(argv, sizeof(argv)/sizeof(argv[0]))); }
+   APT_EXPECT_CMD("apt-get install -sf",
 	 "apt-get", "install", "-sf");
-   EXPECT_CMD("apt-cache -s apt -so Debug::test=Test",
+   APT_EXPECT_CMD("apt-cache -s apt -so Debug::test=Test",
 	 "apt-cache", "-s", "apt", "-so", "Debug::test=Test");
-   EXPECT_CMD("apt-cache -s apt -so Debug::test=\"Das ist ein Test\"",
+   APT_EXPECT_CMD("apt-cache -s apt -so Debug::test='Das ist ein Test'",
 	 "apt-cache", "-s", "apt", "-so", "Debug::test=Das ist ein Test");
-   EXPECT_CMD("apt-cache -s apt --hallo test=1.0",
+   APT_EXPECT_CMD("apt-cache -s apt -so Debug::test='Das ist ein Test'",
+	 "apt-cache", "-s", "apt", "-so", "Debug::test=\"Das ist ein Test\"");
+   APT_EXPECT_CMD("apt-cache -s apt -so Debug::test='Das ist ein Test' foo",
+	 "apt-cache", "-s", "apt", "-so", "\"Debug::test=Das ist ein Test\"", "foo");
+   APT_EXPECT_CMD("apt-cache -s apt -so Debug::test='Das ist ein Test' foo",
+	 "apt-cache", "-s", "apt", "-so", "\'Debug::test=Das ist ein Test\'", "foo");
+   APT_EXPECT_CMD("apt-cache -s apt -so Debug::test='That 	 is crazy!' foo",
+	 "apt-cache", "-s", "apt", "-so", "\'Debug::test=That 	 \ris\n crazy!\'", "foo");
+   APT_EXPECT_CMD("apt-cache -s apt --hallo test=1.0",
 	 "apt-cache", "-s", "apt", "--hallo", "test=1.0");
+#undef APT_EXPECT_CMD
 }
 TEST(CommandLineTest,Parsing)
 {
    CommandLine::Args Args[] = {
       { 't', 0, "Test::Worked", 0 },
+      { 'T', "testing", "Test::Worked", CommandLine::HasArg },
       { 'z', "zero", "Test::Zero", 0 },
+      { 'o', "option", 0, CommandLine::ArbItem },
       {0,0,0,0}
    };
    ::Configuration c;
@@ -56,6 +66,79 @@ TEST(CommandLineTest,Parsing)
    CmdL.Parse(3 , argv2);
    EXPECT_TRUE(c.FindB("Test::Worked", false));
    EXPECT_FALSE(c.FindB("Test::Zero", false));
+
+   c.Clear("Test");
+   {
+   char const * argv[] = { "test", "-T", "yes" };
+   CmdL.Parse(3 , argv);
+   EXPECT_TRUE(c.FindB("Test::Worked", false));
+   EXPECT_EQ("yes", c.Find("Test::Worked", "no"));
+   EXPECT_EQ(0, CmdL.FileSize());
+   }
+   c.Clear("Test");
+   {
+   char const * argv[] = { "test", "-T=yes" };
+   CmdL.Parse(2 , argv);
+   EXPECT_TRUE(c.Exists("Test::Worked"));
+   EXPECT_EQ("yes", c.Find("Test::Worked", "no"));
+   EXPECT_EQ(0, CmdL.FileSize());
+   }
+   c.Clear("Test");
+   {
+   char const * argv[] = { "test", "-T=", "yes" };
+   CmdL.Parse(3 , argv);
+   EXPECT_TRUE(c.Exists("Test::Worked"));
+   EXPECT_EQ("no", c.Find("Test::Worked", "no"));
+   EXPECT_EQ(1, CmdL.FileSize());
+   }
+
+   c.Clear("Test");
+   {
+   char const * argv[] = { "test", "--testing", "yes" };
+   CmdL.Parse(3 , argv);
+   EXPECT_TRUE(c.FindB("Test::Worked", false));
+   EXPECT_EQ("yes", c.Find("Test::Worked", "no"));
+   EXPECT_EQ(0, CmdL.FileSize());
+   }
+   c.Clear("Test");
+   {
+   char const * argv[] = { "test", "--testing=yes" };
+   CmdL.Parse(2 , argv);
+   EXPECT_TRUE(c.Exists("Test::Worked"));
+   EXPECT_EQ("yes", c.Find("Test::Worked", "no"));
+   EXPECT_EQ(0, CmdL.FileSize());
+   }
+   c.Clear("Test");
+   {
+   char const * argv[] = { "test", "--testing=", "yes" };
+   CmdL.Parse(3 , argv);
+   EXPECT_TRUE(c.Exists("Test::Worked"));
+   EXPECT_EQ("no", c.Find("Test::Worked", "no"));
+   EXPECT_EQ(1, CmdL.FileSize());
+   }
+
+   c.Clear("Test");
+   {
+   char const * argv[] = { "test", "-o", "test::worked=yes" };
+   CmdL.Parse(3 , argv);
+   EXPECT_TRUE(c.FindB("Test::Worked", false));
+   EXPECT_EQ("yes", c.Find("Test::Worked", "no"));
+   }
+   c.Clear("Test");
+   {
+   char const * argv[] = { "test", "-o", "test::worked=" };
+   CmdL.Parse(3 , argv);
+   EXPECT_TRUE(c.Exists("Test::Worked"));
+   EXPECT_EQ("no", c.Find("Test::Worked", "no"));
+   }
+   c.Clear("Test");
+   {
+   char const * argv[] = { "test", "-o", "test::worked=", "yes" };
+   CmdL.Parse(4 , argv);
+   EXPECT_TRUE(c.Exists("Test::Worked"));
+   EXPECT_EQ("no", c.Find("Test::Worked", "no"));
+   }
+   c.Clear("Test");
 }
 
 TEST(CommandLineTest, BoolParsing)
@@ -87,7 +170,7 @@ TEST(CommandLineTest, BoolParsing)
 
 }
 
-bool DoVoid(CommandLine &) { return false; }
+static bool DoVoid(CommandLine &) { return false; }
 
 TEST(CommandLineTest,GetCommand)
 {
@@ -96,7 +179,7 @@ TEST(CommandLineTest,GetCommand)
    char const * argv[] = { "apt-get", "-t", "unstable", "remove", "-d", "foo" };
    char const * com = CommandLine::GetCommand(Cmds, sizeof(argv)/sizeof(argv[0]), argv);
    EXPECT_STREQ("remove", com);
-   std::vector<CommandLine::Args> Args = getCommandArgs("apt-get", com);
+   std::vector<CommandLine::Args> Args = getCommandArgs(APT_CMD::APT_GET, com);
    ::Configuration c;
    CommandLine CmdL(Args.data(), &c);
    ASSERT_TRUE(CmdL.Parse(sizeof(argv)/sizeof(argv[0]), argv));
@@ -110,7 +193,7 @@ TEST(CommandLineTest,GetCommand)
    char const * argv[] = {"apt-get", "-t", "unstable", "remove", "--", "-d", "foo" };
    char const * com = CommandLine::GetCommand(Cmds, sizeof(argv)/sizeof(argv[0]), argv);
    EXPECT_STREQ("remove", com);
-   std::vector<CommandLine::Args> Args = getCommandArgs("apt-get", com);
+   std::vector<CommandLine::Args> Args = getCommandArgs(APT_CMD::APT_GET, com);
    ::Configuration c;
    CommandLine CmdL(Args.data(), &c);
    ASSERT_TRUE(CmdL.Parse(sizeof(argv)/sizeof(argv[0]), argv));
@@ -125,7 +208,7 @@ TEST(CommandLineTest,GetCommand)
    char const * argv[] = {"apt-get", "-t", "unstable", "--", "remove", "-d", "foo" };
    char const * com = CommandLine::GetCommand(Cmds, sizeof(argv)/sizeof(argv[0]), argv);
    EXPECT_STREQ("remove", com);
-   std::vector<CommandLine::Args> Args = getCommandArgs("apt-get", com);
+   std::vector<CommandLine::Args> Args = getCommandArgs(APT_CMD::APT_GET, com);
    ::Configuration c;
    CommandLine CmdL(Args.data(), &c);
    ASSERT_TRUE(CmdL.Parse(sizeof(argv)/sizeof(argv[0]), argv));
@@ -140,7 +223,7 @@ TEST(CommandLineTest,GetCommand)
    char const * argv[] = {"apt-get", "install", "-t", "unstable", "--", "remove", "-d", "foo" };
    char const * com = CommandLine::GetCommand(Cmds, sizeof(argv)/sizeof(argv[0]), argv);
    EXPECT_STREQ("install", com);
-   std::vector<CommandLine::Args> Args = getCommandArgs("apt-get", com);
+   std::vector<CommandLine::Args> Args = getCommandArgs(APT_CMD::APT_GET, com);
    ::Configuration c;
    CommandLine CmdL(Args.data(), &c);
    ASSERT_TRUE(CmdL.Parse(sizeof(argv)/sizeof(argv[0]), argv));
