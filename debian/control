@@ -16,7 +16,7 @@ Build-Conflicts: autoconf2.13, automake1.4
 Vcs-Git: git://anonscm.debian.org/apt/apt.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=apt/apt.git
 XS-Testsuite: autopkgtest
-XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ stretch
 
 Package: apt
 Architecture: any
