@@ -1,6 +1,8 @@
 apt (1.4.8pexip1) pexip; urgency=low
 
   * Migrate to Stretch
+  * vendor/pexip/apt-vendor.ent: add sourceslist-{list,sources}-format
+    definitions
 
  -- John-Mark Bell <jmb@pexip.com>  Tue, 10 Jul 2018 16:01:29 +0100
 

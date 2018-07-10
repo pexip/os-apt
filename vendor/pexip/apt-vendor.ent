@@ -5,3 +5,9 @@
 <!ENTITY keyring-removed-filename "<filename>/usr/share/keyrings/pexip-archive-removed-keys.gpg</filename>">
 <!ENTITY keyring-master-filename "/usr/share/keyrings/pexip-master-keyring.gpg">
 <!ENTITY keyring-uri "">
+
+<!ENTITY sourceslist-list-format "deb http://localhost/pexip pexip main">
+<!ENTITY sourceslist-sources-format "Types: deb
+URIs: http://localhost/pexip
+Suites: pexip
+Components: main">
