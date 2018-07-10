@@ -23,11 +23,16 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/pkgsystem.h>
 
+#include <apt-private/private-cmndline.h>
+#include <apt-private/private-main.h>
+
 #include <vector>
 #include <algorithm>
 #include <stdio.h>
+#include <unistd.h>
 #include <iostream>
 #include <string>
+#include <memory>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -106,106 +111,56 @@ static bool DoIt(string InFile)
    const char **Order = TFRewritePackageOrder;
    if (Source == true)
       Order = TFRewriteSourceOrder;
-   
+
    // Emit
-   unsigned char *Buffer = new unsigned char[Largest+1];
+   FileFd stdoutfd;
+   stdoutfd.OpenDescriptor(STDOUT_FILENO, FileFd::WriteOnly, false);
+   auto const Buffer = std::unique_ptr<unsigned char[]>(new unsigned char[Largest+1]);
    for (vector<PkgName>::iterator I = List.begin(); I != List.end(); ++I)
    {
       // Read in the Record.
-      if (Fd.Seek(I->Offset) == false || Fd.Read(Buffer,I->Length) == false)
-      {
-	 delete [] Buffer;
+      if (Fd.Seek(I->Offset) == false || Fd.Read(Buffer.get(),I->Length) == false)
 	 return false;
-      }
-      
-      Buffer[I->Length] = '\n';      
-      if (Section.Scan((char *)Buffer,I->Length+1) == false)
-      {
-	 delete [] Buffer;
+
+      Buffer[I->Length] = '\n';
+      if (Section.Scan((char *)Buffer.get(),I->Length+1) == false)
 	 return _error->Error("Internal error, failed to scan buffer");
-      }
 
       // Sort the section
-      if (TFRewrite(stdout,Section,Order,0) == false)
-      {
-	 delete [] Buffer;
+      if (Section.Write(stdoutfd, Order) == false || stdoutfd.Write("\n", 1) == false)
 	 return _error->Error("Internal error, failed to sort fields");
-      }
-      
-      fputc('\n',stdout);      
    }
-   
-   delete [] Buffer;
    return true;
 }
 									/*}}}*/
-// ShowHelp - Show the help text					/*{{{*/
-// ---------------------------------------------------------------------
-/* */
-static int ShowHelp()
+static bool ShowHelp(CommandLine &)					/*{{{*/
 {
-   ioprintf(cout,_("%s %s for %s compiled on %s %s\n"),PACKAGE,PACKAGE_VERSION,
-	    COMMON_ARCH,__DATE__,__TIME__);
-   if (_config->FindB("version") == true)
-      return 0;
-   
-   cout <<
+   std::cout <<
     _("Usage: apt-sortpkgs [options] file1 [file2 ...]\n"
       "\n"
-      "apt-sortpkgs is a simple tool to sort package files. The -s option is used\n"
-      "to indicate what kind of file it is.\n"
-      "\n"
-      "Options:\n"
-      "  -h   This help text\n"
-      "  -s   Use source file sorting\n"
-      "  -c=? Read this configuration file\n"
-      "  -o=? Set an arbitrary configuration option, eg -o dir::cache=/tmp\n");
-
-   return 0;
+      "apt-sortpkgs is a simple tool to sort package information files.\n"
+      "By default it sorts by binary package information, but the -s option\n"
+      "can be used to switch to source package ordering instead.\n");
+   return true;
+}
+									/*}}}*/
+static std::vector<aptDispatchWithHelp> GetCommands()			/*{{{*/
+{
+   return {
+      {nullptr, nullptr, nullptr}
+   };
 }
 									/*}}}*/
 int main(int argc,const char *argv[])					/*{{{*/
 {
-   CommandLine::Args Args[] = {
-      {'h',"help","help",0},
-      {'v',"version","version",0},
-      {'s',"source","APT::SortPkgs::Source",0},
-      {'c',"config-file",0,CommandLine::ConfigFile},
-      {'o',"option",0,CommandLine::ArbItem},
-      {0,0,0,0}};
-
-   // Set up gettext support
-   setlocale(LC_ALL,"");
-   textdomain(PACKAGE);
-
-   // Parse the command line and initialize the package library
-   CommandLine CmdL(Args,_config);
-   if (pkgInitConfig(*_config) == false ||
-       CmdL.Parse(argc,argv) == false ||
-       pkgInitSystem(*_config,_system) == false)
-   {
-      _error->DumpErrors();
-      return 100;
-   }
-
-   // See if the help should be shown
-   if (_config->FindB("help") == true ||
-       CmdL.FileSize() == 0)
-      return ShowHelp();
+   CommandLine CmdL;
+   ParseCommandLine(CmdL, APT_CMD::APT_SORTPKG, &_config, &_system, argc, argv, &ShowHelp, &GetCommands);
 
    // Match the operation
    for (unsigned int I = 0; I != CmdL.FileSize(); I++)
       if (DoIt(CmdL.FileList[I]) == false)
 	 break;
-   
-   // Print any errors or warnings found during parsing
-   if (_error->empty() == false)
-   {
-      bool Errors = _error->PendingError();
-      _error->DumpErrors();
-      return Errors == true?100:0;
-   }
-   
-   return 0;   
+
+   return DispatchCommandLine(CmdL, {});
 }
 									/*}}}*/

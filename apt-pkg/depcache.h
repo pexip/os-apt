@@ -1,6 +1,5 @@
 // -*- mode: c++; mode: fold -*-
 // Description								/*{{{*/
-// $Id: depcache.h,v 1.14 2001/02/20 07:03:17 jgg Exp $
 /* ######################################################################
 
    DepCache - Dependency Extension data for the cache
@@ -22,7 +21,7 @@
    3 dependency results.
      Now - Compared using the Currently install version
      Install - Compared using the install version (final state)
-     CVer - (Candidate Verion) Compared using the Candidate Version
+     CVer - (Candidate Version) Compared using the Candidate Version
    The candidate and now results are used to decide wheather a package
    should be automatically installed or if it should be left alone.
    
@@ -91,7 +90,7 @@ class pkgDepCache : protected pkgCache::Namespace
     *  \param follow_suggests If \b true, suggestions of the package
     *  will be recursively marked.
     */
-   void MarkPackage(const pkgCache::PkgIterator &pkg,
+   APT_HIDDEN void MarkPackage(const pkgCache::PkgIterator &pkg,
 		    const pkgCache::VerIterator &ver,
 		    bool const &follow_recommends,
 		    bool const &follow_suggests);
@@ -164,12 +163,13 @@ class pkgDepCache : protected pkgCache::Namespace
     */
    class ActionGroup
    {
+       void * const d;
        pkgDepCache &cache;
 
        bool released;
 
        /** Action groups are noncopyable. */
-       ActionGroup(const ActionGroup &other);
+       APT_HIDDEN ActionGroup(const ActionGroup &other);
    public:
        /** \brief Create a new ActionGroup.
 	*
@@ -179,7 +179,7 @@ class pkgDepCache : protected pkgCache::Namespace
 	*  As long as this object exists, no automatic cleanup
 	*  operations will be undertaken.
 	*/
-       ActionGroup(pkgDepCache &cache);
+       explicit ActionGroup(pkgDepCache &cache);
 
        /** \brief Clean up the action group before it is destroyed.
         *
@@ -192,7 +192,7 @@ class pkgDepCache : protected pkgCache::Namespace
 	*  If this is the last action group, the automatic cache
 	*  cleanup operations will be undertaken.
 	*/
-       ~ActionGroup();
+       virtual ~ActionGroup();
    };
 
    /** \brief Returns \b true for packages matching a regular
@@ -204,12 +204,12 @@ class pkgDepCache : protected pkgCache::Namespace
      DefaultRootSetFunc() : Configuration::MatchAgainstConfig("APT::NeverAutoRemove") {};
      virtual ~DefaultRootSetFunc() {};
 
-     bool InRootSet(const pkgCache::PkgIterator &pkg) { return pkg.end() == false && Match(pkg.Name()); };
+     bool InRootSet(const pkgCache::PkgIterator &pkg) APT_OVERRIDE { return pkg.end() == false && Match(pkg.Name()); };
    };
 
    struct StateCache
    {
-      // Epoch stripped text versions of the two version fields
+      // text versions of the two version fields
       const char *CandVersion;
       const char *CurVersion;
 
@@ -240,7 +240,7 @@ class pkgDepCache : protected pkgCache::Namespace
       unsigned char DepState;          // DepState Flags
 
       // Update of candidate version
-      const char *StripEpoch(const char *Ver) APT_PURE;
+      APT_DEPRECATED_MSG("Use the method of the same name in contrib/strutl.h instead if you must") const char *StripEpoch(const char *Ver) APT_PURE;
       void Update(PkgIterator Pkg,pkgCache &Cache);
       
       // Various test members for the current status of the package
@@ -250,7 +250,7 @@ class pkgDepCache : protected pkgCache::Namespace
       inline bool Keep() const {return Mode == ModeKeep;};
       inline bool Protect() const {return (iFlags & Protected) == Protected;};
       inline bool Upgrade() const {return Status > 0 && Mode == ModeInstall;};
-      inline bool Upgradable() const {return Status >= 1;};
+      inline bool Upgradable() const {return Status >= 1 && CandidateVer != NULL;};
       inline bool Downgrade() const {return Status < 0 && Mode == ModeInstall;};
       inline bool Held() const {return Status != 0 && Keep();};
       inline bool NowBroken() const {return (DepState & DepNowMin) != DepNowMin;};
@@ -267,7 +267,7 @@ class pkgDepCache : protected pkgCache::Namespace
    
    // Helper functions
    void BuildGroupOrs(VerIterator const &V);
-   void UpdateVerState(PkgIterator Pkg);
+   void UpdateVerState(PkgIterator const &Pkg);
 
    // User Policy control
    class Policy
@@ -279,8 +279,9 @@ class pkgDepCache : protected pkgCache::Namespace
       }
 
       virtual VerIterator GetCandidateVer(PkgIterator const &Pkg);
-      virtual bool IsImportantDep(DepIterator const &Dep);
+      virtual bool IsImportantDep(DepIterator const &Dep) const;
       virtual signed short GetPriority(PkgIterator const &Pkg);
+      virtual signed short GetPriority(VerIterator const &Ver, bool ConsiderFiles=true);
       virtual signed short GetPriority(PkgFileIterator const &File);
 
       virtual ~Policy() {};
@@ -323,18 +324,18 @@ class pkgDepCache : protected pkgCache::Namespace
    Policy *LocalPolicy;
    
    // Check for a matching provides
-   bool CheckDep(DepIterator Dep,int Type,PkgIterator &Res);
-   inline bool CheckDep(DepIterator Dep,int Type)
+   bool CheckDep(DepIterator const &Dep,int const Type,PkgIterator &Res);
+   inline bool CheckDep(DepIterator const &Dep,int const Type)
    {
       PkgIterator Res(*this,0);
       return CheckDep(Dep,Type,Res);
    }
    
    // Computes state information for deps and versions (w/o storing)
-   unsigned char DependencyState(DepIterator &D);
-   unsigned char VersionState(DepIterator D,unsigned char Check,
-			      unsigned char SetMin,
-			      unsigned char SetPolicy);
+   unsigned char DependencyState(DepIterator const &D);
+   unsigned char VersionState(DepIterator D,unsigned char const Check,
+			      unsigned char const SetMin,
+			      unsigned char const SetPolicy) const;
 
    // Recalculates various portions of the cache, call after changing something
    void Update(DepIterator Dep);           // Mostly internal
@@ -359,14 +360,16 @@ class pkgDepCache : protected pkgCache::Namespace
 
    inline pkgCache &GetCache() {return *Cache;};
    inline pkgVersioningSystem &VS() {return *Cache->VS;};
-   
+
    // Policy implementation
-   inline VerIterator GetCandidateVer(PkgIterator const &Pkg) {return LocalPolicy->GetCandidateVer(Pkg);};
-   inline bool IsImportantDep(DepIterator Dep) {return LocalPolicy->IsImportantDep(Dep);};
+   APT_DEPRECATED_MSG("Confusingly named method which returns the candidate as chosen by policy (NOT as chosen via .SetCandidateVersion!). You probably want to use .GetCandidateVersion instead.") inline VerIterator GetCandidateVer(PkgIterator const &Pkg) {return /* GetCandidateVersion(Pkg); but for API compat: */ LocalPolicy->GetCandidateVer(Pkg);};
+
+   inline bool IsImportantDep(DepIterator Dep) const {return LocalPolicy->IsImportantDep(Dep);};
    inline Policy &GetPolicy() {return *LocalPolicy;};
    
    // Accessors
    inline StateCache &operator [](PkgIterator const &I) {return PkgState[I->ID];};
+   inline StateCache &operator [](PkgIterator const &I) const {return PkgState[I->ID];};
    inline unsigned char &operator [](DepIterator const &I) {return DepState[I->ID];};
 
    /** \return A function identifying packages in the root set other
@@ -396,19 +399,8 @@ class pkgDepCache : protected pkgCache::Namespace
     *  \param rootFunc A predicate that returns \b true for packages
     *  that should be added to the root set.
     */
-   bool MarkAndSweep(InRootSetFunc &rootFunc)
-   {
-     return MarkRequired(rootFunc) && Sweep();
-   }
-
-   bool MarkAndSweep()
-   {
-     std::auto_ptr<InRootSetFunc> f(GetRootSetFunc());
-     if(f.get() != NULL)
-       return MarkAndSweep(*f.get());
-     else
-       return false;
-   }
+   bool MarkAndSweep(InRootSetFunc &rootFunc);
+   bool MarkAndSweep();
 
    /** \name State Manipulators
     */
@@ -423,6 +415,16 @@ class pkgDepCache : protected pkgCache::Namespace
    void MarkProtected(PkgIterator const &Pkg) { PkgState[Pkg->ID].iFlags |= Protected; };
 
    void SetReInstall(PkgIterator const &Pkg,bool To);
+
+   /** @return 'the' candidate version of a package
+    *
+    * The version returned is the version previously set explicitly via
+    * SetCandidate* methods like #SetCandidateVersion or if there wasn't one
+    * set the version as chosen via #Policy.
+    *
+    * @param Pkg is the package to return the candidate for
+    */
+   pkgCache::VerIterator GetCandidateVersion(pkgCache::PkgIterator const &Pkg);
    void SetCandidateVersion(VerIterator TargetVer);
    bool SetCandidateRelease(pkgCache::VerIterator TargetVer,
 				std::string const &TargetRel);
@@ -482,8 +484,8 @@ class pkgDepCache : protected pkgCache::Namespace
 			    unsigned long Depth = 0, bool FromUser = true);
 
    // read persistent states
-   bool readStateFile(OpProgress *prog);
-   bool writeStateFile(OpProgress *prog, bool InstalledOnly=true);
+   bool readStateFile(OpProgress * const prog);
+   bool writeStateFile(OpProgress * const prog, bool const InstalledOnly=true);
    
    // Size queries
    inline signed long long UsrSize() {return iUsrSize;};
@@ -495,11 +497,11 @@ class pkgDepCache : protected pkgCache::Namespace
    inline unsigned long PolicyBrokenCount() {return iPolicyBrokenCount;};
    inline unsigned long BadCount() {return iBadCount;};
 
-   bool Init(OpProgress *Prog);
+   bool Init(OpProgress * const Prog);
    // Generate all state information
-   void Update(OpProgress *Prog = 0);
+   void Update(OpProgress * const Prog = 0);
 
-   pkgDepCache(pkgCache *Cache,Policy *Plcy = 0);
+   pkgDepCache(pkgCache * const Cache,Policy * const Plcy = 0);
    virtual ~pkgDepCache();
 
    protected:
@@ -514,7 +516,9 @@ class pkgDepCache : protected pkgCache::Namespace
 	 bool const rPurge, unsigned long const Depth, bool const FromUser);
 
    private:
-   bool IsModeChangeOk(ModeList const mode, PkgIterator const &Pkg,
+   void * const d;
+
+   APT_HIDDEN bool IsModeChangeOk(ModeList const mode, PkgIterator const &Pkg,
 			unsigned long const Depth, bool const FromUser);
 };
 

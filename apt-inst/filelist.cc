@@ -195,7 +195,7 @@ map_ptrloc pkgFLCache::TreeLookup(map_ptrloc *Base,const char *Text,
 									/*}}}*/
 // FLCache::PrintTree - Print out a tree				/*{{{*/
 // ---------------------------------------------------------------------
-/* This is a simple generic tree dumper, ment for debugging. */
+/* This is a simple generic tree dumper, meant for debugging. */
 void pkgFLCache::PrintTree(map_ptrloc Base,unsigned long Size)
 {
    if (Base == 0)
@@ -468,7 +468,7 @@ bool pkgFLCache::AddDiversion(PkgIterator const &Owner,
    if (FromN->Pointer != 0)
       Diver = FromN->Pointer;
   
-   /* Make sure from and to point to the same diversion, if they dont
+   /* Make sure from and to point to the same diversion, if they don't
       then we are trying to intermix diversions - very bad */
    if (ToN->Pointer != 0 && ToN->Pointer != Diver)
    {

@@ -21,16 +21,21 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/error.h>
 
+#include <array>
+#include <algorithm>
+#include <iomanip>
+#include <locale>
+#include <sstream>
+#include <string>
+#include <sstream>
+#include <vector>
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <time.h>
-#include <string>
-#include <vector>
 #include <ctype.h>
 #include <string.h>
-#include <sstream>
 #include <stdio.h>
-#include <algorithm>
 #include <unistd.h>
 #include <regex.h>
 #include <errno.h>
@@ -71,7 +76,25 @@ bool Endswith(const std::string &s, const std::string &end)
 {
    if (end.size() > s.size())
       return false;
-   return (s.substr(s.size() - end.size(), s.size()) == end);
+   return (s.compare(s.size() - end.size(), end.size(), end) == 0);
+}
+
+bool Startswith(const std::string &s, const std::string &start)
+{
+   if (start.size() > s.size())
+      return false;
+   return (s.compare(0, start.size(), start) == 0);
+}
+
+std::string Join(std::vector<std::string> list, const std::string &sep)
+{
+   std::ostringstream oss;
+   for (auto it = list.begin(); it != list.end(); it++)
+   {
+      if (it != list.begin()) oss << sep;
+      oss << *it;
+   }
+   return oss.str();
 }
 
 }
@@ -317,21 +340,19 @@ bool ParseCWord(const char *&String,string &Res)
 /* */
 string QuoteString(const string &Str, const char *Bad)
 {
-   string Res;
+   std::stringstream Res;
    for (string::const_iterator I = Str.begin(); I != Str.end(); ++I)
    {
-      if (strchr(Bad,*I) != 0 || isprint(*I) == 0 || 
+      if (strchr(Bad,*I) != 0 || isprint(*I) == 0 ||
 	  *I == 0x25 || // percent '%' char
 	  *I <= 0x20 || *I >= 0x7F) // control chars
       {
-	 char Buf[10];
-	 sprintf(Buf,"%%%02x",(int)*I);
-	 Res += Buf;
+	 ioprintf(Res, "%%%02hhx", *I);
       }
       else
-	 Res += *I;
+	 Res << *I;
    }
-   return Res;
+   return Res.str();
 }
 									/*}}}*/
 // DeQuoteString - Convert a string from quoted from                    /*{{{*/
@@ -372,13 +393,12 @@ string DeQuoteString(string::const_iterator const &begin,
    YottaBytes (E24) */
 string SizeToStr(double Size)
 {
-   char S[300];
    double ASize;
    if (Size >= 0)
       ASize = Size;
    else
       ASize = -1*Size;
-   
+
    /* bytes, KiloBytes, MegaBytes, GigaBytes, TeraBytes, PetaBytes, 
       ExaBytes, ZettaBytes, YottaBytes */
    char Ext[] = {'\0','k','M','G','T','P','E','Z','Y'};
@@ -387,20 +407,21 @@ string SizeToStr(double Size)
    {
       if (ASize < 100 && I != 0)
       {
-         sprintf(S,"%'.1f %c",ASize,Ext[I]);
-	 break;
+	 std::string S;
+	 strprintf(S, "%'.1f %c", ASize, Ext[I]);
+	 return S;
       }
-      
+
       if (ASize < 10000)
       {
-         sprintf(S,"%'.0f %c",ASize,Ext[I]);
-	 break;
+	 std::string S;
+	 strprintf(S, "%'.0f %c", ASize, Ext[I]);
+	 return S;
       }
       ASize /= 1000.0;
       I++;
    }
-   
-   return S;
+   return "";
 }
 									/*}}}*/
 // TimeToStr - Convert the time into a string				/*{{{*/
@@ -408,36 +429,27 @@ string SizeToStr(double Size)
 /* Converts a number of seconds to a hms format */
 string TimeToStr(unsigned long Sec)
 {
-   char S[300];
-   
-   while (1)
+   std::string S;
+   if (Sec > 60*60*24)
    {
-      if (Sec > 60*60*24)
-      {
-	 //d means days, h means hours, min means minutes, s means seconds
-	 sprintf(S,_("%lid %lih %limin %lis"),Sec/60/60/24,(Sec/60/60) % 24,(Sec/60) % 60,Sec % 60);
-	 break;
-      }
-      
-      if (Sec > 60*60)
-      {
-	 //h means hours, min means minutes, s means seconds
-	 sprintf(S,_("%lih %limin %lis"),Sec/60/60,(Sec/60) % 60,Sec % 60);
-	 break;
-      }
-      
-      if (Sec > 60)
-      {
-	 //min means minutes, s means seconds
-	 sprintf(S,_("%limin %lis"),Sec/60,Sec % 60);
-	 break;
-      }
-
-      //s means seconds
-      sprintf(S,_("%lis"),Sec);
-      break;
+      //TRANSLATOR: d means days, h means hours, min means minutes, s means seconds
+      strprintf(S,_("%lid %lih %limin %lis"),Sec/60/60/24,(Sec/60/60) % 24,(Sec/60) % 60,Sec % 60);
    }
-   
+   else if (Sec > 60*60)
+   {
+      //TRANSLATOR: h means hours, min means minutes, s means seconds
+      strprintf(S,_("%lih %limin %lis"),Sec/60/60,(Sec/60) % 60,Sec % 60);
+   }
+   else if (Sec > 60)
+   {
+      //TRANSLATOR: min means minutes, s means seconds
+      strprintf(S,_("%limin %lis"),Sec/60,Sec % 60);
+   }
+   else
+   {
+      //TRANSLATOR: s means seconds
+      strprintf(S,_("%lis"),Sec);
+   }
    return S;
 }
 									/*}}}*/
@@ -468,7 +480,9 @@ string SubstVar(const string &Str,const string &Subst,const string &Contents)
 
    if (OldPos >= Str.length())
       return Temp;
-   return Temp + string(Str,OldPos);
+
+   Temp.append(Str, OldPos, string::npos);
+   return Temp;
 }
 string SubstVar(string Str,const struct SubstVar *Vars)
 {
@@ -694,9 +708,9 @@ string LookupTag(const string &Message,const char *Tag,const char *Default)
 	 // Find the end of line and strip the leading/trailing spaces
 	 string::const_iterator J;
 	 I += Length + 1;
-	 for (; isspace(*I) != 0 && I < Message.end(); ++I);
+	 for (; isspace_ascii(*I) != 0 && I < Message.end(); ++I);
 	 for (J = I; *J != '\n' && J < Message.end(); ++J);
-	 for (; J > I && isspace(J[-1]) != 0; --J);
+	 for (; J > I && isspace_ascii(J[-1]) != 0; --J);
 	 
 	 return string(I,J);
       }
@@ -746,22 +760,29 @@ int StringToBool(const string &Text,int Default)
 // TimeRFC1123 - Convert a time_t into RFC1123 format			/*{{{*/
 // ---------------------------------------------------------------------
 /* This converts a time_t into a string time representation that is
-   year 2000 complient and timezone neutral */
+   year 2000 compliant and timezone neutral */
 string TimeRFC1123(time_t Date)
+{
+   return TimeRFC1123(Date, false);
+}
+string TimeRFC1123(time_t Date, bool const NumericTimezone)
 {
    struct tm Conv;
    if (gmtime_r(&Date, &Conv) == NULL)
       return "";
 
-   char Buf[300];
-   const char *Day[] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
-   const char *Month[] = {"Jan","Feb","Mar","Apr","May","Jun","Jul",
-                          "Aug","Sep","Oct","Nov","Dec"};
-
-   snprintf(Buf, sizeof(Buf), "%s, %02i %s %i %02i:%02i:%02i GMT",Day[Conv.tm_wday],
-	   Conv.tm_mday,Month[Conv.tm_mon],Conv.tm_year+1900,Conv.tm_hour,
-	   Conv.tm_min,Conv.tm_sec);
-   return Buf;
+   auto const posix = std::locale::classic();
+   std::ostringstream datestr;
+   datestr.imbue(posix);
+   APT::StringView const fmt("%a, %d %b %Y %H:%M:%S");
+   std::use_facet<std::time_put<char>>(posix).put(
+                    std::ostreambuf_iterator<char>(datestr),
+                    datestr, ' ', &Conv, fmt.data(), fmt.data() + fmt.size());
+   if (NumericTimezone)
+      datestr << " +0000";
+   else
+      datestr << " GMT";
+   return datestr.str();
 }
 									/*}}}*/
 // ReadMessages - Read messages from the FD				/*{{{*/
@@ -772,93 +793,105 @@ string TimeRFC1123(time_t Date)
 
    In particular: this reads blocks from the input until it believes
    that it's run out of input text.  Each block is terminated by a
-   double newline ('\n' followed by '\n').  As noted below, there is a
-   bug in this code: it assumes that all the blocks have been read if
-   it doesn't see additional text in the buffer after the last one is
-   parsed, which will cause it to lose blocks if the last block
-   coincides with the end of the buffer.
+   double newline ('\n' followed by '\n').
  */
 bool ReadMessages(int Fd, vector<string> &List)
 {
    char Buffer[64000];
-   char *End = Buffer;
    // Represents any left-over from the previous iteration of the
    // parse loop.  (i.e., if a message is split across the end
    // of the buffer, it goes here)
    string PartialMessage;
-   
-   while (1)
-   {
-      int Res = read(Fd,End,sizeof(Buffer) - (End-Buffer));
+
+   do {
+      int const Res = read(Fd, Buffer, sizeof(Buffer));
       if (Res < 0 && errno == EINTR)
 	 continue;
-      
-      // Process is dead, this is kind of bad..
+
+      // process we read from has died
       if (Res == 0)
 	 return false;
-      
+
       // No data
+#if EAGAIN != EWOULDBLOCK
+      if (Res < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+#else
       if (Res < 0 && errno == EAGAIN)
+#endif
 	 return true;
       if (Res < 0)
 	 return false;
-			      
-      End += Res;
-      
-      // Look for the end of the message
-      for (char *I = Buffer; I + 1 < End; I++)
-      {
-	 if (I[1] != '\n' ||
-	       (I[0] != '\n' && strncmp(I, "\r\n\r\n", 4) != 0))
-	    continue;
-	 
-	 // Pull the message out
-	 string Message(Buffer,I-Buffer);
-	 PartialMessage += Message;
 
-	 // Fix up the buffer
-	 for (; I < End && (*I == '\n' || *I == '\r'); ++I);
-	 End -= I-Buffer;	 
-	 memmove(Buffer,I,End-Buffer);
-	 I = Buffer;
-	 
-	 List.push_back(PartialMessage);
-	 PartialMessage.clear();
+      // extract the message(s) from the buffer
+      char const *Start = Buffer;
+      char const * const End = Buffer + Res;
+
+      char const * NL = (char const *) memchr(Start, '\n', End - Start);
+      if (NL == NULL)
+      {
+	 // end of buffer: store what we have so far and read new data in
+	 PartialMessage.append(Start, End - Start);
+	 Start = End;
       }
-      if (End != Buffer)
-	{
-	  // If there's text left in the buffer, store it
-	  // in PartialMessage and throw the rest of the buffer
-	  // away.  This allows us to handle messages that
-	  // are longer than the static buffer size.
-	  PartialMessage += string(Buffer, End);
-	  End = Buffer;
-	}
       else
-	{
-	  // BUG ALERT: if a message block happens to end at a
-	  // multiple of 64000 characters, this will cause it to
-	  // terminate early, leading to a badly formed block and
-	  // probably crashing the method.  However, this is the only
-	  // way we have to find the end of the message block.  I have
-	  // an idea of how to fix this, but it will require changes
-	  // to the protocol (essentially to mark the beginning and
-	  // end of the block).
-	  //
-	  //  -- dburrows 2008-04-02
-	  return true;
-	}
+	 ++NL;
+
+      if (PartialMessage.empty() == false && Start < End)
+      {
+	 // if we start with a new line, see if the partial message we have ended with one
+	 // so that we properly detect records ending between two read() runs
+	 // cases are: \n|\n  ,  \r\n|\r\n  and  \r\n\r|\n
+	 // the case \r|\n\r\n is handled by the usual double-newline handling
+	 if ((NL - Start) == 1 || ((NL - Start) == 2 && *Start == '\r'))
+	 {
+	    if (APT::String::Endswith(PartialMessage, "\n") || APT::String::Endswith(PartialMessage, "\r\n\r"))
+	    {
+	       PartialMessage.erase(PartialMessage.find_last_not_of("\r\n") + 1);
+	       List.push_back(PartialMessage);
+	       PartialMessage.clear();
+	       while (NL < End && (*NL == '\n' || *NL == '\r')) ++NL;
+	       Start = NL;
+	    }
+	 }
+      }
+
+      while (Start < End) {
+	 char const * NL2 = (char const *) memchr(NL, '\n', End - NL);
+	 if (NL2 == NULL)
+	 {
+	    // end of buffer: store what we have so far and read new data in
+	    PartialMessage.append(Start, End - Start);
+	    break;
+	 }
+	 ++NL2;
+
+	 // did we find a double newline?
+	 if ((NL2 - NL) == 1 || ((NL2 - NL) == 2 && *NL == '\r'))
+	 {
+	    PartialMessage.append(Start, NL2 - Start);
+	    PartialMessage.erase(PartialMessage.find_last_not_of("\r\n") + 1);
+	    List.push_back(PartialMessage);
+	    PartialMessage.clear();
+	    while (NL2 < End && (*NL2 == '\n' || *NL2 == '\r')) ++NL2;
+	    Start = NL2;
+	 }
+	 NL = NL2;
+      }
+
+      // we have read at least one complete message and nothing left
+      if (PartialMessage.empty() == true)
+	 return true;
 
       if (WaitFd(Fd) == false)
 	 return false;
-   }   
+   } while (true);
 }
 									/*}}}*/
 // MonthConv - Converts a month string into a number			/*{{{*/
 // ---------------------------------------------------------------------
 /* This was lifted from the boa webserver which lifted it from 'wn-v1.07'
    Made it a bit more robust with a few tolower_ascii though. */
-static int MonthConv(char *Month)
+static int MonthConv(char const * const Month)
 {
    switch (tolower_ascii(*Month)) 
    {
@@ -911,28 +944,98 @@ static time_t timegm(struct tm *t)
 }
 #endif
 									/*}}}*/
-// FullDateToTime - Converts a HTTP1.1 full date strings into a time_t	/*{{{*/
+// RFC1123StrToTime - Converts a HTTP1.1 full date strings into a time_t	/*{{{*/
 // ---------------------------------------------------------------------
-/* tries to parses a full date as specified in RFC2616 Section 3.3.1
-   with one exception: All timezones (%Z) are accepted but the protocol
-   says that it MUST be GMT, but this one is equal to UTC which we will
-   encounter from time to time (e.g. in Release files) so we accept all
-   here and just assume it is GMT (or UTC) later on */
+/* tries to parses a full date as specified in RFC7231 §7.1.1.1
+   with one exception: HTTP/1.1 valid dates need to have GMT as timezone.
+   As we encounter dates from UTC or with a numeric timezone in other places,
+   we allow them here to to be able to reuse the method. Either way, a date
+   must be in UTC or parsing will fail. Previous implementations of this
+   method used to ignore the timezone and assume always UTC. */
 bool RFC1123StrToTime(const char* const str,time_t &time)
 {
-   struct tm Tm;
-   setlocale (LC_ALL,"C");
-   bool const invalid =
-   // Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
-      (strptime(str, "%a, %d %b %Y %H:%M:%S %Z", &Tm) == NULL &&
-   // Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
-       strptime(str, "%A, %d-%b-%y %H:%M:%S %Z", &Tm) == NULL &&
-   // Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
-       strptime(str, "%a %b %d %H:%M:%S %Y", &Tm) == NULL);
-   setlocale (LC_ALL,"");
-   if (invalid == true)
+   unsigned short day = 0;
+   signed int year = 0; // yes, Y23K problem – we gonna worry then…
+   std::string weekday, month, datespec, timespec, zone;
+   std::istringstream ss(str);
+   auto const &posix = std::locale::classic();
+   ss.imbue(posix);
+   ss >> weekday;
+   // we only superficially check weekday, mostly to avoid accepting localized
+   // weekdays here and take only its length to decide which datetime format we
+   // encounter here. The date isn't stored.
+   std::transform(weekday.begin(), weekday.end(), weekday.begin(), ::tolower);
+   std::array<char const * const, 7> c_weekdays = {{ "sun", "mon", "tue", "wed", "thu", "fri", "sat" }};
+   if (std::find(c_weekdays.begin(), c_weekdays.end(), weekday.substr(0,3)) == c_weekdays.end())
       return false;
 
+   switch (weekday.length())
+   {
+   case 4:
+      // Sun, 06 Nov 1994 08:49:37 GMT ; RFC 822, updated by RFC 1123
+      if (weekday[3] != ',')
+	 return false;
+      ss >> day >> month >> year >> timespec >> zone;
+      break;
+   case 3:
+      // Sun Nov  6 08:49:37 1994 ; ANSI C's asctime() format
+      ss >> month >> day >> timespec >> year;
+      zone = "UTC";
+      break;
+   case 0:
+   case 1:
+   case 2:
+      return false;
+   default:
+      // Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
+      if (weekday[weekday.length() - 1] != ',')
+	 return false;
+      ss >> datespec >> timespec >> zone;
+      auto const expldate = VectorizeString(datespec, '-');
+      if (expldate.size() != 3)
+	 return false;
+      try {
+	 size_t pos;
+	 day = std::stoi(expldate[0], &pos);
+	 if (pos != expldate[0].length())
+	    return false;
+	 year = 1900 + std::stoi(expldate[2], &pos);
+	 if (pos != expldate[2].length())
+	    return false;
+	 strprintf(datespec, "%.4d-%.2d-%.2d", year, MonthConv(expldate[1].c_str()) + 1, day);
+      } catch (...) {
+         return false;
+      }
+      break;
+   }
+
+   if (ss.fail() || ss.bad() || !ss.eof())
+      return false;
+
+   if (zone != "GMT" && zone != "UTC" && zone != "Z") // RFC 822
+   {
+      // numeric timezones as a should of RFC 1123 and generally preferred
+      try {
+	 size_t pos;
+	 auto const z = std::stoi(zone, &pos);
+	 if (z != 0 || pos != zone.length())
+	    return false;
+      } catch (...) {
+	 return false;
+      }
+   }
+
+   if (datespec.empty())
+   {
+      if (month.empty())
+	 return false;
+      strprintf(datespec, "%.4d-%.2d-%.2d", year, MonthConv(month.c_str()) + 1, day);
+   }
+
+   std::string const datetime = datespec + ' ' + timespec;
+   struct tm Tm;
+   if (strptime(datetime.c_str(), "%Y-%m-%d %H:%M:%S", &Tm) == nullptr)
+      return false;
    time = timegm(&Tm);
    return true;
 }
@@ -1061,7 +1164,7 @@ bool StrToNum(const char *Str,unsigned long long &Res,unsigned Len,unsigned Base
 // ---------------------------------------------------------------------
 /* This is used in decoding the 256bit encoded fixed length fields in
    tar files */
-bool Base256ToNum(const char *Str,unsigned long &Res,unsigned int Len)
+bool Base256ToNum(const char *Str,unsigned long long &Res,unsigned int Len)
 {
    if ((Str[0] & 0x80) == 0)
       return false;
@@ -1072,6 +1175,24 @@ bool Base256ToNum(const char *Str,unsigned long &Res,unsigned int Len)
          Res = (Res<<8) + Str[i];
       return true;
    }
+}
+									/*}}}*/
+// Base256ToNum - Convert a fixed length binary to a number             /*{{{*/
+// ---------------------------------------------------------------------
+/* This is used in decoding the 256bit encoded fixed length fields in
+   tar files */
+bool Base256ToNum(const char *Str,unsigned long &Res,unsigned int Len)
+{
+   unsigned long long Num = 0;
+   bool rc;
+
+   rc = Base256ToNum(Str, Num, Len);
+   // rudimentary check for overflow (Res = ulong, Num = ulonglong)
+   Res = Num;
+   if (Res != Num)
+      return false;
+
+   return rc;
 }
 									/*}}}*/
 // HexDigit - Convert a hex character into an integer			/*{{{*/
@@ -1085,7 +1206,7 @@ static int HexDigit(int c)
       return c - 'a' + 10;
    if (c >= 'A' && c <= 'F')
       return c - 'A' + 10;
-   return 0;
+   return -1;
 }
 									/*}}}*/
 // Hex2Num - Convert a long hex number into a buffer			/*{{{*/
@@ -1093,18 +1214,28 @@ static int HexDigit(int c)
 /* The length of the buffer must be exactly 1/2 the length of the string. */
 bool Hex2Num(const string &Str,unsigned char *Num,unsigned int Length)
 {
+   return Hex2Num(APT::StringView(Str), Num, Length);
+}
+
+bool Hex2Num(const APT::StringView Str,unsigned char *Num,unsigned int Length)
+{
    if (Str.length() != Length*2)
       return false;
    
    // Convert each digit. We store it in the same order as the string
    int J = 0;
-   for (string::const_iterator I = Str.begin(); I != Str.end();J++, I += 2)
+   for (auto I = Str.begin(); I != Str.end();J++, I += 2)
    {
-      if (isxdigit(*I) == 0 || isxdigit(I[1]) == 0)
+      int first_half = HexDigit(I[0]);
+      int second_half;
+      if (first_half < 0)
 	 return false;
       
-      Num[J] = HexDigit(I[0]) << 4;
-      Num[J] += HexDigit(I[1]);
+      second_half = HexDigit(I[1]);
+      if (second_half < 0)
+	 return false;
+      Num[J] = first_half << 4;
+      Num[J] += second_half;
    }
    
    return true;
@@ -1180,7 +1311,7 @@ vector<string> StringSplit(std::string const &s, std::string const &sep,
    vector<string> split;
    size_t start, pos;
 
-   // no seperator given, this is bogus
+   // no separator given, this is bogus
    if(sep.size() == 0)
       return split;
 
@@ -1287,10 +1418,12 @@ void ioprintf(ostream &out,const char *format,...)
    va_list args;
    ssize_t size = 400;
    while (true) {
+      bool ret;
       va_start(args,format);
-      if (iovprintf(out, format, args, size) == true)
-	 return;
+      ret = iovprintf(out, format, args, size);
       va_end(args);
+      if (ret == true)
+	 return;
    }
 }
 void strprintf(string &out,const char *format,...)
@@ -1299,10 +1432,12 @@ void strprintf(string &out,const char *format,...)
    ssize_t size = 400;
    std::ostringstream outstr;
    while (true) {
+      bool ret;
       va_start(args,format);
-      if (iovprintf(outstr, format, args, size) == true)
-	 break;
+      ret = iovprintf(outstr, format, args, size);
       va_end(args);
+      if (ret == true)
+	 break;
    }
    out = outstr.str();
 }
@@ -1339,17 +1474,32 @@ string StripEpoch(const string &VerStr)
    return VerStr.substr(i+1);
 }
 									/*}}}*/
+
 // tolower_ascii - tolower() function that ignores the locale		/*{{{*/
 // ---------------------------------------------------------------------
 /* This little function is the most called method we have and tries
-   therefore to do the absolut minimum - and is notable faster than
+   therefore to do the absolute minimum - and is notable faster than
    standard tolower/toupper and as a bonus avoids problems with different
    locales - we only operate on ascii chars anyway. */
+#undef tolower_ascii
+int tolower_ascii(int const c) APT_CONST APT_COLD;
 int tolower_ascii(int const c)
 {
-   if (c >= 'A' && c <= 'Z')
-      return c + 32;
-   return c;
+   return tolower_ascii_inline(c);
+}
+									/*}}}*/
+
+// isspace_ascii - isspace() function that ignores the locale		/*{{{*/
+// ---------------------------------------------------------------------
+/* This little function is one of the most called methods we have and tries
+   therefore to do the absolute minimum - and is notable faster than
+   standard isspace() and as a bonus avoids problems with different
+   locales - we only operate on ascii chars anyway. */
+#undef isspace_ascii
+int isspace_ascii(int const c) APT_CONST APT_COLD;
+int isspace_ascii(int const c)
+{
+   return isspace_ascii_inline(c);
 }
 									/*}}}*/
 
@@ -1387,7 +1537,7 @@ size_t strv_length(const char **str_array)
       ;
    return i;
 }
-
+									/*}}}*/
 // DeEscapeString - unescape (\0XX and \xXX) from a string		/*{{{*/
 // ---------------------------------------------------------------------
 /* */
@@ -1503,13 +1653,15 @@ void URI::CopyFrom(const string &U)
    I = FirstColon + 1;
    if (I > SingleSlash)
       I = SingleSlash;
-   for (; I < SingleSlash && *I != ':'; ++I);
-   string::const_iterator SecondColon = I;
-   
-   // Search for the @ after the colon
-   for (; I < SingleSlash && *I != '@'; ++I);
-   string::const_iterator At = I;
-   
+
+   // Search for the @ separating user:pass from host
+   auto const RevAt = std::find(
+	 std::string::const_reverse_iterator(SingleSlash),
+	 std::string::const_reverse_iterator(I), '@');
+   string::const_iterator const At = RevAt.base() == I ? SingleSlash : std::prev(RevAt.base());
+   // and then look for the colon between user and pass
+   string::const_iterator const SecondColon = std::find(I, At, ':');
+
    // Now write the host and user/pass
    if (At == SingleSlash)
    {
@@ -1569,56 +1721,49 @@ void URI::CopyFrom(const string &U)
 /* */
 URI::operator string()
 {
-   string Res;
-   
+   std::stringstream Res;
+
    if (Access.empty() == false)
-      Res = Access + ':';
-   
+      Res << Access << ':';
+
    if (Host.empty() == false)
-   {	 
+   {
       if (Access.empty() == false)
-	 Res += "//";
-          
+	 Res << "//";
+
       if (User.empty() == false)
       {
 	 // FIXME: Technically userinfo is permitted even less
 	 // characters than these, but this is not conveniently
 	 // expressed with a blacklist.
-	 Res += QuoteString(User, ":/?#[]@");
+	 Res << QuoteString(User, ":/?#[]@");
 	 if (Password.empty() == false)
-	    Res += ":" + QuoteString(Password, ":/?#[]@");
-	 Res += "@";
+	    Res << ":" << QuoteString(Password, ":/?#[]@");
+	 Res << "@";
       }
-      
+
       // Add RFC 2732 escaping characters
-      if (Access.empty() == false &&
-	  (Host.find('/') != string::npos || Host.find(':') != string::npos))
-	 Res += '[' + Host + ']';
+      if (Access.empty() == false && Host.find_first_of("/:") != string::npos)
+	 Res << '[' << Host << ']';
       else
-	 Res += Host;
-      
+	 Res << Host;
+
       if (Port != 0)
-      {
-	 char S[30];
-	 sprintf(S,":%u",Port);
-	 Res += S;
-      }	 
+	 Res << ':' << std::to_string(Port);
    }
-   
+
    if (Path.empty() == false)
    {
       if (Path[0] != '/')
-	 Res += "/" + Path;
+	 Res << "/" << Path;
       else
-	 Res += Path;
+	 Res << Path;
    }
-   
-   return Res;
+
+   return Res.str();
 }
 									/*}}}*/
 // URI::SiteOnly - Return the schema and site for the URI		/*{{{*/
-// ---------------------------------------------------------------------
-/* */
 string URI::SiteOnly(const string &URI)
 {
    ::URI U(URI);
@@ -1628,9 +1773,18 @@ string URI::SiteOnly(const string &URI)
    return U;
 }
 									/*}}}*/
+// URI::ArchiveOnly - Return the schema, site and cleaned path for the URI /*{{{*/
+string URI::ArchiveOnly(const string &URI)
+{
+   ::URI U(URI);
+   U.User.clear();
+   U.Password.clear();
+   if (U.Path.empty() == false && U.Path[U.Path.length() - 1] == '/')
+      U.Path.erase(U.Path.length() - 1);
+   return U;
+}
+									/*}}}*/
 // URI::NoUserPassword - Return the schema, site and path for the URI	/*{{{*/
-// ---------------------------------------------------------------------
-/* */
 string URI::NoUserPassword(const string &URI)
 {
    ::URI U(URI);

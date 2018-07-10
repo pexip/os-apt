@@ -15,6 +15,7 @@
 #define PKGLIB_EXTRACTTAR_H
 
 #include <apt-pkg/fileutl.h>
+#include <apt-pkg/macros.h>
 
 #include <string>
 
@@ -39,7 +40,7 @@ class ExtractTar
                   GNU_LongLink = 'K',GNU_LongName = 'L'};
 
    FileFd &File;
-   unsigned long MaxInSize;
+   unsigned long long MaxInSize;
    int GZPid;
    FileFd InFd;
    bool Eof;
@@ -47,13 +48,14 @@ class ExtractTar
    
    // Fork and reap gzip
    bool StartGzip();
-   bool Done(bool Force);
-   
+   bool Done();
+   APT_DEPRECATED_MSG("Parameter Force is ignored, use Done() instead.") bool Done(bool Force);
+
    public:
 
    bool Go(pkgDirStream &Stream);
-   
-   ExtractTar(FileFd &Fd,unsigned long Max,std::string DecompressionProgram);
+
+   ExtractTar(FileFd &Fd,unsigned long long Max,std::string DecompressionProgram);
    virtual ~ExtractTar();
 };
 

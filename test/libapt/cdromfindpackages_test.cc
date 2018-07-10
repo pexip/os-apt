@@ -24,7 +24,9 @@ class Cdrom : public pkgCdrom {
 	    std::string &InfoDir) {
 	 std::string const startdir = SafeGetCWD();
 	 EXPECT_FALSE(startdir.empty());
+	 EXPECT_TRUE(InfoDir.empty());
 	 bool const result = pkgCdrom::FindPackages(CD, List, SList, SigList, TransList, InfoDir, NULL, 0);
+	 EXPECT_FALSE(InfoDir.empty());
 	 std::sort(List.begin(), List.end());
 	 std::sort(SList.begin(), SList.end());
 	 std::sort(SigList.begin(), SigList.end());
@@ -46,7 +48,7 @@ TEST(CDROMTest,FindPackages)
    createDirectory(path, "dists/stable/main/binary-i386");
    createDirectory(path, "dists/stable/main/source");
    createDirectory(path, "dists/stable/contrib/binary-amd64");
-   createDirectory(path, "dists/stable/contrib/binary-all");
+   createDirectory(path, "dists/stable/non-free/binary-all");
    createDirectory(path, "dists/unstable/main/binary-i386");
    createDirectory(path, "dists/unstable/main/i18n");
    createDirectory(path, "dists/unstable/main/source");
@@ -57,7 +59,7 @@ TEST(CDROMTest,FindPackages)
    createFile(path, "dists/stable/main/source/Sources.xz");
    createFile(path, "dists/stable/contrib/binary-amd64/Packages");
    createFile(path, "dists/stable/contrib/binary-amd64/Packages.gz");
-   createFile(path, "dists/stable/contrib/binary-all/Packages");
+   createFile(path, "dists/stable/non-free/binary-all/Packages");
    createFile(path, "dists/unstable/main/binary-i386/Packages.xz");
    createFile(path, "dists/unstable/main/binary-i386/Packages.lzma");
    createFile(path, "dists/unstable/main/i18n/Translation-en");
@@ -74,11 +76,12 @@ TEST(CDROMTest,FindPackages)
    std::vector<std::string> Packages, Sources, Signatur, Translation;
    std::string InfoDir;
    EXPECT_TRUE(cd.FindPackages(path, Packages, Sources, Signatur, Translation, InfoDir));
-   EXPECT_EQ(4, Packages.size());
+   EXPECT_EQ(5, Packages.size());
    EXPECT_EQ(path + "/dists/sid/main/binary-i386/", Packages[0]);
    EXPECT_EQ(path + "/dists/stable/contrib/binary-amd64/", Packages[1]);
    EXPECT_EQ(path + "/dists/stable/main/binary-i386/", Packages[2]);
-   EXPECT_EQ(path + "/dists/unstable/main/binary-i386/", Packages[3]);
+   EXPECT_EQ(path + "/dists/stable/non-free/binary-all/", Packages[3]);
+   EXPECT_EQ(path + "/dists/unstable/main/binary-i386/", Packages[4]);
    EXPECT_EQ(3, Sources.size());
    EXPECT_EQ(path + "/dists/sid/main/source/", Sources[0]);
    EXPECT_EQ(path + "/dists/stable/main/source/", Sources[1]);
@@ -103,10 +106,11 @@ TEST(CDROMTest,FindPackages)
    _error->DumpErrors();
    cd.DropRepeats(Translation, "");
 
-   EXPECT_EQ(3, Packages.size());
+   EXPECT_EQ(4, Packages.size());
    EXPECT_EQ(path + "/dists/stable/contrib/binary-amd64/", Packages[0]);
    EXPECT_EQ(path + "/dists/stable/main/binary-i386/", Packages[1]);
-   EXPECT_EQ(path + "/dists/unstable/main/binary-i386/", Packages[2]);
+   EXPECT_EQ(path + "/dists/stable/non-free/binary-all/", Packages[2]);
+   EXPECT_EQ(path + "/dists/unstable/main/binary-i386/", Packages[3]);
    EXPECT_EQ(2, Sources.size());
    EXPECT_EQ(path + "/dists/stable/main/source/", Sources[0]);
    EXPECT_EQ(path + "/dists/unstable/main/source/", Sources[1]);

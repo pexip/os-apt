@@ -21,16 +21,18 @@ class pkgCache;
 class pkgArchiveCleaner
 {
    /** \brief dpointer placeholder (for later in case we need it) */
-   void *d;
+   void * const d;
 
    protected:
-   
+
    virtual void Erase(const char * /*File*/,std::string /*Pkg*/,std::string /*Ver*/,struct stat & /*St*/) {};
 
-   public:   
-   
+   public:
+
    bool Go(std::string Dir,pkgCache &Cache);
-   virtual ~pkgArchiveCleaner() {};
+
+   pkgArchiveCleaner();
+   virtual ~pkgArchiveCleaner();
 };
 
 #endif

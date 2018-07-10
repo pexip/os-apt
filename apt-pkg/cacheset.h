@@ -12,15 +12,24 @@
 #include <fstream>
 #include <map>
 #include <set>
+#if __cplusplus >= 201103L
+#include <unordered_set>
+#include <forward_list>
+#include <initializer_list>
+#endif
 #include <list>
+#include <deque>
+#include <vector>
 #include <string>
 #include <iterator>
+#include <algorithm>
 
 #include <stddef.h>
 
 #include <apt-pkg/error.h>
 #include <apt-pkg/pkgcache.h>
 #include <apt-pkg/cacheiterators.h>
+#include <apt-pkg/macros.h>
 
 #ifndef APT_8_CLEANER_HEADERS
 #include <apt-pkg/cachefile.h>
@@ -47,39 +56,125 @@ class CacheSetHelper {							/*{{{*/
 */
 public:									/*{{{*/
 	CacheSetHelper(bool const ShowError = true,
-		GlobalError::MsgType ErrorType = GlobalError::ERROR) :
-			ShowError(ShowError), ErrorType(ErrorType) {}
-	virtual ~CacheSetHelper() {}
+		GlobalError::MsgType ErrorType = GlobalError::ERROR);
+	virtual ~CacheSetHelper();
 
-	virtual void showTaskSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
-	virtual void showRegExSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
-#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
-	virtual void showFnmatchSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
-#endif
-	virtual void showSelectedVersion(pkgCache::PkgIterator const &Pkg, pkgCache::VerIterator const Ver,
+	enum PkgSelector { UNKNOWN, REGEX, TASK, FNMATCH, PACKAGENAME, STRING };
+
+	virtual bool PackageFrom(enum PkgSelector const select, PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string const &pattern);
+
+	virtual bool PackageFromCommandLine(PackageContainerInterface * const pci, pkgCacheFile &Cache, const char **cmdline);
+
+	struct PkgModifier {
+		enum Position { NONE, PREFIX, POSTFIX };
+		unsigned short ID;
+		const char * const Alias;
+		Position Pos;
+		PkgModifier (unsigned short const &id, const char * const alias, Position const &pos) : ID(id), Alias(alias), Pos(pos) {}
+	};
+	virtual bool PackageFromModifierCommandLine(unsigned short &modID, PackageContainerInterface * const pci,
+					    pkgCacheFile &Cache, const char * cmdline,
+					    std::list<PkgModifier> const &mods);
+
+	APT_DEPRECATED_MSG("use .PackageFrom(PACKAGENAME, …) instead") pkgCache::PkgIterator PackageFromName(pkgCacheFile &Cache, std::string const &pattern);
+
+	/** \brief be notified about the package being selected via pattern
+	 *
+	 * Main use is probably to show a message to the user what happened
+	 *
+	 * \param pkg is the package which was selected
+	 * \param select is the selection method which choose the package
+	 * \param pattern is the string used by the selection method to pick the package
+	 */
+	virtual void showPackageSelection(pkgCache::PkgIterator const &pkg, PkgSelector const select, std::string const &pattern);
+	// use the method above instead, react only on the type you need and let the base handle the rest if need be
+	// this allows us to add new selection methods without breaking the ABI constantly with new virtual methods
+	APT_DEPRECATED_MSG("override .showPackageSelection and select with switch") virtual void showTaskSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
+	APT_DEPRECATED_MSG("override .showPackageSelection and select with switch") virtual void showRegExSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
+	APT_DEPRECATED_MSG("override .showPackageSelection and select with switch") virtual void showFnmatchSelection(pkgCache::PkgIterator const &pkg, std::string const &pattern);
+
+	/** \brief be notified if a package can't be found via pattern
+	 *
+	 * Can be used to show a message as well as to try something else to make it match
+	 *
+	 * \param select is the method tried for selection
+	 * \param pci is the container the package should be inserted in
+	 * \param Cache is the package universe available
+	 * \param pattern is the string not matching anything
+	 */
+	virtual void canNotFindPackage(enum PkgSelector const select, PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string const &pattern);
+	// same as above for showPackageSelection
+	APT_DEPRECATED_MSG("override .canNotFindPackage and select with switch") virtual void canNotFindTask(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
+	APT_DEPRECATED_MSG("override .canNotFindPackage and select with switch") virtual void canNotFindRegEx(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
+	APT_DEPRECATED_MSG("override .canNotFindPackage and select with switch") virtual void canNotFindFnmatch(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
+	APT_DEPRECATED_MSG("override .canNotFindPackage and select with switch") virtual void canNotFindPackage(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string const &str);
+
+	/** \brief specifies which version(s) we want to refer to */
+	enum VerSelector {
+		/** by release string */
+		RELEASE,
+		/** by version number string */
+		VERSIONNUMBER,
+		/** All versions */
+		ALL,
+		/** Candidate and installed version */
+		CANDANDINST,
+		/** Candidate version */
+		CANDIDATE,
+		/** Installed version */
+		INSTALLED,
+		/** Candidate or if non installed version */
+		CANDINST,
+		/** Installed or if non candidate version */
+		INSTCAND,
+		/** Newest version */
+		NEWEST
+	};
+
+	/** \brief be notified about the version being selected via pattern
+	 *
+	 * Main use is probably to show a message to the user what happened
+	 * Note that at the moment this method is only called for RELEASE
+	 * and VERSION selections, not for the others.
+	 *
+	 * \param Pkg is the package which was selected for
+	 * \param Ver is the version selected
+	 * \param select is the selection method which choose the version
+	 * \param pattern is the string used by the selection method to pick the version
+	 */
+	virtual void showVersionSelection(pkgCache::PkgIterator const &Pkg, pkgCache::VerIterator const &Ver,
+	      enum VerSelector const select, std::string const &pattern);
+	APT_DEPRECATED_MSG("use .showVersionSelection instead, similar to .showPackageSelection") virtual void showSelectedVersion(pkgCache::PkgIterator const &Pkg, pkgCache::VerIterator const Ver,
 				 std::string const &ver, bool const verIsRel);
 
-	virtual void canNotFindTask(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
-	virtual void canNotFindRegEx(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
-#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
-	virtual void canNotFindFnmatch(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
-#endif
-	virtual void canNotFindPackage(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string const &str);
-
-	virtual void canNotFindAllVer(VersionContainerInterface * const vci, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
-	virtual void canNotFindInstCandVer(VersionContainerInterface * const vci, pkgCacheFile &Cache,
+	/** \brief be notified if a version can't be found for a package
+	 *
+	 * Main use is probably to show a message to the user what happened
+	 *
+	 * \param select is the method tried for selection
+	 * \param vci is the container the version should be inserted in
+	 * \param Cache is the package universe available
+	 * \param Pkg is the package we wanted a version from
+	 */
+	virtual void canNotFindVersion(enum VerSelector const select, VersionContainerInterface * const vci, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
+	APT_DEPRECATED_MSG("override .canNotFindVersion and select via switch") virtual void canNotFindAllVer(VersionContainerInterface * const vci, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
+	APT_DEPRECATED_MSG("override .canNotFindVersion and select via switch") virtual void canNotFindInstCandVer(VersionContainerInterface * const vci, pkgCacheFile &Cache,
 				pkgCache::PkgIterator const &Pkg);
-	virtual void canNotFindCandInstVer(VersionContainerInterface * const vci,
+	APT_DEPRECATED_MSG("override .canNotFindVersion and select via switch") virtual void canNotFindCandInstVer(VersionContainerInterface * const vci,
 				pkgCacheFile &Cache,
 				pkgCache::PkgIterator const &Pkg);
 
+	// the difference between canNotFind and canNotGet is that the later is more low-level
+	// and called from other places: In this case looking into the code is the only real answer…
+	virtual pkgCache::VerIterator canNotGetVersion(enum VerSelector const select, pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
+	APT_DEPRECATED_MSG("override .canNotGetVersion and select via switch") virtual pkgCache::VerIterator canNotFindNewestVer(pkgCacheFile &Cache,
+				pkgCache::PkgIterator const &Pkg);
+	APT_DEPRECATED_MSG("override .canNotGetVersion and select via switch") virtual pkgCache::VerIterator canNotFindCandidateVer(pkgCacheFile &Cache,
+				pkgCache::PkgIterator const &Pkg);
+	APT_DEPRECATED_MSG("override .canNotGetVersion and select via switch") virtual pkgCache::VerIterator canNotFindInstalledVer(pkgCacheFile &Cache,
+				pkgCache::PkgIterator const &Pkg);
+
 	virtual pkgCache::PkgIterator canNotFindPkgName(pkgCacheFile &Cache, std::string const &str);
-	virtual pkgCache::VerIterator canNotFindNewestVer(pkgCacheFile &Cache,
-				pkgCache::PkgIterator const &Pkg);
-	virtual pkgCache::VerIterator canNotFindCandidateVer(pkgCacheFile &Cache,
-				pkgCache::PkgIterator const &Pkg);
-	virtual pkgCache::VerIterator canNotFindInstalledVer(pkgCacheFile &Cache,
-				pkgCache::PkgIterator const &Pkg);
 
 	bool showErrors() const { return ShowError; }
 	bool showErrors(bool const newValue) { if (ShowError == newValue) return ShowError; else return ((ShowError = newValue) == false); }
@@ -98,7 +193,106 @@ public:									/*{{{*/
 protected:
 	bool ShowError;
 	GlobalError::MsgType ErrorType;
+
+	pkgCache::VerIterator canNotGetInstCandVer(pkgCacheFile &Cache,
+		pkgCache::PkgIterator const &Pkg);
+	pkgCache::VerIterator canNotGetCandInstVer(pkgCacheFile &Cache,
+		pkgCache::PkgIterator const &Pkg);
+
+	bool PackageFromTask(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
+	bool PackageFromRegEx(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
+	bool PackageFromFnmatch(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
+	bool PackageFromPackageName(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
+	bool PackageFromString(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string const &pattern);
+private:
+	void * const d;
 };									/*}}}*/
+// Iterator templates for our Containers				/*{{{*/
+template<typename Interface, typename Master, typename iterator_type, typename container_iterator, typename container_value> class Container_iterator_base :
+   public std::iterator<typename std::iterator_traits<container_iterator>::iterator_category, container_value>,
+   public Interface::template iterator_base<iterator_type>
+{
+protected:
+	container_iterator _iter;
+public:
+	explicit Container_iterator_base(container_iterator i) : _iter(i) {}
+	inline container_value operator*(void) const { return static_cast<iterator_type const*>(this)->getType(); };
+	operator container_iterator(void) const { return _iter; }
+	inline iterator_type& operator++() { ++_iter; return static_cast<iterator_type&>(*this); }
+	inline iterator_type operator++(int) { iterator_type tmp(*this); operator++(); return tmp; }
+	inline iterator_type operator+(typename container_iterator::difference_type const &n) { return iterator_type(_iter + n); }
+	inline iterator_type operator+=(typename container_iterator::difference_type const &n) { _iter += n; return static_cast<iterator_type&>(*this); }
+	inline iterator_type& operator--() { --_iter;; return static_cast<iterator_type&>(*this); }
+	inline iterator_type operator--(int) { iterator_type tmp(*this); operator--(); return tmp; }
+	inline iterator_type operator-(typename container_iterator::difference_type const &n) { return iterator_type(_iter - n); }
+	inline typename container_iterator::difference_type operator-(iterator_type const &b) { return (_iter - b._iter); }
+	inline iterator_type operator-=(typename container_iterator::difference_type const &n) { _iter -= n; return static_cast<iterator_type&>(*this); }
+	inline bool operator!=(iterator_type const &i) const { return _iter != i._iter; }
+	inline bool operator==(iterator_type const &i) const { return _iter == i._iter; }
+	inline bool operator<(iterator_type const &i) const { return _iter < i._iter; }
+	inline bool operator>(iterator_type const &i) const { return _iter > i._iter; }
+	inline bool operator<=(iterator_type const &i) const { return _iter <= i._iter; }
+	inline bool operator>=(iterator_type const &i) const { return _iter >= i._iter; }
+	inline typename container_iterator::reference operator[](typename container_iterator::difference_type const &n) const { return _iter[n]; }
+
+	friend std::ostream& operator<<(std::ostream& out, iterator_type i) { return operator<<(out, *i); }
+	friend Master;
+};
+template<class Interface, class Container, class Master> class Container_const_iterator :
+   public Container_iterator_base<Interface, Master, Container_const_iterator<Interface, Container, Master>, typename Container::const_iterator, typename Container::value_type>
+{
+	typedef Container_const_iterator<Interface, Container, Master> iterator_type;
+	typedef typename Container::const_iterator container_iterator;
+public:
+	explicit Container_const_iterator(container_iterator i) :
+	   Container_iterator_base<Interface, Master, iterator_type, container_iterator, typename Container::value_type>(i) {}
+
+	inline typename Container::value_type getType(void) const { return *this->_iter; }
+};
+template<class Interface, class Container, class Master> class Container_iterator :
+   public Container_iterator_base<Interface, Master, Container_iterator<Interface, Container, Master>, typename Container::iterator, typename Container::value_type>
+{
+	typedef Container_iterator<Interface, Container, Master> iterator_type;
+	typedef typename Container::iterator container_iterator;
+public:
+	explicit Container_iterator(container_iterator i) :
+	   Container_iterator_base<Interface, Master, iterator_type, container_iterator, typename Container::value_type>(i) {}
+
+	operator typename Master::const_iterator() { return typename Master::const_iterator(this->_iter); }
+	inline iterator_type& operator=(iterator_type const &i) { this->_iter = i._iter; return static_cast<iterator_type&>(*this); }
+	inline iterator_type& operator=(container_iterator const &i) { this->_iter = i; return static_cast<iterator_type&>(*this); }
+	inline typename Container::iterator::reference operator*(void) const { return *this->_iter; }
+
+	inline typename Container::value_type getType(void) const { return *this->_iter; }
+};
+template<class Interface, class Container, class Master> class Container_const_reverse_iterator :
+   public Container_iterator_base<Interface, Master, Container_const_reverse_iterator<Interface, Container, Master>, typename Container::const_reverse_iterator, typename Container::value_type>
+{
+	typedef Container_const_reverse_iterator<Interface, Container, Master> iterator_type;
+	typedef typename Container::const_reverse_iterator container_iterator;
+public:
+	explicit Container_const_reverse_iterator(container_iterator i) :
+	   Container_iterator_base<Interface, Master, iterator_type, container_iterator, typename Container::value_type>(i) {}
+
+	inline typename Container::value_type getType(void) const { return *this->_iter; }
+};
+template<class Interface, class Container, class Master> class Container_reverse_iterator :
+   public Container_iterator_base<Interface, Master, Container_reverse_iterator<Interface, Container, Master>, typename Container::reverse_iterator, typename Container::value_type>
+{
+	typedef Container_reverse_iterator<Interface, Container, Master> iterator_type;
+	typedef typename Container::reverse_iterator container_iterator;
+public:
+	explicit Container_reverse_iterator(container_iterator i) :
+	   Container_iterator_base<Interface, Master, iterator_type, container_iterator, typename Container::value_type>(i) {}
+
+	operator typename Master::const_iterator() { return typename Master::const_iterator(this->_iter); }
+	inline iterator_type& operator=(iterator_type const &i) { this->_iter = i._iter; return static_cast<iterator_type&>(*this); }
+	inline iterator_type& operator=(container_iterator const &i) { this->_iter = i; return static_cast<iterator_type&>(*this); }
+	inline typename Container::reverse_iterator::reference operator*(void) const { return *this->_iter; }
+
+	inline typename Container::value_type getType(void) const { return *this->_iter; }
+};
+									/*}}}*/
 class PackageContainerInterface {					/*{{{*/
 /** \class PackageContainerInterface
 
@@ -110,70 +304,85 @@ class PackageContainerInterface {					/*{{{*/
  * This class mostly protects use from the need to write all implementation
  * of the methods working on containers in the template */
 public:
-	class const_iterator {						/*{{{*/
+	template<class Itr> class iterator_base {			/*{{{*/
+		pkgCache::PkgIterator getType() const { return static_cast<Itr const*>(this)->getType(); };
 	public:
-		virtual pkgCache::PkgIterator getPkg() const = 0;
-		operator pkgCache::PkgIterator(void) const { return getPkg(); }
+		operator pkgCache::PkgIterator(void) const { return getType(); }
 
-		inline const char *Name() const {return getPkg().Name(); }
-		inline std::string FullName(bool const Pretty) const { return getPkg().FullName(Pretty); }
-		inline std::string FullName() const { return getPkg().FullName(); }
-		APT_DEPRECATED inline const char *Section() const {
-#if __GNUC__ >= 4
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-	   return getPkg().Section();
-#if __GNUC__ >= 4
-	#pragma GCC diagnostic pop
-#endif
+		inline const char *Name() const {return getType().Name(); }
+		inline std::string FullName(bool const Pretty) const { return getType().FullName(Pretty); }
+		inline std::string FullName() const { return getType().FullName(); }
+		APT_DEPRECATED_MSG("Use the .Section method of VerIterator instead") inline const char *Section() const {
+		   APT_IGNORE_DEPRECATED_PUSH
+		      return getType().Section();
+		   APT_IGNORE_DEPRECATED_POP
 		}
-		inline bool Purge() const {return getPkg().Purge(); }
-		inline const char *Arch() const {return getPkg().Arch(); }
-		inline pkgCache::GrpIterator Group() const { return getPkg().Group(); }
-		inline pkgCache::VerIterator VersionList() const { return getPkg().VersionList(); }
-		inline pkgCache::VerIterator CurrentVer() const { return getPkg().CurrentVer(); }
-		inline pkgCache::DepIterator RevDependsList() const { return getPkg().RevDependsList(); }
-		inline pkgCache::PrvIterator ProvidesList() const { return getPkg().ProvidesList(); }
-		inline pkgCache::PkgIterator::OkState State() const { return getPkg().State(); }
-		inline const char *CandVersion() const { return getPkg().CandVersion(); }
-		inline const char *CurVersion() const { return getPkg().CurVersion(); }
-		inline pkgCache *Cache() const { return getPkg().Cache(); }
-		inline unsigned long Index() const {return getPkg().Index();}
+		inline bool Purge() const {return getType().Purge(); }
+		inline const char *Arch() const {return getType().Arch(); }
+		inline pkgCache::GrpIterator Group() const { return getType().Group(); }
+		inline pkgCache::VerIterator VersionList() const { return getType().VersionList(); }
+		inline pkgCache::VerIterator CurrentVer() const { return getType().CurrentVer(); }
+		inline pkgCache::DepIterator RevDependsList() const { return getType().RevDependsList(); }
+		inline pkgCache::PrvIterator ProvidesList() const { return getType().ProvidesList(); }
+		inline pkgCache::PkgIterator::OkState State() const { return getType().State(); }
+		APT_DEPRECATED_MSG("This method does not respect apt_preferences! Use pkgDepCache::GetCandidateVersion(Pkg)") inline const char *CandVersion() const { return getType().CandVersion(); }
+		inline const char *CurVersion() const { return getType().CurVersion(); }
+		inline pkgCache *Cache() const { return getType().Cache(); }
+		inline unsigned long Index() const {return getType().Index();}
 		// we have only valid iterators here
 		inline bool end() const { return false; }
 
-		inline pkgCache::Package const * operator->() const {return &*getPkg();}
+		inline pkgCache::Package const * operator->() const {return &*getType();}
 	};
 									/*}}}*/
 
 	virtual bool insert(pkgCache::PkgIterator const &P) = 0;
 	virtual bool empty() const = 0;
 	virtual void clear() = 0;
+	virtual size_t size() const = 0;
 
-	enum Constructor { UNKNOWN, REGEX, TASK, FNMATCH };
-	virtual void setConstructor(Constructor const &con) = 0;
-	virtual Constructor getConstructor() const = 0;
+	enum APT_DEPRECATED_MSG("Use CacheSetHelper::PkgSelector instead") Constructor { UNKNOWN = CacheSetHelper::UNKNOWN,
+		REGEX = CacheSetHelper::REGEX,
+		TASK = CacheSetHelper::TASK,
+		FNMATCH = CacheSetHelper::FNMATCH };
+APT_IGNORE_DEPRECATED_PUSH
+	void setConstructor(Constructor const by) { ConstructedBy = (CacheSetHelper::PkgSelector)by; }
+APT_IGNORE_DEPRECATED_POP
 
-	static bool FromTask(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern, CacheSetHelper &helper);
-	static bool FromRegEx(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern, CacheSetHelper &helper);
-	static pkgCache::PkgIterator FromName(pkgCacheFile &Cache, std::string const &pattern, CacheSetHelper &helper);
-	static bool FromFnmatch(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern, CacheSetHelper &helper);
-	static bool FromGroup(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern, CacheSetHelper &helper);
-	static bool FromString(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string const &pattern, CacheSetHelper &helper);
-	static bool FromCommandLine(PackageContainerInterface * const pci, pkgCacheFile &Cache, const char **cmdline, CacheSetHelper &helper);
+	void setConstructor(CacheSetHelper::PkgSelector const by) { ConstructedBy = by; }
+	CacheSetHelper::PkgSelector getConstructor() const { return ConstructedBy; }
+	PackageContainerInterface();
+	explicit PackageContainerInterface(CacheSetHelper::PkgSelector const by);
+	PackageContainerInterface& operator=(PackageContainerInterface const &other);
+	virtual ~PackageContainerInterface();
 
-	struct Modifier {
-		enum Position { NONE, PREFIX, POSTFIX };
-		unsigned short ID;
-		const char * const Alias;
-		Position Pos;
-		Modifier (unsigned short const &id, const char * const alias, Position const &pos) : ID(id), Alias(alias), Pos(pos) {}
-	};
+	APT_DEPRECATED_MSG("Use helper.PackageFrom(CacheSetHelper::TASK, …) instead") static bool FromTask(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern, CacheSetHelper &helper) {
+	   return helper.PackageFrom(CacheSetHelper::TASK, pci, Cache, pattern); }
+	APT_DEPRECATED_MSG("Use helper.PackageFrom(CacheSetHelper::REGEX, …) instead") static bool FromRegEx(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern, CacheSetHelper &helper) {
+	   return helper.PackageFrom(CacheSetHelper::REGEX, pci, Cache, pattern); }
+	APT_DEPRECATED_MSG("Use helper.PackageFrom(CacheSetHelper::FNMATCH, …) instead") static bool FromFnmatch(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern, CacheSetHelper &helper) {
+	   return helper.PackageFrom(CacheSetHelper::FNMATCH, pci, Cache, pattern); }
+	APT_DEPRECATED_MSG("Use helper.PackageFrom(CacheSetHelper::PACKAGENAME, …) instead") static bool FromGroup(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern, CacheSetHelper &helper) {
+	   return helper.PackageFrom(CacheSetHelper::PACKAGENAME, pci, Cache, pattern); }
+	APT_DEPRECATED_MSG("Use helper.PackageFrom(CacheSetHelper::STRING, …) instead") static bool FromString(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string const &pattern, CacheSetHelper &helper) {
+	   return helper.PackageFrom(CacheSetHelper::STRING, pci, Cache, pattern); }
+	APT_DEPRECATED_MSG("Use helper.PackageFromCommandLine instead") static bool FromCommandLine(PackageContainerInterface * const pci, pkgCacheFile &Cache, const char **cmdline, CacheSetHelper &helper) {
+	   return helper.PackageFromCommandLine(pci, Cache, cmdline); }
 
-	static bool FromModifierCommandLine(unsigned short &modID, PackageContainerInterface * const pci,
-					    pkgCacheFile &Cache, const char * cmdline,
-					    std::list<Modifier> const &mods, CacheSetHelper &helper);
+	APT_DEPRECATED_MSG("enum moved to CacheSetHelper::PkgModifier") typedef CacheSetHelper::PkgModifier Modifier;
+
+APT_IGNORE_DEPRECATED_PUSH
+	APT_DEPRECATED_MSG("Use helper.PackageFromName instead") static pkgCache::PkgIterator FromName(pkgCacheFile &Cache, std::string const &pattern, CacheSetHelper &helper) {
+	   return helper.PackageFromName(Cache, pattern); }
+	APT_DEPRECATED_MSG("Use helper.PackageFromModifierCommandLine instead") static bool FromModifierCommandLine(unsigned short &modID, PackageContainerInterface * const pci,
+	      pkgCacheFile &Cache, const char * cmdline,
+	      std::list<Modifier> const &mods, CacheSetHelper &helper) {
+	   return helper.PackageFromModifierCommandLine(modID, pci, Cache, cmdline, mods); }
+APT_IGNORE_DEPRECATED_POP
+
+private:
+	CacheSetHelper::PkgSelector ConstructedBy;
+	void * const d;
 };
 									/*}}}*/
 template<class Container> class PackageContainer : public PackageContainerInterface {/*{{{*/
@@ -185,75 +394,85 @@ template<class Container> class PackageContainer : public PackageContainerInterf
 	Container _cont;
 public:									/*{{{*/
 	/** \brief smell like a pkgCache::PkgIterator */
-	class const_iterator : public PackageContainerInterface::const_iterator,/*{{{*/
-			       public std::iterator<std::forward_iterator_tag, typename Container::const_iterator> {
-		typename Container::const_iterator _iter;
-	public:
-		const_iterator(typename Container::const_iterator i) : _iter(i) {}
-		pkgCache::PkgIterator getPkg(void) const { return *_iter; }
-		inline pkgCache::PkgIterator operator*(void) const { return *_iter; }
-		operator typename Container::const_iterator(void) const { return _iter; }
-		inline const_iterator& operator++() { ++_iter; return *this; }
-		inline const_iterator operator++(int) { const_iterator tmp(*this); operator++(); return tmp; }
-		inline bool operator!=(const_iterator const &i) const { return _iter != i._iter; }
-		inline bool operator==(const_iterator const &i) const { return _iter == i._iter; }
-		friend std::ostream& operator<<(std::ostream& out, const_iterator i) { return operator<<(out, *i); }
-	};
-	class iterator : public PackageContainerInterface::const_iterator,
-			 public std::iterator<std::forward_iterator_tag, typename Container::iterator> {
-		typename Container::iterator _iter;
-	public:
-		iterator(typename Container::iterator i) : _iter(i) {}
-		pkgCache::PkgIterator getPkg(void) const { return *_iter; }
-		inline pkgCache::PkgIterator operator*(void) const { return *_iter; }
-		operator typename Container::iterator(void) const { return _iter; }
-		operator typename PackageContainer<Container>::const_iterator() { return typename PackageContainer<Container>::const_iterator(_iter); }
-		inline iterator& operator++() { ++_iter; return *this; }
-		inline iterator operator++(int) { iterator tmp(*this); operator++(); return tmp; }
-		inline bool operator!=(iterator const &i) const { return _iter != i._iter; }
-		inline bool operator==(iterator const &i) const { return _iter == i._iter; }
-		inline iterator& operator=(iterator const &i) { _iter = i._iter; return *this; }
-		inline iterator& operator=(typename Container::iterator const &i) { _iter = i; return *this; }
-		friend std::ostream& operator<<(std::ostream& out, iterator i) { return operator<<(out, *i); }
-	};
-									/*}}}*/
+	typedef Container_const_iterator<PackageContainerInterface, Container, PackageContainer> const_iterator;
+	typedef Container_iterator<PackageContainerInterface, Container, PackageContainer> iterator;
+	typedef Container_const_reverse_iterator<PackageContainerInterface, Container, PackageContainer> const_reverse_iterator;
+	typedef Container_reverse_iterator<PackageContainerInterface, Container, PackageContainer> reverse_iterator;
+	typedef typename Container::value_type value_type;
+	typedef typename Container::pointer pointer;
+	typedef typename Container::const_pointer const_pointer;
+	typedef typename Container::reference reference;
+	typedef typename Container::const_reference const_reference;
+	typedef typename Container::difference_type difference_type;
+	typedef typename Container::size_type size_type;
+	typedef typename Container::allocator_type allocator_type;
 
-	bool insert(pkgCache::PkgIterator const &P) { if (P.end() == true) return false; _cont.insert(P); return true; }
+	bool insert(pkgCache::PkgIterator const &P) APT_OVERRIDE { if (P.end() == true) return false; _cont.insert(P); return true; }
 	template<class Cont> void insert(PackageContainer<Cont> const &pkgcont) { _cont.insert((typename Cont::const_iterator)pkgcont.begin(), (typename Cont::const_iterator)pkgcont.end()); }
 	void insert(const_iterator begin, const_iterator end) { _cont.insert(begin, end); }
 
-	bool empty() const { return _cont.empty(); }
-	void clear() { return _cont.clear(); }
-	//FIXME: on ABI break, replace the first with the second without bool
-	void erase(iterator position) { _cont.erase((typename Container::iterator)position); }
-	iterator& erase(iterator &position, bool) { return position = _cont.erase((typename Container::iterator)position); }
-	size_t erase(const pkgCache::PkgIterator x) { return _cont.erase(x); }
-	void erase(iterator first, iterator last) { _cont.erase(first, last); }
-	size_t size() const { return _cont.size(); }
-
+	bool empty() const APT_OVERRIDE { return _cont.empty(); }
+	void clear() APT_OVERRIDE { return _cont.clear(); }
+	size_t size() const APT_OVERRIDE { return _cont.size(); }
+#if __GNUC__ >= 5 || (__GNUC_MINOR__ >= 9 && __GNUC__ >= 4)
+	iterator erase( const_iterator pos ) { return iterator(_cont.erase(pos._iter)); }
+	iterator erase( const_iterator first, const_iterator last ) { return iterator(_cont.erase(first._iter, last._iter)); }
+#else
+	iterator erase( iterator pos ) { return iterator(_cont.erase(pos._iter)); }
+	iterator erase( iterator first, iterator last ) { return iterator(_cont.erase(first._iter, last._iter)); }
+#endif
 	const_iterator begin() const { return const_iterator(_cont.begin()); }
 	const_iterator end() const { return const_iterator(_cont.end()); }
+	const_reverse_iterator rbegin() const { return const_reverse_iterator(_cont.rbegin()); }
+	const_reverse_iterator rend() const { return const_reverse_iterator(_cont.rend()); }
+#if __cplusplus >= 201103L
+	const_iterator cbegin() const { return const_iterator(_cont.cbegin()); }
+	const_iterator cend() const { return const_iterator(_cont.cend()); }
+	const_reverse_iterator crbegin() const { return const_reverse_iterator(_cont.crbegin()); }
+	const_reverse_iterator crend() const { return const_reverse_iterator(_cont.crend()); }
+#endif
 	iterator begin() { return iterator(_cont.begin()); }
 	iterator end() { return iterator(_cont.end()); }
+	reverse_iterator rbegin() { return reverse_iterator(_cont.rbegin()); }
+	reverse_iterator rend() { return reverse_iterator(_cont.rend()); }
 	const_iterator find(pkgCache::PkgIterator const &P) const { return const_iterator(_cont.find(P)); }
 
-	void setConstructor(Constructor const &by) { ConstructedBy = by; }
-	Constructor getConstructor() const { return ConstructedBy; }
+	PackageContainer() : PackageContainerInterface(CacheSetHelper::UNKNOWN) {}
+	explicit PackageContainer(CacheSetHelper::PkgSelector const &by) : PackageContainerInterface(by) {}
+APT_IGNORE_DEPRECATED_PUSH
+	APT_DEPRECATED_MSG("Construct with a CacheSetHelper::PkgSelector instead") explicit PackageContainer(Constructor const &by) : PackageContainerInterface((CacheSetHelper::PkgSelector)by) {}
+APT_IGNORE_DEPRECATED_POP
+	template<typename Itr> PackageContainer(Itr first, Itr last) : PackageContainerInterface(CacheSetHelper::UNKNOWN), _cont(first, last) {}
+#if __cplusplus >= 201103L
+	PackageContainer(std::initializer_list<value_type> list) : PackageContainerInterface(CacheSetHelper::UNKNOWN), _cont(list) {}
+	void push_back(value_type&& P) { _cont.emplace_back(std::move(P)); }
+	template<typename... Args> void emplace_back(Args&&... args) { _cont.emplace_back(std::forward<Args>(args)...); }
+#endif
+	void push_back(const value_type& P) { _cont.push_back(P); }
 
-	PackageContainer() : ConstructedBy(UNKNOWN) {}
-	PackageContainer(Constructor const &by) : ConstructedBy(by) {}
+	/** \brief sort all included versions with given comparer
+
+	    Some containers are sorted by default, some are not and can't be,
+	    but a few like std::vector can be sorted if need be, so this can be
+	    specialized in later on. The default is that this will fail though.
+	    Specifically, already sorted containers like std::set will return
+	    false as well as there is no easy way to check that the given comparer
+	    would sort in the same way the set is currently sorted
+
+	    \return \b true if the set was sorted, \b false if not. */
+	template<class Compare> bool sort(Compare /*Comp*/) { return false; }
 
 	/** \brief returns all packages in the cache who belong to the given task
 
 	    A simple helper responsible for search for all members of a task
-	    in the cache. Optional it prints a a notice about the
+	    in the cache. Optional it prints a notice about the
 	    packages chosen cause of the given task.
 	    \param Cache the packages are in
 	    \param pattern name of the task
 	    \param helper responsible for error and message handling */
 	static PackageContainer FromTask(pkgCacheFile &Cache, std::string const &pattern, CacheSetHelper &helper) {
-		PackageContainer cont(TASK);
-		PackageContainerInterface::FromTask(&cont, Cache, pattern, helper);
+		PackageContainer cont(CacheSetHelper::TASK);
+		helper.PackageFrom(CacheSetHelper::TASK, &cont, Cache, pattern);
 		return cont;
 	}
 	static PackageContainer FromTask(pkgCacheFile &Cache, std::string const &pattern) {
@@ -264,14 +483,14 @@ public:									/*{{{*/
 	/** \brief returns all packages in the cache whose name matchs a given pattern
 
 	    A simple helper responsible for executing a regular expression on all
-	    package names in the cache. Optional it prints a a notice about the
+	    package names in the cache. Optional it prints a notice about the
 	    packages chosen cause of the given package.
 	    \param Cache the packages are in
 	    \param pattern regular expression for package names
 	    \param helper responsible for error and message handling */
-	static PackageContainer FromRegEx(pkgCacheFile &Cache, std::string pattern, CacheSetHelper &helper) {
-		PackageContainer cont(REGEX);
-		PackageContainerInterface::FromRegEx(&cont, Cache, pattern, helper);
+	static PackageContainer FromRegEx(pkgCacheFile &Cache, std::string const &pattern, CacheSetHelper &helper) {
+		PackageContainer cont(CacheSetHelper::REGEX);
+		helper.PackageFrom(CacheSetHelper::REGEX, &cont, Cache, pattern);
 		return cont;
 	}
 
@@ -280,9 +499,9 @@ public:									/*{{{*/
 		return FromRegEx(Cache, pattern, helper);
 	}
 
-	static PackageContainer FromFnmatch(pkgCacheFile &Cache, std::string pattern, CacheSetHelper &helper) {
-		PackageContainer cont(FNMATCH);
-		PackageContainerInterface::FromFnmatch(&cont, Cache, pattern, helper);
+	static PackageContainer FromFnmatch(pkgCacheFile &Cache, std::string const &pattern, CacheSetHelper &helper) {
+		PackageContainer cont(CacheSetHelper::FNMATCH);
+		helper.PackageFrom(CacheSetHelper::FNMATCH, &cont, Cache, pattern);
 		return cont;
 	}
 	static PackageContainer FromFnMatch(pkgCacheFile &Cache, std::string const &pattern) {
@@ -290,18 +509,20 @@ public:									/*{{{*/
 		return FromFnmatch(Cache, pattern, helper);
 	}
 
+APT_IGNORE_DEPRECATED_PUSH
 	/** \brief returns a package specified by a string
 
 	    \param Cache the package is in
 	    \param pattern String the package name should be extracted from
 	    \param helper responsible for error and message handling */
-	static pkgCache::PkgIterator FromName(pkgCacheFile &Cache, std::string const &pattern, CacheSetHelper &helper) {
-		return PackageContainerInterface::FromName(Cache, pattern, helper);
+	APT_DEPRECATED_MSG("Use helper.PackageFromName instead") static pkgCache::PkgIterator FromName(pkgCacheFile &Cache, std::string const &pattern, CacheSetHelper &helper) {
+		return helper.PackageFromName(Cache, pattern);
 	}
-	static pkgCache::PkgIterator FromName(pkgCacheFile &Cache, std::string const &pattern) {
+	APT_DEPRECATED_MSG("Use helper.PackageFromName instead") static pkgCache::PkgIterator FromName(pkgCacheFile &Cache, std::string const &pattern) {
 		CacheSetHelper helper;
-		return PackageContainerInterface::FromName(Cache, pattern, helper);
+		return FromName(Cache, pattern, helper);
 	}
+APT_IGNORE_DEPRECATED_POP
 
 	/** \brief returns all packages specified by a string
 
@@ -310,7 +531,7 @@ public:									/*{{{*/
 	    \param helper responsible for error and message handling */
 	static PackageContainer FromString(pkgCacheFile &Cache, std::string const &pattern, CacheSetHelper &helper) {
 		PackageContainer cont;
-		PackageContainerInterface::FromString(&cont, Cache, pattern, helper);
+		helper.PackageFrom(CacheSetHelper::PACKAGENAME, &cont, Cache, pattern);
 		return cont;
 	}
 	static PackageContainer FromString(pkgCacheFile &Cache, std::string const &pattern) {
@@ -327,7 +548,7 @@ public:									/*{{{*/
 	    \param helper responsible for error and message handling */
 	static PackageContainer FromCommandLine(pkgCacheFile &Cache, const char **cmdline, CacheSetHelper &helper) {
 		PackageContainer cont;
-		PackageContainerInterface::FromCommandLine(&cont, Cache, cmdline, helper);
+		helper.PackageFromCommandLine(&cont, Cache, cmdline);
 		return cont;
 	}
 	static PackageContainer FromCommandLine(pkgCacheFile &Cache, const char **cmdline) {
@@ -349,14 +570,14 @@ public:									/*{{{*/
 	static std::map<unsigned short, PackageContainer> GroupedFromCommandLine(
 										 pkgCacheFile &Cache,
 										 const char **cmdline,
-										 std::list<Modifier> const &mods,
+										 std::list<CacheSetHelper::PkgModifier> const &mods,
 										 unsigned short const &fallback,
 										 CacheSetHelper &helper) {
 		std::map<unsigned short, PackageContainer> pkgsets;
 		for (const char **I = cmdline; *I != 0; ++I) {
 			unsigned short modID = fallback;
 			PackageContainer pkgset;
-			PackageContainerInterface::FromModifierCommandLine(modID, &pkgset, Cache, *I, mods, helper);
+			helper.PackageFromModifierCommandLine(modID, &pkgset, Cache, *I, mods);
 			pkgsets[modID].insert(pkgset);
 		}
 		return pkgsets;
@@ -364,25 +585,56 @@ public:									/*{{{*/
 	static std::map<unsigned short, PackageContainer> GroupedFromCommandLine(
 										 pkgCacheFile &Cache,
 										 const char **cmdline,
-										 std::list<Modifier> const &mods,
+										 std::list<CacheSetHelper::PkgModifier> const &mods,
 										 unsigned short const &fallback) {
 		CacheSetHelper helper;
 		return GroupedFromCommandLine(Cache, cmdline,
 				mods, fallback, helper);
 	}
 									/*}}}*/
-private:								/*{{{*/
-	Constructor ConstructedBy;
-									/*}}}*/
 };									/*}}}*/
-
+// various specialisations for PackageContainer				/*{{{*/
 template<> template<class Cont> void PackageContainer<std::list<pkgCache::PkgIterator> >::insert(PackageContainer<Cont> const &pkgcont) {
 	for (typename PackageContainer<Cont>::const_iterator p = pkgcont.begin(); p != pkgcont.end(); ++p)
 		_cont.push_back(*p);
 }
-// these two are 'inline' as otherwise the linker has problems with seeing these untemplated
+#if __cplusplus >= 201103L
+template<> template<class Cont> void PackageContainer<std::forward_list<pkgCache::PkgIterator> >::insert(PackageContainer<Cont> const &pkgcont) {
+	for (typename PackageContainer<Cont>::const_iterator p = pkgcont.begin(); p != pkgcont.end(); ++p)
+		_cont.push_front(*p);
+}
+#endif
+template<> template<class Cont> void PackageContainer<std::deque<pkgCache::PkgIterator> >::insert(PackageContainer<Cont> const &pkgcont) {
+	for (typename PackageContainer<Cont>::const_iterator p = pkgcont.begin(); p != pkgcont.end(); ++p)
+		_cont.push_back(*p);
+}
+template<> template<class Cont> void PackageContainer<std::vector<pkgCache::PkgIterator> >::insert(PackageContainer<Cont> const &pkgcont) {
+	for (typename PackageContainer<Cont>::const_iterator p = pkgcont.begin(); p != pkgcont.end(); ++p)
+		_cont.push_back(*p);
+}
+// these are 'inline' as otherwise the linker has problems with seeing these untemplated
 // specializations again and again - but we need to see them, so that library users can use them
 template<> inline bool PackageContainer<std::list<pkgCache::PkgIterator> >::insert(pkgCache::PkgIterator const &P) {
+	if (P.end() == true)
+		return false;
+	_cont.push_back(P);
+	return true;
+}
+#if __cplusplus >= 201103L
+template<> inline bool PackageContainer<std::forward_list<pkgCache::PkgIterator> >::insert(pkgCache::PkgIterator const &P) {
+	if (P.end() == true)
+		return false;
+	_cont.push_front(P);
+	return true;
+}
+#endif
+template<> inline bool PackageContainer<std::deque<pkgCache::PkgIterator> >::insert(pkgCache::PkgIterator const &P) {
+	if (P.end() == true)
+		return false;
+	_cont.push_back(P);
+	return true;
+}
+template<> inline bool PackageContainer<std::vector<pkgCache::PkgIterator> >::insert(pkgCache::PkgIterator const &P) {
 	if (P.end() == true)
 		return false;
 	_cont.push_back(P);
@@ -392,8 +644,114 @@ template<> inline void PackageContainer<std::list<pkgCache::PkgIterator> >::inse
 	for (const_iterator p = begin; p != end; ++p)
 		_cont.push_back(*p);
 }
+#if __cplusplus >= 201103L
+template<> inline void PackageContainer<std::forward_list<pkgCache::PkgIterator> >::insert(const_iterator begin, const_iterator end) {
+	for (const_iterator p = begin; p != end; ++p)
+		_cont.push_front(*p);
+}
+#endif
+template<> inline void PackageContainer<std::deque<pkgCache::PkgIterator> >::insert(const_iterator begin, const_iterator end) {
+	for (const_iterator p = begin; p != end; ++p)
+		_cont.push_back(*p);
+}
+template<> inline void PackageContainer<std::vector<pkgCache::PkgIterator> >::insert(const_iterator begin, const_iterator end) {
+	for (const_iterator p = begin; p != end; ++p)
+		_cont.push_back(*p);
+}
+#if APT_GCC_VERSION < 0x409
+template<> inline PackageContainer<std::set<pkgCache::PkgIterator> >::iterator PackageContainer<std::set<pkgCache::PkgIterator> >::erase(iterator i) {
+	_cont.erase(i._iter);
+	return end();
+}
+template<> inline PackageContainer<std::set<pkgCache::PkgIterator> >::iterator PackageContainer<std::set<pkgCache::PkgIterator> >::erase(iterator first, iterator last) {
+	_cont.erase(first, last);
+	return end();
+}
+#endif
+template<> template<class Compare> inline bool PackageContainer<std::vector<pkgCache::PkgIterator> >::sort(Compare Comp) {
+	std::sort(_cont.begin(), _cont.end(), Comp);
+	return true;
+}
+template<> template<class Compare> inline bool PackageContainer<std::list<pkgCache::PkgIterator> >::sort(Compare Comp) {
+	_cont.sort(Comp);
+	return true;
+}
+#if __cplusplus >= 201103L
+template<> template<class Compare> inline bool PackageContainer<std::forward_list<pkgCache::PkgIterator> >::sort(Compare Comp) {
+	_cont.sort(Comp);
+	return true;
+}
+#endif
+template<> template<class Compare> inline bool PackageContainer<std::deque<pkgCache::PkgIterator> >::sort(Compare Comp) {
+	std::sort(_cont.begin(), _cont.end(), Comp);
+	return true;
+}
+									/*}}}*/
+
+// class PackageUniverse - pkgCache as PackageContainerInterface	/*{{{*/
+/** \class PackageUniverse
+
+    Wraps around our usual pkgCache, so that it can be stuffed into methods
+    expecting a PackageContainer.
+
+    The wrapping is read-only in practice modeled by making erase and co
+    private methods. */
+class APT_PUBLIC PackageUniverse : public PackageContainerInterface {
+	pkgCache * const _cont;
+	void * const d;
+public:
+	class const_iterator : public APT::Container_iterator_base<APT::PackageContainerInterface, PackageUniverse, PackageUniverse::const_iterator, pkgCache::PkgIterator, pkgCache::PkgIterator>
+	{
+	public:
+	   explicit const_iterator(pkgCache::PkgIterator i):
+	      Container_iterator_base<APT::PackageContainerInterface, PackageUniverse, PackageUniverse::const_iterator, pkgCache::PkgIterator, pkgCache::PkgIterator>(i) {}
+
+	   inline pkgCache::PkgIterator getType(void) const { return _iter; }
+	};
+	typedef const_iterator iterator;
+	typedef pkgCache::PkgIterator value_type;
+	typedef typename pkgCache::PkgIterator* pointer;
+	typedef typename pkgCache::PkgIterator const* const_pointer;
+	typedef const pkgCache::PkgIterator& const_reference;
+	typedef const_reference reference;
+	typedef const_iterator::difference_type difference_type;
+	typedef std::make_unsigned<const_iterator::difference_type>::type size_type;
+
+
+	bool empty() const APT_OVERRIDE { return false; }
+	size_t size() const APT_OVERRIDE { return _cont->Head().PackageCount; }
+
+	const_iterator begin() const { return const_iterator(_cont->PkgBegin()); }
+	const_iterator end() const { return const_iterator(_cont->PkgEnd()); }
+	const_iterator cbegin() const { return const_iterator(_cont->PkgBegin()); }
+	const_iterator cend() const { return const_iterator(_cont->PkgEnd()); }
+	iterator begin() { return iterator(_cont->PkgBegin()); }
+	iterator end() { return iterator(_cont->PkgEnd()); }
+
+	pkgCache * data() const { return _cont; }
+
+	explicit PackageUniverse(pkgCache * const Owner);
+	explicit PackageUniverse(pkgCacheFile * const Owner);
+	virtual ~PackageUniverse();
+
+private:
+	APT_HIDDEN bool insert(pkgCache::PkgIterator const &) APT_OVERRIDE { return true; }
+	template<class Cont> APT_HIDDEN void insert(PackageContainer<Cont> const &) { }
+	APT_HIDDEN void insert(const_iterator, const_iterator) { }
+
+	APT_HIDDEN void clear() APT_OVERRIDE { }
+	APT_HIDDEN iterator erase( const_iterator pos );
+	APT_HIDDEN iterator erase( const_iterator first, const_iterator last );
+};
+									/*}}}*/
 typedef PackageContainer<std::set<pkgCache::PkgIterator> > PackageSet;
+#if __cplusplus >= 201103L
+typedef PackageContainer<std::unordered_set<pkgCache::PkgIterator> > PackageUnorderedSet;
+typedef PackageContainer<std::forward_list<pkgCache::PkgIterator> > PackageForwardList;
+#endif
 typedef PackageContainer<std::list<pkgCache::PkgIterator> > PackageList;
+typedef PackageContainer<std::deque<pkgCache::PkgIterator> > PackageDeque;
+typedef PackageContainer<std::vector<pkgCache::PkgIterator> > PackageVector;
 
 class VersionContainerInterface {					/*{{{*/
 /** \class APT::VersionContainerInterface
@@ -401,79 +759,98 @@ class VersionContainerInterface {					/*{{{*/
     Same as APT::PackageContainerInterface, just for Versions */
 public:
 	/** \brief smell like a pkgCache::VerIterator */
-	class const_iterator {						/*{{{*/
+	template<class Itr> class iterator_base {			/*{{{*/
+	   pkgCache::VerIterator getType() const { return static_cast<Itr const*>(this)->getType(); };
 	public:
-		virtual pkgCache::VerIterator getVer() const = 0;
-		operator pkgCache::VerIterator(void) { return getVer(); }
+		operator pkgCache::VerIterator(void) { return getType(); }
 
-		inline pkgCache *Cache() const { return getVer().Cache(); }
-		inline unsigned long Index() const {return getVer().Index();}
-		inline int CompareVer(const pkgCache::VerIterator &B) const { return getVer().CompareVer(B); }
-		inline const char *VerStr() const { return getVer().VerStr(); }
-		inline const char *Section() const { return getVer().Section(); }
-		inline const char *Arch() const { return getVer().Arch(); }
-		inline pkgCache::PkgIterator ParentPkg() const { return getVer().ParentPkg(); }
-		inline pkgCache::DescIterator DescriptionList() const { return getVer().DescriptionList(); }
-		inline pkgCache::DescIterator TranslatedDescription() const { return getVer().TranslatedDescription(); }
-		inline pkgCache::DepIterator DependsList() const { return getVer().DependsList(); }
-		inline pkgCache::PrvIterator ProvidesList() const { return getVer().ProvidesList(); }
-		inline pkgCache::VerFileIterator FileList() const { return getVer().FileList(); }
-		inline bool Downloadable() const { return getVer().Downloadable(); }
-		inline const char *PriorityType() const { return getVer().PriorityType(); }
-		inline std::string RelStr() const { return getVer().RelStr(); }
-		inline bool Automatic() const { return getVer().Automatic(); }
-		inline pkgCache::VerFileIterator NewestFile() const { return getVer().NewestFile(); }
+		inline pkgCache *Cache() const { return getType().Cache(); }
+		inline unsigned long Index() const {return getType().Index();}
+		inline int CompareVer(const pkgCache::VerIterator &B) const { return getType().CompareVer(B); }
+		inline const char *VerStr() const { return getType().VerStr(); }
+		inline const char *Section() const { return getType().Section(); }
+		inline const char *Arch() const { return getType().Arch(); }
+		inline pkgCache::PkgIterator ParentPkg() const { return getType().ParentPkg(); }
+		inline pkgCache::DescIterator DescriptionList() const { return getType().DescriptionList(); }
+		inline pkgCache::DescIterator TranslatedDescription() const { return getType().TranslatedDescription(); }
+		inline pkgCache::DepIterator DependsList() const { return getType().DependsList(); }
+		inline pkgCache::PrvIterator ProvidesList() const { return getType().ProvidesList(); }
+		inline pkgCache::VerFileIterator FileList() const { return getType().FileList(); }
+		inline bool Downloadable() const { return getType().Downloadable(); }
+		inline const char *PriorityType() const { return getType().PriorityType(); }
+		inline std::string RelStr() const { return getType().RelStr(); }
+		inline bool Automatic() const { return getType().Automatic(); }
+		inline pkgCache::VerFileIterator NewestFile() const { return getType().NewestFile(); }
 		// we have only valid iterators here
 		inline bool end() const { return false; }
 
-		inline pkgCache::Version const * operator->() const { return &*getVer(); }
+		inline pkgCache::Version const * operator->() const { return &*getType(); }
 	};
 									/*}}}*/
 
 	virtual bool insert(pkgCache::VerIterator const &V) = 0;
 	virtual bool empty() const = 0;
 	virtual void clear() = 0;
+	virtual size_t size() const = 0;
 
 	/** \brief specifies which version(s) will be returned if non is given */
-	enum Version {
-		/** All versions */
-		ALL,
-		/** Candidate and installed version */
-		CANDANDINST,
-		/** Candidate version */
-		CANDIDATE,
-		/** Installed version */
-		INSTALLED,
-		/** Candidate or if non installed version */
-		CANDINST,
-		/** Installed or if non candidate version */
-		INSTCAND,
-		/** Newest version */
-		NEWEST
+	enum APT_DEPRECATED_MSG("enum moved to CacheSetHelper::VerSelector instead") Version {
+		ALL = CacheSetHelper::ALL,
+		CANDANDINST = CacheSetHelper::CANDANDINST,
+		CANDIDATE = CacheSetHelper::CANDIDATE,
+		INSTALLED = CacheSetHelper::INSTALLED,
+		CANDINST = CacheSetHelper::CANDINST,
+		INSTCAND = CacheSetHelper::INSTCAND,
+		NEWEST = CacheSetHelper::NEWEST
 	};
 
 	struct Modifier {
-		enum Position { NONE, PREFIX, POSTFIX };
-		unsigned short ID;
+		unsigned short const ID;
 		const char * const Alias;
-		Position Pos;
-		Version SelectVersion;
+		enum Position { NONE, PREFIX, POSTFIX } const Pos;
+		enum CacheSetHelper::VerSelector const SelectVersion;
 		Modifier (unsigned short const &id, const char * const alias, Position const &pos,
-			  Version const &select) : ID(id), Alias(alias), Pos(pos),
+			  enum CacheSetHelper::VerSelector const select) : ID(id), Alias(alias), Pos(pos),
 			 SelectVersion(select) {}
+APT_IGNORE_DEPRECATED_PUSH
+		APT_DEPRECATED_MSG("Construct with a CacheSetHelper::VerSelector instead") Modifier(unsigned short const &id, const char * const alias, Position const &pos,
+			  Version const &select) : ID(id), Alias(alias), Pos(pos),
+			 SelectVersion((CacheSetHelper::VerSelector)select) {}
+APT_IGNORE_DEPRECATED_POP
 	};
 
 	static bool FromCommandLine(VersionContainerInterface * const vci, pkgCacheFile &Cache,
-				    const char **cmdline, Version const &fallback,
+				    const char **cmdline, CacheSetHelper::VerSelector const fallback,
 				    CacheSetHelper &helper);
+APT_IGNORE_DEPRECATED_PUSH
+	APT_DEPRECATED_MSG("Use CacheSetHelper::VerSelector as fallback selector") static bool FromCommandLine(VersionContainerInterface * const vci, pkgCacheFile &Cache,
+				    const char **cmdline, Version const &fallback,
+				    CacheSetHelper &helper) {
+	   return FromCommandLine(vci, Cache, cmdline, (CacheSetHelper::VerSelector)fallback, helper);
+	}
+APT_IGNORE_DEPRECATED_POP
 
 	static bool FromString(VersionContainerInterface * const vci, pkgCacheFile &Cache,
-			       std::string pkg, Version const &fallback, CacheSetHelper &helper,
+			       std::string pkg, CacheSetHelper::VerSelector const fallback, CacheSetHelper &helper,
 			       bool const onlyFromName = false);
+APT_IGNORE_DEPRECATED_PUSH
+	APT_DEPRECATED_MSG("Use CacheSetHelper::VerSelector as fallback selector") static bool FromString(VersionContainerInterface * const vci, pkgCacheFile &Cache,
+			       std::string pkg, Version const &fallback, CacheSetHelper &helper,
+			       bool const onlyFromName = false) {
+	   return FromString(vci, Cache, pkg, (CacheSetHelper::VerSelector)fallback, helper, onlyFromName);
+	}
+APT_IGNORE_DEPRECATED_POP
 
 	static bool FromPackage(VersionContainerInterface * const vci, pkgCacheFile &Cache,
-				pkgCache::PkgIterator const &P, Version const &fallback,
+				pkgCache::PkgIterator const &P, CacheSetHelper::VerSelector const fallback,
 				CacheSetHelper &helper);
+APT_IGNORE_DEPRECATED_PUSH
+	APT_DEPRECATED_MSG("Use CacheSetHelper::VerSelector as fallback selector") static bool FromPackage(VersionContainerInterface * const vci, pkgCacheFile &Cache,
+				pkgCache::PkgIterator const &P, Version const &fallback,
+				CacheSetHelper &helper) {
+	   return FromPackage(vci, Cache, P, (CacheSetHelper::VerSelector)fallback, helper);
+	}
+APT_IGNORE_DEPRECATED_POP
 
 	static bool FromModifierCommandLine(unsigned short &modID,
 					    VersionContainerInterface * const vci,
@@ -485,8 +862,23 @@ public:
 	static bool FromDependency(VersionContainerInterface * const vci,
 				   pkgCacheFile &Cache,
 				   pkgCache::DepIterator const &D,
-				   Version const &selector,
+				   CacheSetHelper::VerSelector const selector,
 				   CacheSetHelper &helper);
+APT_IGNORE_DEPRECATED_PUSH
+	APT_DEPRECATED_MSG("Use CacheSetHelper::VerSelector as fallback selector") static bool FromDependency(VersionContainerInterface * const vci,
+				   pkgCacheFile &Cache,
+				   pkgCache::DepIterator const &D,
+				   Version const &selector,
+				   CacheSetHelper &helper) {
+	   return FromDependency(vci, Cache, D, (CacheSetHelper::VerSelector)selector, helper);
+	}
+APT_IGNORE_DEPRECATED_POP
+
+	VersionContainerInterface();
+	VersionContainerInterface& operator=(VersionContainerInterface const &other);
+	virtual ~VersionContainerInterface();
+private:
+	void * const d;
 
 protected:								/*{{{*/
 
@@ -516,57 +908,69 @@ template<class Container> class VersionContainer : public VersionContainerInterf
     pkgCache. */
 	Container _cont;
 public:									/*{{{*/
-	/** \brief smell like a pkgCache::VerIterator */
-	class const_iterator : public VersionContainerInterface::const_iterator,
-			       public std::iterator<std::forward_iterator_tag, typename Container::const_iterator> {/*{{{*/
-		typename Container::const_iterator _iter;
-	public:
-		const_iterator(typename Container::const_iterator i) : _iter(i) {}
-		pkgCache::VerIterator getVer(void) const { return *_iter; }
-		inline pkgCache::VerIterator operator*(void) const { return *_iter; }
-		operator typename Container::const_iterator(void) const { return _iter; }
-		inline const_iterator& operator++() { ++_iter; return *this; }
-		inline const_iterator operator++(int) { const_iterator tmp(*this); operator++(); return tmp; }
-		inline bool operator!=(const_iterator const &i) const { return _iter != i._iter; }
-		inline bool operator==(const_iterator const &i) const { return _iter == i._iter; }
-		friend std::ostream& operator<<(std::ostream& out, const_iterator i) { return operator<<(out, *i); }
-	};
-	class iterator : public VersionContainerInterface::const_iterator,
-			 public std::iterator<std::forward_iterator_tag, typename Container::iterator> {
-		typename Container::iterator _iter;
-	public:
-		iterator(typename Container::iterator i) : _iter(i) {}
-		pkgCache::VerIterator getVer(void) const { return *_iter; }
-		inline pkgCache::VerIterator operator*(void) const { return *_iter; }
-		operator typename Container::iterator(void) const { return _iter; }
-		operator typename VersionContainer<Container>::const_iterator() { return typename VersionContainer<Container>::const_iterator(_iter); }
-		inline iterator& operator++() { ++_iter; return *this; }
-		inline iterator operator++(int) { iterator tmp(*this); operator++(); return tmp; }
-		inline bool operator!=(iterator const &i) const { return _iter != i._iter; }
-		inline bool operator==(iterator const &i) const { return _iter == i._iter; }
-		inline iterator& operator=(iterator const &i) { _iter = i._iter; return *this; }
-		inline iterator& operator=(typename Container::iterator const &i) { _iter = i; return *this; }
-		friend std::ostream& operator<<(std::ostream& out, iterator i) { return operator<<(out, *i); }
-	};
-									/*}}}*/
 
-	bool insert(pkgCache::VerIterator const &V) { if (V.end() == true) return false; _cont.insert(V); return true; }
+	typedef Container_const_iterator<VersionContainerInterface, Container, VersionContainer> const_iterator;
+	typedef Container_iterator<VersionContainerInterface, Container, VersionContainer> iterator;
+	typedef Container_const_reverse_iterator<VersionContainerInterface, Container, VersionContainer> const_reverse_iterator;
+	typedef Container_reverse_iterator<VersionContainerInterface, Container, VersionContainer> reverse_iterator;
+	typedef typename Container::value_type value_type;
+	typedef typename Container::pointer pointer;
+	typedef typename Container::const_pointer const_pointer;
+	typedef typename Container::reference reference;
+	typedef typename Container::const_reference const_reference;
+	typedef typename Container::difference_type difference_type;
+	typedef typename Container::size_type size_type;
+	typedef typename Container::allocator_type allocator_type;
+
+	bool insert(pkgCache::VerIterator const &V) APT_OVERRIDE { if (V.end() == true) return false; _cont.insert(V); return true; }
 	template<class Cont> void insert(VersionContainer<Cont> const &vercont) { _cont.insert((typename Cont::const_iterator)vercont.begin(), (typename Cont::const_iterator)vercont.end()); }
 	void insert(const_iterator begin, const_iterator end) { _cont.insert(begin, end); }
-	bool empty() const { return _cont.empty(); }
-	void clear() { return _cont.clear(); }
-	//FIXME: on ABI break, replace the first with the second without bool
-	void erase(iterator position) { _cont.erase((typename Container::iterator)position); }
-	iterator& erase(iterator &position, bool) { return position = _cont.erase((typename Container::iterator)position); }
-	size_t erase(const pkgCache::VerIterator x) { return _cont.erase(x); }
-	void erase(iterator first, iterator last) { _cont.erase(first, last); }
-	size_t size() const { return _cont.size(); }
-
+	bool empty() const APT_OVERRIDE { return _cont.empty(); }
+	void clear() APT_OVERRIDE { return _cont.clear(); }
+	size_t size() const APT_OVERRIDE { return _cont.size(); }
+#if APT_GCC_VERSION >= 0x409
+	iterator erase( const_iterator pos ) { return iterator(_cont.erase(pos._iter)); }
+	iterator erase( const_iterator first, const_iterator last ) { return iterator(_cont.erase(first._iter, last._iter)); }
+#else
+	iterator erase( iterator pos ) { return iterator(_cont.erase(pos._iter)); }
+	iterator erase( iterator first, iterator last ) { return iterator(_cont.erase(first._iter, last._iter)); }
+#endif
 	const_iterator begin() const { return const_iterator(_cont.begin()); }
 	const_iterator end() const { return const_iterator(_cont.end()); }
+	const_reverse_iterator rbegin() const { return const_reverse_iterator(_cont.rbegin()); }
+	const_reverse_iterator rend() const { return const_reverse_iterator(_cont.rend()); }
+#if __cplusplus >= 201103L
+	const_iterator cbegin() const { return const_iterator(_cont.cbegin()); }
+	const_iterator cend() const { return const_iterator(_cont.cend()); }
+	const_reverse_iterator crbegin() const { return const_reverse_iterator(_cont.crbegin()); }
+	const_reverse_iterator crend() const { return const_reverse_iterator(_cont.crend()); }
+#endif
 	iterator begin() { return iterator(_cont.begin()); }
 	iterator end() { return iterator(_cont.end()); }
+	reverse_iterator rbegin() { return reverse_iterator(_cont.rbegin()); }
+	reverse_iterator rend() { return reverse_iterator(_cont.rend()); }
 	const_iterator find(pkgCache::VerIterator const &V) const { return const_iterator(_cont.find(V)); }
+
+	VersionContainer() : VersionContainerInterface() {}
+	template<typename Itr> VersionContainer(Itr first, Itr last) : VersionContainerInterface(), _cont(first, last) {}
+#if __cplusplus >= 201103L
+	VersionContainer(std::initializer_list<value_type> list) : VersionContainerInterface(), _cont(list) {}
+	void push_back(value_type&& P) { _cont.emplace_back(std::move(P)); }
+	template<typename... Args> void emplace_back(Args&&... args) { _cont.emplace_back(std::forward<Args>(args)...); }
+#endif
+	void push_back(const value_type& P) { _cont.push_back(P); }
+
+	/** \brief sort all included versions with given comparer
+
+	    Some containers are sorted by default, some are not and can't be,
+	    but a few like std::vector can be sorted if need be, so this can be
+	    specialized in later on. The default is that this will fail though.
+	    Specifically, already sorted containers like std::set will return
+	    false as well as there is no easy way to check that the given comparer
+	    would sort in the same way the set is currently sorted
+
+	    \return \b true if the set was sorted, \b false if not. */
+	template<class Compare> bool sort(Compare /*Comp*/) { return false; }
 
 	/** \brief returns all versions specified on the commandline
 
@@ -577,35 +981,59 @@ public:									/*{{{*/
 	    \param fallback version specification
 	    \param helper responsible for error and message handling */
 	static VersionContainer FromCommandLine(pkgCacheFile &Cache, const char **cmdline,
-			Version const &fallback, CacheSetHelper &helper) {
+			CacheSetHelper::VerSelector const fallback, CacheSetHelper &helper) {
 		VersionContainer vercon;
 		VersionContainerInterface::FromCommandLine(&vercon, Cache, cmdline, fallback, helper);
 		return vercon;
 	}
 	static VersionContainer FromCommandLine(pkgCacheFile &Cache, const char **cmdline,
-			Version const &fallback) {
+			CacheSetHelper::VerSelector const fallback) {
 		CacheSetHelper helper;
 		return FromCommandLine(Cache, cmdline, fallback, helper);
 	}
 	static VersionContainer FromCommandLine(pkgCacheFile &Cache, const char **cmdline) {
-		return FromCommandLine(Cache, cmdline, CANDINST);
+		return FromCommandLine(Cache, cmdline, CacheSetHelper::CANDINST);
 	}
-
 	static VersionContainer FromString(pkgCacheFile &Cache, std::string const &pkg,
-			Version const &fallback, CacheSetHelper &helper,
-			bool const onlyFromName = false) {
+			CacheSetHelper::VerSelector const fallback, CacheSetHelper &helper,
+                                           bool const /*onlyFromName = false*/) {
 		VersionContainer vercon;
 		VersionContainerInterface::FromString(&vercon, Cache, pkg, fallback, helper);
 		return vercon;
 	}
 	static VersionContainer FromString(pkgCacheFile &Cache, std::string pkg,
-			Version const &fallback) {
+			CacheSetHelper::VerSelector const fallback) {
 		CacheSetHelper helper;
 		return FromString(Cache, pkg, fallback, helper);
 	}
 	static VersionContainer FromString(pkgCacheFile &Cache, std::string pkg) {
-		return FromString(Cache, pkg, CANDINST);
+		return FromString(Cache, pkg, CacheSetHelper::CANDINST);
 	}
+APT_IGNORE_DEPRECATED_PUSH
+	static VersionContainer FromCommandLine(pkgCacheFile &Cache, const char **cmdline,
+			Version const &fallback, CacheSetHelper &helper) {
+		VersionContainer vercon;
+		VersionContainerInterface::FromCommandLine(&vercon, Cache, cmdline, (CacheSetHelper::VerSelector)fallback, helper);
+		return vercon;
+	}
+	static VersionContainer FromCommandLine(pkgCacheFile &Cache, const char **cmdline,
+			Version const &fallback) {
+		CacheSetHelper helper;
+		return FromCommandLine(Cache, cmdline, (CacheSetHelper::VerSelector)fallback, helper);
+	}
+	static VersionContainer FromString(pkgCacheFile &Cache, std::string const &pkg,
+			Version const &fallback, CacheSetHelper &helper,
+                                           bool const /*onlyFromName = false*/) {
+		VersionContainer vercon;
+		VersionContainerInterface::FromString(&vercon, Cache, pkg, (CacheSetHelper::VerSelector)fallback, helper);
+		return vercon;
+	}
+	static VersionContainer FromString(pkgCacheFile &Cache, std::string pkg,
+			Version const &fallback) {
+		CacheSetHelper helper;
+		return FromString(Cache, pkg, (CacheSetHelper::VerSelector)fallback, helper);
+	}
+APT_IGNORE_DEPRECATED_POP
 
 	/** \brief returns all versions specified for the package
 
@@ -614,18 +1042,31 @@ public:									/*{{{*/
 	    \param fallback the version(s) you want to get
 	    \param helper the helper used for display and error handling */
 	static VersionContainer FromPackage(pkgCacheFile &Cache, pkgCache::PkgIterator const &P,
-		Version const &fallback, CacheSetHelper &helper) {
+		CacheSetHelper::VerSelector const fallback, CacheSetHelper &helper) {
 		VersionContainer vercon;
 		VersionContainerInterface::FromPackage(&vercon, Cache, P, fallback, helper);
 		return vercon;
 	}
 	static VersionContainer FromPackage(pkgCacheFile &Cache, pkgCache::PkgIterator const &P,
-					    Version const &fallback) {
+					    CacheSetHelper::VerSelector const fallback) {
 		CacheSetHelper helper;
 		return FromPackage(Cache, P, fallback, helper);
 	}
+APT_IGNORE_DEPRECATED_PUSH
+	static VersionContainer FromPackage(pkgCacheFile &Cache, pkgCache::PkgIterator const &P,
+		Version const &fallback, CacheSetHelper &helper) {
+		VersionContainer vercon;
+		VersionContainerInterface::FromPackage(&vercon, Cache, P, (CacheSetHelper::VerSelector)fallback, helper);
+		return vercon;
+	}
+	static VersionContainer FromPackage(pkgCacheFile &Cache, pkgCache::PkgIterator const &P,
+					    Version const &fallback) {
+		CacheSetHelper helper;
+		return FromPackage(Cache, P, (CacheSetHelper::VerSelector)fallback, helper);
+	}
+APT_IGNORE_DEPRECATED_POP
 	static VersionContainer FromPackage(pkgCacheFile &Cache, pkgCache::PkgIterator const &P) {
-		return FromPackage(Cache, P, CANDIDATE);
+		return FromPackage(Cache, P, CacheSetHelper::CANDIDATE);
 	}
 
 	static std::map<unsigned short, VersionContainer> GroupedFromCommandLine(
@@ -654,29 +1095,76 @@ public:									/*{{{*/
 	}
 
 	static VersionContainer FromDependency(pkgCacheFile &Cache, pkgCache::DepIterator const &D,
-					       Version const &selector, CacheSetHelper &helper) {
+					       CacheSetHelper::VerSelector const selector, CacheSetHelper &helper) {
 		VersionContainer vercon;
 		VersionContainerInterface::FromDependency(&vercon, Cache, D, selector, helper);
 		return vercon;
 	}
 	static VersionContainer FromDependency(pkgCacheFile &Cache, pkgCache::DepIterator const &D,
+					       CacheSetHelper::VerSelector const selector) {
+		CacheSetHelper helper;
+		return FromDependency(Cache, D, selector, helper);
+	}
+APT_IGNORE_DEPRECATED_PUSH
+	static VersionContainer FromDependency(pkgCacheFile &Cache, pkgCache::DepIterator const &D,
+					       Version const &selector, CacheSetHelper &helper) {
+		VersionContainer vercon;
+		VersionContainerInterface::FromDependency(&vercon, Cache, D, (CacheSetHelper::VerSelector)selector, helper);
+		return vercon;
+	}
+	static VersionContainer FromDependency(pkgCacheFile &Cache, pkgCache::DepIterator const &D,
 					       Version const &selector) {
 		CacheSetHelper helper;
-		return FromPackage(Cache, D, selector, helper);
+		return FromDependency(Cache, D, (CacheSetHelper::VerSelector)selector, helper);
 	}
+APT_IGNORE_DEPRECATED_POP
 	static VersionContainer FromDependency(pkgCacheFile &Cache, pkgCache::DepIterator const &D) {
-		return FromPackage(Cache, D, CANDIDATE);
+		return FromDependency(Cache, D, CacheSetHelper::CANDIDATE);
 	}
 									/*}}}*/
 };									/*}}}*/
-
+// various specialisations for VersionContainer				/*{{{*/
 template<> template<class Cont> void VersionContainer<std::list<pkgCache::VerIterator> >::insert(VersionContainer<Cont> const &vercont) {
 	for (typename VersionContainer<Cont>::const_iterator v = vercont.begin(); v != vercont.end(); ++v)
 		_cont.push_back(*v);
 }
-// these two are 'inline' as otherwise the linker has problems with seeing these untemplated
+#if __cplusplus >= 201103L
+template<> template<class Cont> void VersionContainer<std::forward_list<pkgCache::VerIterator> >::insert(VersionContainer<Cont> const &vercont) {
+	for (typename VersionContainer<Cont>::const_iterator v = vercont.begin(); v != vercont.end(); ++v)
+		_cont.push_front(*v);
+}
+#endif
+template<> template<class Cont> void VersionContainer<std::deque<pkgCache::VerIterator> >::insert(VersionContainer<Cont> const &vercont) {
+	for (typename VersionContainer<Cont>::const_iterator v = vercont.begin(); v != vercont.end(); ++v)
+		_cont.push_back(*v);
+}
+template<> template<class Cont> void VersionContainer<std::vector<pkgCache::VerIterator> >::insert(VersionContainer<Cont> const &vercont) {
+	for (typename VersionContainer<Cont>::const_iterator v = vercont.begin(); v != vercont.end(); ++v)
+		_cont.push_back(*v);
+}
+// these are 'inline' as otherwise the linker has problems with seeing these untemplated
 // specializations again and again - but we need to see them, so that library users can use them
 template<> inline bool VersionContainer<std::list<pkgCache::VerIterator> >::insert(pkgCache::VerIterator const &V) {
+	if (V.end() == true)
+		return false;
+	_cont.push_back(V);
+	return true;
+}
+#if __cplusplus >= 201103L
+template<> inline bool VersionContainer<std::forward_list<pkgCache::VerIterator> >::insert(pkgCache::VerIterator const &V) {
+	if (V.end() == true)
+		return false;
+	_cont.push_front(V);
+	return true;
+}
+#endif
+template<> inline bool VersionContainer<std::deque<pkgCache::VerIterator> >::insert(pkgCache::VerIterator const &V) {
+	if (V.end() == true)
+		return false;
+	_cont.push_back(V);
+	return true;
+}
+template<> inline bool VersionContainer<std::vector<pkgCache::VerIterator> >::insert(pkgCache::VerIterator const &V) {
 	if (V.end() == true)
 		return false;
 	_cont.push_back(V);
@@ -686,7 +1174,57 @@ template<> inline void VersionContainer<std::list<pkgCache::VerIterator> >::inse
 	for (const_iterator v = begin; v != end; ++v)
 		_cont.push_back(*v);
 }
+#if __cplusplus >= 201103L
+template<> inline void VersionContainer<std::forward_list<pkgCache::VerIterator> >::insert(const_iterator begin, const_iterator end) {
+	for (const_iterator v = begin; v != end; ++v)
+		_cont.push_front(*v);
+}
+#endif
+template<> inline void VersionContainer<std::deque<pkgCache::VerIterator> >::insert(const_iterator begin, const_iterator end) {
+	for (const_iterator v = begin; v != end; ++v)
+		_cont.push_back(*v);
+}
+template<> inline void VersionContainer<std::vector<pkgCache::VerIterator> >::insert(const_iterator begin, const_iterator end) {
+	for (const_iterator v = begin; v != end; ++v)
+		_cont.push_back(*v);
+}
+#if APT_GCC_VERSION < 0x409
+template<> inline VersionContainer<std::set<pkgCache::VerIterator> >::iterator VersionContainer<std::set<pkgCache::VerIterator> >::erase(iterator i) {
+	_cont.erase(i._iter);
+	return end();
+}
+template<> inline VersionContainer<std::set<pkgCache::VerIterator> >::iterator VersionContainer<std::set<pkgCache::VerIterator> >::erase(iterator first, iterator last) {
+	_cont.erase(first, last);
+	return end();
+}
+#endif
+template<> template<class Compare> inline bool VersionContainer<std::vector<pkgCache::VerIterator> >::sort(Compare Comp) {
+	std::sort(_cont.begin(), _cont.end(), Comp);
+	return true;
+}
+template<> template<class Compare> inline bool VersionContainer<std::list<pkgCache::VerIterator> >::sort(Compare Comp) {
+	_cont.sort(Comp);
+	return true;
+}
+#if __cplusplus >= 201103L
+template<> template<class Compare> inline bool VersionContainer<std::forward_list<pkgCache::VerIterator> >::sort(Compare Comp) {
+	_cont.sort(Comp);
+	return true;
+}
+#endif
+template<> template<class Compare> inline bool VersionContainer<std::deque<pkgCache::VerIterator> >::sort(Compare Comp) {
+	std::sort(_cont.begin(), _cont.end(), Comp);
+	return true;
+}
+									/*}}}*/
+
 typedef VersionContainer<std::set<pkgCache::VerIterator> > VersionSet;
+#if __cplusplus >= 201103L
+typedef VersionContainer<std::unordered_set<pkgCache::VerIterator> > VersionUnorderedSet;
+typedef VersionContainer<std::forward_list<pkgCache::VerIterator> > VersionForwardList;
+#endif
 typedef VersionContainer<std::list<pkgCache::VerIterator> > VersionList;
+typedef VersionContainer<std::deque<pkgCache::VerIterator> > VersionDeque;
+typedef VersionContainer<std::vector<pkgCache::VerIterator> > VersionVector;
 }
 #endif

@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: orderlist.h,v 1.9 2001/02/20 07:03:17 jgg Exp $
 /* ######################################################################
 
    Order List - Represents and Manipulates an ordered list of packages.
@@ -25,6 +24,7 @@
 class pkgDepCache;
 class pkgOrderList : protected pkgCache::Namespace
 {
+   void * const d;
    protected:
 
    pkgDepCache &Cache;   
@@ -48,7 +48,7 @@ class pkgOrderList : protected pkgCache::Namespace
    bool Debug;
    
    // Main visit function
-   APT_DEPRECATED bool VisitNode(PkgIterator Pkg) { return VisitNode(Pkg, "UNKNOWN"); };
+   APT_DEPRECATED_MSG("Add a unique calling identifier as parameter for debugging output") bool VisitNode(PkgIterator Pkg) { return VisitNode(Pkg, "UNKNOWN"); };
    bool VisitNode(PkgIterator Pkg, char const* from);
    bool VisitDeps(DepFunc F,PkgIterator Pkg);
    bool VisitRDeps(DepFunc F,PkgIterator Pkg);
@@ -69,9 +69,8 @@ class pkgOrderList : protected pkgCache::Namespace
    bool DoRun();
    
    // For pre sorting
-   static pkgOrderList *Me;
-   static int OrderCompareA(const void *a, const void *b) APT_PURE;
-   static int OrderCompareB(const void *a, const void *b) APT_PURE;
+   int OrderCompareA(Package *a, Package *b) APT_PURE;
+   int OrderCompareB(Package *a, Package *b) APT_PURE;
    int FileCmp(PkgIterator A,PkgIterator B) APT_PURE;
    
    public:
@@ -122,8 +121,8 @@ class pkgOrderList : protected pkgCache::Namespace
 
    int Score(PkgIterator Pkg);
 
-   pkgOrderList(pkgDepCache *Cache);
-   ~pkgOrderList();
+   explicit pkgOrderList(pkgDepCache *Cache);
+   virtual ~pkgOrderList();
 };
 
 #endif

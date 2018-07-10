@@ -22,6 +22,9 @@
 #include <cstring>
 #include <vector>
 #include <iostream>
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+#include <apt-pkg/string_view.h>
+#endif
 #include <time.h>
 #include <stddef.h>
 
@@ -40,6 +43,9 @@ namespace APT {
    namespace String {
       std::string Strip(const std::string &s);
       bool Endswith(const std::string &s, const std::string &ending);
+      bool Startswith(const std::string &s, const std::string &starting);
+      std::string Join(std::vector<std::string> list, const std::string &sep);
+
    }
 }
 
@@ -62,18 +68,46 @@ std::string TimeToStr(unsigned long Sec);
 std::string Base64Encode(const std::string &Str);
 std::string OutputInDepth(const unsigned long Depth, const char* Separator="  ");
 std::string URItoFileName(const std::string &URI);
-std::string TimeRFC1123(time_t Date);
+APT_DEPRECATED_MSG("Specify if GMT is required or a numeric timezone can be used") std::string TimeRFC1123(time_t Date);
+/** returns a datetime string as needed by HTTP/1.1 and Debian files.
+ *
+ * Note: The date will always be represented in a UTC timezone
+ *
+ * @param Date to be represented as a string
+ * @param NumericTimezone is preferred in general, but HTTP/1.1 requires the use
+ *    of GMT as timezone instead. \b true means that the timezone should be denoted
+ *    as "+0000" while \b false uses "GMT".
+ */
+std::string TimeRFC1123(time_t Date, bool const NumericTimezone);
+/** parses time as needed by HTTP/1.1 and Debian files.
+ *
+ * HTTP/1.1 prefers dates in RFC1123 format (but the other two obsolete date formats
+ * are supported to) and e.g. Release files use the same format in Date & Valid-Until
+ * fields.
+ *
+ * Note: datetime strings need to be in UTC timezones (GMT, UTC, Z, +/-0000) to be
+ * parsed. Other timezones will be rejected as invalid. Previous implementations
+ * accepted other timezones, but treated them as UTC.
+ *
+ * @param str is the datetime string to parse
+ * @param[out] time will be the seconds since epoch of the given datetime if
+ *    parsing is successful, undefined otherwise.
+ * @return \b true if parsing was successful, otherwise \b false.
+ */
 bool RFC1123StrToTime(const char* const str,time_t &time) APT_MUSTCHECK;
 bool FTPMDTMStrToTime(const char* const str,time_t &time) APT_MUSTCHECK;
-APT_DEPRECATED bool StrToTime(const std::string &Val,time_t &Result);
+APT_DEPRECATED_MSG("Use RFC1123StrToTime or FTPMDTMStrToTime as needed instead") bool StrToTime(const std::string &Val,time_t &Result);
 std::string LookupTag(const std::string &Message,const char *Tag,const char *Default = 0);
 int StringToBool(const std::string &Text,int Default = -1);
 bool ReadMessages(int Fd, std::vector<std::string> &List);
 bool StrToNum(const char *Str,unsigned long &Res,unsigned Len,unsigned Base = 0);
 bool StrToNum(const char *Str,unsigned long long &Res,unsigned Len,unsigned Base = 0);
 bool Base256ToNum(const char *Str,unsigned long &Res,unsigned int Len);
+bool Base256ToNum(const char *Str,unsigned long long &Res,unsigned int Len);
 bool Hex2Num(const std::string &Str,unsigned char *Num,unsigned int Length);
-
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+APT_HIDDEN bool Hex2Num(const APT::StringView Str,unsigned char *Num,unsigned int Length);
+#endif
 // input changing string split
 bool TokSplitString(char Tok,char *Input,char **List,
 		    unsigned long ListMax);
@@ -86,7 +120,7 @@ std::vector<std::string> VectorizeString(std::string const &haystack, char const
  *
  * \param input The input string.
  *
- * \param sep The seperator to use.
+ * \param sep The separator to use.
  *
  * \param maxsplit (optional) The maximum amount of splitting that
  * should be done .
@@ -103,7 +137,28 @@ void ioprintf(std::ostream &out,const char *format,...) APT_PRINTF(2);
 void strprintf(std::string &out,const char *format,...) APT_PRINTF(2);
 char *safe_snprintf(char *Buffer,char *End,const char *Format,...) APT_PRINTF(3);
 bool CheckDomainList(const std::string &Host, const std::string &List);
-int tolower_ascii(int const c) APT_CONST APT_HOT;
+
+/* Do some compat mumbo jumbo */
+#define tolower_ascii  tolower_ascii_inline
+#define isspace_ascii  isspace_ascii_inline
+
+APT_CONST APT_HOT
+static inline int tolower_ascii_unsafe(int const c)
+{
+   return c | 0x20;
+}
+APT_CONST APT_HOT
+static inline int tolower_ascii_inline(int const c)
+{
+   return (c >= 'A' && c <= 'Z') ? c + 32 : c;
+}
+APT_CONST APT_HOT
+static inline int isspace_ascii_inline(int const c)
+{
+   // 9='\t',10='\n',11='\v',12='\f',13='\r',32=' '
+   return (c >= 9 && c <= 13) || c == ' ';
+}
+
 std::string StripEpoch(const std::string &VerStr);
 
 #define APT_MKSTRCMP(name,func) \
@@ -151,9 +206,9 @@ inline const char *DeNull(const char *s) {return (s == 0?"(null)":s);}
 class URI
 {
    void CopyFrom(const std::string &From);
-		 
+
    public:
-   
+
    std::string Access;
    std::string User;
    std::string Password;
@@ -165,6 +220,7 @@ class URI
    inline void operator =(const std::string &From) {CopyFrom(From);}
    inline bool empty() {return Access.empty();};
    static std::string SiteOnly(const std::string &URI);
+   static std::string ArchiveOnly(const std::string &URI);
    static std::string NoUserPassword(const std::string &URI);
    
    URI(std::string Path) {CopyFrom(Path);}

@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 
 setupenvironment
 configarchitecture "i386"
@@ -11,25 +11,35 @@ insertpackage 'stable' 'apt' 'all' '1'
 setupaptarchive --no-update
 
 echo 'alright' > aptarchive/working
-changetohttpswebserver  -o 'aptwebserver::redirect::replace::/redirectme/=http://localhost:8080/'
+changetohttpswebserver
+webserverconfig 'aptwebserver::redirect::replace::/redirectme/' "http://localhost:${APTHTTPPORT}/"
+webserverconfig 'aptwebserver::redirect::replace::/redirectme2/' "https://localhost:${APTHTTPSPORT}/"
+echo 'Dir::Bin::Methods::https+http "https";' > rootdir/etc/apt/apt.conf.d/99add-https-http-method
 
 msgtest 'download of a file works via' 'http'
-downloadfile 'http://localhost:8080/working' httpfile >/dev/null 2>&1 && msgpass || msgfail
+testsuccess --nomsg downloadfile "http://localhost:${APTHTTPPORT}/working" httpfile
 testfileequal httpfile 'alright'
 
 msgtest 'download of a file works via' 'https'
-downloadfile 'https://localhost:4433/working' httpsfile >/dev/null 2>&1 && msgpass || msgfail
+testsuccess --nomsg downloadfile "https://localhost:${APTHTTPSPORT}/working" httpsfile
 testfileequal httpsfile 'alright'
+rm -f httpfile httpsfile
+
+msgtest 'download of http file works via' 'https+http'
+testsuccess --nomsg downloadfile "http://localhost:${APTHTTPPORT}/working" httpfile
+testfileequal httpfile 'alright'
+
+msgtest 'download of https file works via' 'https+http'
+testsuccess --nomsg downloadfile "https://localhost:${APTHTTPSPORT}/working" httpsfile
+testfileequal httpsfile 'alright'
+rm -f httpfile httpsfile
 
 msgtest 'download of a file does not work if' 'https redirected to http'
-downloadfile 'https://localhost:4433/redirectme/working' redirectfile >curloutput 2>&1 && msgfail || msgpass
+testfailure --nomsg downloadfile "https://localhost:${APTHTTPSPORT}/redirectme/working" redirectfile
 
 msgtest 'libcurl has forbidden access in last request to' 'http resource'
-if grep -q -E -- 'Protocol "?http"? not supported or disabled in libcurl' curloutput; then
-	msgpass
-else
-	cat curloutput
-	msgfail
-fi
+testsuccess --nomsg grep -q -E -- "Redirection from https to 'http://.*' is forbidden" rootdir/tmp/testfailure.output
 
-
+msgtest 'download of a file does work if' 'https+http redirected to https'
+testsuccess --nomsg downloadfile "https+http://localhost:${APTHTTPPORT}/redirectme2/working" redirectfile
+testfileequal redirectfile 'alright'

@@ -37,7 +37,7 @@ class pkgDPkgPMPrivate;
 class pkgDPkgPM : public pkgPackageManager
 {
    private:
-   pkgDPkgPMPrivate *d;
+   pkgDPkgPMPrivate * const d;
 
    /** \brief record the disappear action and handle accordingly
 
@@ -52,7 +52,8 @@ class pkgDPkgPM : public pkgPackageManager
       needs to declare a Replaces on the disappeared package.
       \param pkgname Name of the package that disappeared
    */
-   void handleDisappearAction(std::string const &pkgname);
+   APT_HIDDEN void handleDisappearAction(std::string const &pkgname);
+   APT_HIDDEN void handleCrossUpgradeAction(std::string const &pkgname);
 
    protected:
    int pkgFailures;
@@ -76,22 +77,24 @@ class pkgDPkgPM : public pkgPackageManager
    // progress reporting
    unsigned int PackagesDone;
    unsigned int PackagesTotal;
-  
+
+   public:
    struct Item
    {
-      enum Ops {Install, Configure, Remove, Purge, ConfigurePending, TriggersPending} Op;
+      enum Ops {Install, Configure, Remove, Purge, ConfigurePending, TriggersPending,
+         RemovePending, PurgePending } Op;
       std::string File;
       PkgIterator Pkg;
       Item(Ops Op,PkgIterator Pkg,std::string File = "") : Op(Op),
             File(File), Pkg(Pkg) {};
       Item() {};
-      
    };
+   protected:
    std::vector<Item> List;
 
    // Helpers
    bool RunScriptsWithPkgs(const char *Cnf);
-   APT_DEPRECATED bool SendV2Pkgs(FILE *F);
+   APT_DEPRECATED_MSG("Use SendPkgInfo with the version as parameter instead") bool SendV2Pkgs(FILE *F);
    bool SendPkgsInfo(FILE * const F, unsigned int const &Version);
    void WriteHistoryTag(std::string const &tag, std::string value);
    std::string ExpandShortPackageName(pkgDepCache &Cache,
@@ -118,34 +121,23 @@ class pkgDPkgPM : public pkgPackageManager
    void DoTerminalPty(int master);
    void DoDpkgStatusFd(int statusfd);
    void ProcessDpkgStatusLine(char *line);
-#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR < 13)
-   void DoDpkgStatusFd(int statusfd, int /*unused*/) {
-      DoDpkgStatusFd(statusfd);
-   }
-   void ProcessDpkgStatusLine(int /*unused*/, char *line) {
-      ProcessDpkgStatusLine(line);
-   }
-#endif
 
+   // The Actual installation implementation
+   virtual bool Install(PkgIterator Pkg,std::string File) APT_OVERRIDE;
+   virtual bool Configure(PkgIterator Pkg) APT_OVERRIDE;
+   virtual bool Remove(PkgIterator Pkg,bool Purge = false) APT_OVERRIDE;
 
-   // The Actuall installation implementation
-   virtual bool Install(PkgIterator Pkg,std::string File);
-   virtual bool Configure(PkgIterator Pkg);
-   virtual bool Remove(PkgIterator Pkg,bool Purge = false);
+   virtual bool Go(APT::Progress::PackageManager *progress) APT_OVERRIDE;
+   APT_DEPRECATED_MSG("Use overload with explicit progress manager") virtual bool Go(int StatusFd=-1) APT_OVERRIDE;
 
-#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
-   virtual bool Go(APT::Progress::PackageManager *progress);
-#else
-   virtual bool Go(int StatusFd=-1);
-   bool GoNoABIBreak(APT::Progress::PackageManager *progress);
-#endif
-
-   virtual void Reset();
+   virtual void Reset() APT_OVERRIDE;
    
    public:
 
    pkgDPkgPM(pkgDepCache *Cache);
    virtual ~pkgDPkgPM();
+
+   APT_HIDDEN static bool ExpandPendingCalls(std::vector<Item> &List, pkgDepCache &Cache);
 };
 
 void SigINT(int sig);

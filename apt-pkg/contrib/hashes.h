@@ -53,9 +53,10 @@ class HashString
    HashString();
 
    // get hash type used
-   std::string HashType() { return Type; };
    std::string HashType() const { return Type; };
    std::string HashValue() const { return Hash; };
+   APT_DEPRECATED_MSG("method was const-ified") std::string HashType() { return Type; };
+   APT_DEPRECATED_MSG("method was const-ified") std::string HashValue() { return Hash; };
 
    // verify the given filename against the currently loaded hash
    bool VerifyFile(std::string filename) const;
@@ -67,6 +68,7 @@ class HashString
    // helper
    std::string toStr() const;                    // convert to str as "type:hash"
    bool empty() const;
+   bool usable() const;
    bool operator==(HashString const &other) const;
    bool operator!=(HashString const &other) const;
 
@@ -86,6 +88,22 @@ class HashStringList
     */
    HashString const * find(char const * const type) const;
    HashString const * find(std::string const &type) const { return find(type.c_str()); }
+
+   /** finds the filesize hash and returns it as number
+    *
+    * @return beware: if the size isn't known we return \b 0 here,
+    * just like we would do for an empty file. If that is a problem
+    * for you have to get the size manually out of the list.
+    */
+   unsigned long long FileSize() const;
+
+   /** sets the filesize hash
+    *
+    * @param Size of the file
+    * @return @see #push_back
+    */
+   bool FileSize(unsigned long long const Size);
+
    /** check if the given hash type is supported
     *
     * @param type to check
@@ -102,7 +120,7 @@ class HashStringList
    /** @return size of the list of HashStrings */
    size_t size() const { return list.size(); }
 
-   /** take the 'best' hash and verify file with it
+   /** verify file against all hashes in the list
     *
     * @param filename to verify
     * @return true if the file matches the hashsum, otherwise false
@@ -114,6 +132,15 @@ class HashStringList
     * @return \b true if the list is empty, otherwise \b false
     */
    bool empty() const { return list.empty(); }
+
+   /** has the list at least one good entry
+    *
+    * similar to #empty, but handles forced hashes.
+    *
+    * @return if no hash is forced, same result as #empty,
+    * if one is forced \b true if this has is available, \b false otherwise
+    */
+   bool usable() const;
 
    typedef std::vector<HashString>::const_iterator const_iterator;
 
@@ -129,8 +156,10 @@ class HashStringList
    /** compare two HashStringList for similarity.
     *
     * Two lists are similar if at least one hashtype is in both lists
-    * and the hashsum matches. All hashes are checked, if one doesn't
-    * match false is returned regardless of how many matched before.
+    * and the hashsum matches. All hashes are checked by default,
+    * if one doesn't match false is returned regardless of how many
+    * matched before. If a hash is forced, only this hash is compared,
+    * all others are ignored.
     */
    bool operator==(HashStringList const &other) const;
    bool operator!=(HashStringList const &other) const;
@@ -151,32 +180,73 @@ class HashStringList
    std::vector<HashString> list;
 };
 
+class PrivateHashes;
 class Hashes
 {
-   public:
+   PrivateHashes * const d;
 
-   MD5Summation MD5;
-   SHA1Summation SHA1;
-   SHA256Summation SHA256;
-   SHA512Summation SHA512;
-   
+   public:
+   /* those will disappear in the future as it is hard to add new ones this way.
+    * Use Add* to build the results and get them via GetHashStringList() instead */
+   APT_DEPRECATED_MSG("Use general .Add* and .GetHashStringList methods instead of hardcoding specific hashes") MD5Summation MD5;
+   APT_DEPRECATED_MSG("Use general .Add* and .GetHashStringList methods instead of hardcoding specific hashes") SHA1Summation SHA1;
+   APT_DEPRECATED_MSG("Use general .Add* and .GetHashStringList methods instead of hardcoding specific hashes") SHA256Summation SHA256;
+   APT_DEPRECATED_MSG("Use general .Add* and .GetHashStringList methods instead of hardcoding specific hashes") SHA512Summation SHA512;
+
    static const int UntilEOF = 0;
 
-   inline bool Add(const unsigned char *Data,unsigned long long Size)
+   bool Add(const unsigned char * const Data, unsigned long long const Size) APT_NONNULL(2);
+   APT_DEPRECATED_MSG("Construct accordingly instead of choosing hashes while adding") bool Add(const unsigned char * const Data, unsigned long long const Size, unsigned int const Hashes) APT_NONNULL(2);
+   inline bool Add(const char * const Data) APT_NONNULL(2)
+   {return Add((unsigned char const * const)Data,strlen(Data));};
+   inline bool Add(const unsigned char * const Beg,const unsigned char * const End) APT_NONNULL(2,3)
+   {return Add(Beg,End-Beg);};
+
+   enum SupportedHashes { MD5SUM = (1 << 0), SHA1SUM = (1 << 1), SHA256SUM = (1 << 2),
+      SHA512SUM = (1 << 3) };
+   bool AddFD(int const Fd,unsigned long long Size = 0);
+   APT_DEPRECATED_MSG("Construct accordingly instead of choosing hashes while adding") bool AddFD(int const Fd,unsigned long long Size, unsigned int const Hashes);
+   bool AddFD(FileFd &Fd,unsigned long long Size = 0);
+   APT_DEPRECATED_MSG("Construct accordingly instead of choosing hashes while adding") bool AddFD(FileFd &Fd,unsigned long long Size, unsigned int const Hashes);
+
+   HashStringList GetHashStringList();
+
+APT_IGNORE_DEPRECATED_PUSH
+   /** create a Hashes object to calculate all supported hashes
+    *
+    * If ALL is too much, you can limit which Hashes are calculated
+    * with the following other constructors which mention explicitly
+    * which hashes to generate. */
+   Hashes();
+   /** @param Hashes bitflag composed of #SupportedHashes */
+   Hashes(unsigned int const Hashes);
+   /** @param Hashes is a list of hashes */
+   Hashes(HashStringList const &Hashes);
+   virtual ~Hashes();
+APT_IGNORE_DEPRECATED_POP
+
+   private:
+   APT_HIDDEN APT_CONST inline unsigned int boolsToFlag(bool const addMD5, bool const addSHA1, bool const addSHA256, bool const addSHA512)
    {
-      return MD5.Add(Data,Size) && SHA1.Add(Data,Size) && SHA256.Add(Data,Size) && SHA512.Add(Data,Size);
+      unsigned int Hashes = ~0;
+      if (addMD5 == false) Hashes &= ~MD5SUM;
+      if (addSHA1 == false) Hashes &= ~SHA1SUM;
+      if (addSHA256 == false) Hashes &= ~SHA256SUM;
+      if (addSHA512 == false) Hashes &= ~SHA512SUM;
+      return Hashes;
+   }
+
+   public:
+APT_IGNORE_DEPRECATED_PUSH
+   APT_DEPRECATED_MSG("Construct accordingly instead of choosing hashes while adding") bool AddFD(int const Fd, unsigned long long Size, bool const addMD5,
+	 bool const addSHA1, bool const addSHA256, bool const addSHA512) {
+      return AddFD(Fd, Size, boolsToFlag(addMD5, addSHA1, addSHA256, addSHA512));
    };
-   inline bool Add(const char *Data) {return Add((unsigned char const *)Data,strlen(Data));};
-   inline bool AddFD(int const Fd,unsigned long long Size = 0)
-   { return AddFD(Fd, Size, true, true, true, true); };
-   bool AddFD(int const Fd, unsigned long long Size, bool const addMD5,
-	      bool const addSHA1, bool const addSHA256, bool const addSHA512);
-   inline bool AddFD(FileFd &Fd,unsigned long long Size = 0)
-   { return AddFD(Fd, Size, true, true, true, true); };
-   bool AddFD(FileFd &Fd, unsigned long long Size, bool const addMD5,
-	      bool const addSHA1, bool const addSHA256, bool const addSHA512);
-   inline bool Add(const unsigned char *Beg,const unsigned char *End) 
-                  {return Add(Beg,End-Beg);};
+   APT_DEPRECATED_MSG("Construct accordingly instead of choosing hashes while adding") bool AddFD(FileFd &Fd, unsigned long long Size, bool const addMD5,
+	 bool const addSHA1, bool const addSHA256, bool const addSHA512) {
+      return AddFD(Fd, Size, boolsToFlag(addMD5, addSHA1, addSHA256, addSHA512));
+   };
+APT_IGNORE_DEPRECATED_POP
 };
 
 #endif

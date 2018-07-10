@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 setupenvironment
 configarchitecture 'i386'
 
@@ -23,9 +23,9 @@ Provides: stuff-abi-2'
 
 setupaptarchive
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   cool
 The following NEW packages will be installed:
   cool coolstuff
@@ -35,9 +35,9 @@ Inst coolstuff (1.0-1 unstable [all])
 Conf cool (1.0-1 unstable [all])
 Conf coolstuff (1.0-1 unstable [all])' aptget install coolstuff -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   stuff
 The following NEW packages will be installed:
   coolstuff2 stuff
@@ -47,7 +47,7 @@ Inst coolstuff2 (1.0-1 unstable [all])
 Conf stuff (1.0-1 unstable [all])
 Conf coolstuff2 (1.0-1 unstable [all])' aptget install coolstuff2 -s
 
-testequal 'Reading package lists...
+testfailureequal 'Reading package lists...
 Building dependency tree...
 Some packages could not be installed. This may mean that you have
 requested an impossible situation or if you are using the unstable
@@ -60,19 +60,19 @@ The following packages have unmet dependencies:
                              stuff2 but it is not installable
 E: Unable to correct problems, you have held broken packages.' aptget install coolstuff-broken -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 Recommended packages:
-  cool2 stuff2
+  cool2 | stuff2
 The following NEW packages will be installed:
   coolstuff-brokenrec
 0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
 Inst coolstuff-brokenrec (1.0-1 unstable [all])
 Conf coolstuff-brokenrec (1.0-1 unstable [all])' aptget install coolstuff-brokenrec -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   stuff
 The following NEW packages will be installed:
   coolstuff-conflict stuff
@@ -82,9 +82,9 @@ Inst coolstuff-conflict (1.0-1 unstable [all])
 Conf stuff (1.0-1 unstable [all])
 Conf coolstuff-conflict (1.0-1 unstable [all])' aptget install coolstuff-conflict -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   extrastuff
 The following NEW packages will be installed:
   coolstuff-provided extrastuff
@@ -94,7 +94,7 @@ Inst coolstuff-provided (1.0-1 unstable [all])
 Conf extrastuff (1.0-1 unstable [all])
 Conf coolstuff-provided (1.0-1 unstable [all])' aptget install coolstuff-provided -s
 
-testequal 'Reading package lists...
+testfailureequal 'Reading package lists...
 Building dependency tree...
 Some packages could not be installed. This may mean that you have
 requested an impossible situation or if you are using the unstable

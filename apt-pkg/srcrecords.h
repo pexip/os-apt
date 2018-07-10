@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: srcrecords.h,v 1.8.2.1 2003/12/26 16:27:34 mdz Exp $
 /* ######################################################################
    
    Source Package Records - Allows access to source package records
@@ -30,16 +29,12 @@ class pkgSrcRecords
 {
    public:
 
-#if __GNUC__ >= 4
-	// ensure that con- & de-structor don't trigger this warning
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
+APT_IGNORE_DEPRECATED_PUSH
    // Describes a single file
    struct File
    {
-      APT_DEPRECATED std::string MD5Hash;
-      APT_DEPRECATED unsigned long Size;
+      APT_DEPRECATED_MSG("Use Hashes member instead of hardcoded hash algorithm") std::string MD5Hash;
+      APT_DEPRECATED_MSG("Use FileSize member instead") unsigned long Size;
       std::string Path;
       std::string Type;
    };
@@ -48,13 +43,12 @@ class pkgSrcRecords
       unsigned long long FileSize;
       HashStringList Hashes;
    };
-#if __GNUC__ >= 4
-	#pragma GCC diagnostic pop
-#endif
+APT_IGNORE_DEPRECATED_POP
 
    // Abstract parser for each source record
    class Parser
    {
+      void * const d;
       protected:
       
       const pkgIndexFile *iIndex;
@@ -62,7 +56,8 @@ class pkgSrcRecords
       public:
 
       enum BuildDep {BuildDepend=0x0,BuildDependIndep=0x1,
-	             BuildConflict=0x2,BuildConflictIndep=0x3};
+	             BuildConflict=0x2,BuildConflictIndep=0x3,
+	             BuildDependArch=0x4,BuildConflictArch=0x5};
 
       struct BuildDepRec 
       {
@@ -92,14 +87,14 @@ class pkgSrcRecords
 
       virtual bool Files(std::vector<pkgSrcRecords::File> &F) = 0;
       bool Files2(std::vector<pkgSrcRecords::File2> &F);
-      
-      Parser(const pkgIndexFile *Index) : iIndex(Index) {};
-      virtual ~Parser() {};
+
+      explicit Parser(const pkgIndexFile *Index);
+      virtual ~Parser();
    };
    
    private:
    /** \brief dpointer placeholder (for later in case we need it) */
-   void *d;
+   void * const d;
    
    // The list of files and the current parser pointer
    std::vector<Parser*> Files;
@@ -117,8 +112,8 @@ class pkgSrcRecords
    // Locate a package by name and return pointer to the Parser.
    // The pointer is owned by libapt.
    Parser* Find(const char *Package,bool const &SrcOnly = false);
-   
-   pkgSrcRecords(pkgSourceList &List);
+
+   explicit pkgSrcRecords(pkgSourceList &List);
    virtual ~pkgSrcRecords();
 };
 

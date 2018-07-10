@@ -16,7 +16,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <stddef.h>
+
+#include <algorithm>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -32,50 +36,92 @@ static char * GenerateTemporaryFileTemplate(const char *basename)	/*{{{*/
 									/*}}}*/
 // ExecGPGV - returns the command needed for verify			/*{{{*/
 // ---------------------------------------------------------------------
-/* Generating the commandline for calling gpgv is somehow complicated as
+/* Generating the commandline for calling gpg is somehow complicated as
    we need to add multiple keyrings and user supplied options.
-   Also, as gpgv has no options to enforce a certain reduced style of
+   Also, as gpg has no options to enforce a certain reduced style of
    clear-signed files (=the complete content of the file is signed and
    the content isn't encoded) we do a divide and conquer approach here
-   and split up the clear-signed file in message and signature for gpgv
+   and split up the clear-signed file in message and signature for gpg.
+   And as a cherry on the cake, we use our apt-key wrapper to do part
+   of the lifting in regards to merging keyrings. Fun for the whole family.
 */
+static bool iovprintf(std::ostream &out, const char *format,
+		      va_list &args, ssize_t &size) {
+   char *S = (char*)malloc(size);
+   ssize_t const n = vsnprintf(S, size, format, args);
+   if (n > -1 && n < size) {
+      out << S;
+      free(S);
+      return true;
+   } else {
+      if (n > -1)
+	 size = n + 1;
+      else
+	 size *= 2;
+   }
+   free(S);
+   return false;
+}
+static void APT_PRINTF(4) apt_error(std::ostream &outterm, int const statusfd, int fd[2], const char *format, ...)
+{
+   std::ostringstream outstr;
+   std::ostream &out = (statusfd == -1) ? outterm : outstr;
+   va_list args;
+   ssize_t size = 400;
+   while (true) {
+      bool ret;
+      va_start(args,format);
+      ret = iovprintf(out, format, args, size);
+      va_end(args);
+      if (ret == true)
+	 break;
+   }
+   if (statusfd != -1)
+   {
+      auto const errtag = "[APTKEY:] ERROR ";
+      outstr << '\n';
+      auto const errtext = outstr.str();
+      if (FileFd::Write(fd[1], errtag, strlen(errtag)) == false ||
+	    FileFd::Write(fd[1], errtext.data(), errtext.size()) == false)
+	 outterm << errtext << std::flush;
+   }
+}
 void ExecGPGV(std::string const &File, std::string const &FileGPG,
-             int const &statusfd, int fd[2])
+             int const &statusfd, int fd[2], std::string const &key)
 {
    #define EINTERNAL 111
-   std::string const gpgvpath = _config->Find("Dir::Bin::gpg", "/usr/bin/gpgv");
-   // FIXME: remove support for deprecated APT::GPGV setting
-   std::string const trustedFile = _config->Find("APT::GPGV::TrustedKeyring", _config->FindFile("Dir::Etc::Trusted"));
-   std::string const trustedPath = _config->FindDir("Dir::Etc::TrustedParts");
+   std::string const aptkey = _config->Find("Dir::Bin::apt-key", CMAKE_INSTALL_FULL_BINDIR "/apt-key");
 
    bool const Debug = _config->FindB("Debug::Acquire::gpgv", false);
+   struct exiter {
+      std::vector<const char *> files;
+      void operator ()(int code) APT_NORETURN {
+	 std::for_each(files.begin(), files.end(), unlink);
+	 exit(code);
+      }
+   } local_exit;
 
-   if (Debug == true)
-   {
-      std::clog << "gpgv path: " << gpgvpath << std::endl;
-      std::clog << "Keyring file: " << trustedFile << std::endl;
-      std::clog << "Keyring path: " << trustedPath << std::endl;
-   }
-
-   std::vector<std::string> keyrings;
-   if (DirectoryExists(trustedPath))
-     keyrings = GetListOfFilesInDir(trustedPath, "gpg", false, true);
-   if (RealFileExists(trustedFile) == true)
-     keyrings.push_back(trustedFile);
 
    std::vector<const char *> Args;
-   Args.reserve(30);
+   Args.reserve(10);
 
-   if (keyrings.empty() == true)
+   Args.push_back(aptkey.c_str());
+   Args.push_back("--quiet");
+   Args.push_back("--readonly");
+   if (key.empty() == false)
    {
-      // TRANSLATOR: %s is the trusted keyring parts directory
-      ioprintf(std::cerr, _("No keyring installed in %s."),
-	    _config->FindDir("Dir::Etc::TrustedParts").c_str());
-      exit(EINTERNAL);
+      if (key[0] == '/')
+      {
+	 Args.push_back("--keyring");
+	 Args.push_back(key.c_str());
+      }
+      else
+      {
+	 Args.push_back("--keyid");
+	 Args.push_back(key.c_str());
+      }
    }
-
-   Args.push_back(gpgvpath.c_str());
-   Args.push_back("--ignore-time-conflict");
+   Args.push_back("verify");
 
    char statusfdstr[10];
    if (statusfd != -1)
@@ -83,13 +129,6 @@ void ExecGPGV(std::string const &File, std::string const &FileGPG,
       Args.push_back("--status-fd");
       snprintf(statusfdstr, sizeof(statusfdstr), "%i", statusfd);
       Args.push_back(statusfdstr);
-   }
-
-   for (std::vector<std::string>::const_iterator K = keyrings.begin();
-	K != keyrings.end(); ++K)
-   {
-      Args.push_back("--keyring");
-      Args.push_back(K->c_str());
    }
 
    Configuration::Item const *Opts;
@@ -106,9 +145,30 @@ void ExecGPGV(std::string const &File, std::string const &FileGPG,
    }
 
    enum  { DETACHED, CLEARSIGNED } releaseSignature = (FileGPG != File) ? DETACHED : CLEARSIGNED;
-   std::vector<std::string> dataHeader;
    char * sig = NULL;
    char * data = NULL;
+   char * conf = nullptr;
+
+   // Dump the configuration so apt-key picks up the correct Dir values
+   {
+      conf = GenerateTemporaryFileTemplate("apt.conf");
+      if (conf == nullptr) {
+	 apt_error(std::cerr, statusfd, fd, "Couldn't create tempfile names for passing config to apt-key");
+	 local_exit(EINTERNAL);
+      }
+      int confFd = mkstemp(conf);
+      if (confFd == -1) {
+	 apt_error(std::cerr, statusfd, fd, "Couldn't create temporary file %s for passing config to apt-key", conf);
+	 local_exit(EINTERNAL);
+      }
+      local_exit.files.push_back(conf);
+
+      std::ofstream confStream(conf);
+      close(confFd);
+      _config->Dump(confStream);
+      confStream.close();
+      setenv("APT_CONFIG", conf, 1);
+   }
 
    if (releaseSignature == DETACHED)
    {
@@ -121,20 +181,20 @@ void ExecGPGV(std::string const &File, std::string const &FileGPG,
       data = GenerateTemporaryFileTemplate("apt.data");
       if (sig == NULL || data == NULL)
       {
-	 ioprintf(std::cerr, "Couldn't create tempfile names for splitting up %s", File.c_str());
-	 exit(EINTERNAL);
+	 apt_error(std::cerr, statusfd, fd, "Couldn't create tempfile names for splitting up %s", File.c_str());
+	 local_exit(EINTERNAL);
       }
 
       int const sigFd = mkstemp(sig);
       int const dataFd = mkstemp(data);
+      if (dataFd != -1)
+	 local_exit.files.push_back(data);
+      if (sigFd != -1)
+	 local_exit.files.push_back(sig);
       if (sigFd == -1 || dataFd == -1)
       {
-	 if (dataFd != -1)
-	    unlink(sig);
-	 if (sigFd != -1)
-	    unlink(data);
-	 ioprintf(std::cerr, "Couldn't create tempfiles for splitting up %s", File.c_str());
-	 exit(EINTERNAL);
+	 apt_error(std::cerr, statusfd, fd, "Couldn't create tempfiles for splitting up %s", File.c_str());
+	 local_exit(EINTERNAL);
       }
 
       FileFd signature;
@@ -143,14 +203,10 @@ void ExecGPGV(std::string const &File, std::string const &FileGPG,
       message.OpenDescriptor(dataFd, FileFd::WriteOnly, true);
 
       if (signature.Failed() == true || message.Failed() == true ||
-	    SplitClearSignedFile(File, &message, &dataHeader, &signature) == false)
+	    SplitClearSignedFile(File, &message, nullptr, &signature) == false)
       {
-	 if (dataFd != -1)
-	    unlink(sig);
-	 if (sigFd != -1)
-	    unlink(data);
-	 ioprintf(std::cerr, "Splitting up %s into data and signature failed", File.c_str());
-	 exit(112);
+	 apt_error(std::cerr, statusfd, fd, "Splitting up %s into data and signature failed", File.c_str());
+	 local_exit(112);
       }
       Args.push_back(sig);
       Args.push_back(data);
@@ -160,7 +216,7 @@ void ExecGPGV(std::string const &File, std::string const &FileGPG,
 
    if (Debug == true)
    {
-      std::clog << "Preparing to exec: " << gpgvpath;
+      std::clog << "Preparing to exec: ";
       for (std::vector<const char *>::const_iterator a = Args.begin(); *a != NULL; ++a)
 	 std::clog << " " << *a;
       std::clog << std::endl;
@@ -168,7 +224,7 @@ void ExecGPGV(std::string const &File, std::string const &FileGPG,
 
    if (statusfd != -1)
    {
-      int const nullfd = open("/dev/null", O_RDONLY);
+      int const nullfd = open("/dev/null", O_WRONLY);
       close(fd[0]);
       // Redirect output to /dev/null; we read from the status fd
       if (statusfd != STDOUT_FILENO)
@@ -183,67 +239,50 @@ void ExecGPGV(std::string const &File, std::string const &FileGPG,
       putenv((char *)"LC_MESSAGES=");
    }
 
-   if (releaseSignature == DETACHED)
-   {
-      execvp(gpgvpath.c_str(), (char **) &Args[0]);
-      ioprintf(std::cerr, "Couldn't execute %s to check %s", Args[0], File.c_str());
-      exit(EINTERNAL);
+
+   // We have created tempfiles we have to clean up
+   // and we do an additional check, so fork yet another time …
+   pid_t pid = ExecFork();
+   if(pid < 0) {
+      apt_error(std::cerr, statusfd, fd, "Fork failed for %s to check %s", Args[0], File.c_str());
+      local_exit(EINTERNAL);
    }
-   else
+   if(pid == 0)
    {
-//#define UNLINK_EXIT(X) exit(X)
-#define UNLINK_EXIT(X) unlink(sig);unlink(data);exit(X)
-
-      // for clear-signed files we have created tempfiles we have to clean up
-      // and we do an additional check, so fork yet another time …
-      pid_t pid = ExecFork();
-      if(pid < 0) {
-	 ioprintf(std::cerr, "Fork failed for %s to check %s", Args[0], File.c_str());
-	 UNLINK_EXIT(EINTERNAL);
-      }
-      if(pid == 0)
-      {
-	 if (statusfd != -1)
-	    dup2(fd[1], statusfd);
-	 execvp(gpgvpath.c_str(), (char **) &Args[0]);
-	 ioprintf(std::cerr, "Couldn't execute %s to check %s", Args[0], File.c_str());
-	 UNLINK_EXIT(EINTERNAL);
-      }
-
-      // Wait and collect the error code - taken from WaitPid as we need the exact Status
-      int Status;
-      while (waitpid(pid,&Status,0) != pid)
-      {
-	 if (errno == EINTR)
-	    continue;
-	 ioprintf(std::cerr, _("Waited for %s but it wasn't there"), "gpgv");
-	 UNLINK_EXIT(EINTERNAL);
-      }
-#undef UNLINK_EXIT
-      // we don't need the files any longer
-      unlink(sig);
-      unlink(data);
-      free(sig);
-      free(data);
-
-      // check if it exit'ed normally …
-      if (WIFEXITED(Status) == false)
-      {
-	 ioprintf(std::cerr, _("Sub-process %s exited unexpectedly"), "gpgv");
-	 exit(EINTERNAL);
-      }
-
-      // … and with a good exit code
-      if (WEXITSTATUS(Status) != 0)
-      {
-	 ioprintf(std::cerr, _("Sub-process %s returned an error code (%u)"), "gpgv", WEXITSTATUS(Status));
-	 exit(WEXITSTATUS(Status));
-      }
-
-      // everything fine
-      exit(0);
+      if (statusfd != -1)
+	 dup2(fd[1], statusfd);
+      execvp(Args[0], (char **) &Args[0]);
+      apt_error(std::cerr, statusfd, fd, "Couldn't execute %s to check %s", Args[0], File.c_str());
+      local_exit(EINTERNAL);
    }
-   exit(EINTERNAL); // unreachable safe-guard
+
+   // Wait and collect the error code - taken from WaitPid as we need the exact Status
+   int Status;
+   while (waitpid(pid,&Status,0) != pid)
+   {
+      if (errno == EINTR)
+	 continue;
+      apt_error(std::cerr, statusfd, fd, _("Waited for %s but it wasn't there"), "apt-key");
+      local_exit(EINTERNAL);
+   }
+
+   // check if it exit'ed normally …
+   if (WIFEXITED(Status) == false)
+   {
+      apt_error(std::cerr, statusfd, fd, _("Sub-process %s exited unexpectedly"), "apt-key");
+      local_exit(EINTERNAL);
+   }
+
+   // … and with a good exit code
+   if (WEXITSTATUS(Status) != 0)
+   {
+      // we forward the statuscode, so don't generate a message on the fd in this case
+      apt_error(std::cerr, -1, fd, _("Sub-process %s returned an error code (%u)"), "apt-key", WEXITSTATUS(Status));
+      local_exit(WEXITSTATUS(Status));
+   }
+
+   // everything fine
+   local_exit(0);
 }
 									/*}}}*/
 // SplitClearSignedFile - split message into data/signature		/*{{{*/
@@ -273,6 +312,8 @@ bool SplitClearSignedFile(std::string const &InFile, FileFd * const ContentFile,
    bool skip_until_empty_line = false;
    bool found_signature = false;
    bool first_line = true;
+   bool signed_message_not_on_first_line = false;
+   bool found_garbage = false;
 
    char *buf = NULL;
    size_t buf_size = 0;
@@ -287,6 +328,8 @@ bool SplitClearSignedFile(std::string const &InFile, FileFd * const ContentFile,
 	    found_message_start = true;
 	    skip_until_empty_line = true;
 	 }
+	 else
+	    signed_message_not_on_first_line = found_garbage = true;
       }
       else if (skip_until_empty_line == true)
       {
@@ -324,6 +367,8 @@ bool SplitClearSignedFile(std::string const &InFile, FileFd * const ContentFile,
 	    if (ContentFile != NULL)
 	       ContentFile->Write(dashfree, strlen(dashfree));
 	 }
+	 else
+	    found_garbage = true;
       }
       else if (found_signature == true)
       {
@@ -336,10 +381,28 @@ bool SplitClearSignedFile(std::string const &InFile, FileFd * const ContentFile,
 	    found_signature = false; // look for other signatures
       }
       // all the rest is whitespace, unsigned garbage or additional message blocks we ignore
+      else
+	 found_garbage = true;
    }
    fclose(in);
+   if (buf != NULL)
+      free(buf);
 
-   // An error occured during reading - propagate it up
+   // Flush the files. Errors will be checked below.
+   if (SignatureFile != nullptr)
+      SignatureFile->Flush();
+   if (ContentFile != nullptr)
+      ContentFile->Flush();
+
+   if (found_message_start)
+   {
+      if (signed_message_not_on_first_line)
+	 _error->Warning("Clearsigned file '%s' does not start with a signed message block.", InFile.c_str());
+      else if (found_garbage)
+	 _error->Warning("Clearsigned file '%s' contains unsigned lines.", InFile.c_str());
+   }
+
+   // An error occurred during reading - propagate it up
    bool const hasErrored = _error->PendingError();
    _error->MergeWithStack();
    if (hasErrored)
@@ -368,11 +431,11 @@ bool OpenMaybeClearSignedFile(std::string const &ClearSignedFileName, FileFd &Me
       free(message);
       return _error->Errno("mkstemp", "Couldn't create temporary file to work with %s", ClearSignedFileName.c_str());
    }
-   // we have the fd, thats enough for us
+   // we have the fd, that's enough for us
    unlink(message);
    free(message);
 
-   MessageFile.OpenDescriptor(messageFd, FileFd::ReadWrite, true);
+   MessageFile.OpenDescriptor(messageFd, FileFd::ReadWrite | FileFd::BufferedWrite, true);
    if (MessageFile.Failed() == true)
       return _error->Error("Couldn't open temporary file to work with %s", ClearSignedFileName.c_str());
 

@@ -1,19 +1,24 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 
 setupenvironment
 configarchitecture 'amd64' 'i386'
 configdpkgnoopchroot
+
+if [ ! -e /proc/self/fd ]; then
+	msgskip "needs /proc/self/fd"
+    exit 0
+fi
 
 setupsimplenativepackage "fdleaks" 'all' '1.0' 'unstable'
 BUILDDIR="incoming/fdleaks-1.0"
 for script in 'preinst' 'postinst' 'prerm' 'postrm'; do
 	cat > ${BUILDDIR}/debian/$script << EOF
 #!/bin/sh
-if [ -e "$(pwd)/rootdir/tmp/read_stdin" ]; then
+if [ -e '$(pwd)/rootdir/tmp/read_stdin' ]; then
 	read line;
 	echo "STDIN: -\$line-"
 fi
@@ -24,7 +29,7 @@ buildpackage "$BUILDDIR" 'unstable' 'main' 'native'
 rm -rf "$BUILDDIR"
 
 PKGNAME='fdleaks:all'
-if ! dpkg-checkbuilddeps -d 'dpkg (>= 1.16.2)' /dev/null >/dev/null 2>&1; then
+if dpkg --compare-versions "$(dpkg_version)" 'lt' '1.16.2'; then
 	PKGNAME='fdleaks'
 fi
 
@@ -34,7 +39,7 @@ rm -f rootdir/var/log/dpkg.log rootdir/var/log/apt/term.log
 testsuccess aptget install -y fdleaks -qq < /dev/null
 
 checkfdleak() {
-	msgtest 'Check if fds were not' 'leaked'
+	msgtest 'Check if fds were not' "leaked: expect $1"
 	if [ "$(grep 'root root' rootdir/tmp/testsuccess.output | wc -l)" = "$1" ]; then
 		msgpass
 	else
@@ -59,8 +64,7 @@ startup packages configure
 configure $PKGNAME 1.0 <none>
 status unpacked $PKGNAME 1.0
 status half-configured $PKGNAME 1.0
-status installed $PKGNAME 1.0
-startup packages configure" cut -f 3- -d' ' rootdir/var/log/dpkg.log
+status installed $PKGNAME 1.0" cut -f 3- -d' ' rootdir/var/log/dpkg.log
 }
 checkinstall
 
@@ -73,12 +77,16 @@ checkpurge() {
 	tail -n +3 rootdir/var/log/apt/term.log | head -n -1 > terminal.log
 	testfileequal 'terminal.log' "$(cat terminal.output)"
 
-	testequal "startup packages purge
+	if dpkg --compare-versions "$(dpkg_version)" 'ge' '1.18.11'; then
+		testequal "startup packages remove
 status installed $PKGNAME 1.0
 remove $PKGNAME 1.0 <none>
 status half-configured $PKGNAME 1.0
 status half-installed $PKGNAME 1.0
 status config-files $PKGNAME 1.0
+status config-files $PKGNAME 1.0
+startup packages configure
+startup packages purge
 purge $PKGNAME 1.0 <none>
 status config-files $PKGNAME 1.0
 status config-files $PKGNAME 1.0
@@ -87,6 +95,27 @@ status config-files $PKGNAME 1.0
 status config-files $PKGNAME 1.0
 status not-installed $PKGNAME <none>
 startup packages configure" cut -f 3- -d' ' rootdir/var/log/dpkg.log
+	else
+		testequal "startup packages remove
+status installed $PKGNAME 1.0
+remove $PKGNAME 1.0 <none>
+status half-configured $PKGNAME 1.0
+status half-installed $PKGNAME 1.0
+status config-files $PKGNAME 1.0
+status config-files $PKGNAME 1.0
+startup packages configure
+startup packages purge
+remove $PKGNAME 1.0 <none>
+purge $PKGNAME 1.0 <none>
+status config-files $PKGNAME 1.0
+status config-files $PKGNAME 1.0
+status config-files $PKGNAME 1.0
+status config-files $PKGNAME 1.0
+status config-files $PKGNAME 1.0
+status not-installed $PKGNAME <none>
+startup packages configure" cut -f 3- -d' ' rootdir/var/log/dpkg.log
+	fi
+	testequalor2 "dpkg-query: no packages found matching ${PKGNAME}" "No packages found matching ${PKGNAME}." dpkg -l "$PKGNAME"
 }
 checkpurge
 

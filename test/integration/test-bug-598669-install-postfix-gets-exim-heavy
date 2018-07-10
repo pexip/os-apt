@@ -1,13 +1,13 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 setupenvironment
 configarchitecture "i386"
 setupaptarchive
 
-testequal "Reading package lists...
+testfailureequal "Reading package lists...
 Building dependency tree...
 The following packages will be REMOVED:
   exim4 exim4-daemon-light

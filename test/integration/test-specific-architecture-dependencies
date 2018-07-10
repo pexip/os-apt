@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 setupenvironment
 configarchitecture 'amd64' 'i386'
 
@@ -33,9 +33,9 @@ insertpackage 'unstable' 'foo-no-conflictor' 'i386' '1' 'Conflicts: foo:i386'
 
 setupaptarchive
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   libc6:i386
 The following NEW packages will be installed:
   libc6:i386 pre-depender
@@ -45,9 +45,9 @@ Conf libc6:i386 (1 unstable [i386])
 Inst pre-depender (1 unstable [all])
 Conf pre-depender (1 unstable [all])' aptget install pre-depender -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   libc6:i386
 The following NEW packages will be installed:
   depender libc6:i386
@@ -57,9 +57,9 @@ Inst depender (1 unstable [all])
 Conf libc6:i386 (1 unstable [i386])
 Conf depender (1 unstable [all])' aptget install depender -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   libc6:i386
 The following NEW packages will be installed:
   depender-x32:i386 libc6:i386
@@ -69,9 +69,9 @@ Inst depender-x32:i386 (1 unstable [i386])
 Conf libc6:i386 (1 unstable [i386])
 Conf depender-x32:i386 (1 unstable [i386])' aptget install depender-x32:i386 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   libc6:i386
 The following NEW packages will be installed:
   depender-x32 libc6:i386
@@ -81,9 +81,9 @@ Inst depender-x32 (1 unstable [amd64])
 Conf libc6:i386 (1 unstable [i386])
 Conf depender-x32 (1 unstable [amd64])' aptget install depender-x32:amd64 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   libc6
 The following NEW packages will be installed:
   depender-x64 libc6
@@ -93,9 +93,9 @@ Inst depender-x64 (1 unstable [amd64])
 Conf libc6 (1 unstable [amd64])
 Conf depender-x64 (1 unstable [amd64])' aptget install depender-x64:amd64 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   libc6
 The following NEW packages will be installed:
   depender-x64:i386 libc6
@@ -105,19 +105,19 @@ Inst depender-x64:i386 (1 unstable [i386])
 Conf libc6 (1 unstable [amd64])
 Conf depender-x64:i386 (1 unstable [i386])' aptget install depender-x64:i386 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following packages will be REMOVED:
-  libold libold:i386
+  libold:i386 libold
 The following NEW packages will be installed:
   breaker
 0 upgraded, 1 newly installed, 2 to remove and 0 not upgraded.
-Remv libold [1]
 Remv libold:i386 [1]
+Remv libold [1]
 Inst breaker (1 unstable [all])
 Conf breaker (1 unstable [all])' aptget install breaker -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following packages will be REMOVED:
   libold:i386
@@ -128,7 +128,7 @@ Remv libold:i386 [1]
 Inst breaker-x32 (1 unstable [amd64])
 Conf breaker-x32 (1 unstable [amd64])' aptget install breaker-x32:amd64 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following packages will be REMOVED:
   libold:i386
@@ -139,7 +139,7 @@ Remv libold:i386 [1]
 Inst breaker-x32:i386 (1 unstable [i386])
 Conf breaker-x32:i386 (1 unstable [i386])' aptget install breaker-x32:i386 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following packages will be REMOVED:
   libold
@@ -150,7 +150,7 @@ Remv libold [1]
 Inst breaker-x64 (1 unstable [amd64])
 Conf breaker-x64 (1 unstable [amd64])' aptget install breaker-x64:amd64 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following packages will be REMOVED:
   libold
@@ -161,7 +161,7 @@ Remv libold [1]
 Inst breaker-x64:i386 (1 unstable [i386])
 Conf breaker-x64:i386 (1 unstable [i386])' aptget install breaker-x64:i386 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following NEW packages will be installed:
   oldconflictor
@@ -169,7 +169,7 @@ The following NEW packages will be installed:
 Inst oldconflictor (1 unstable [all])
 Conf oldconflictor (1 unstable [all])' aptget install oldconflictor -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following NEW packages will be installed:
   oldconflictor-x32
@@ -177,7 +177,7 @@ The following NEW packages will be installed:
 Inst oldconflictor-x32 (1 unstable [amd64])
 Conf oldconflictor-x32 (1 unstable [amd64])' aptget install oldconflictor-x32 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following NEW packages will be installed:
   oldconflictor-x64:i386
@@ -185,7 +185,7 @@ The following NEW packages will be installed:
 Inst oldconflictor-x64:i386 (1 unstable [i386])
 Conf oldconflictor-x64:i386 (1 unstable [i386])' aptget install oldconflictor-x64 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following NEW packages will be installed:
   foo-depender
@@ -193,7 +193,7 @@ The following NEW packages will be installed:
 Inst foo-depender (1 unstable [amd64])
 Conf foo-depender (1 unstable [amd64])' aptget install foo-depender -s
 
-testequal 'Reading package lists...
+testfailureequal 'Reading package lists...
 Building dependency tree...
 Some packages could not be installed. This may mean that you have
 requested an impossible situation or if you are using the unstable
@@ -205,7 +205,7 @@ The following packages have unmet dependencies:
  foo-depender:i386 : Depends: foo:i386 but it is not installable
 E: Unable to correct problems, you have held broken packages.' aptget install foo-depender:i386 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following NEW packages will be installed:
   foo-native-depender
@@ -213,7 +213,7 @@ The following NEW packages will be installed:
 Inst foo-native-depender (1 unstable [amd64])
 Conf foo-native-depender (1 unstable [amd64])' aptget install foo-native-depender -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following NEW packages will be installed:
   foo-foreign-depender:i386
@@ -221,7 +221,7 @@ The following NEW packages will be installed:
 Inst foo-foreign-depender:i386 (1 unstable [i386])
 Conf foo-foreign-depender:i386 (1 unstable [i386])' aptget install foo-foreign-depender:i386 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following packages will be REMOVED:
   provider
@@ -232,7 +232,7 @@ Remv provider [1]
 Inst foo-conflictor (1 unstable [amd64])
 Conf foo-conflictor (1 unstable [amd64])' aptget install foo-conflictor -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following packages will be REMOVED:
   provider
@@ -243,7 +243,7 @@ Remv provider [1]
 Inst foo-conflictor:i386 (1 unstable [i386])
 Conf foo-conflictor:i386 (1 unstable [i386])' aptget install foo-conflictor:i386 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following packages will be REMOVED:
   provider
@@ -254,7 +254,7 @@ Remv provider [1]
 Inst foo-foreign-conflictor:i386 (1 unstable [i386])
 Conf foo-foreign-conflictor:i386 (1 unstable [i386])' aptget install foo-foreign-conflictor:i386 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following NEW packages will be installed:
   foo-no-conflictor:i386
@@ -265,9 +265,9 @@ Conf foo-no-conflictor:i386 (1 unstable [i386])' aptget install foo-no-conflicto
 msgmsg 'switch to single architecture'
 configarchitecture 'amd64'
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
-The following extra packages will be installed:
+The following additional packages will be installed:
   libc6
 The following NEW packages will be installed:
   depender-x64 libc6
@@ -277,11 +277,11 @@ Inst depender-x64 (1 unstable [amd64])
 Conf libc6 (1 unstable [amd64])
 Conf depender-x64 (1 unstable [amd64])' aptget install depender-x64 -s
 
-testequal 'Reading package lists...
+testfailureequal 'Reading package lists...
 Building dependency tree...
-E: Unable to locate package depender-x64' aptget install depender-x64:i386 -s
+E: Unable to locate package depender-x64:i386' aptget install depender-x64:i386 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following NEW packages will be installed:
   foo-native-depender
@@ -289,16 +289,18 @@ The following NEW packages will be installed:
 Inst foo-native-depender (1 unstable [amd64])
 Conf foo-native-depender (1 unstable [amd64])' aptget install foo-native-depender -s
 
-# libold:i386 is installed, but we don't see it as i386 isn't configured
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
+The following packages will be REMOVED:
+  libold:i386
 The following NEW packages will be installed:
   breaker-x32
-0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+0 upgraded, 1 newly installed, 1 to remove and 0 not upgraded.
+Remv libold:i386 [1]
 Inst breaker-x32 (1 unstable [amd64])
 Conf breaker-x32 (1 unstable [amd64])' aptget install breaker-x32:amd64 -s
 
-testequal 'Reading package lists...
+testsuccessequal 'Reading package lists...
 Building dependency tree...
 The following packages will be REMOVED:
   libold
@@ -309,7 +311,7 @@ Remv libold [1]
 Inst breaker-x64 (1 unstable [amd64])
 Conf breaker-x64 (1 unstable [amd64])' aptget install breaker-x64:amd64 -s
 
-testequal 'Reading package lists...
+testfailureequal 'Reading package lists...
 Building dependency tree...
 Some packages could not be installed. This may mean that you have
 requested an impossible situation or if you are using the unstable

@@ -13,6 +13,9 @@
 
 #include <string>
 #include <cstring>
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+#include <apt-pkg/string_view.h>
+#endif
 
 #include <apt-pkg/strutl.h>
 
@@ -76,22 +79,40 @@ class HashSumValue
       return Value();
    }
 
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+   APT_HIDDEN bool Set(APT::StringView Str)
+   {
+      return Hex2Num(Str,Sum,sizeof(Sum));
+   }
+#else
    bool Set(std::string Str)
    {
       return Hex2Num(Str,Sum,sizeof(Sum));
    }
-
+#endif
    inline void Set(unsigned char S[N/8])
    {
       for (int I = 0; I != sizeof(Sum); ++I)
          Sum[I] = S[I];
    }
 
-   HashSumValue(std::string Str)
+   explicit HashSumValue(std::string const &Str)
    {
          memset(Sum,0,sizeof(Sum));
          Set(Str);
    }
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+   APT_HIDDEN explicit HashSumValue(APT::StringView const &Str)
+   {
+         memset(Sum,0,sizeof(Sum));
+         Set(Str);
+   }
+   APT_HIDDEN explicit HashSumValue(const char *Str)
+   {
+         memset(Sum,0,sizeof(Sum));
+         Set(Str);
+   }
+#endif
    HashSumValue()
    {
       memset(Sum,0,sizeof(Sum));
@@ -101,18 +122,18 @@ class HashSumValue
 class SummationImplementation
 {
    public:
-   virtual bool Add(const unsigned char *inbuf, unsigned long long inlen) = 0;
-   inline bool Add(const char *inbuf, unsigned long long const inlen)
+   virtual bool Add(const unsigned char *inbuf, unsigned long long inlen) APT_NONNULL(2) = 0;
+   inline bool Add(const char *inbuf, unsigned long long const inlen) APT_NONNULL(2)
    { return Add((const unsigned char *)inbuf, inlen); }
 
-   inline bool Add(const unsigned char *Data)
+   inline bool Add(const unsigned char *Data) APT_NONNULL(2)
    { return Add(Data, strlen((const char *)Data)); }
-   inline bool Add(const char *Data)
+   inline bool Add(const char *Data) APT_NONNULL(2)
    { return Add((const unsigned char *)Data, strlen(Data)); }
 
-   inline bool Add(const unsigned char *Beg, const unsigned char *End)
+   inline bool Add(const unsigned char *Beg, const unsigned char *End) APT_NONNULL(2,3)
    { return Add(Beg, End - Beg); }
-   inline bool Add(const char *Beg, const char *End)
+   inline bool Add(const char *Beg, const char *End) APT_NONNULL(2,3)
    { return Add((const unsigned char *)Beg, End - Beg); }
 
    bool AddFD(int Fd, unsigned long long Size = 0);

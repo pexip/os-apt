@@ -18,6 +18,8 @@
 #include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/srcrecords.h>
 #include <apt-pkg/tagfile.h>
+#include <apt-pkg/hashes.h>
+#include <apt-pkg/gpgv.h>
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -30,6 +32,24 @@
 using std::max;
 using std::string;
 
+debSrcRecordParser::debSrcRecordParser(std::string const &File,pkgIndexFile const *Index)
+   : Parser(Index), d(NULL), Tags(&Fd), iOffset(0), Buffer(NULL)
+{
+   if (File.empty() == false)
+   {
+      if (Fd.Open(File, FileFd::ReadOnly, FileFd::Extension))
+	 Tags.Init(&Fd, 102400);
+   }
+}
+std::string debSrcRecordParser::Package() const				/*{{{*/
+{
+   auto const name = Sect.FindS("Package");
+   if (iIndex == nullptr)
+      return name.empty() ? Sect.FindS("Source") : name;
+   else
+      return name;
+}
+									/*}}}*/
 // SrcRecordParser::Binaries - Return the binaries field		/*{{{*/
 // ---------------------------------------------------------------------
 /* This member parses the binaries field into a pair of class arrays and
@@ -42,7 +62,7 @@ const char **debSrcRecordParser::Binaries()
    const char *Start, *End;
    if (Sect.Find("Binary", Start, End) == false)
       return NULL;
-   for (; isspace(*Start) != 0; ++Start);
+   for (; isspace_ascii(*Start) != 0; ++Start);
    if (Start >= End)
       return NULL;
 
@@ -53,14 +73,18 @@ const char **debSrcRecordParser::Binaries()
    char* bin = Buffer;
    do {
       char* binStartNext = strchrnul(bin, ',');
-      char* binEnd = binStartNext - 1;
-      for (; isspace(*binEnd) != 0; --binEnd)
-	 binEnd = '\0';
+      // Found a comma, clean up any space before it
+      if (binStartNext > Buffer) {
+	 char* binEnd = binStartNext - 1;
+	 for (; binEnd > Buffer && isspace_ascii(*binEnd) != 0; --binEnd)
+	    *binEnd = 0;
+      }
       StaticBinList.push_back(bin);
       if (*binStartNext != ',')
 	 break;
       *binStartNext = '\0';
-      for (bin = binStartNext + 1; isspace(*bin) != 0; ++bin);
+      for (bin = binStartNext + 1; isspace_ascii(*bin) != 0; ++bin)
+         ;
    } while (*bin != '\0');
    StaticBinList.push_back(NULL);
 
@@ -79,14 +103,16 @@ bool debSrcRecordParser::BuildDepends(std::vector<pkgSrcRecords::Parser::BuildDe
    unsigned int I;
    const char *Start, *Stop;
    BuildDepRec rec;
-   const char *fields[] = {"Build-Depends", 
+   const char *fields[] = {"Build-Depends",
                            "Build-Depends-Indep",
 			   "Build-Conflicts",
-			   "Build-Conflicts-Indep"};
+			   "Build-Conflicts-Indep",
+			   "Build-Depends-Arch",
+			   "Build-Conflicts-Arch"};
 
    BuildDeps.clear();
 
-   for (I = 0; I < 4; I++) 
+   for (I = 0; I < 6; I++)
    {
       if (ArchOnly && (I == 1 || I == 3))
          continue;
@@ -103,8 +129,18 @@ bool debSrcRecordParser::BuildDepends(std::vector<pkgSrcRecords::Parser::BuildDe
             return _error->Error("Problem parsing dependency: %s", fields[I]);
 	 rec.Type = I;
 
-	 if (rec.Package != "")
+	 // We parsed a package that was ignored (wrong architecture restriction
+	 // or something).
+	 if (rec.Package == "") {
+	    // If we are in an OR group, we need to set the "Or" flag of the
+	    // previous entry to our value.
+	    if (BuildDeps.size() > 0 && (BuildDeps[BuildDeps.size() - 1].Op & pkgCache::Dep::Or) == pkgCache::Dep::Or) {
+	       BuildDeps[BuildDeps.size() - 1].Op &= ~pkgCache::Dep::Or;
+	       BuildDeps[BuildDeps.size() - 1].Op |= (rec.Op & pkgCache::Dep::Or);
+	    }
+	 } else {
    	    BuildDeps.push_back(rec);
+	 }
 	 
    	 if (Start == Stop) 
 	    break;
@@ -177,6 +213,15 @@ bool debSrcRecordParser::Files2(std::vector<pkgSrcRecords::File2> &List)
 	       ParseQuoteWord(C, path) == false)
 	    return _error->Error("Error parsing file record in %s of source package %s", checksumField.c_str(), Package().c_str());
 
+	 if (iIndex == nullptr && checksumField == "Files")
+	 {
+	    // the Files field has a different format than the rest in deb-changes files
+	    std::string ignore;
+	    if (ParseQuoteWord(C, ignore) == false ||
+		  ParseQuoteWord(C, path) == false)
+	       return _error->Error("Error parsing file record in %s of source package %s", checksumField.c_str(), Package().c_str());
+	 }
+
 	 HashString const hashString(*type, hash);
 	 if (Base.empty() == false)
 	    path = Base + path;
@@ -190,16 +235,8 @@ bool debSrcRecordParser::Files2(std::vector<pkgSrcRecords::File2> &List)
 	 // we have it already, store the new hash and be done
 	 if (file != List.end())
 	 {
-#if __GNUC__ >= 4
-	// set for compatibility only, so warn users not us
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
 	    if (checksumField == "Files")
-	       file->MD5Hash = hash;
-#if __GNUC__ >= 4
-	#pragma GCC diagnostic pop
-#endif
+	       APT_IGNORE_DEPRECATED(file->MD5Hash = hash;)
 	    // an error here indicates that we have two different hashes for the same file
 	    if (file->Hashes.push_back(hashString) == false)
 	       return _error->Error("Error parsing checksum in %s of source package %s", checksumField.c_str(), Package().c_str());
@@ -211,18 +248,13 @@ bool debSrcRecordParser::Files2(std::vector<pkgSrcRecords::File2> &List)
 	 F.Path = path;
 	 F.FileSize = strtoull(size.c_str(), NULL, 10);
 	 F.Hashes.push_back(hashString);
+	 F.Hashes.FileSize(F.FileSize);
 
-#if __GNUC__ >= 4
-	// set for compatibility only, so warn users not us
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
+	 APT_IGNORE_DEPRECATED_PUSH
 	 F.Size = F.FileSize;
 	 if (checksumField == "Files")
 	    F.MD5Hash = hash;
-#if __GNUC__ >= 4
-	#pragma GCC diagnostic pop
-#endif
+	 APT_IGNORE_DEPRECATED_POP
 
 	 // Try to guess what sort of file it is we are getting.
 	 string::size_type Pos = F.Path.length()-1;
@@ -264,3 +296,21 @@ debSrcRecordParser::~debSrcRecordParser()
    free(Buffer);
 }
 									/*}}}*/
+
+
+debDscRecordParser::debDscRecordParser(std::string const &DscFile, pkgIndexFile const *Index)
+   : debSrcRecordParser("", Index)
+{
+   // support clear signed files
+   if (OpenMaybeClearSignedFile(DscFile, Fd) == false)
+   {
+      _error->Error("Failed to open %s", DscFile.c_str());
+      return;
+   }
+
+   // re-init to ensure the updated Fd is used
+   Tags.Init(&Fd, pkgTagFile::SUPPORT_COMMENTS);
+   // read the first (and only) record
+   Step();
+
+}

@@ -16,20 +16,21 @@ class CacheFile;
 class CommandLine;
 class pkgProblemResolver;
 
-#define RAMFS_MAGIC     0x858458f6
-
 APT_PUBLIC bool DoInstall(CommandLine &Cmd);
 
-bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, CacheFile &Cache,
+bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, std::vector<std::string> &VolatileCmdL, CacheFile &Cache,
                                         std::map<unsigned short, APT::VersionSet> &verset, int UpgradeMode);
+bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, std::vector<std::string> &VolatileCmdL, CacheFile &Cache, int UpgradeMode);
 bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, CacheFile &Cache, int UpgradeMode);
 
 APT_PUBLIC bool InstallPackages(CacheFile &Cache,bool ShwKept,bool Ask = true,
                         bool Safety = true);
 
+bool CheckNothingBroken(CacheFile &Cache);
+bool DoAutomaticRemove(CacheFile &Cache);
 
 // TryToInstall - Mark a package for installation			/*{{{*/
-struct APT_PUBLIC TryToInstall {
+struct TryToInstall {
    pkgCacheFile* Cache;
    pkgProblemResolver* Fix;
    bool FixBroken;
@@ -45,7 +46,7 @@ struct APT_PUBLIC TryToInstall {
 };
 									/*}}}*/
 // TryToRemove - Mark a package for removal				/*{{{*/
-struct APT_PUBLIC TryToRemove {
+struct TryToRemove {
    pkgCacheFile* Cache;
    pkgProblemResolver* Fix;
    bool PurgePkgs;

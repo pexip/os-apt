@@ -10,7 +10,6 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
-#include <apt-pkg/acquire-method.h>
 #include <apt-pkg/cdrom.h>
 #include <apt-pkg/cdromutl.h>
 #include <apt-pkg/error.h>
@@ -18,6 +17,8 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/hashes.h>
+
+#include "aptmethod.h"
 
 #include <string>
 #include <vector>
@@ -29,7 +30,7 @@
 
 using namespace std;
 
-class CDROMMethod : public pkgAcqMethod
+class CDROMMethod : public aptMethod
 {
    bool DatabaseLoaded;
    bool Debug;
@@ -42,9 +43,9 @@ class CDROMMethod : public pkgAcqMethod
  
    bool IsCorrectCD(URI want, string MountPath, string& NewID);
    bool AutoDetectAndMount(const URI, string &NewID);
-   virtual bool Fetch(FetchItem *Itm);
+   virtual bool Fetch(FetchItem *Itm) APT_OVERRIDE;
    string GetID(string Name);
-   virtual void Exit();
+   virtual void Exit() APT_OVERRIDE;
       
    public:
    
@@ -54,9 +55,9 @@ class CDROMMethod : public pkgAcqMethod
 // CDROMMethod::CDROMethod - Constructor				/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-CDROMMethod::CDROMMethod() : pkgAcqMethod("1.0",SingleInstance | LocalOnly |
+CDROMMethod::CDROMMethod() : aptMethod("cdrom", "1.0",SingleInstance | LocalOnly |
 					  SendConfig | NeedsCleanup |
-					  Removable), 
+					  Removable),
                                           DatabaseLoaded(false),
 					  Debug(false),
                                           MountedByApt(false)
@@ -176,7 +177,7 @@ bool CDROMMethod::Fetch(FetchItem *Itm)
 
    URI Get = Itm->Uri;
    string File = Get.Path;
-   Debug = _config->FindB("Debug::Acquire::cdrom", false);
+   Debug = DebugEnabled();
 
    if (Debug)
       clog << "CDROMMethod::Fetch " << Itm->Uri << endl;
@@ -223,7 +224,7 @@ bool CDROMMethod::Fetch(FetchItem *Itm)
       return true;
    }
 
-   bool AutoDetect = _config->FindB("Acquire::cdrom::AutoDetect", true);
+   bool const AutoDetect = ConfigFindB("AutoDetect", true);
    CDROM = _config->FindDir("Acquire::cdrom::mount");
    if (Debug)
       clog << "Looking for CDROM at " << CDROM << endl;
@@ -260,13 +261,14 @@ bool CDROMMethod::Fetch(FetchItem *Itm)
    struct stat Buf;
    if (stat(Res.Filename.c_str(),&Buf) != 0)
       return _error->Error(_("File not found"));
-   
+
+   URIStart(Res);
    if (NewID.empty() == false)
       CurrentID = NewID;
    Res.LastModified = Buf.st_mtime;
    Res.Size = Buf.st_size;
 
-   Hashes Hash;
+   Hashes Hash(Itm->ExpectedHashes);
    FileFd Fd(Res.Filename, FileFd::ReadOnly);
    Hash.AddFD(Fd);
    Res.TakeHashes(Hash);
@@ -278,8 +280,6 @@ bool CDROMMethod::Fetch(FetchItem *Itm)
 
 int main()
 {
-   setlocale(LC_ALL, "");
-
-   CDROMMethod Mth;
-   return Mth.Run();
+   _config->CndSet("Binary::cdrom::Debug::NoDropPrivs", true);
+   return CDROMMethod().Run();
 }

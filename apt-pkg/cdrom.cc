@@ -16,14 +16,15 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <sstream>
-#include <fstream>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <algorithm>
 #include <dlfcn.h>
+#include <iostream>
+#include <sstream>
+#include <fstream>
 
 #include<apti18n.h>
 
@@ -60,13 +61,13 @@ bool pkgCdrom::FindPackages(string CD,
       return _error->Errno("chdir","Unable to change to %s",CD.c_str());
 
    // Look for a .disk subdirectory
-   if (DirectoryExists(".disk") == true)
+   if (InfoDir.empty() == true)
    {
-      if (InfoDir.empty() == true)
-	 InfoDir = CD + ".disk/";
+      if (DirectoryExists(".disk") == true)
+	 InfoDir = InfoDir + CD + ".disk/";
    }
 
-   // Don't look into directories that have been marked to ingore.
+   // Don't look into directories that have been marked to ignore.
    if (RealFileExists(".aptignr") == true)
       return true;
 
@@ -155,10 +156,7 @@ bool pkgCdrom::FindPackages(string CD,
       // Skip some files..
       if (strcmp(Dir->d_name,".") == 0 ||
 	  strcmp(Dir->d_name,"..") == 0 ||
-	  //strcmp(Dir->d_name,"source") == 0 ||
 	  strcmp(Dir->d_name,".disk") == 0 ||
-	  strcmp(Dir->d_name,"experimental") == 0 ||
-	  strcmp(Dir->d_name,"binary-all") == 0 ||
           strcmp(Dir->d_name,"debian-installer") == 0)
 	 continue;
 
@@ -369,7 +367,7 @@ bool pkgCdrom::DropRepeats(vector<string> &List,const char *Name)
 									/*}}}*/
 // ReduceSourceList - Takes the path list and reduces it		/*{{{*/
 // ---------------------------------------------------------------------
-/* This takes the list of source list expressed entires and collects
+/* This takes the list of source list expressed entries and collects
    similar ones to form a single entry for each dist */
 void pkgCdrom::ReduceSourcelist(string /*CD*/,vector<string> &List)
 {
@@ -428,8 +426,8 @@ bool pkgCdrom::WriteDatabase(Configuration &Cnf)
 {
    string DFile = _config->FindFile("Dir::State::cdroms");
    string NewFile = DFile + ".new";
-   
-   unlink(NewFile.c_str());
+
+   RemoveFile("WriteDatabase", NewFile);
    ofstream Out(NewFile.c_str());
    if (!Out)
       return _error->Errno("ofstream::ofstream",
@@ -453,7 +451,7 @@ bool pkgCdrom::WriteDatabase(Configuration &Cnf)
 // WriteSourceList - Write an updated sourcelist			/*{{{*/
 // ---------------------------------------------------------------------
 /* This reads the old source list and copies it into the new one. It 
-   appends the new CDROM entires just after the first block of comments.
+   appends the new CDROM entries just after the first block of comments.
    This places them first in the file. It also removes any old entries
    that were the same. */
 bool pkgCdrom::WriteSourceList(string Name,vector<string> &List,bool Source)
@@ -466,18 +464,18 @@ bool pkgCdrom::WriteSourceList(string Name,vector<string> &List,bool Source)
    // Open the stream for reading
    ifstream F((FileExists(File)?File.c_str():"/dev/null"),
 	      ios::in );
-   if (!F != 0)
+   if (F.fail() == true)
       return _error->Errno("ifstream::ifstream","Opening %s",File.c_str());
 
    string NewFile = File + ".new";
-   unlink(NewFile.c_str());
+   RemoveFile("WriteDatabase", NewFile);
    ofstream Out(NewFile.c_str());
    if (!Out)
       return _error->Errno("ofstream::ofstream",
 			   "Failed to open %s.new",File.c_str());
 
    // Create a short uri without the path
-   string ShortURI = "cdrom:[" + Name + "]/";   
+   string ShortURI = "cdrom:[" + Name + "]/";
    string ShortURI2 = "cdrom:" + Name + "/";     // For Compatibility
 
    string Type;
@@ -485,12 +483,12 @@ bool pkgCdrom::WriteSourceList(string Name,vector<string> &List,bool Source)
       Type = "deb-src";
    else
       Type = "deb";
-   
+
    char Buffer[300];
    int CurLine = 0;
    bool First = true;
    while (F.eof() == false)
-   {      
+   {
       F.getline(Buffer,sizeof(Buffer));
       CurLine++;
       if (F.fail() && !F.eof())
@@ -754,7 +752,7 @@ bool pkgCdrom::Add(pkgCdromStatus *log)					/*{{{*/
 	  FileExists(InfoDir + "/info") == true)
       {
 	 ifstream F((InfoDir + "/info").c_str());
-	 if (!F == 0)
+	 if (F.good() == true)
 	    getline(F,Name);
 
 	 if (Name.empty() == false)
@@ -822,8 +820,11 @@ bool pkgCdrom::Add(pkgCdromStatus *log)					/*{{{*/
    // check for existence and possibly create state directory for copying
    string const listDir = _config->FindDir("Dir::State::lists");
    string const partialListDir = listDir + "partial/";
-   if (CreateAPTDirectoryIfNeeded(_config->FindDir("Dir::State"), partialListDir) == false &&
-       CreateAPTDirectoryIfNeeded(listDir, partialListDir) == false)
+   mode_t const mode = umask(S_IWGRP | S_IWOTH);
+   bool const creation_fail = (CreateAPTDirectoryIfNeeded(_config->FindDir("Dir::State"), partialListDir) == false &&
+	 CreateAPTDirectoryIfNeeded(listDir, partialListDir) == false);
+   umask(mode);
+   if (creation_fail == true)
    {
       UnmountCDROM(CDROM, NULL);
       return _error->Errno("cdrom", _("List directory %spartial is missing."), listDir.c_str());
@@ -913,15 +914,18 @@ bool pkgCdrom::Add(pkgCdromStatus *log)					/*{{{*/
    return true;
 }
 									/*}}}*/
-pkgUdevCdromDevices::pkgUdevCdromDevices()                     		/*{{{*/
-   : libudev_handle(NULL)
+pkgUdevCdromDevices::pkgUdevCdromDevices()				/*{{{*/
+: d(NULL), libudev_handle(NULL), udev_new(NULL), udev_enumerate_add_match_property(NULL),
+   udev_enumerate_scan_devices(NULL), udev_enumerate_get_list_entry(NULL),
+   udev_device_new_from_syspath(NULL), udev_enumerate_get_udev(NULL),
+   udev_list_entry_get_name(NULL), udev_device_get_devnode(NULL),
+   udev_enumerate_new(NULL), udev_list_entry_get_next(NULL),
+   udev_device_get_property_value(NULL), udev_enumerate_add_match_sysattr(NULL)
 {
-
 }
 									/*}}}*/
 
-bool
-pkgUdevCdromDevices::Dlopen()                     		        /*{{{*/
+bool pkgUdevCdromDevices::Dlopen()					/*{{{*/
 {
    // alread open
    if(libudev_handle != NULL)
@@ -950,18 +954,14 @@ pkgUdevCdromDevices::Dlopen()                     		        /*{{{*/
    return true;
 }
 									/*}}}*/
-                                                                        /*{{{*/
-// convenience interface, this will just call ScanForRemovable
-vector<CdromDevice>
-pkgUdevCdromDevices::Scan()
+// convenience interface, this will just call ScanForRemovable		/*{{{*/
+vector<CdromDevice> pkgUdevCdromDevices::Scan()
 {
    bool CdromOnly = _config->FindB("APT::cdrom::CdromOnly", true);
    return ScanForRemovable(CdromOnly);
 }
 									/*}}}*/
-                                                                        /*{{{*/
-vector<CdromDevice>
-pkgUdevCdromDevices::ScanForRemovable(bool CdromOnly)
+vector<CdromDevice> pkgUdevCdromDevices::ScanForRemovable(bool CdromOnly)/*{{{*/
 {
    vector<CdromDevice> cdrom_devices;
    struct udev_enumerate *enumerate;
@@ -1020,3 +1020,9 @@ pkgUdevCdromDevices::~pkgUdevCdromDevices()                             /*{{{*/
       dlclose(libudev_handle);
 }
 									/*}}}*/
+
+pkgCdromStatus::pkgCdromStatus() : d(NULL), totalSteps(0) {}
+pkgCdromStatus::~pkgCdromStatus() {}
+
+pkgCdrom::pkgCdrom() : d(NULL) {}
+pkgCdrom::~pkgCdrom() {}

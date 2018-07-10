@@ -34,6 +34,9 @@ CommandLine::CommandLine(Args *AList,Configuration *Conf) : ArgList(AList),
                                  Conf(Conf), FileList(0)
 {
 }
+CommandLine::CommandLine() : ArgList(NULL), Conf(NULL), FileList(0)
+{
+}
 									/*}}}*/
 // CommandLine::~CommandLine - Destructor				/*{{{*/
 // ---------------------------------------------------------------------
@@ -121,7 +124,7 @@ bool CommandLine::Parse(int argc,const char **argv)
 	    Args *A;
 	    for (A = ArgList; A->end() == false && A->ShortOpt != *Opt; A++);
 	    if (A->end() == true)
-	       return _error->Error(_("Command line option '%c' [from %s] is not known."),*Opt,argv[I]);
+	       return _error->Error(_("Command line option '%c' [from %s] is not understood in combination with the other options."),*Opt,argv[I]);
 
 	    if (HandleOpt(I,argc,argv,Opt,A) == false)
 	       return false;
@@ -146,7 +149,7 @@ bool CommandLine::Parse(int argc,const char **argv)
       {
          Opt = (const char*) memchr(Opt, '-', OptEnd - Opt);
 	 if (Opt == NULL)
-	    return _error->Error(_("Command line option %s is not understood"),argv[I]);
+	    return _error->Error(_("Command line option %s is not understood in combination with the other options"),argv[I]);
 	 Opt++;
 	 
 	 for (A = ArgList; A->end() == false &&
@@ -155,7 +158,7 @@ bool CommandLine::Parse(int argc,const char **argv)
 
 	 // Failed again..
 	 if (A->end() == true && OptEnd - Opt != 1)
-	    return _error->Error(_("Command line option %s is not understood"),argv[I]);
+	    return _error->Error(_("Command line option %s is not understood in combination with the other options"),argv[I]);
 
 	 // The option could be a single letter option prefixed by a no-..
 	 if (A->end() == true)
@@ -163,7 +166,7 @@ bool CommandLine::Parse(int argc,const char **argv)
 	    for (A = ArgList; A->end() == false && A->ShortOpt != *Opt; A++);
 	    
 	    if (A->end() == true)
-	       return _error->Error(_("Command line option %s is not understood"),argv[I]);
+	       return _error->Error(_("Command line option %s is not understood in combination with the other options"),argv[I]);
 	 }
 	 
 	 // The option is not boolean
@@ -202,17 +205,11 @@ bool CommandLine::HandleOpt(int &I,int argc,const char *argv[],
 
    /* Determine the possible location of an option or 0 if their is
       no option */
-   if (Opt[1] == 0 || (Opt[1] == '=' && Opt[2] == 0))
+   if (Opt[1] == 0)
    {
       if (I + 1 < argc && argv[I+1][0] != '-')
 	 Argument = argv[I+1];
-      
-      // Equals was specified but we fell off the end!
-      if (Opt[1] == '=' && Argument == 0)
-	 return _error->Error(_("Option %s requires an argument."),argv[I]);
-      if (Opt[1] == '=')
-	 CertainArg = true;
-	 
+
       IncI = 1;
    }
    else
@@ -241,20 +238,11 @@ bool CommandLine::HandleOpt(int &I,int argc,const char *argv[],
       // Arbitrary item specification
       if ((A->Flags & ArbItem) == ArbItem)
       {
-	 const char *J = strchr(Argument, '=');
-	 if (J == NULL)
+	 const char * const J = strchr(Argument, '=');
+	 if (J == nullptr)
 	    return _error->Error(_("Option %s: Configuration item specification must have an =<val>."),argv[I]);
 
-	 // = is trailing
-	 if (J[1] == 0)
-	 {
-	    if (I+1 >= argc)
-	       return _error->Error(_("Option %s: Configuration item specification must have an =<val>."),argv[I]);
-	    Conf->Set(string(Argument,J-Argument),string(argv[I++ +1]));
-	 }
-	 else
-	    Conf->Set(string(Argument,J-Argument),string(J+1));
-	 
+	 Conf->Set(string(Argument,J-Argument), J+1);
 	 return true;
       }
       
@@ -371,9 +359,7 @@ unsigned int CommandLine::FileSize() const
 }
 									/*}}}*/
 // CommandLine::DispatchArg - Do something with the first arg		/*{{{*/
-// ---------------------------------------------------------------------
-/* */
-bool CommandLine::DispatchArg(Dispatch *Map,bool NoMatch)
+bool CommandLine::DispatchArg(Dispatch const * const Map,bool NoMatch)
 {
    int I;
    for (I = 0; Map[I].Match != 0; I++)
@@ -396,6 +382,11 @@ bool CommandLine::DispatchArg(Dispatch *Map,bool NoMatch)
    
    return false;
 }
+bool CommandLine::DispatchArg(Dispatch *Map,bool NoMatch)
+{
+   Dispatch const * const Map2 = Map;
+   return DispatchArg(Map2, NoMatch);
+}
 									/*}}}*/
 // CommandLine::SaveInConfig - for output later in a logfile or so	/*{{{*/
 // ---------------------------------------------------------------------
@@ -411,21 +402,27 @@ void CommandLine::SaveInConfig(unsigned int const &argc, char const * const * co
    bool closeQuote = false;
    for (unsigned int i = 0; i < argc && length < sizeof(cmdline); ++i, ++length)
    {
-      for (unsigned int j = 0; argv[i][j] != '\0' && length < sizeof(cmdline)-1; ++j, ++length)
+      for (unsigned int j = 0; argv[i][j] != '\0' && length < sizeof(cmdline)-2; ++j)
       {
-	 cmdline[length] = argv[i][j];
+	 // we can't really sensibly deal with quoting so skip it
+	 if (strchr("\"\'\r\n", argv[i][j]) != nullptr)
+	    continue;
+	 cmdline[length++] = argv[i][j];
 	 if (lastWasOption == true && argv[i][j] == '=')
 	 {
 	    // That is possibly an option: Quote it if it includes spaces,
 	    // the benefit is that this will eliminate also most false positives
 	    const char* c = strchr(&argv[i][j+1], ' ');
 	    if (c == NULL) continue;
-	    cmdline[++length] = '"';
+	    cmdline[length++] = '\'';
 	    closeQuote = true;
 	 }
       }
       if (closeQuote == true)
-	 cmdline[length++] = '"';
+      {
+	 cmdline[length++] = '\'';
+	 closeQuote = false;
+      }
       // Problem: detects also --hello
       if (cmdline[length-1] == 'o')
 	 lastWasOption = true;

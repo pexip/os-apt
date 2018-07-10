@@ -79,10 +79,31 @@
 
 #include <string>
 #include <time.h>
+#include <stdint.h>
+
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+#include <apt-pkg/string_view.h>
+#endif
 
 #ifndef APT_8_CLEANER_HEADERS
 using std::string;
 #endif
+
+// size of (potentially big) files like debs or the install size of them
+typedef uint64_t map_filesize_t;
+// storing file sizes of indexes, which are way below 4 GB for now
+typedef uint32_t map_filesize_small_t;
+// each package/group/dependency gets an id
+typedef uint32_t map_id_t;
+// some files get an id, too, but in far less absolute numbers
+typedef uint16_t map_fileid_t;
+// relative pointer from cache start
+typedef uint32_t map_pointer_t;
+// same as the previous, but documented to be to a string item
+typedef map_pointer_t map_stringitem_t;
+// we have only a small amount of flags for each item
+typedef uint8_t map_flags_t;
+typedef uint8_t map_number_t;
 
 class pkgVersioningSystem;
 class pkgCache								/*{{{*/
@@ -92,11 +113,13 @@ class pkgCache								/*{{{*/
    struct Header;
    struct Group;
    struct Package;
+   struct ReleaseFile;
    struct PackageFile;
    struct Version;
    struct Description;
    struct Provides;
    struct Dependency;
+   struct DependencyData;
    struct StringItem;
    struct VerFile;
    struct DescFile;
@@ -109,6 +132,7 @@ class pkgCache								/*{{{*/
    class DescIterator;
    class DepIterator;
    class PrvIterator;
+   class RlsFileIterator;
    class PkgFileIterator;
    class VerFileIterator;
    class DescFileIterator;
@@ -129,8 +153,12 @@ class pkgCache								/*{{{*/
           The lower 4 bits are used to indicate what operator is being specified and
           the upper 4 bits are flags. OR indicates that the next package is
           or'd with the current package. */
-      enum DepCompareOp {Or=0x10,NoOp=0,LessEq=0x1,GreaterEq=0x2,Less=0x3,
-	 Greater=0x4,Equals=0x5,NotEquals=0x6};
+      enum DepCompareOp {NoOp=0,LessEq=0x1,GreaterEq=0x2,Less=0x3,
+	 Greater=0x4,Equals=0x5,NotEquals=0x6,
+	 Or=0x10, /*!< or'ed with the next dependency */
+	 MultiArchImplicit=0x20, /*!< generated internally, not spelled out in the index */
+	 ArchSpecific=0x40 /*!< was decorated with an explicit architecture in index */
+      };
    };
    
    struct State
@@ -138,7 +166,7 @@ class pkgCache								/*{{{*/
       /** \brief priority of a package version
 
           Zero is used for unparsable or absent Priority fields. */
-      enum VerPriority {Important=1,Required=2,Standard=3,Optional=4,Extra=5};
+      enum VerPriority {Required=1,Important=2,Standard=3,Optional=4,Extra=5};
       enum PkgSelectedState {Unknown=0,Install=1,Hold=2,DeInstall=3,Purge=4};
       enum PkgInstState {Ok=0,ReInstReq=1,HoldInst=2,HoldReInstReq=3};
       enum PkgCurrentState {NotInstalled=0,UnPacked=1,HalfConfigured=2,
@@ -149,7 +177,19 @@ class pkgCache								/*{{{*/
    struct Flag
    {
       enum PkgFlags {Auto=(1<<0),Essential=(1<<3),Important=(1<<4)};
-      enum PkgFFlags {NotSource=(1<<0),NotAutomatic=(1<<1),ButAutomaticUpgrades=(1<<2)};
+      enum PkgFFlags {
+	 NotSource=(1<<0), /*!< packages can't be fetched from here, e.g. dpkg/status file */
+	 LocalSource=(1<<1), /*!< local sources can't and will not be verified by hashes */
+	 NoPackages=(1<<2), /*!< the file includes no package records itself, but additions like Translations */
+      };
+      enum ReleaseFileFlags {
+	 NotAutomatic=(1<<0), /*!< archive has a default pin of 1 */
+	 ButAutomaticUpgrades=(1<<1), /*!< (together with the previous) archive has a default pin of 100 */
+      };
+      enum ProvidesFlags {
+	 MultiArchImplicit=pkgCache::Dep::MultiArchImplicit, /*!< generated internally, not spelled out in the index */
+	 ArchSpecific=pkgCache::Dep::ArchSpecific /*!< was decorated with an explicit architecture in index */
+      };
    };
    
    protected:
@@ -157,9 +197,11 @@ class pkgCache								/*{{{*/
    // Memory mapped cache file
    std::string CacheFile;
    MMap &Map;
-
-   unsigned long sHash(const std::string &S) const APT_PURE;
-   unsigned long sHash(const char *S) const APT_PURE;
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+   APT_HIDDEN map_id_t sHash(APT::StringView S) const APT_PURE;
+#endif
+   map_id_t sHash(const std::string &S) const APT_PURE;
+   map_id_t sHash(const char *S) const APT_PURE;
    
    public:
    
@@ -169,12 +211,14 @@ class pkgCache								/*{{{*/
    Package *PkgP;
    VerFile *VerFileP;
    DescFile *DescFileP;
+   ReleaseFile *RlsFileP;
    PackageFile *PkgFileP;
    Version *VerP;
    Description *DescP;
    Provides *ProvideP;
    Dependency *DepP;
-   StringItem *StringItemP;
+   DependencyData *DepDataP;
+   APT_DEPRECATED_MSG("Not used anymore in cache generation and without a replacement") StringItem *StringItemP;
    char *StrP;
 
    virtual bool ReMap(bool const &Errorchecks = true);
@@ -183,13 +227,34 @@ class pkgCache								/*{{{*/
    inline void *DataEnd() {return ((unsigned char *)Map.Data()) + Map.Size();}
       
    // String hashing function (512 range)
-   inline unsigned long Hash(const std::string &S) const {return sHash(S);}
-   inline unsigned long Hash(const char *S) const {return sHash(S);}
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+   APT_HIDDEN inline map_id_t Hash(APT::StringView S) const {return sHash(S);}
+#endif
+   inline map_id_t Hash(const std::string &S) const {return sHash(S);}
+   inline map_id_t Hash(const char *S) const {return sHash(S);}
+
+   APT_HIDDEN uint32_t CacheHash();
 
    // Useful transformation things
-   const char *Priority(unsigned char Priority);
+   static const char *Priority(unsigned char Priority);
    
    // Accessors
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+   APT_HIDDEN GrpIterator FindGrp(APT::StringView Name);
+   APT_HIDDEN PkgIterator FindPkg(APT::StringView Name);
+   APT_HIDDEN PkgIterator FindPkg(APT::StringView Name, APT::StringView Arch);
+#endif
+
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+   APT::StringView ViewString(map_stringitem_t idx) const
+   {
+      char *name = StrP + idx;
+      uint16_t len = *reinterpret_cast<const uint16_t*>(name - sizeof(uint16_t));
+      return APT::StringView(name, len);
+   }
+#endif
+
+
    GrpIterator FindGrp(const std::string &Name);
    PkgIterator FindPkg(const std::string &Name);
    PkgIterator FindPkg(const std::string &Name, const std::string &Arch);
@@ -201,6 +266,8 @@ class pkgCache								/*{{{*/
    inline PkgIterator PkgEnd();
    inline PkgFileIterator FileBegin();
    inline PkgFileIterator FileEnd();
+   inline RlsFileIterator RlsFileBegin();
+   inline RlsFileIterator RlsFileEnd();
 
    inline bool MultiArchCache() const { return MultiArchEnabled; }
    inline char const * NativeArch();
@@ -212,13 +279,13 @@ class pkgCache								/*{{{*/
    static const char *CompTypeDeb(unsigned char Comp) APT_CONST;
    static const char *CompType(unsigned char Comp) APT_CONST;
    static const char *DepType(unsigned char Dep);
-   
+
    pkgCache(MMap *Map,bool DoMap = true);
-   virtual ~pkgCache() {}
+   virtual ~pkgCache();
 
 private:
+   void * const d;
    bool MultiArchEnabled;
-   APT_DEPRECATED PkgIterator SingleArchFindPkg(const std::string &Name);
 };
 									/*}}}*/
 // Header structure							/*{{{*/
@@ -229,10 +296,10 @@ struct pkgCache::Header
        This must contain the hex value 0x98FE76DC which is designed to
        verify that the system loading the image has the same byte order
        and byte size as the system saving the image */
-   unsigned long Signature;
+   uint32_t Signature;
    /** These contain the version of the cache file */
-   short MajorVersion;
-   short MinorVersion;
+   map_number_t MajorVersion;
+   map_number_t MinorVersion;
    /** \brief indicates if the cache should be erased
 
        Dirty is true if the cache file was opened for reading, the client
@@ -247,51 +314,54 @@ struct pkgCache::Header
 
        If any of the size values do not exactly match what the client expects
        then the client should refuse the load the file. */
-   unsigned short HeaderSz;
-   unsigned short GroupSz;
-   unsigned short PackageSz;
-   unsigned short PackageFileSz;
-   unsigned short VersionSz;
-   unsigned short DescriptionSz;
-   unsigned short DependencySz;
-   unsigned short ProvidesSz;
-   unsigned short VerFileSz;
-   unsigned short DescFileSz;
+   uint16_t HeaderSz;
+   map_number_t GroupSz;
+   map_number_t PackageSz;
+   map_number_t ReleaseFileSz;
+   map_number_t PackageFileSz;
+   map_number_t VersionSz;
+   map_number_t DescriptionSz;
+   map_number_t DependencySz;
+   map_number_t DependencyDataSz;
+   map_number_t ProvidesSz;
+   map_number_t VerFileSz;
+   map_number_t DescFileSz;
 
    /** \brief Structure counts
 
        These indicate the number of each structure contained in the cache.
        PackageCount is especially useful for generating user state structures.
        See Package::Id for more info. */
-   unsigned long GroupCount;
-   unsigned long PackageCount;
-   unsigned long VersionCount;
-   unsigned long DescriptionCount;
-   unsigned long DependsCount;
-   unsigned long PackageFileCount;
-   unsigned long VerFileCount;
-   unsigned long DescFileCount;
-   unsigned long ProvidesCount;
+   map_id_t GroupCount;
+   map_id_t PackageCount;
+   map_id_t VersionCount;
+   map_id_t DescriptionCount;
+   map_id_t DependsCount;
+   map_id_t DependsDataCount;
+   map_fileid_t ReleaseFileCount;
+   map_fileid_t PackageFileCount;
+   map_fileid_t VerFileCount;
+   map_fileid_t DescFileCount;
+   map_id_t ProvidesCount;
 
    /** \brief index of the first PackageFile structure
 
        The PackageFile structures are singly linked lists that represent
        all package files that have been merged into the cache. */
-   map_ptrloc FileList;
-   /** \brief index of the first StringItem structure
+   map_pointer_t FileList;
+   /** \brief index of the first ReleaseFile structure */
+   map_pointer_t RlsFileList;
 
-       The cache contains a list of all the unique strings (StringItems).
-       The parser reads this list into memory so it can match strings
-       against it.*/
-   map_ptrloc StringList;
    /** \brief String representing the version system used */
-   map_ptrloc VerSysName;
-   /** \brief Architecture(s) the cache was built against */
-   map_ptrloc Architecture;
+   map_pointer_t VerSysName;
+   /** \brief native architecture the cache was built against */
+   map_pointer_t Architecture;
+   /** \brief all architectures the cache was built against */
+   map_pointer_t Architectures;
    /** \brief The maximum size of a raw entry from the original Package file */
-   unsigned long MaxVerFileSize;
+   map_filesize_t MaxVerFileSize;
    /** \brief The maximum size of a raw entry from the original Translation file */
-   unsigned long MaxDescFileSize;
+   map_filesize_t MaxDescFileSize;
 
    /** \brief The Pool structures manage the allocation pools that the generator uses
 
@@ -301,24 +371,28 @@ struct pkgCache::Header
        the same number of pools as there are structure types. The generator
        stores this information so future additions can make use of any unused pool
        blocks. */
-   DynamicMMap::Pool Pools[9];
-   
+   DynamicMMap::Pool Pools[12];
+
    /** \brief hash tables providing rapid group/package name lookup
 
-       Each group/package name is inserted into the hash table using pkgCache::Hash(const &string)
+       Each group/package name is inserted into a hash table using pkgCache::Hash(const &string)
        By iterating over each entry in the hash table it is possible to iterate over
        the entire list of packages. Hash Collisions are handled with a singly linked
        list of packages based at the hash item. The linked list contains only
        packages that match the hashing function.
        In the PkgHashTable is it possible that multiple packages have the same name -
        these packages are stored as a sequence in the list.
+       The size of both tables is the same. */
+   uint32_t HashTableSize;
+   uint32_t GetHashTableSize() const { return HashTableSize; }
+   void SetHashTableSize(unsigned int const sz) { HashTableSize = sz; }
+   map_pointer_t GetArchitectures() const { return Architectures; }
+   void SetArchitectures(map_pointer_t const idx) { Architectures = idx; }
+   map_pointer_t * PkgHashTableP() const { return (map_pointer_t*) (this + 1); }
+   map_pointer_t * GrpHashTableP() const { return PkgHashTableP() + GetHashTableSize(); }
 
-       Beware: The Hashmethod assumes that the hash table sizes are equal */
-   map_ptrloc PkgHashTable[2*1048];
-   map_ptrloc GrpHashTable[2*1048];
-
-   /** \brief Size of the complete cache file */
-   unsigned long  CacheFileSize;
+   /** \brief Hash of the file (TODO: Rename) */
+   map_filesize_small_t CacheFileSize;
 
    bool CheckSizes(Header &Against) const APT_PURE;
    Header();
@@ -334,17 +408,17 @@ struct pkgCache::Header
 struct pkgCache::Group
 {
    /** \brief Name of the group */
-   map_ptrloc Name;		// StringItem
+   map_stringitem_t Name;
 
    // Linked List
    /** \brief Link to the first package which belongs to the group */
-   map_ptrloc FirstPackage;	// Package
+   map_pointer_t FirstPackage;	// Package
    /** \brief Link to the last package which belongs to the group */
-   map_ptrloc LastPackage;	// Package
+   map_pointer_t LastPackage;	// Package
    /** \brief Link to the next Group */
-   map_ptrloc Next;		// Group
+   map_pointer_t Next;		// Group
    /** \brief unique sequel ID */
-   unsigned int ID;
+   map_id_t ID;
 
 };
 									/*}}}*/
@@ -362,10 +436,13 @@ struct pkgCache::Group
 */
 struct pkgCache::Package
 {
-   /** \brief Name of the package */
-   map_ptrloc Name;              // StringItem
+   /** \brief Name of the package
+    * Note that the access method Name() will remain. It is just this data member
+    * deprecated as this information is already stored and available via the
+    * associated Group – so it is wasting precious binary cache space */
+   APT_DEPRECATED_MSG("Use the .Name() method instead of accessing the member directly") map_stringitem_t Name;
    /** \brief Architecture of the package */
-   map_ptrloc Arch;              // StringItem
+   map_stringitem_t Arch;
    /** \brief Base of a singly linked list of versions
 
        Each structure represents a unique version of the package.
@@ -375,36 +452,31 @@ struct pkgCache::Package
        versions of a package can be cleanly handled by the system.
        Furthermore, this linked list is guaranteed to be sorted
        from Highest version to lowest version with no duplicate entries. */
-   map_ptrloc VersionList;       // Version
+   map_pointer_t VersionList;       // Version
    /** \brief index to the installed version */
-   map_ptrloc CurrentVer;        // Version
-   /** \brief indicates the deduced section
-
-       Should be the index to the string "Unknown" or to the section
-       of the last parsed item. */
-   map_ptrloc Section;           // StringItem
+   map_pointer_t CurrentVer;        // Version
    /** \brief index of the group this package belongs to */
-   map_ptrloc Group;             // Group the Package belongs to
+   map_pointer_t Group;             // Group the Package belongs to
 
    // Linked list
    /** \brief Link to the next package in the same bucket */
-   map_ptrloc NextPackage;       // Package
+   map_pointer_t NextPackage;       // Package
    /** \brief List of all dependencies on this package */
-   map_ptrloc RevDepends;        // Dependency
+   map_pointer_t RevDepends;        // Dependency
    /** \brief List of all "packages" this package provide */
-   map_ptrloc ProvidesList;      // Provides
+   map_pointer_t ProvidesList;      // Provides
 
    // Install/Remove/Purge etc
    /** \brief state that the user wishes the package to be in */
-   unsigned char SelectedState;     // What
+   map_number_t SelectedState;     // What
    /** \brief installation state of the package
 
        This should be "ok" but in case the installation failed
        it will be different.
    */
-   unsigned char InstState;         // Flags
+   map_number_t InstState;         // Flags
    /** \brief indicates if the package is installed */
-   unsigned char CurrentState;      // State
+   map_number_t CurrentState;      // State
 
    /** \brief unique sequel ID
 
@@ -412,9 +484,49 @@ struct pkgCache::Package
        This allows clients to create an array of size PackageCount and use it to store
        state information for the package map. For instance the status file emitter uses
        this to track which packages have been emitted already. */
-   unsigned int ID;
+   map_id_t ID;
    /** \brief some useful indicators of the package's state */
-   unsigned long Flags;
+   map_flags_t Flags;
+};
+									/*}}}*/
+// Release File structure						/*{{{*/
+/** \brief stores information about the release files used to generate the cache
+
+    PackageFiles reference ReleaseFiles as we need to keep record of which
+    version belongs to which release e.g. for pinning. */
+struct pkgCache::ReleaseFile
+{
+   /** \brief physical disk file that this ReleaseFile represents */
+   map_stringitem_t FileName;
+   /** \brief the release information
+
+       Please see the files document for a description of what the
+       release information means. */
+   map_stringitem_t Archive;
+   map_stringitem_t Codename;
+   map_stringitem_t Version;
+   map_stringitem_t Origin;
+   map_stringitem_t Label;
+   /** \brief The site the index file was fetched from */
+   map_stringitem_t Site;
+
+   /** \brief Size of the file
+
+       Used together with the modification time as a
+       simple check to ensure that the Packages
+       file has not been altered since Cache generation. */
+   map_filesize_t Size;
+   /** \brief Modification time for the file */
+   time_t mtime;
+
+   /** @TODO document PackageFile::Flags */
+   map_flags_t Flags;
+
+   // Linked list
+   /** \brief Link to the next ReleaseFile in the Cache */
+   map_pointer_t NextFile;
+   /** \brief unique sequel ID */
+   map_fileid_t ID;
 };
 									/*}}}*/
 // Package File structure						/*{{{*/
@@ -426,41 +538,34 @@ struct pkgCache::Package
 struct pkgCache::PackageFile
 {
    /** \brief physical disk file that this PackageFile represents */
-   map_ptrloc FileName;        // StringItem
-   /** \brief the release information
+   map_stringitem_t FileName;
+   /** \brief the release information */
+   map_pointer_t Release;
 
-       Please see the files document for a description of what the
-       release information means. */
-   map_ptrloc Archive;         // StringItem
-   map_ptrloc Codename;        // StringItem
-   map_ptrloc Component;       // StringItem
-   map_ptrloc Version;         // StringItem
-   map_ptrloc Origin;          // StringItem
-   map_ptrloc Label;           // StringItem
-   map_ptrloc Architecture;    // StringItem
-   /** \brief The site the index file was fetched from */
-   map_ptrloc Site;            // StringItem
+   map_stringitem_t Component;
+   map_stringitem_t Architecture;
+
    /** \brief indicates what sort of index file this is
 
        @TODO enumerate at least the possible indexes */
-   map_ptrloc IndexType;       // StringItem
+   map_stringitem_t IndexType;
    /** \brief Size of the file
 
        Used together with the modification time as a
        simple check to ensure that the Packages
        file has not been altered since Cache generation. */
-   unsigned long Size;
+   map_filesize_t Size;
    /** \brief Modification time for the file */
    time_t mtime;
 
    /** @TODO document PackageFile::Flags */
-   unsigned long Flags;
+   map_flags_t Flags;
 
    // Linked list
    /** \brief Link to the next PackageFile in the Cache */
-   map_ptrloc NextFile;        // PackageFile
+   map_pointer_t NextFile;        // PackageFile
    /** \brief unique sequel ID */
-   unsigned int ID;
+   map_fileid_t ID;
 };
 									/*}}}*/
 // VerFile structure							/*{{{*/
@@ -471,13 +576,13 @@ struct pkgCache::PackageFile
 struct pkgCache::VerFile
 {
    /** \brief index of the package file that this version was found in */
-   map_ptrloc File;           // PackageFile
+   map_pointer_t File;           // PackageFile
    /** \brief next step in the linked list */
-   map_ptrloc NextFile;       // PkgVerFile
+   map_pointer_t NextFile;       // PkgVerFile
    /** \brief position in the package file */
-   map_ptrloc Offset;         // File offset
+   map_filesize_t Offset;         // File offset
    /** @TODO document pkgCache::VerFile::Size */
-   unsigned long Size;
+   map_filesize_t Size;
 };
 									/*}}}*/
 // DescFile structure							/*{{{*/
@@ -485,13 +590,13 @@ struct pkgCache::VerFile
 struct pkgCache::DescFile
 {
    /** \brief index of the file that this description was found in */
-   map_ptrloc File;           // PackageFile
+   map_pointer_t File;           // PackageFile
    /** \brief next step in the linked list */
-   map_ptrloc NextFile;       // PkgVerFile
+   map_pointer_t NextFile;       // PkgVerFile
    /** \brief position in the file */
-   map_ptrloc Offset;         // File offset
+   map_filesize_t Offset;         // File offset
    /** @TODO document pkgCache::DescFile::Size */
-   unsigned long Size;
+   map_filesize_t Size;
 };
 									/*}}}*/
 // Version structure							/*{{{*/
@@ -500,26 +605,37 @@ struct pkgCache::DescFile
     The version list is always sorted from highest version to lowest
     version by the generator. Equal version numbers are either merged
     or handled as separate versions based on the Hash value. */
+APT_IGNORE_DEPRECATED_PUSH
 struct pkgCache::Version
 {
    /** \brief complete version string */
-   map_ptrloc VerStr;            // StringItem
+   map_stringitem_t VerStr;
    /** \brief section this version is filled in */
-   map_ptrloc Section;           // StringItem
+   map_stringitem_t Section;
+   /** \brief source package name this version comes from
+      Always contains the name, even if it is the same as the binary name */
+   map_stringitem_t SourcePkgName;
+   /** \brief source version this version comes from
+      Always contains the version string, even if it is the same as the binary version */
+   map_stringitem_t SourceVerStr;
 
    /** \brief Multi-Arch capabilities of a package version */
-   enum VerMultiArch { None = 0, /*!< is the default and doesn't trigger special behaviour */
+   enum VerMultiArch { No = 0, /*!< is the default and doesn't trigger special behaviour */
 		       All = (1<<0), /*!< will cause that Ver.Arch() will report "all" */
 		       Foreign = (1<<1), /*!< can satisfy dependencies in another architecture */
 		       Same = (1<<2), /*!< can be co-installed with itself from other architectures */
 		       Allowed = (1<<3), /*!< other packages are allowed to depend on thispkg:any */
 		       AllForeign = All | Foreign,
 		       AllAllowed = All | Allowed };
+
+   /** \brief deprecated variant of No */
+   static const APT_DEPRECATED_MSG("The default value of the Multi-Arch field is no, not none") VerMultiArch None = No;
+
    /** \brief stores the MultiArch capabilities of this version
 
        Flags used are defined in pkgCache::Version::VerMultiArch
    */
-   unsigned char MultiArch;
+   map_number_t MultiArch;
 
    /** \brief references all the PackageFile's that this version came from
 
@@ -527,36 +643,37 @@ struct pkgCache::Version
        applies to. If FileList is 0 then this is a blank version.
        The structure should also have a 0 in all other fields excluding
        pkgCache::Version::VerStr and Possibly pkgCache::Version::NextVer. */
-   map_ptrloc FileList;          // VerFile
+   map_pointer_t FileList;          // VerFile
    /** \brief next (lower or equal) version in the linked list */
-   map_ptrloc NextVer;           // Version
+   map_pointer_t NextVer;           // Version
    /** \brief next description in the linked list */
-   map_ptrloc DescriptionList;   // Description
+   map_pointer_t DescriptionList;   // Description
    /** \brief base of the dependency list */
-   map_ptrloc DependsList;       // Dependency
+   map_pointer_t DependsList;       // Dependency
    /** \brief links to the owning package
 
        This allows reverse dependencies to determine the package */
-   map_ptrloc ParentPkg;         // Package
+   map_pointer_t ParentPkg;         // Package
    /** \brief list of pkgCache::Provides */
-   map_ptrloc ProvidesList;      // Provides
+   map_pointer_t ProvidesList;      // Provides
 
    /** \brief archive size for this version
 
        For Debian this is the size of the .deb file. */
-   unsigned long long Size;      // These are the .deb size
+   map_filesize_t Size; // These are the .deb size
    /** \brief uncompressed size for this version */
-   unsigned long long InstalledSize;
+   map_filesize_t InstalledSize;
    /** \brief characteristic value representing this version
 
        No two packages in existence should have the same VerStr
        and Hash with different contents. */
    unsigned short Hash;
    /** \brief unique sequel ID */
-   unsigned int ID;
+   map_id_t ID;
    /** \brief parsed priority value */
-   unsigned char Priority;
+   map_number_t Priority;
 };
+APT_IGNORE_DEPRECATED_POP
 									/*}}}*/
 // Description structure						/*{{{*/
 /** \brief datamember of a linked list of available description for a version */
@@ -566,22 +683,22 @@ struct pkgCache::Description
 
        If the value has a 0 length then this is read using the Package
        file else the Translation-CODE file is used. */
-   map_ptrloc language_code;     // StringItem
+   map_stringitem_t language_code;
    /** \brief MD5sum of the original description
 
        Used to map Translations of a description to a version
        and to check that the Translation is up-to-date. */
-   map_ptrloc md5sum;            // StringItem
+   map_stringitem_t md5sum;
 
    /** @TODO document pkgCache::Description::FileList */
-   map_ptrloc FileList;          // DescFile
+   map_pointer_t FileList;          // DescFile
    /** \brief next translation for this description */
-   map_ptrloc NextDesc;          // Description
+   map_pointer_t NextDesc;          // Description
    /** \brief the text is a description of this package */
-   map_ptrloc ParentPkg;         // Package
+   map_pointer_t ParentPkg;         // Package
 
    /** \brief unique sequel ID */
-   unsigned int ID;
+   map_id_t ID;
 };
 									/*}}}*/
 // Dependency structure							/*{{{*/
@@ -591,30 +708,37 @@ struct pkgCache::Description
     The base of the linked list is pkgCache::Version::DependsList.
     All forms of dependencies are recorded here including Depends,
     Recommends, Suggests, Enhances, Conflicts, Replaces and Breaks. */
-struct pkgCache::Dependency
+struct pkgCache::DependencyData
 {
    /** \brief string of the version the dependency is applied against */
-   map_ptrloc Version;         // StringItem
+   map_stringitem_t Version;
    /** \brief index of the package this depends applies to
 
        The generator will - if the package does not already exist -
        create a blank (no version records) package. */
-   map_ptrloc Package;         // Package
-   /** \brief next dependency of this version */
-   map_ptrloc NextDepends;     // Dependency
-   /** \brief next reverse dependency of this package */
-   map_ptrloc NextRevDepends;  // Dependency
-   /** \brief version of the package which has the reverse depends */
-   map_ptrloc ParentVer;       // Version
+   map_pointer_t Package;         // Package
 
-   /** \brief unique sequel ID */
-   map_ptrloc ID;
    /** \brief Dependency type - Depends, Recommends, Conflicts, etc */
-   unsigned char Type;
+   map_number_t Type;
    /** \brief comparison operator specified on the depends line
 
        If the high bit is set then it is a logical OR with the previous record. */
-   unsigned char CompareOp;
+   map_flags_t CompareOp;
+
+   map_pointer_t NextData;
+};
+struct pkgCache::Dependency
+{
+   map_pointer_t DependencyData;  // DependencyData
+   /** \brief version of the package which has the depends */
+   map_pointer_t ParentVer;       // Version
+   /** \brief next reverse dependency of this package */
+   map_pointer_t NextRevDepends;  // Dependency
+   /** \brief next dependency of this version */
+   map_pointer_t NextDepends;     // Dependency
+
+   /** \brief unique sequel ID */
+   map_id_t ID;
 };
 									/*}}}*/
 // Provides structure							/*{{{*/
@@ -629,31 +753,23 @@ struct pkgCache::Dependency
 struct pkgCache::Provides
 {
    /** \brief index of the package providing this */
-   map_ptrloc ParentPkg;        // Package
+   map_pointer_t ParentPkg;        // Package
    /** \brief index of the version this provide line applies to */
-   map_ptrloc Version;          // Version
+   map_pointer_t Version;          // Version
    /** \brief version in the provides line (if any)
 
        This version allows dependencies to depend on specific versions of a
-       Provides, as well as allowing Provides to override existing packages.
-       This is experimental. Note that Debian doesn't allow versioned provides */
-   map_ptrloc ProvideVersion;   // StringItem
+       Provides, as well as allowing Provides to override existing packages. */
+   map_stringitem_t ProvideVersion;
+   map_flags_t Flags;
    /** \brief next provides (based of package) */
-   map_ptrloc NextProvides;     // Provides
+   map_pointer_t NextProvides;     // Provides
    /** \brief next provides (based of version) */
-   map_ptrloc NextPkgProv;      // Provides
+   map_pointer_t NextPkgProv;      // Provides
 };
 									/*}}}*/
-// StringItem structure							/*{{{*/
-/** \brief used for generating single instances of strings
-
-    Some things like Section Name are are useful to have as unique tags.
-    It is part of a linked list based at pkgCache::Header::StringList
-
-    All strings are simply inlined any place in the file that is natural
-    for the writer. The client should make no assumptions about the positioning
-    of strings. All StringItems should be null-terminated. */
-struct pkgCache::StringItem
+// UNUSED StringItem structure						/*{{{*/
+struct APT_DEPRECATED_MSG("No longer used in cache generation without a replacement") pkgCache::StringItem
 {
    /** \brief string this refers to */
    map_ptrloc String;        // StringItem
@@ -661,7 +777,6 @@ struct pkgCache::StringItem
    map_ptrloc NextItem;      // StringItem
 };
 									/*}}}*/
-
 
 inline char const * pkgCache::NativeArch()
 	{ return StrP + HeaderP->Architecture; }
@@ -680,6 +795,11 @@ inline pkgCache::PkgFileIterator pkgCache::FileBegin()
        {return PkgFileIterator(*this,PkgFileP + HeaderP->FileList);}
 inline pkgCache::PkgFileIterator pkgCache::FileEnd()
        {return PkgFileIterator(*this,PkgFileP);}
+inline pkgCache::RlsFileIterator pkgCache::RlsFileBegin()
+       {return RlsFileIterator(*this,RlsFileP + HeaderP->RlsFileList);}
+inline pkgCache::RlsFileIterator pkgCache::RlsFileEnd()
+       {return RlsFileIterator(*this,RlsFileP);}
+
 
 // Oh I wish for Real Name Space Support
 class pkgCache::Namespace						/*{{{*/
@@ -691,6 +811,7 @@ class pkgCache::Namespace						/*{{{*/
    typedef pkgCache::DescIterator DescIterator;
    typedef pkgCache::DepIterator DepIterator;
    typedef pkgCache::PrvIterator PrvIterator;
+   typedef pkgCache::RlsFileIterator RlsFileIterator;
    typedef pkgCache::PkgFileIterator PkgFileIterator;
    typedef pkgCache::VerFileIterator VerFileIterator;
    typedef pkgCache::Version Version;

@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: acquire-worker.h,v 1.12 2001/02/20 07:03:17 jgg Exp $
 /* ######################################################################
 
    Acquire Worker - Worker process manager
@@ -48,7 +47,7 @@
 class pkgAcquire::Worker : public WeakPointable
 {
    /** \brief dpointer placeholder (for later in case we need it) */
-   void *d;
+   void * const d;
   
    friend class pkgAcquire;
    
@@ -100,6 +99,11 @@ class pkgAcquire::Worker : public WeakPointable
     *  Used to send commands and configuration data to the subprocess.
     */
    int OutFd;
+
+   /** \brief The socket to send SCM_RIGHTS message through
+    */
+   int PrivSepSocketFd;
+   int PrivSepSocketFdChild;
 
    /** \brief Set to \b true if the worker is in a state in which it
     *  might generate data or command responses.
@@ -313,7 +317,7 @@ class pkgAcquire::Worker : public WeakPointable
     *  \param Config A location in which to store information about
     *  the fetch method.
     */
-   Worker(MethodConfig *Config);
+   explicit Worker(MethodConfig *Config);
 
    /** \brief Clean up this worker.
     *
@@ -321,6 +325,9 @@ class pkgAcquire::Worker : public WeakPointable
     *  \b false, also rudely interrupts the worker with a SIGINT.
     */
    virtual ~Worker();
+
+private:
+   APT_HIDDEN void PrepareFiles(char const * const caller, pkgAcquire::Queue::QItem const * const Itm);
 };
 
 /** @} */

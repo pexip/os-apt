@@ -38,6 +38,11 @@ bool pkgArchiveCleaner::Go(std::string Dir,pkgCache &Cache)
    if(Dir == "/")
       return _error->Error(_("Clean of %s is not supported"), Dir.c_str());
 
+   // non-existing directories are always clean
+   // we do not check for a directory explicitly to support symlinks
+   if (FileExists(Dir) == false)
+      return true;
+
    DIR *D = opendir(Dir.c_str());
    if (D == 0)
       return _error->Errno("opendir",_("Unable to read %s"),Dir.c_str());
@@ -54,6 +59,7 @@ bool pkgArchiveCleaner::Go(std::string Dir,pkgCache &Cache)
       // Skip some files..
       if (strcmp(Dir->d_name,"lock") == 0 ||
 	  strcmp(Dir->d_name,"partial") == 0 ||
+	  strcmp(Dir->d_name,"lost+found") == 0 ||
 	  strcmp(Dir->d_name,".") == 0 ||
 	  strcmp(Dir->d_name,"..") == 0)
 	 continue;
@@ -106,7 +112,7 @@ bool pkgArchiveCleaner::Go(std::string Dir,pkgCache &Cache)
 		 J.end() == false; ++J)
 	    {
 	       if (CleanInstalled == true &&
-		   (J.File()->Flags & pkgCache::Flag::NotSource) != 0)
+		   J.File().Flagged(pkgCache::Flag::NotSource))
 		  continue;
 	       IsFetchable = true;
 	       break;
@@ -131,3 +137,6 @@ bool pkgArchiveCleaner::Go(std::string Dir,pkgCache &Cache)
    return true;
 }
 									/*}}}*/
+
+pkgArchiveCleaner::pkgArchiveCleaner() : d(NULL) {}
+APT_CONST pkgArchiveCleaner::~pkgArchiveCleaner() {}

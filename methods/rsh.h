@@ -25,6 +25,7 @@ class RSHConn
    int WriteFd;
    int ReadFd;
    URI ServerName;
+   std::string const Prog;
 
    // Private helper functions
    bool ReadLine(std::string &Text);
@@ -36,6 +37,7 @@ class RSHConn
    // Raw connection IO
    bool WriteMsg(std::string &Text,bool Sync,const char *Fmt,...);
    bool Connect(std::string Host, std::string User);
+   bool Connect(std::string Host, unsigned int Port, std::string User);
    bool Comp(URI Other) const {return Other.Host == ServerName.Host && Other.Port == ServerName.Port;};
 
    // Connection control
@@ -48,16 +50,16 @@ class RSHConn
    bool Get(const char *Path,FileFd &To,unsigned long long Resume,
             Hashes &Hash,bool &Missing, unsigned long long Size);
 
-   RSHConn(URI Srv);
+   RSHConn(std::string const &Prog, URI Srv);
    ~RSHConn();
 };
 
-#include <apt-pkg/acquire-method.h>
+#include "aptmethod.h"
 
-class RSHMethod : public pkgAcqMethod
+class RSHMethod : public aptMethod
 {
-   virtual bool Fetch(FetchItem *Itm);
-   virtual bool Configuration(std::string Message);
+   virtual bool Fetch(FetchItem *Itm) APT_OVERRIDE;
+   virtual bool Configuration(std::string Message) APT_OVERRIDE;
 
    RSHConn *Server;
 
@@ -68,7 +70,7 @@ class RSHMethod : public pkgAcqMethod
 
    public:
 
-   RSHMethod();
+   explicit RSHMethod(std::string &&Prog);
 };
 
 #endif

@@ -57,7 +57,7 @@
    There are complications in this algorithm when presented with cycles.
    For all known practical cases it works, all cases where it doesn't work
    is fixable by tweaking the package descriptions. However, it should be
-   possible to impove this further to make some better choices when 
+   possible to improve this further to make some better choices when 
    presented with cycles. 
    
    ##################################################################### */
@@ -68,25 +68,22 @@
 #include <apt-pkg/orderlist.h>
 #include <apt-pkg/depcache.h>
 #include <apt-pkg/error.h>
-#include <apt-pkg/sptr.h>
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/pkgcache.h>
 
 #include <stdlib.h>
 #include <string.h>
-#include <string>
+#include <algorithm>
 #include <iostream>
 									/*}}}*/
 
 using namespace std;
 
-pkgOrderList *pkgOrderList::Me = 0;
-
 // OrderList::pkgOrderList - Constructor				/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-pkgOrderList::pkgOrderList(pkgDepCache *pCache) : Cache(*pCache),
+pkgOrderList::pkgOrderList(pkgDepCache *pCache) : d(NULL), Cache(*pCache),
 						  Primary(NULL), Secondary(NULL),
 						  RevDepends(NULL), Remove(NULL),
 						  AfterEnd(NULL), FileList(NULL),
@@ -137,14 +134,14 @@ bool pkgOrderList::IsMissing(PkgIterator Pkg)
 									/*}}}*/
 // OrderList::DoRun - Does an order run					/*{{{*/
 // ---------------------------------------------------------------------
-/* The caller is expeted to have setup the desired probe state */
+/* The caller is expected to have setup the desired probe state */
 bool pkgOrderList::DoRun()
 {   
    // Temp list
    unsigned long Size = Cache.Head().PackageCount;
-   SPtrArray<Package *> NList = new Package *[Size];
-   SPtrArray<Package *> AfterList = new Package *[Size];
-   AfterEnd = AfterList;
+   std::unique_ptr<Package *[]> NList(new Package *[Size]);
+   std::unique_ptr<Package *[]> AfterList(new Package *[Size]);
+   AfterEnd = AfterList.get();
    
    Depth = 0;
    WipeFlags(Added | AddPending | Loop | InList);
@@ -154,7 +151,7 @@ bool pkgOrderList::DoRun()
 
    // Rebuild the main list into the temp list.
    iterator OldEnd = End;
-   End = NList;
+   End = NList.get();
    for (iterator I = List; I != OldEnd; ++I)
       if (VisitNode(PkgIterator(Cache,*I), "DoRun") == false)
       {
@@ -163,12 +160,12 @@ bool pkgOrderList::DoRun()
       }
    
    // Copy the after list to the end of the main list
-   for (Package **I = AfterList; I != AfterEnd; I++)
+   for (Package **I = AfterList.get(); I != AfterEnd; I++)
       *End++ = *I;
    
    // Swap the main list to the new list
    delete [] List;
-   List = NList.UnGuard();
+   List = NList.release();
    return true;
 }
 									/*}}}*/
@@ -188,8 +185,7 @@ bool pkgOrderList::OrderCritical()
    LoopCount = 0;
 
    // Sort
-   Me = this;
-   qsort(List,End - List,sizeof(*List),&OrderCompareB);
+   std::sort(List,End, [this](Package *a, Package *b) { return OrderCompareB(a, b) < 0; } );
 
    if (DoRun() == false)
       return false;
@@ -241,8 +237,7 @@ bool pkgOrderList::OrderUnpack(string *FileList)
    LoopCount = -1;
 
    // Sort
-   Me = this;
-   qsort(List,End - List,sizeof(*List),&OrderCompareA);
+   std::sort(List,End, [this](Package *a, Package *b) { return OrderCompareA(a, b) < 0; });
 
    if (Debug == true)
       clog << "** Pass A" << endl;
@@ -259,7 +254,7 @@ bool pkgOrderList::OrderUnpack(string *FileList)
       clog << "** Pass C" << endl;
    LoopCount = 0;
    RevDepends = 0;
-   Remove = 0;             // Otherwise the libreadline remove problem occures
+   Remove = 0;             // Otherwise the libreadline remove problem occurs
    if (DoRun() == false)
       return false;
 
@@ -333,7 +328,7 @@ int pkgOrderList::Score(PkgIterator Pkg)
 	 break;
       }
 
-   // Important Required Standard Optional Extra
+   // Required Important Standard Optional Extra
    if (Cache[Pkg].InstVerIter(Cache)->Priority <= 5)
    {
       signed short PrioMap[] = {0,5,4,3,1,0};
@@ -384,21 +379,21 @@ static int BoolCompare(bool A,bool B)
 // ---------------------------------------------------------------------
 /* This provides a first-pass sort of the list and gives a decent starting
     point for further complete ordering. It is used by OrderUnpack only */
-int pkgOrderList::OrderCompareA(const void *a, const void *b)
+int pkgOrderList::OrderCompareA(Package *a, Package *b)
 {
-   PkgIterator A(Me->Cache,*(Package **)a);
-   PkgIterator B(Me->Cache,*(Package **)b);
+   PkgIterator A(Cache,a);
+   PkgIterator B(Cache,b);
 
    // We order packages with a set state toward the front
    int Res;
-   if ((Res = BoolCompare(Me->IsNow(A),Me->IsNow(B))) != 0)
+   if ((Res = BoolCompare(IsNow(A),IsNow(B))) != 0)
       return -1*Res;
    
    // We order missing files to toward the end
-/*   if (Me->FileList != 0)
+/*   if (FileList != 0)
    {
-      if ((Res = BoolCompare(Me->IsMissing(A),
-			     Me->IsMissing(B))) != 0)
+      if ((Res = BoolCompare(IsMissing(A),
+			     IsMissing(B))) != 0)
 	 return Res;
    }*/
    
@@ -410,8 +405,8 @@ int pkgOrderList::OrderCompareA(const void *a, const void *b)
        B.State() != pkgCache::PkgIterator::NeedsNothing)
       return 1;
    
-   int ScoreA = Me->Score(A);
-   int ScoreB = Me->Score(B);
+   int ScoreA = Score(A);
+   int ScoreB = Score(B);
 
    if (ScoreA > ScoreB)
       return -1;
@@ -426,10 +421,10 @@ int pkgOrderList::OrderCompareA(const void *a, const void *b)
 // ---------------------------------------------------------------------
 /* This orders by installation source. This is useful to handle
    inter-source breaks */
-int pkgOrderList::OrderCompareB(const void *a, const void *b)
+int pkgOrderList::OrderCompareB(Package *a, Package *b)
 {
-   PkgIterator A(Me->Cache,*(Package **)a);
-   PkgIterator B(Me->Cache,*(Package **)b);
+   PkgIterator A(Cache,a);
+   PkgIterator B(Cache,b);
 
    if (A.State() != pkgCache::PkgIterator::NeedsNothing && 
        B.State() == pkgCache::PkgIterator::NeedsNothing)
@@ -439,7 +434,7 @@ int pkgOrderList::OrderCompareB(const void *a, const void *b)
        B.State() != pkgCache::PkgIterator::NeedsNothing)
       return 1;
    
-   int F = Me->FileCmp(A,B);
+   int F = FileCmp(A,B);
    if (F != 0)
    {
       if (F > 0)
@@ -447,8 +442,8 @@ int pkgOrderList::OrderCompareB(const void *a, const void *b)
       return 1;
    }
    
-   int ScoreA = Me->Score(A);
-   int ScoreB = Me->Score(B);
+   int ScoreA = Score(A);
+   int ScoreB = Score(B);
 
    if (ScoreA > ScoreB)
       return -1;
@@ -512,8 +507,8 @@ bool pkgOrderList::VisitRProvides(DepFunc F,VerIterator Ver)
    against it! */
 bool pkgOrderList::VisitProvides(DepIterator D,bool Critical)
 {
-   SPtrArray<Version *> List = D.AllTargets();
-   for (Version **I = List; *I != 0; ++I)
+   std::unique_ptr<Version *[]> List(D.AllTargets());
+   for (Version **I = List.get(); *I != 0; ++I)
    {
       VerIterator Ver(Cache,*I);
       PkgIterator Pkg = Ver.ParentPkg();
@@ -541,7 +536,7 @@ bool pkgOrderList::VisitProvides(DepIterator D,bool Critical)
    }
    if (D.IsNegative() == false)
       return true;
-   for (Version **I = List; *I != 0; ++I)
+   for (Version **I = List.get(); *I != 0; ++I)
    {
       VerIterator Ver(Cache,*I);
       PkgIterator Pkg = Ver.ParentPkg();
@@ -592,7 +587,7 @@ bool pkgOrderList::VisitNode(PkgIterator Pkg, char const* from)
 
    DepFunc Old = Primary;
    
-   // Perform immedate configuration of the package if so flagged.
+   // Perform immediate configuration of the package if so flagged.
    if (IsFlag(Pkg,Immediate) == true && Primary != &pkgOrderList::DepUnPackPre)
       Primary = &pkgOrderList::DepUnPackPreD;
 
@@ -880,7 +875,7 @@ bool pkgOrderList::DepUnPackDep(DepIterator D)
    orders configuration so that when a package comes to be configured it's
    dependents are configured. 
  
-   Loops are ingored. Depends loop entry points are chaotic. */
+   Loops are ignored. Depends loop entry points are chaotic. */
 bool pkgOrderList::DepConfigure(DepIterator D)
 {
    // Never consider reverse configuration dependencies.
@@ -1075,9 +1070,9 @@ void pkgOrderList::WipeFlags(unsigned long F)
    this fails to produce a suitable result. */
 bool pkgOrderList::CheckDep(DepIterator D)
 {
-   SPtrArray<Version *> List = D.AllTargets();
+   std::unique_ptr<Version *[]> List(D.AllTargets());
    bool Hit = false;
-   for (Version **I = List; *I != 0; I++)
+   for (Version **I = List.get(); *I != 0; I++)
    {
       VerIterator Ver(Cache,*I);
       PkgIterator Pkg = Ver.ParentPkg();

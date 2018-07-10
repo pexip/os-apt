@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 setupenvironment
 configarchitecture 'amd64' 'i386'
 
@@ -36,3 +36,6 @@ test "$LS_U_AMD" -lt "$LS_C_INT" && msgpass || msgfail
 
 msgtest 'Test if' 'libsame:i386 unpack is before libsame:amd64 configure'
 test "$LS_U_INT" -lt "$LS_C_AMD" && msgpass || msgfail
+
+# lets see if it really does work out
+testsuccess apt dist-upgrade -y

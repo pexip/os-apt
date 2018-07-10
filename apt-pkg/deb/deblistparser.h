@@ -19,6 +19,9 @@
 
 #include <string>
 #include <vector>
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+#include <apt-pkg/string_view.h>
+#endif
 
 #ifndef APT_8_CLEANER_HEADERS
 #include <apt-pkg/indexfile.h>
@@ -26,95 +29,127 @@
 
 class FileFd;
 
-class debListParser : public pkgCacheGenerator::ListParser
+class APT_HIDDEN debListParser : public pkgCacheListParser
 {
    public:
 
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
    // Parser Helper
    struct WordList
    {
-      const char *Str;
+      APT::StringView Str;
       unsigned char Val;
    };
+#endif
 
    private:
-   /** \brief dpointer placeholder (for later in case we need it) */
-   void *d;
+   std::vector<std::string> forceEssential;
+   std::vector<std::string> forceImportant;
+   std::string MD5Buffer;
 
    protected:
    pkgTagFile Tags;
    pkgTagSection Section;
-   unsigned long iOffset;
-   std::string Arch;
-   std::vector<std::string> Architectures;
-   bool MultiArchEnabled;
+   map_filesize_t iOffset;
 
-   unsigned long UniqFindTagWrite(const char *Tag);
    virtual bool ParseStatus(pkgCache::PkgIterator &Pkg,pkgCache::VerIterator &Ver);
-   bool ParseDepends(pkgCache::VerIterator &Ver,const char *Tag,
+   bool ParseDepends(pkgCache::VerIterator &Ver, pkgTagSection::Key Key,
 		     unsigned int Type);
    bool ParseProvides(pkgCache::VerIterator &Ver);
-   bool NewProvidesAllArch(pkgCache::VerIterator &Ver, std::string const &Package, std::string const &Version);
-   static bool GrabWord(std::string Word,WordList *List,unsigned char &Out);
-   
+
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+   APT_HIDDEN static bool GrabWord(APT::StringView Word,const WordList *List,unsigned char &Out);
+#endif
+   APT_HIDDEN unsigned char ParseMultiArch(bool const showErrors);
+
    public:
 
-   static unsigned char GetPrio(std::string Str);
+   APT_PUBLIC static unsigned char GetPrio(std::string Str);
       
    // These all operate against the current section
-   virtual std::string Package();
-   virtual std::string Architecture();
-   virtual bool ArchitectureAll();
-   virtual std::string Version();
-   virtual bool NewVersion(pkgCache::VerIterator &Ver);
-   virtual std::string Description();
-   virtual std::string DescriptionLanguage();
-   virtual MD5SumValue Description_md5();
-   virtual unsigned short VersionHash();
-#if (APT_PKG_MAJOR >= 4 && APT_PKG_MINOR >= 13)
-   virtual bool SameVersion(unsigned short const Hash, pkgCache::VerIterator const &Ver);
+   virtual std::string Package() APT_OVERRIDE;
+   virtual bool ArchitectureAll() APT_OVERRIDE;
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+   virtual APT::StringView Architecture() APT_OVERRIDE;
+   virtual APT::StringView Version() APT_OVERRIDE;
 #endif
+   virtual bool NewVersion(pkgCache::VerIterator &Ver) APT_OVERRIDE;
+   virtual std::vector<std::string> AvailableDescriptionLanguages() APT_OVERRIDE;
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+   virtual APT::StringView Description_md5() APT_OVERRIDE;
+#endif
+   virtual unsigned short VersionHash() APT_OVERRIDE;
+   virtual bool SameVersion(unsigned short const Hash, pkgCache::VerIterator const &Ver) APT_OVERRIDE;
    virtual bool UsePackage(pkgCache::PkgIterator &Pkg,
-			   pkgCache::VerIterator &Ver);
-   virtual unsigned long Offset() {return iOffset;};
-   virtual unsigned long Size() {return Section.size();};
+			   pkgCache::VerIterator &Ver) APT_OVERRIDE;
+   virtual map_filesize_t Offset() APT_OVERRIDE {return iOffset;};
+   virtual map_filesize_t Size() APT_OVERRIDE {return Section.size();};
 
-   virtual bool Step();
-   
-   bool LoadReleaseInfo(pkgCache::PkgFileIterator &FileI,FileFd &File,
-			std::string section);
+   virtual bool Step() APT_OVERRIDE;
 
-   static const char *ParseDepends(const char *Start,const char *Stop,
+   bool LoadReleaseInfo(pkgCache::RlsFileIterator &FileI,FileFd &File,
+			std::string const &section);
+
+   APT_PUBLIC static const char *ParseDepends(const char *Start,const char *Stop,
 	 std::string &Package,std::string &Ver,unsigned int &Op);
-   static const char *ParseDepends(const char *Start,const char *Stop,
+   APT_PUBLIC static const char *ParseDepends(const char *Start,const char *Stop,
 	 std::string &Package,std::string &Ver,unsigned int &Op,
 	 bool const &ParseArchFlags);
-   static const char *ParseDepends(const char *Start,const char *Stop,
+   APT_PUBLIC static const char *ParseDepends(const char *Start,const char *Stop,
 	 std::string &Package,std::string &Ver,unsigned int &Op,
 	 bool const &ParseArchFlags, bool const &StripMultiArch);
-   static const char *ParseDepends(const char *Start,const char *Stop,
+   APT_PUBLIC static const char *ParseDepends(const char *Start,const char *Stop,
 	 std::string &Package,std::string &Ver,unsigned int &Op,
 	 bool const &ParseArchFlags, bool const &StripMultiArch,
 	 bool const &ParseRestrictionsList);
+   APT_PUBLIC static const char *ParseDepends(const char *Start,const char *Stop,
+	 std::string &Package,std::string &Ver,unsigned int &Op,
+	 bool const &ParseArchFlags, bool const &StripMultiArch,
+	 bool const &ParseRestrictionsList,
+	 std::string const &Arch);
 
-   static const char *ConvertRelation(const char *I,unsigned int &Op);
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
+   APT_HIDDEN static const char *ParseDepends(const char *Start,const char *Stop,
+	 APT::StringView &Package,
+    APT::StringView &Ver,unsigned int &Op,
+	 bool const ParseArchFlags = false, bool StripMultiArch = true,
+	 bool const ParseRestrictionsList = false);
+   APT_HIDDEN static const char *ParseDepends(const char *Start,const char *Stop,
+	 APT::StringView &Package,
+	 APT::StringView &Ver,unsigned int &Op,
+	 bool const ParseArchFlags, bool StripMultiArch,
+	 bool const ParseRestrictionsList,
+	 std::string const &Arch);
+#endif
 
-   debListParser(FileFd *File, std::string const &Arch = "");
-   virtual ~debListParser() {};
+   APT_PUBLIC static const char *ConvertRelation(const char *I,unsigned int &Op);
 
-   private:
-   APT_HIDDEN unsigned char ParseMultiArch(bool const showErrors);
+   debListParser(FileFd *File);
+   virtual ~debListParser();
 };
 
-class debTranslationsParser : public debListParser
+class APT_HIDDEN debDebFileParser : public debListParser
+{
+ private:
+   std::string DebFile;
+
+ public:
+   debDebFileParser(FileFd *File, std::string const &DebFile);
+   virtual bool UsePackage(pkgCache::PkgIterator &Pkg,
+			   pkgCache::VerIterator &Ver) APT_OVERRIDE;
+};
+
+class APT_HIDDEN debTranslationsParser : public debListParser
 {
  public:
+#ifdef APT_PKG_EXPOSE_STRING_VIEW
    // a translation can never be a real package
-   virtual std::string Architecture() { return ""; }
-   virtual std::string Version() { return ""; }
+   virtual APT::StringView Architecture() APT_OVERRIDE { return ""; }
+   virtual APT::StringView Version() APT_OVERRIDE { return ""; }
+#endif
 
-   debTranslationsParser(FileFd *File, std::string const &Arch = "")
-      : debListParser(File, Arch) {};
+   debTranslationsParser(FileFd *File)
+      : debListParser(File) {};
 };
 
 class APT_HIDDEN debStatusListParser : public debListParser

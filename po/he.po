@@ -610,8 +610,8 @@ msgstr "החבילות המחוזקות הבאות ישונו:"
 
 #: cmdline/apt-get.cc:545
 #, c-format
-msgid "%s (due to %s) "
-msgstr "%s (בגלל %s) "
+msgid "%s (due to %s)"
+msgstr "%s (בגלל %s)"
 
 #: cmdline/apt-get.cc:553
 #, fuzzy
@@ -668,12 +668,12 @@ msgid " Done"
 msgstr "סיום"
 
 #: cmdline/apt-get.cc:684
-msgid "You might want to run 'apt-get -f install' to correct these."
-msgstr "אולי תרצה להריץ 'apt-get -f install' כדי לתקן את אלו."
+msgid "You might want to run 'apt --fix-broken install' to correct these."
+msgstr "אולי תרצה להריץ 'apt --fix-broken install' כדי לתקן את אלו."
 
 #: cmdline/apt-get.cc:687
-msgid "Unmet dependencies. Try using -f."
-msgstr "תלויות שלא נענו. נסה להשתמש באפשרות -f."
+msgid "Unmet dependencies. Try using --fix-broken."
+msgstr "תלויות שלא נענו. נסה להשתמש באפשרות --fix-broken."
 
 #: cmdline/apt-get.cc:712
 #, fuzzy
@@ -779,8 +779,8 @@ msgstr "האם אתה רוצה להמשיך? [Y/n]"
 
 #: cmdline/apt-get.cc:993 cmdline/apt-get.cc:2303 apt-pkg/algorithms.cc:1389
 #, c-format
-msgid "Failed to fetch %s  %s\n"
-msgstr "כשלון בהבאת %s  %s\n"
+msgid "Failed to fetch %s  %s"
+msgstr "כשלון בהבאת %s  %s"
 
 #: cmdline/apt-get.cc:1011
 msgid "Some files failed to download"
@@ -919,7 +919,7 @@ msgid "%lu packages were automatically installed and are no longer required.\n"
 msgstr "החבילות החדשות הבאות הולכות להיות מותקנות:"
 
 #: cmdline/apt-get.cc:1516
-msgid "Use 'apt-get autoremove' to remove them."
+msgid "Use '%s' to remove them."
 msgstr ""
 
 #: cmdline/apt-get.cc:1521
@@ -972,12 +972,12 @@ msgid "%s set to manually installed.\n"
 msgstr "אבל %s הולכת להיות מותקנת"
 
 #: cmdline/apt-get.cc:1784
-msgid "You might want to run 'apt-get -f install' to correct these:"
+msgid "You might want to run 'apt --fix-broken install' to correct these:"
 msgstr ""
 
 #: cmdline/apt-get.cc:1787
 msgid ""
-"Unmet dependencies. Try 'apt-get -f install' with no packages (or specify a "
+"Unmet dependencies. Try 'apt --fix-broken install' with no packages (or specify a "
 "solution)."
 msgstr ""
 
@@ -1006,7 +1006,7 @@ msgid "Recommended packages:"
 msgstr ""
 
 #: cmdline/apt-get.cc:1965
-msgid "Calculating upgrade... "
+msgid "Calculating upgrade"
 msgstr ""
 
 #: cmdline/apt-get.cc:1968 methods/ftp.cc:708 methods/connect.cc:112
@@ -1182,25 +1182,29 @@ msgstr ""
 #: cmdline/apt-get.cc:2879
 msgid ""
 "NOTE: This is only a simulation!\n"
-"      apt-get needs root privileges for real execution.\n"
+"      %s needs root privileges for real execution.\n"
 "      Keep also in mind that locking is deactivated,\n"
-"      so don't depend on the relevance to the real current situation!"
+"      so don't depend on the relevance to the real current situation!\n"
 msgstr ""
 
 #: cmdline/acqprogress.cc:55
-msgid "Hit "
+#, c-format
+msgid "Hit:%lu %s"
 msgstr ""
 
 #: cmdline/acqprogress.cc:79
-msgid "Get:"
+#, c-format
+msgid "Get:%lu %s"
 msgstr ""
 
 #: cmdline/acqprogress.cc:110
-msgid "Ign "
+#, c-format
+msgid "Ign:%lu %s"
 msgstr ""
 
 #: cmdline/acqprogress.cc:114
-msgid "Err "
+#, c-format
+msgid "Err:%lu %s"
 msgstr ""
 
 #: cmdline/acqprogress.cc:135
@@ -1810,11 +1814,11 @@ msgstr ""
 
 #: methods/gpgv.cc:232
 #, c-format
-msgid "Could not execute '%s' to verify signature (is gpgv installed?)"
+msgid "Could not execute '%s' to verify signature (is gnupg installed?)"
 msgstr ""
 
 #: methods/gpgv.cc:237
-msgid "Unknown error executing gpgv"
+msgid "Unknown error executing apt-key"
 msgstr ""
 
 #: methods/gpgv.cc:271 methods/gpgv.cc:278
@@ -2259,12 +2263,7 @@ msgstr "כשלון בפענוח %s"
 
 #: apt-pkg/tagfile.cc:102
 #, c-format
-msgid "Unable to parse package file %s (1)"
-msgstr ""
-
-#: apt-pkg/tagfile.cc:189
-#, c-format
-msgid "Unable to parse package file %s (2)"
+msgid "Unable to parse package file %s (%d)"
 msgstr ""
 
 #: apt-pkg/sourcelist.cc:90

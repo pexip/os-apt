@@ -18,6 +18,7 @@
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/acquire-method.h>
 #include <apt-pkg/configuration.h>
+#include <apt-pkg/srvrec.h>
 
 #include <stdio.h>
 #include <errno.h>
@@ -43,6 +44,8 @@ static int LastPort = 0;
 static struct addrinfo *LastHostAddr = 0;
 static struct addrinfo *LastUsed = 0;
 
+static std::vector<SrvRec> SrvRecords;
+
 // Set of IP/hostnames that we timed out before or couldn't resolve
 static std::set<std::string> bad_addr;
 
@@ -58,10 +61,25 @@ void RotateDNS()
       LastUsed = LastHostAddr;
 }
 									/*}}}*/
+static bool ConnectionAllowed(char const * const Service, std::string const &Host)/*{{{*/
+{
+   if (unlikely(Host.empty())) // the only legal empty host (RFC2782 '.' target) is detected by caller
+      return false;
+   if (APT::String::Endswith(Host, ".onion") && _config->FindB("Acquire::BlockDotOnion", true))
+   {
+      // TRANSLATOR: %s is e.g. Tor's ".onion" which would likely fail or leak info (RFC7686)
+      _error->Error(_("Direct connection to %s domains is blocked by default."), ".onion");
+      if (strcmp(Service, "http") == 0)
+	_error->Error(_("If you meant to use Tor remember to use %s instead of %s."), "tor+http", "http");
+      return false;
+   }
+   return true;
+}
+									/*}}}*/
 // DoConnect - Attempt a connect operation				/*{{{*/
 // ---------------------------------------------------------------------
 /* This helper function attempts a connection to a single address. */
-static bool DoConnect(struct addrinfo *Addr,std::string Host,
+static bool DoConnect(struct addrinfo *Addr,std::string const &Host,
 		      unsigned long TimeOut,int &Fd,pkgAcqMethod *Owner)
 {
    // Show a status indicator
@@ -126,19 +144,19 @@ static bool DoConnect(struct addrinfo *Addr,std::string Host,
       return _error->Errno("connect",_("Could not connect to %s:%s (%s)."),Host.c_str(),
 			   Service,Name);
    }
-   
+
+   Owner->SetFailReason("");
+
    return true;
 }
 									/*}}}*/
-// Connect - Connect to a server					/*{{{*/
-// ---------------------------------------------------------------------
-/* Performs a connection to the server */
-bool Connect(std::string Host,int Port,const char *Service,int DefPort,int &Fd,
-	     unsigned long TimeOut,pkgAcqMethod *Owner)
+// Connect to a given Hostname						/*{{{*/
+static bool ConnectToHostname(std::string const &Host, int const Port,
+      const char * const Service, int DefPort, int &Fd,
+      unsigned long const TimeOut, pkgAcqMethod * const Owner)
 {
-   if (_error->PendingError() == true)
+   if (ConnectionAllowed(Service, Host) == false)
       return false;
-
    // Convert the port name/number
    char ServStr[300];
    if (Port != 0)
@@ -165,7 +183,16 @@ bool Connect(std::string Host,int Port,const char *Service,int DefPort,int &Fd,
       struct addrinfo Hints;
       memset(&Hints,0,sizeof(Hints));
       Hints.ai_socktype = SOCK_STREAM;
-      Hints.ai_flags = AI_ADDRCONFIG;
+      Hints.ai_flags = 0;
+#ifdef AI_IDN
+      if (_config->FindB("Acquire::Connect::IDN", true) == true)
+	 Hints.ai_flags |= AI_IDN;
+#endif
+      // see getaddrinfo(3): only return address if system has such a address configured
+      // useful if system is ipv4 only, to not get ipv6, but that fails if the system has
+      // no address configured: e.g. offline and trying to connect to localhost.
+      if (_config->FindB("Acquire::Connect::AddrConfig", true) == true)
+	 Hints.ai_flags |= AI_ADDRCONFIG;
       Hints.ai_protocol = 0;
       
       if(_config->FindB("Acquire::ForceIPv4", false) == true)
@@ -258,3 +285,64 @@ bool Connect(std::string Host,int Port,const char *Service,int DefPort,int &Fd,
    return _error->Error(_("Unable to connect to %s:%s:"),Host.c_str(),ServStr);
 }
 									/*}}}*/
+// Connect - Connect to a server					/*{{{*/
+// ---------------------------------------------------------------------
+/* Performs a connection to the server (including SRV record lookup) */
+bool Connect(std::string Host,int Port,const char *Service,
+                            int DefPort,int &Fd,
+                            unsigned long TimeOut,pkgAcqMethod *Owner)
+{
+   if (_error->PendingError() == true)
+      return false;
+
+   if (ConnectionAllowed(Service, Host) == false)
+      return false;
+
+   if(LastHost != Host || LastPort != Port)
+   {
+      SrvRecords.clear();
+      if (_config->FindB("Acquire::EnableSrvRecords", true) == true)
+      {
+         GetSrvRecords(Host, DefPort, SrvRecords);
+	 // RFC2782 defines that a lonely '.' target is an abort reason
+	 if (SrvRecords.size() == 1 && SrvRecords[0].target.empty())
+	    return _error->Error("SRV records for %s indicate that "
+		  "%s service is not available at this domain", Host.c_str(), Service);
+      }
+   }
+
+   size_t stackSize = 0;
+   // try to connect in the priority order of the srv records
+   std::string initialHost{std::move(Host)};
+   auto const initialPort = Port;
+   while(SrvRecords.empty() == false)
+   {
+      _error->PushToStack();
+      ++stackSize;
+      // PopFromSrvRecs will also remove the server
+      auto Srv = PopFromSrvRecs(SrvRecords);
+      Host = Srv.target;
+      Port = Srv.port;
+      auto const ret = ConnectToHostname(Host, Port, Service, DefPort, Fd, TimeOut, Owner);
+      if (ret)
+      {
+	 while(stackSize--)
+	    _error->RevertToStack();
+         return true;
+      }
+   }
+   Host = std::move(initialHost);
+   Port = initialPort;
+
+   // we have no (good) SrvRecords for this host, connect right away
+   _error->PushToStack();
+   ++stackSize;
+   auto const ret = ConnectToHostname(Host, Port, Service, DefPort, Fd,
+	 TimeOut, Owner);
+   while(stackSize--)
+      if (ret)
+	 _error->RevertToStack();
+      else
+	 _error->MergeWithStack();
+   return ret;
+}

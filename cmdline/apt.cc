@@ -29,6 +29,9 @@
 #include <apt-private/private-show.h>
 #include <apt-private/private-main.h>
 #include <apt-private/private-sources.h>
+#include <apt-private/private-source.h>
+#include <apt-private/private-depends.h>
+#include <apt-private/private-download.h>
 
 #include <unistd.h>
 #include <iostream>
@@ -37,128 +40,79 @@
 #include <apti18n.h>
 									/*}}}*/
 
-static bool ShowHelp(CommandLine &)
+static bool ShowHelp(CommandLine &)					/*{{{*/
 {
-   ioprintf(c1out,_("%s %s for %s compiled on %s %s\n"),PACKAGE,PACKAGE_VERSION,
-	    COMMON_ARCH,__DATE__,__TIME__);
-
-   // FIXME: generate from CommandLine
-   c1out << 
-    _("Usage: apt [options] command\n"
-      "\n"
-      "CLI for apt.\n"
-      "Basic commands: \n"
-      " list - list packages based on package names\n"
-      " search - search in package descriptions\n"
-      " show - show package details\n"
-      "\n"
-      " update - update list of available packages\n"
-      "\n"
-      " install - install packages\n"
-      " remove  - remove packages\n"
-      "\n"
-      " upgrade - upgrade the system by installing/upgrading packages\n"
-      " full-upgrade - upgrade the system by removing/installing/upgrading packages\n"
-      "\n"
-      " edit-sources - edit the source information file\n"
-       );
-   
+   std::cout <<
+      _("Usage: apt [options] command\n"
+	    "\n"
+	    "apt is a commandline package manager and provides commands for\n"
+	    "searching and managing as well as querying information about packages.\n"
+	    "It provides the same functionality as the specialized APT tools,\n"
+	    "like apt-get and apt-cache, but enables options more suitable for\n"
+	    "interactive use by default.\n");
    return true;
 }
+									/*}}}*/
+static std::vector<aptDispatchWithHelp> GetCommands()			/*{{{*/
+{
+   return {
+      // query
+      {"list", &DoList, _("list packages based on package names")},
+      {"search", &DoSearch, _("search in package descriptions")},
+      {"show", &ShowPackage, _("show package details")},
 
+      // package stuff
+      {"install", &DoInstall, _("install packages")},
+      {"remove", &DoInstall, _("remove packages")},
+      {"autoremove", &DoInstall, _("Remove automatically all unused packages")},
+      {"auto-remove", &DoInstall, nullptr},
+      {"purge", &DoInstall, nullptr},
+
+      // system wide stuff
+      {"update", &DoUpdate, _("update list of available packages")},
+      {"upgrade", &DoUpgrade, _("upgrade the system by installing/upgrading packages")},
+      {"full-upgrade", &DoDistUpgrade, _("upgrade the system by removing/installing/upgrading packages")},
+
+      // misc
+      {"edit-sources", &EditSources, _("edit the source information file")},
+      {"moo", &DoMoo, nullptr},
+
+      // for compat with muscle memory
+      {"dist-upgrade", &DoDistUpgrade, nullptr},
+      {"showsrc",&ShowSrcPackage, nullptr},
+      {"depends",&Depends, nullptr},
+      {"rdepends",&RDepends, nullptr},
+      {"policy",&Policy, nullptr},
+      {"build-dep", &DoBuildDep,nullptr},
+      {"clean", &DoClean, nullptr},
+      {"autoclean", &DoAutoClean, nullptr},
+      {"auto-clean", &DoAutoClean, nullptr},
+      {"source", &DoSource, nullptr},
+      {"download", &DoDownload, nullptr},
+      {"changelog", &DoChangelog, nullptr},
+
+      {nullptr, nullptr, nullptr}
+   };
+}
+									/*}}}*/
 int main(int argc, const char *argv[])					/*{{{*/
 {
-   CommandLine::Dispatch Cmds[] = {
-                                   // query
-                                   {"list",&DoList},
-                                   {"search", &FullTextSearch},
-                                   {"show", &APT::Cmd::ShowPackage},
+   CommandLine CmdL;
+   auto const Cmds = ParseCommandLine(CmdL, APT_CMD::APT, &_config, &_system, argc, argv, &ShowHelp, &GetCommands);
 
-                                   // package stuff
-                                   {"install",&DoInstall},
-                                   {"remove", &DoInstall},
-                                   {"purge", &DoInstall},
+   int const quiet = _config->FindI("quiet", 0);
+   if (quiet == 2)
+   {
+      _config->CndSet("quiet::NoProgress", true);
+      _config->Set("quiet", 1);
+   }
 
-                                   // system wide stuff
-                                   {"update",&DoUpdate},
-                                   {"upgrade",&DoUpgrade},
-                                   {"full-upgrade",&DoDistUpgrade},
-                                   // for compat with muscle memory
-                                   {"dist-upgrade",&DoDistUpgrade},
-
-                                   // misc
-                                   {"edit-sources",&EditSources},
-
-                                   // helper
-                                   {"moo",&DoMoo},
-                                   {"help",&ShowHelp},
-                                   {0,0}};
-
-   std::vector<CommandLine::Args> Args = getCommandArgs("apt", CommandLine::GetCommand(Cmds, argc, argv));
-
-   // Init the signals
    InitSignals();
-
-   // Init the output
    InitOutput();
 
-   // Set up gettext support
-   setlocale(LC_ALL,"");
-   textdomain(PACKAGE);
+   CheckIfCalledByScript(argc, argv);
+   CheckIfSimulateMode(CmdL);
 
-    if(pkgInitConfig(*_config) == false) 
-    {
-        _error->DumpErrors();
-        return 100;
-    }
-
-    // some different defaults
-   _config->CndSet("DPkg::Progress-Fancy", "1");
-   _config->CndSet("Apt::Color", "1");
-   _config->CndSet("APT::Get::Upgrade-Allow-New", true);
-   _config->CndSet("APT::Cmd::Show-Update-Stats", true);
-
-   // Parse the command line and initialize the package library
-   CommandLine CmdL(Args.data(), _config);
-   if (CmdL.Parse(argc, argv) == false ||
-       pkgInitSystem(*_config, _system) == false)
-   {
-      _error->DumpErrors();
-      return 100;
-   }
-
-   if(!isatty(STDOUT_FILENO) && 
-      _config->FindB("Apt::Cmd::Disable-Script-Warning", false) == false)
-   {
-      std::cerr << std::endl
-                << "WARNING: " << argv[0] << " "
-                << "does not have a stable CLI interface yet. "
-                << "Use with caution in scripts."
-                << std::endl
-                << std::endl;
-   }
-
-   // See if the help should be shown
-   if (_config->FindB("help") == true ||
-       _config->FindB("version") == true ||
-       CmdL.FileSize() == 0)
-   {
-      ShowHelp(CmdL);
-      return 0;
-   }
-
-   // see if we are in simulate mode
-   CheckSimulateMode(CmdL);
-
-   // parse args
-   CmdL.DispatchArg(Cmds);
-
-   // Print any errors or warnings found during parsing
-   bool const Errors = _error->PendingError();
-   if (_config->FindI("quiet",0) > 0)
-      _error->DumpErrors();
-   else
-      _error->DumpErrors(GlobalError::DEBUG);
-   return Errors == true ? 100 : 0;
+   return DispatchCommandLine(CmdL, Cmds);
 }
 									/*}}}*/

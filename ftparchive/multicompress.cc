@@ -46,7 +46,6 @@ MultiCompress::MultiCompress(string const &Output,string const &Compress,
 {
    Outputs = 0;
    Outputter = -1;
-   Input = 0;
    UpdateMTime = 0;
 
    /* Parse the compression string, a space separated lists of compresison
@@ -187,12 +186,11 @@ bool MultiCompress::Start()
    };
 
    close(Pipe[0]);
-   Input = fdopen(Pipe[1],"w");
-   if (Input == 0)
-      return _error->Errno("fdopen",_("Failed to create FILE*"));
-   
+   if (Input.OpenDescriptor(Pipe[1], FileFd::WriteOnly, true) == false)
+      return false;
+
    if (Outputter == -1)
-      return _error->Errno("fork",_("Failed to fork"));   
+      return _error->Errno("fork",_("Failed to fork"));
    return true;
 }
 									/*}}}*/
@@ -201,11 +199,10 @@ bool MultiCompress::Start()
 /* */
 bool MultiCompress::Die()
 {
-   if (Input == 0)
+   if (Input.IsOpen() == false)
       return true;
-   
-   fclose(Input);
-   Input = 0;
+
+   Input.Close();
    bool Res = ExecWait(Outputter,_("Compress child"),false);
    Outputter = -1;
    return Res;
@@ -217,7 +214,7 @@ bool MultiCompress::Die()
 bool MultiCompress::Finalize(unsigned long long &OutSize)
 {
    OutSize = 0;
-   if (Input == 0 || Die() == false)
+   if (Input.IsOpen() == false || Die() == false)
       return false;
    
    time_t Now;
@@ -355,9 +352,7 @@ bool MultiCompress::Child(int const &FD)
 	 for (Files *I = Outputs; I != 0; I = I->Next)
 	 {
 	    I->TmpFile.Close();
-	    if (unlink(I->TmpFile.Name().c_str()) != 0)
-	       _error->Errno("unlink",_("Problem unlinking %s"),
-			     I->TmpFile.Name().c_str());
+	    RemoveFile("MultiCompress::Child", I->TmpFile.Name());
 	 }
 	 return !_error->PendingError();
       }      

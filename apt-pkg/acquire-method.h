@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: acquire-method.h,v 1.15.2.1 2003/12/24 23:09:17 mdz Exp $
 /* ######################################################################
 
    Acquire Method - Method helper class + functions
@@ -20,6 +19,7 @@
 #ifndef PKGLIB_ACQUIRE_METHOD_H
 #define PKGLIB_ACQUIRE_METHOD_H
 
+#include <apt-pkg/hashes.h>
 #include <apt-pkg/macros.h>
 
 #include <stdarg.h>
@@ -33,7 +33,6 @@
 #include <apt-pkg/strutl.h>
 #endif
 
-class Hashes;
 class pkgAcqMethod
 {
    protected:
@@ -44,17 +43,25 @@ class pkgAcqMethod
 
       std::string Uri;
       std::string DestFile;
+      int DestFileFd;
       time_t LastModified;
       bool IndexFile;
       bool FailIgnore;
+      HashStringList ExpectedHashes;
+      // a maximum size we will download, this can be the exact filesize
+      // for when we know it or a arbitrary limit when we don't know the
+      // filesize (like a InRelease file)
+      unsigned long long MaximumSize;
+
+      FetchItem();
+      virtual ~FetchItem();
+      private:
+      void * const d;
    };
    
    struct FetchResult
    {
-      std::string MD5Sum;
-      std::string SHA1Sum;
-      std::string SHA256Sum;
-      std::string SHA512Sum;
+      HashStringList Hashes;
       std::vector<std::string> GPGVOutput;
       time_t LastModified;
       bool IMSHit;
@@ -62,8 +69,11 @@ class pkgAcqMethod
       unsigned long long Size;
       unsigned long long ResumePoint;
       
-      void TakeHashes(Hashes &Hash);
+      void TakeHashes(class Hashes &Hash);
       FetchResult();
+      virtual ~FetchResult();
+      private:
+      void * const d;
    };
 
    // State
@@ -73,11 +83,12 @@ class pkgAcqMethod
    std::string FailReason;
    std::string UsedMirror;
    std::string IP;
-   
+
    // Handlers for messages
    virtual bool Configuration(std::string Message);
    virtual bool Fetch(FetchItem * /*Item*/) {return true;};
-   
+   virtual bool URIAcquire(std::string const &/*Message*/, FetchItem *Itm) { return Fetch(Itm); };
+
    // Outgoing messages
    void Fail(bool Transient = false);
    inline void Fail(const char *Why, bool Transient = false) {Fail(std::string(Why),Transient);};
@@ -106,8 +117,8 @@ class pkgAcqMethod
    inline void SetIP(std::string aIP) {IP = aIP;};
    
    pkgAcqMethod(const char *Ver,unsigned long Flags = 0);
-   virtual ~pkgAcqMethod() {};
-
+   virtual ~pkgAcqMethod();
+   void DropPrivsOrDie();
    private:
    APT_HIDDEN void Dequeue();
 };

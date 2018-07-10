@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 setupenvironment
 configarchitecture "i386"
 
@@ -13,8 +13,9 @@ setupaptarchive
 
 UPGRADE_KEEP="Reading package lists...
 Building dependency tree...
+Calculating upgrade...
 The following packages have been kept back:
   foo
 0 upgraded, 0 newly installed, 0 to remove and 1 not upgraded."
-testequal "$UPGRADE_KEEP" aptget upgrade -s
+testsuccessequal "$UPGRADE_KEEP" aptget upgrade -s
 

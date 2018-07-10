@@ -13,7 +13,7 @@
    &apt-email;
    &apt-product;
    <!-- The last update date -->
-   <date>2012-06-09T00:00:00Z</date>
+   <date>2016-11-25T00:00:00Z</date>
  </refentryinfo>
 
  <refmeta>
@@ -36,6 +36,29 @@
    by apt to authenticate packages.  Packages which have been
    authenticated using these keys will be considered trusted.
    </para>
+   <para>
+   Note that if usage of <command>apt-key</command> is desired the additional
+   installation of the GNU Privacy Guard suite (packaged in
+   <package>gnupg</package>) is required. For this reason alone the programmatic
+   usage (especially in package maintainerscripts!) is strongly discouraged.
+   Further more the output format of all commands is undefined and can and does
+   change whenever the underlying commands change. <command>apt-key</command> will
+   try to detect such usage and generates warnings on stderr in these cases.
+   </para>
+</refsect1>
+
+<refsect1><title>Supported keyring files</title>
+<para>apt-key supports only the binary OpenPGP format (also known as "GPG key
+   public ring") in files with the "<literal>gpg</literal>" extension, not
+   the keybox database format introduced in newer &gpg; versions as default
+   for keyring files. Binary keyring files intended to be used with any apt
+   version should therefore always be created with <command>gpg --export</command>.
+</para>
+<para>Alternatively, if all systems which should be using the created keyring
+   have at least apt version >= 1.4 installed, you can use the ASCII armored
+   format with the "<literal>asc</literal>" extension instead which can be
+   created with <command>gpg --armor --export</command>.
+</para>
 </refsect1>
 
 <refsect1><title>Commands</title>
@@ -48,7 +71,17 @@
        &synopsis-param-filename; or if the filename is <literal>-</literal>
        from standard input.
      </para>
-
+     <para>
+     It is critical that keys added manually via <command>apt-key</command> are
+     verified to belong to the owner of the repositories they claim to be for
+     otherwise the &apt-secure; infrastructure is completely undermined.
+     </para>
+     <para>
+       <emphasis>Note</emphasis>: Instead of using this command a keyring
+       should be placed directly in the <filename>/etc/apt/trusted.gpg.d/</filename>
+       directory with a descriptive name and either "<literal>gpg</literal>" or
+       "<literal>asc</literal>" as file extension.
+     </para>
      </listitem>
      </varlistentry>
 
@@ -85,51 +118,45 @@
      </listitem>
      </varlistentry>
 
-     <varlistentry><term><option>list</option></term>
+     <varlistentry><term><option>list</option>, <option>finger</option></term>
      <listitem>
      <para>
 
-       List trusted keys.
+       List trusted keys with fingerprints.
 
      </para>
 
      </listitem>
      </varlistentry>
-     
-     <varlistentry><term><option>finger</option></term>
-     <listitem>
-     <para>
 
-     List fingerprints of trusted keys.
-
-     </para>
-
-     </listitem>
-     </varlistentry>
-     
      <varlistentry><term><option>adv</option></term>
      <listitem>
      <para>
-
-     Pass advanced options to gpg. With adv --recv-key you can download the 
-	 public key.  
-
+     Pass advanced options to gpg. With <command>adv --recv-key</command> you
+     can e.g. download key from keyservers directly into the trusted set of
+     keys. Note that there are <emphasis>no</emphasis> checks performed, so it is
+     easy to completely undermine the &apt-secure; infrastructure if used without
+     care.
      </para>
 
      </listitem>
      </varlistentry>
 
-     <varlistentry><term><option>update</option></term>
+     <varlistentry><term><option>update</option> (deprecated)</term>
      <listitem>
      <para>
-
        Update the local keyring with the archive keyring and remove from
        the local keyring the archive keys which are no longer valid.
        The archive keyring is shipped in the <literal>archive-keyring</literal> package of your
        distribution, e.g. the &keyring-package; package in &keyring-distro;.
-
      </para>
-
+     <para>
+       Note that a distribution does not need to and in fact should not use
+       this command any longer and instead ship keyring files in the
+       <filename>/etc/apt/trusted.gpg.d/</filename> directory directly as this
+       avoids a dependency on <package>gnupg</package> and it is easier to manage
+       keys by simply adding and removing files for maintainers and users alike.
+     </para>
      </listitem>
      </varlistentry>
      
@@ -171,18 +198,6 @@
    <variablelist>
 
      &file-trustedgpg;
-
-     <varlistentry><term><filename>/etc/apt/trustdb.gpg</filename></term>
-     <listitem><para>Local trust database of archive keys.</para></listitem>
-     </varlistentry>
-
-     <varlistentry><term>&keyring-filename;</term>
-     <listitem><para>Keyring of &keyring-distro; archive trusted keys.</para></listitem>
-     </varlistentry>
-
-     <varlistentry><term>&keyring-removed-filename;</term>
-     <listitem><para>Keyring of &keyring-distro; archive removed trusted keys.</para></listitem>
-     </varlistentry>
 
    </variablelist>
 

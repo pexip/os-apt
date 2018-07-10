@@ -60,9 +60,8 @@ struct ExtractTar::TarHeader
 // ExtractTar::ExtractTar - Constructor					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-ExtractTar::ExtractTar(FileFd &Fd,unsigned long Max,string DecompressionProgram) : File(Fd), 
-                         MaxInSize(Max), DecompressProg(DecompressionProgram)
-
+ExtractTar::ExtractTar(FileFd &Fd,unsigned long long Max,string DecompressionProgram)
+	: File(Fd), MaxInSize(Max), DecompressProg(DecompressionProgram)
 {
    GZPid = -1;
    Eof = false;
@@ -74,36 +73,17 @@ ExtractTar::ExtractTar(FileFd &Fd,unsigned long Max,string DecompressionProgram)
 ExtractTar::~ExtractTar()
 {
    // Error close
-   Done(true);
+   Done();
 }
 									/*}}}*/
 // ExtractTar::Done - Reap the gzip sub process				/*{{{*/
-// ---------------------------------------------------------------------
-/* If the force flag is given then error messages are suppressed - this
-   means we hit the end of the tar file but there was still gzip data. */
-bool ExtractTar::Done(bool Force)
+bool ExtractTar::Done(bool)
 {
-   InFd.Close();
-   if (GZPid <= 0)
-      return true;
-
-   /* If there is a pending error then we are cleaning up gzip and are
-      not interested in it's failures */
-   if (_error->PendingError() == true)
-      Force = true;
-   
-   // Make sure we clean it up!
-   kill(GZPid,SIGINT);
-   string confvar = string("dir::bin::") + DecompressProg;
-   if (ExecWait(GZPid,_config->Find(confvar.c_str(),DecompressProg.c_str()).c_str(),
-		Force) == false)
-   {
-      GZPid = -1;
-      return Force;
-   }
-   
-   GZPid = -1;
-   return true;
+   return Done();
+}
+bool ExtractTar::Done()
+{
+   return InFd.Close();
 }
 									/*}}}*/
 // ExtractTar::StartGzip - Startup gzip					/*{{{*/
@@ -119,43 +99,17 @@ bool ExtractTar::StartGzip()
       return true;
    }
 
-   int Pipes[2];
-   if (pipe(Pipes) != 0)
-      return _error->Errno("pipe",_("Failed to create pipes"));
-
-   // Fork off the process
-   GZPid = ExecFork();
-
-   // Spawn the subprocess
-   if (GZPid == 0)
-   {
-      // Setup the FDs
-      dup2(Pipes[1],STDOUT_FILENO);
-      dup2(File.Fd(),STDIN_FILENO);
-      int Fd = open("/dev/null",O_RDWR);
-      if (Fd == -1)
-	 _exit(101);
-      dup2(Fd,STDERR_FILENO);
-      close(Fd);
-      SetCloseExec(STDOUT_FILENO,false);
-      SetCloseExec(STDIN_FILENO,false);
-      SetCloseExec(STDERR_FILENO,false);
-
-      const char *Args[3];
-      string confvar = string("dir::bin::") + DecompressProg;
-      string argv0 = _config->Find(confvar.c_str(),DecompressProg.c_str());
-      Args[0] = argv0.c_str();
-      Args[1] = "-d";
-      Args[2] = 0;
-      execvp(Args[0],(char **)Args);
-      cerr << _("Failed to exec gzip ") << Args[0] << endl;
-      _exit(100);
+   std::vector<APT::Configuration::Compressor> const compressors = APT::Configuration::getCompressors();
+   std::vector<APT::Configuration::Compressor>::const_iterator compressor = compressors.begin();
+   for (; compressor != compressors.end(); ++compressor) {
+      if (compressor->Name == DecompressProg) {
+	 return InFd.OpenDescriptor(File.Fd(), FileFd::ReadOnly, *compressor, false);
+      }
    }
 
-   // Fix up our FDs
-   InFd.OpenDescriptor(Pipes[0], FileFd::ReadOnly, FileFd::None, true);
-   close(Pipes[1]);
-   return true;
+   return _error->Error(_("Cannot find a configured compressor for '%s'"),
+			DecompressProg.c_str());
+
 }
 									/*}}}*/
 // ExtractTar::Go - Perform extraction					/*{{{*/
@@ -197,7 +151,7 @@ bool ExtractTar::Go(pkgDirStream &Stream)
       /* Check for a block of nulls - in this case we kill gzip, GNU tar
        	 does this.. */
       if (NewSum == ' '*sizeof(Tar->Checksum))
-	 return Done(true);
+	 return Done();
       
       if (NewSum != CheckSum)
 	 return _error->Error(_("Tar checksum failed, archive corrupted"));
@@ -267,7 +221,7 @@ bool ExtractTar::Go(pkgDirStream &Stream)
 
 	 case GNU_LongLink:
 	 {
-	    unsigned long Length = Itm.Size;
+	    unsigned long long Length = Itm.Size;
 	    unsigned char Block[512];
 	    while (Length > 0)
 	    {
@@ -286,7 +240,7 @@ bool ExtractTar::Go(pkgDirStream &Stream)
 	 
 	 case GNU_LongName:
 	 {
-	    unsigned long Length = Itm.Size;
+	    unsigned long long Length = Itm.Size;
 	    unsigned char Block[512];
 	    while (Length > 0)
 	    {
@@ -315,11 +269,11 @@ bool ExtractTar::Go(pkgDirStream &Stream)
 	    return false;
       
       // Copy the file over the FD
-      unsigned long Size = Itm.Size;
+      unsigned long long Size = Itm.Size;
       while (Size != 0)
       {
 	 unsigned char Junk[32*1024];
-	 unsigned long Read = min(Size,(unsigned long)sizeof(Junk));
+	 unsigned long Read = min(Size, (unsigned long long)sizeof(Junk));
 	 if (InFd.Read(Junk,((Read+511)/512)*512) == false)
 	    return false;
 	 
@@ -352,6 +306,6 @@ bool ExtractTar::Go(pkgDirStream &Stream)
       LastLongLink.erase();
    }
    
-   return Done(false);
+   return Done();
 }
 									/*}}}*/

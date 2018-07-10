@@ -33,6 +33,9 @@
 #include <apt-pkg/dirstream.h>
 #include <apt-pkg/mmap.h>
 
+#include <apt-private/private-cmndline.h>
+#include <apt-private/private-main.h>
+
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
@@ -52,7 +55,7 @@ pkgCache *DebFile::Cache = 0;
 // ---------------------------------------------------------------------
 /* */
 DebFile::DebFile(const char *debfile)
-	: File(debfile, FileFd::ReadOnly), Size(0), Control(NULL), ControlLen(0),
+	: File(debfile, FileFd::ReadOnly), Control(NULL), ControlLen(0),
 	  DepOp(0), PreDepOp(0), Config(0), Template(0), Which(None)
 {
 }
@@ -103,10 +106,12 @@ bool DebFile::DoItem(Item &I, int &Fd)
 	if (strcmp(I.Name, "control") == 0)
 	{
 		delete [] Control;
-		Control = new char[I.Size+1];
-		Control[I.Size] = 0;
+		Control = new char[I.Size+3];
+		Control[I.Size] = '\n';
+		Control[I.Size + 1] = '\n';
+		Control[I.Size + 2] = '\0';
 		Which = IsControl;
-		ControlLen = I.Size;
+		ControlLen = I.Size + 3;
 		// make it call the Process method below. this is so evil
 		Fd = -2;
 	}
@@ -138,7 +143,7 @@ bool DebFile::DoItem(Item &I, int &Fd)
 // ---------------------------------------------------------------------
 /* */
 bool DebFile::Process(Item &/*I*/, const unsigned char *data,
-		unsigned long size, unsigned long pos)
+		unsigned long long size, unsigned long long pos)
 {
 	switch (Which)
 	{
@@ -162,9 +167,10 @@ bool DebFile::Process(Item &/*I*/, const unsigned char *data,
 bool DebFile::ParseInfo()
 {
 	if (Control == NULL) return false;
-	
+
 	pkgTagSection Section;
-	Section.Scan(Control, ControlLen);
+	if (Section.Scan(Control, ControlLen) == false)
+		return false;
 
 	Package = Section.FindS("Package");
 	Version = GetInstalledVer(Package);
@@ -209,29 +215,15 @@ bool DebFile::ParseInfo()
 	return true;
 }
 									/*}}}*/
-// ShowHelp - show a short help text					/*{{{*/
-// ---------------------------------------------------------------------
-/* */
-static int ShowHelp(void)
+static bool ShowHelp(CommandLine &)					/*{{{*/
 {
-   	ioprintf(cout,_("%s %s for %s compiled on %s %s\n"),PACKAGE,PACKAGE_VERSION,
-	    COMMON_ARCH,__DATE__,__TIME__);
-
-	if (_config->FindB("version") == true) 
-		return 0;
-
-	cout << 
+	cout <<
 		_("Usage: apt-extracttemplates file1 [file2 ...]\n"
 		"\n"
-		"apt-extracttemplates is a tool to extract config and template info\n"
-		"from debian packages\n"
-		"\n"
-		"Options:\n"
-	        "  -h   This help text\n"
-		"  -t   Set the temp dir\n"
-		"  -c=? Read this configuration file\n"
-		"  -o=? Set an arbitrary configuration option, eg -o dir::cache=/tmp\n");
-	return 0;
+		"apt-extracttemplates is used to extract config and template files\n"
+		"from debian packages. It is used mainly by debconf(1) to prompt for\n"
+		"configuration questions before installation of packages.\n");
+	return true;
 }
 									/*}}}*/
 // WriteFile - write the contents of the passed string to a file	/*{{{*/
@@ -338,46 +330,20 @@ static bool Go(CommandLine &CmdL)
 	return !_error->PendingError();
 }
 									/*}}}*/
+static std::vector<aptDispatchWithHelp> GetCommands()			/*{{{*/
+{
+   return {
+	{nullptr, nullptr, nullptr}
+   };
+}
+									/*}}}*/
 int main(int argc, const char **argv)					/*{{{*/
 {
-	CommandLine::Args Args[] = {
-		{'h',"help","help",0},
-		{'v',"version","version",0},
-		{'t',"tempdir","APT::ExtractTemplates::TempDir",CommandLine::HasArg},
-		{'c',"config-file",0,CommandLine::ConfigFile},
-		{'o',"option",0,CommandLine::ArbItem},
-		{0,0,0,0}};
+	CommandLine CmdL;
+	auto const Cmds = ParseCommandLine(CmdL, APT_CMD::APT_EXTRACTTEMPLATES, &_config, &_system, argc, argv, &ShowHelp, &GetCommands);
 
-	// Set up gettext support
-	setlocale(LC_ALL,"");
-	textdomain(PACKAGE);
-
-	// Parse the command line and initialize the package library
-	CommandLine CmdL(Args,_config);
-	if (pkgInitConfig(*_config) == false ||
-	    CmdL.Parse(argc,argv) == false ||
-	    pkgInitSystem(*_config,_system) == false)
-	{
-		_error->DumpErrors();
-		return 100;
-	}
-	
-	// See if the help should be shown
-	if (_config->FindB("help") == true ||
-	    CmdL.FileSize() == 0)
-		return ShowHelp();
-	
 	Go(CmdL);
 
-	// Print any errors or warnings found during operation
-	if (_error->empty() == false)
-	{
-		// This goes to stderr..
-		bool Errors = _error->PendingError();
-		_error->DumpErrors();
-		return Errors == true?100:0;
-	}
-	
-	return 0;
+	return DispatchCommandLine(CmdL, {});
 }
 									/*}}}*/

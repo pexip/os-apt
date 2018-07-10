@@ -22,36 +22,39 @@
 #include <apt-private/private-output.h>
 #include <apt-private/private-download.h>
 #include <apt-private/private-cmndline.h>
+#include <apt-private/private-main.h>
+#include <apt-pkg/srvrec.h>
 
 #include <iostream>
 #include <string>
 #include <vector>
 
+#include <unistd.h>
+#include <stdlib.h>
+
 #include <apti18n.h>
 									/*}}}*/
 
-static bool DoAutoDetectProxy(CommandLine &CmdL)
+static bool DoAutoDetectProxy(CommandLine &CmdL)			/*{{{*/
 {
    if (CmdL.FileSize() != 2)
       return _error->Error(_("Need one URL as argument"));
    URI ServerURL(CmdL.FileList[1]);
-   AutoDetectProxy(ServerURL);
+   if (AutoDetectProxy(ServerURL) == false)
+      return false;
    std::string SpecificProxy = _config->Find("Acquire::"+ServerURL.Access+"::Proxy::" + ServerURL.Host);
    ioprintf(std::cout, "Using proxy '%s' for URL '%s'\n",
             SpecificProxy.c_str(), std::string(ServerURL).c_str());
 
    return true;
 }
-
-static bool DoDownloadFile(CommandLine &CmdL)
+									/*}}}*/
+static bool DoDownloadFile(CommandLine &CmdL)				/*{{{*/
 {
    if (CmdL.FileSize() <= 2)
       return _error->Error(_("Must specify at least one pair url/filename"));
 
-   pkgAcquire Fetcher;
-   AcqTextStatus Stat(ScreenWidth, _config->FindI("quiet",0));
-   Fetcher.Setup(&Stat);
-
+   aptAcquireWithTextStatus Fetcher;
    size_t fileind = 0;
    std::vector<std::string> targetfiles;
    while (fileind + 2 <= CmdL.FileSize())
@@ -78,76 +81,131 @@ static bool DoDownloadFile(CommandLine &CmdL)
 
    return true;
 }
-
-static bool ShowHelp(CommandLine &)
+									/*}}}*/
+static bool DoSrvLookup(CommandLine &CmdL)				/*{{{*/
 {
-   ioprintf(std::cout,_("%s %s for %s compiled on %s %s\n"),PACKAGE,PACKAGE_VERSION,
-	    COMMON_ARCH,__DATE__,__TIME__);
+   if (CmdL.FileSize() <= 1)
+      return _error->Error("Must specify at least one SRV record");
 
-   if (_config->FindB("version") == true)
-     return true;
+   for(size_t i = 1; CmdL.FileList[i] != NULL; ++i)
+   {
+      std::vector<SrvRec> srv_records;
+      std::string const name = CmdL.FileList[i];
+      c0out << "# Target\tPriority\tWeight\tPort # for " << name << std::endl;
+      size_t const found = name.find(":");
+      if (found != std::string::npos)
+      {
+	 std::string const host = name.substr(0, found);
+	 size_t const port = atoi(name.c_str() + found + 1);
+	 if(GetSrvRecords(host, port, srv_records) == false)
+	    _error->Error(_("GetSrvRec failed for %s"), name.c_str());
+      }
+      else if(GetSrvRecords(name, srv_records) == false)
+	 _error->Error(_("GetSrvRec failed for %s"), name.c_str());
 
-   std::cout <<
-    _("Usage: apt-helper [options] command\n"
-      "       apt-helper [options] download-file uri target-path\n"
-      "\n"
-      "apt-helper is a internal helper for apt\n"
-      "\n"
-      "Commands:\n"
-      "   download-file - download the given uri to the target-path\n"
-      "   auto-detect-proxy - detect proxy using apt.conf\n"
-      "\n"
-      "                       This APT helper has Super Meep Powers.\n");
+      for (SrvRec const &I : srv_records)
+	 ioprintf(c1out, "%s\t%d\t%d\t%d\n", I.target.c_str(), I.priority, I.weight, I.port);
+   }
    return true;
 }
+									/*}}}*/
+static const APT::Configuration::Compressor *FindCompressor(std::vector<APT::Configuration::Compressor> const & compressors, std::string name)				/*{{{*/
+{
+   APT::Configuration::Compressor const * compressor = NULL;
+   for (auto const & c : compressors)
+   {
+      if (compressor != NULL && c.Cost >= compressor->Cost)
+         continue;
+      if (c.Name == name || c.Extension == name || (!c.Extension.empty() && c.Extension.substr(1) == name))
+         compressor = &c;
+   }
 
+   return compressor;
+}
+									/*}}}*/
+static bool DoCatFile(CommandLine &CmdL)				/*{{{*/
+{
+   FileFd fd;
+   FileFd out;
+   std::string const compressorName = _config->Find("Apt-Helper::Cat-File::Compress", "");
 
+   if (compressorName.empty() == false)
+   {
+
+      auto const compressors = APT::Configuration::getCompressors();
+      auto const compressor = FindCompressor(compressors, compressorName);
+
+      if (compressor == NULL)
+         return _error->Error("Could not find compressor: %s", compressorName.c_str());
+
+      if (out.OpenDescriptor(STDOUT_FILENO, FileFd::WriteOnly, *compressor) == false)
+         return false;
+   } else
+   {
+      if (out.OpenDescriptor(STDOUT_FILENO, FileFd::WriteOnly) == false)
+         return false;
+   }
+
+   if (CmdL.FileSize() <= 1)
+   {
+      if (fd.OpenDescriptor(STDIN_FILENO, FileFd::ReadOnly) == false)
+	 return false;
+      if (CopyFile(fd, out) == false)
+         return false;
+      return true;
+   }
+
+   for(size_t i = 1; CmdL.FileList[i] != NULL; ++i)
+   {
+      std::string const name = CmdL.FileList[i];
+
+      if (name != "-")
+      {
+	 if (fd.Open(name, FileFd::ReadOnly, FileFd::Extension) == false)
+	    return false;
+      }
+      else
+      {
+	 if (fd.OpenDescriptor(STDIN_FILENO, FileFd::ReadOnly) == false)
+	    return false;
+      }
+
+      if (CopyFile(fd, out) == false)
+         return false;
+   }
+   return true;
+}
+									/*}}}*/
+static bool ShowHelp(CommandLine &)					/*{{{*/
+{
+   std::cout <<
+      _("Usage: apt-helper [options] command\n"
+	    "       apt-helper [options] cat-file file ...\n"
+	    "       apt-helper [options] download-file uri target-path\n"
+	    "\n"
+	    "apt-helper bundles a variety of commands for shell scripts to use\n"
+	    "e.g. the same proxy configuration or acquire system as APT would.\n");
+   return true;
+}
+									/*}}}*/
+static std::vector<aptDispatchWithHelp> GetCommands()			/*{{{*/
+{
+   return {
+      {"download-file", &DoDownloadFile, _("download the given uri to the target-path")},
+      {"srv-lookup", &DoSrvLookup, _("lookup a SRV record (e.g. _http._tcp.ftp.debian.org)")},
+      {"cat-file", &DoCatFile, _("concatenate files, with automatic decompression")},
+      {"auto-detect-proxy", &DoAutoDetectProxy, _("detect proxy using apt.conf")},
+      {nullptr, nullptr, nullptr}
+   };
+}
+									/*}}}*/
 int main(int argc,const char *argv[])					/*{{{*/
 {
-   CommandLine::Dispatch Cmds[] = {{"help",&ShowHelp},
-				   {"download-file", &DoDownloadFile},
-				   {"auto-detect-proxy", &DoAutoDetectProxy},
-                                   {0,0}};
-
-   std::vector<CommandLine::Args> Args = getCommandArgs(
-      "apt-download", CommandLine::GetCommand(Cmds, argc, argv));
-
-   // Set up gettext support
-   setlocale(LC_ALL,"");
-   textdomain(PACKAGE);
-
-   // Parse the command line and initialize the package library
-   CommandLine CmdL(Args.data(),_config);
-   if (pkgInitConfig(*_config) == false ||
-       CmdL.Parse(argc,argv) == false ||
-       pkgInitSystem(*_config,_system) == false)
-   {
-      if (_config->FindB("version") == true)
-	 ShowHelp(CmdL);
-      _error->DumpErrors();
-      return 100;
-   }
-
-   // See if the help should be shown
-   if (_config->FindB("help") == true ||
-       _config->FindB("version") == true ||
-       CmdL.FileSize() == 0)
-   {
-      ShowHelp(CmdL);
-      return 0;
-   }
+   CommandLine CmdL;
+   auto const Cmds = ParseCommandLine(CmdL, APT_CMD::APT_HELPER, &_config, &_system, argc, argv, &ShowHelp, &GetCommands);
 
    InitOutput();
 
-   // Match the operation
-   CmdL.DispatchArg(Cmds);
-
-   // Print any errors or warnings found during parsing
-   bool const Errors = _error->PendingError();
-   if (_config->FindI("quiet",0) > 0)
-      _error->DumpErrors();
-   else
-      _error->DumpErrors(GlobalError::DEBUG);
-   return Errors == true ? 100 : 0;
+   return DispatchCommandLine(CmdL, Cmds);
 }
 									/*}}}*/

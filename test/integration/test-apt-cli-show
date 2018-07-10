@@ -1,21 +1,16 @@
 #!/bin/sh
 set -e
 
-TESTDIR=$(readlink -f $(dirname $0))
-. $TESTDIR/framework
+TESTDIR="$(readlink -f "$(dirname "$0")")"
+. "$TESTDIR/framework"
 
 setupenvironment
-configarchitecture "i386"
+configarchitecture 'i386' 'amd64'
 
-if [ ! -x ${BUILDDIRECTORY}/apt ]; then
-    msgmsg "No ${BUILDDIRECTORY}/apt"
-    msgskip 
-    exit 0
-fi
-
-DESCR='Some description 
+DESCR='Some description
  That has multiple lines'
 insertpackage 'unstable' 'foo' 'all' '1.0' '' '' "$DESCR"
+insertpackage 'unstable' 'bar' 'i386,amd64' '1' '' '' "$DESCR"
 insertinstalledpackage 'foo' 'all' '1.0'
 
 setupaptarchive
@@ -24,15 +19,48 @@ APTARCHIVE=$(readlink -f ./aptarchive)
 
 # note that we do not display Description-md5 with the "apt" cmd
 # and also show some additional fields that are calculated
-testequal "Package: foo
+testsuccessequal "Package: foo
+Version: 1.0
 Priority: optional
 Section: other
-Installed-Size: 43.0 kB
 Maintainer: Joe Sixpack <joe@example.org>
-Version: 1.0
+Installed-Size: 43.0 kB
 Download-Size: unknown
 APT-Manual-Installed: yes
-APT-Sources: file:$APTARCHIVE/ unstable/main i386 Packages
-Description: Some description 
+APT-Sources: file:$APTARCHIVE unstable/main all Packages
+Description: Some description
  That has multiple lines
 " apt show foo
+testsuccessequal "Package: bar
+Version: 1
+Priority: optional
+Section: other
+Maintainer: Joe Sixpack <joe@example.org>
+Installed-Size: 43.0 kB
+Download-Size: unknown
+APT-Sources: file:$APTARCHIVE unstable/main i386 Packages
+Description: Some description
+ That has multiple lines
+" apt show bar
+testsuccessequal "Package: bar:amd64
+Version: 1
+Priority: optional
+Section: other
+Maintainer: Joe Sixpack <joe@example.org>
+Installed-Size: 43.0 kB
+Download-Size: unknown
+APT-Sources: file:$APTARCHIVE unstable/main amd64 Packages
+Description: Some description
+ That has multiple lines
+" apt show bar:amd64
+
+# this is the default, but disabled by the testcases
+testsuccess apt show foo -o Apt::Cmd::Disable-Script-Warning=0
+cp rootdir/tmp/testsuccess.output aptshow.output
+testsuccess grep '^WARNING: ' aptshow.output
+
+if [ "$(id -u)" != '0' ]; then
+	testsuccess apt install foo -s -o APT::Get::Show-User-Simulation-Note=1
+	cp rootdir/tmp/testsuccess.output aptshow.output
+	testsuccess grep '^NOTE: ' aptshow.output
+fi

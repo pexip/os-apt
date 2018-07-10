@@ -1,5 +1,6 @@
 #include <config.h>
 
+#include <apt-pkg/configuration.h>
 #include <apt-pkg/md5.h>
 #include <apt-pkg/sha1.h>
 #include <apt-pkg/sha2.h>
@@ -118,7 +119,7 @@ static void getSummationString(char const * const type, std::string &sum)
    FileFd fd;
    ASSERT_TRUE(fd.Open(tempfile, FileFd::WriteOnly | FileFd::Empty, compress));
    ASSERT_TRUE(fd.IsOpen());
-   FileFd input(__FILE__, FileFd::ReadOnly);
+   FileFd input("/etc/os-release", FileFd::ReadOnly);
    ASSERT_TRUE(input.IsOpen());
    ASSERT_NE(0, input.FileSize());
    ASSERT_TRUE(CopyFile(input, fd));
@@ -160,26 +161,60 @@ TEST(HashSumsTest, FileBased)
    SHA512SumValue sha512(summation);
    EXPECT_EQ(sha512.Value(), summation);
 
-   FileFd fd(__FILE__, FileFd::ReadOnly);
+   FileFd fd("/etc/os-release", FileFd::ReadOnly);
    EXPECT_TRUE(fd.IsOpen());
+   std::string FileSize;
+   strprintf(FileSize, "%llu", fd.FileSize());
 
    {
       Hashes hashes;
       hashes.AddFD(fd.Fd());
-      EXPECT_EQ(md5.Value(), hashes.MD5.Result().Value());
-      EXPECT_EQ(sha1.Value(), hashes.SHA1.Result().Value());
-      EXPECT_EQ(sha256.Value(), hashes.SHA256.Result().Value());
-      EXPECT_EQ(sha512.Value(), hashes.SHA512.Result().Value());
+      HashStringList list = hashes.GetHashStringList();
+      EXPECT_FALSE(list.empty());
+      EXPECT_EQ(5, list.size());
+      EXPECT_EQ(md5.Value(), list.find("MD5Sum")->HashValue());
+      EXPECT_EQ(sha1.Value(), list.find("SHA1")->HashValue());
+      EXPECT_EQ(sha256.Value(), list.find("SHA256")->HashValue());
+      EXPECT_EQ(sha512.Value(), list.find("SHA512")->HashValue());
+      EXPECT_EQ(FileSize, list.find("Checksum-FileSize")->HashValue());
    }
-   unsigned long sz = fd.FileSize();
+   unsigned long long sz = fd.FileSize();
    fd.Seek(0);
    {
       Hashes hashes;
       hashes.AddFD(fd.Fd(), sz);
-      EXPECT_EQ(md5.Value(), hashes.MD5.Result().Value());
-      EXPECT_EQ(sha1.Value(), hashes.SHA1.Result().Value());
-      EXPECT_EQ(sha256.Value(), hashes.SHA256.Result().Value());
-      EXPECT_EQ(sha512.Value(), hashes.SHA512.Result().Value());
+      HashStringList list = hashes.GetHashStringList();
+      EXPECT_FALSE(list.empty());
+      EXPECT_EQ(5, list.size());
+      EXPECT_EQ(md5.Value(), list.find("MD5Sum")->HashValue());
+      EXPECT_EQ(sha1.Value(), list.find("SHA1")->HashValue());
+      EXPECT_EQ(sha256.Value(), list.find("SHA256")->HashValue());
+      EXPECT_EQ(sha512.Value(), list.find("SHA512")->HashValue());
+      EXPECT_EQ(FileSize, list.find("Checksum-FileSize")->HashValue());
+   }
+   fd.Seek(0);
+   {
+      Hashes hashes(Hashes::MD5SUM | Hashes::SHA512SUM);
+      hashes.AddFD(fd);
+      HashStringList list = hashes.GetHashStringList();
+      EXPECT_FALSE(list.empty());
+      EXPECT_EQ(3, list.size());
+      EXPECT_EQ(md5.Value(), list.find("MD5Sum")->HashValue());
+      EXPECT_EQ(NULL, list.find("SHA1"));
+      EXPECT_EQ(NULL, list.find("SHA256"));
+      EXPECT_EQ(sha512.Value(), list.find("SHA512")->HashValue());
+      EXPECT_EQ(FileSize, list.find("Checksum-FileSize")->HashValue());
+      fd.Seek(0);
+      Hashes hashes2(list);
+      hashes2.AddFD(fd);
+      list = hashes2.GetHashStringList();
+      EXPECT_FALSE(list.empty());
+      EXPECT_EQ(3, list.size());
+      EXPECT_EQ(md5.Value(), list.find("MD5Sum")->HashValue());
+      EXPECT_EQ(NULL, list.find("SHA1"));
+      EXPECT_EQ(NULL, list.find("SHA256"));
+      EXPECT_EQ(sha512.Value(), list.find("SHA512")->HashValue());
+      EXPECT_EQ(FileSize, list.find("Checksum-FileSize")->HashValue());
    }
    fd.Seek(0);
    {
@@ -208,18 +243,18 @@ TEST(HashSumsTest, FileBased)
    fd.Close();
 
    HashString sha2file("SHA512", sha512.Value());
-   EXPECT_TRUE(sha2file.VerifyFile(__FILE__));
+   EXPECT_TRUE(sha2file.VerifyFile("/etc/os-release"));
    HashString sha2wrong("SHA512", "00000000000");
-   EXPECT_FALSE(sha2wrong.VerifyFile(__FILE__));
+   EXPECT_FALSE(sha2wrong.VerifyFile("/etc/os-release"));
    EXPECT_EQ(sha2file, sha2file);
    EXPECT_TRUE(sha2file == sha2file);
    EXPECT_NE(sha2file, sha2wrong);
    EXPECT_TRUE(sha2file != sha2wrong);
 
    HashString sha2big("SHA256", sha256.Value());
-   EXPECT_TRUE(sha2big.VerifyFile(__FILE__));
+   EXPECT_TRUE(sha2big.VerifyFile("/etc/os-release"));
    HashString sha2small("sha256:" + sha256.Value());
-   EXPECT_TRUE(sha2small.VerifyFile(__FILE__));
+   EXPECT_TRUE(sha2small.VerifyFile("/etc/os-release"));
    EXPECT_EQ(sha2big, sha2small);
    EXPECT_TRUE(sha2big == sha2small);
    EXPECT_FALSE(sha2big != sha2small);
@@ -248,7 +283,7 @@ TEST(HashSumsTest, FileBased)
    EXPECT_EQ(2, hashes.size());
    EXPECT_FALSE(hashes.push_back(sha2wrong));
    EXPECT_EQ(2, hashes.size());
-   EXPECT_TRUE(hashes.VerifyFile(__FILE__));
+   EXPECT_TRUE(hashes.VerifyFile("/etc/os-release"));
 
    EXPECT_EQ(similar, hashes);
    EXPECT_TRUE(similar == hashes);
@@ -259,4 +294,99 @@ TEST(HashSumsTest, FileBased)
    EXPECT_NE(similar, hashes);
    EXPECT_FALSE(similar == hashes);
    EXPECT_TRUE(similar != hashes);
+}
+TEST(HashSumsTest, HashStringList)
+{
+   _config->Clear("Acquire::ForceHash");
+
+   HashStringList list;
+   EXPECT_TRUE(list.empty());
+   EXPECT_FALSE(list.usable());
+   EXPECT_EQ(0, list.size());
+   EXPECT_EQ(NULL, list.find(NULL));
+   EXPECT_EQ(NULL, list.find(""));
+   EXPECT_EQ(NULL, list.find("MD5Sum"));
+   EXPECT_EQ(NULL, list.find("ROT26"));
+   EXPECT_EQ(NULL, list.find("SHA1"));
+   EXPECT_EQ(0, list.FileSize());
+
+   // empty lists aren't equal
+   HashStringList list2;
+   EXPECT_FALSE(list == list2);
+   EXPECT_TRUE(list != list2);
+
+   // some hashes don't really contribute to usability
+   list.push_back(HashString("Checksum-FileSize", "29"));
+   EXPECT_FALSE(list.empty());
+   EXPECT_FALSE(list.usable());
+   EXPECT_EQ(1, list.size());
+   EXPECT_EQ(29, list.FileSize());
+   list.push_back(HashString("MD5Sum", "d41d8cd98f00b204e9800998ecf8427e"));
+   EXPECT_FALSE(list.empty());
+   EXPECT_FALSE(list.usable());
+   EXPECT_EQ(2, list.size());
+   EXPECT_EQ(29, list.FileSize());
+   EXPECT_TRUE(NULL != list.find("MD5Sum"));
+   list.push_back(HashString("SHA1", "cacecbd74968bc90ea3342767e6b94f46ddbcafc"));
+   EXPECT_FALSE(list.usable());
+   EXPECT_EQ(3, list.size());
+   EXPECT_EQ(29, list.FileSize());
+   EXPECT_TRUE(NULL != list.find("MD5Sum"));
+   EXPECT_TRUE(NULL != list.find("SHA1"));
+   list.push_back(HashString("SHA256", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"));
+   EXPECT_TRUE(list.usable());
+   EXPECT_EQ(4, list.size());
+   EXPECT_EQ(29, list.FileSize());
+   EXPECT_TRUE(NULL != list.find("MD5Sum"));
+   EXPECT_TRUE(NULL != list.find("SHA1"));
+   EXPECT_TRUE(NULL != list.find("SHA256"));
+
+   Hashes hashes;
+   hashes.Add("The quick brown fox jumps over the lazy dog");
+   list = hashes.GetHashStringList();
+   EXPECT_FALSE(list.empty());
+   EXPECT_TRUE(list.usable());
+   EXPECT_EQ(5, list.size());
+   EXPECT_TRUE(NULL != list.find(NULL));
+   EXPECT_TRUE(NULL != list.find(""));
+   EXPECT_TRUE(NULL != list.find("MD5Sum"));
+   EXPECT_TRUE(NULL != list.find("Checksum-FileSize"));
+   EXPECT_TRUE(NULL == list.find("ROT26"));
+
+   _config->Set("Acquire::ForceHash", "MD5Sum");
+   EXPECT_FALSE(list.empty());
+   EXPECT_TRUE(list.usable());
+   EXPECT_EQ(5, list.size());
+   EXPECT_TRUE(NULL != list.find(NULL));
+   EXPECT_TRUE(NULL != list.find(""));
+   EXPECT_TRUE(NULL != list.find("MD5Sum"));
+   EXPECT_TRUE(NULL != list.find("Checksum-FileSize"));
+   EXPECT_TRUE(NULL == list.find("ROT26"));
+
+   _config->Set("Acquire::ForceHash", "ROT26");
+   EXPECT_FALSE(list.empty());
+   EXPECT_FALSE(list.usable());
+   EXPECT_EQ(5, list.size());
+   EXPECT_TRUE(NULL == list.find(NULL));
+   EXPECT_TRUE(NULL == list.find(""));
+   EXPECT_TRUE(NULL != list.find("MD5Sum"));
+   EXPECT_TRUE(NULL != list.find("Checksum-FileSize"));
+   EXPECT_TRUE(NULL == list.find("ROT26"));
+
+   _config->Clear("Acquire::ForceHash");
+
+   list2.push_back(*list.find("MD5Sum"));
+   EXPECT_TRUE(list == list2);
+   EXPECT_FALSE(list != list2);
+
+   // introduce a mismatch to the list
+   list2.push_back(HashString("SHA1", "cacecbd74968bc90ea3342767e6b94f46ddbcafc"));
+   EXPECT_FALSE(list == list2);
+   EXPECT_TRUE(list != list2);
+
+   _config->Set("Acquire::ForceHash", "MD5Sum");
+   EXPECT_TRUE(list == list2);
+   EXPECT_FALSE(list != list2);
+
+   _config->Clear("Acquire::ForceHash");
 }

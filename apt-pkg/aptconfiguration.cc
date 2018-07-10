@@ -16,6 +16,7 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/macros.h>
 #include <apt-pkg/strutl.h>
+#include <apt-pkg/pkgsystem.h>
 
 #include <dirent.h>
 #include <stdio.h>
@@ -29,9 +30,45 @@
 #include <string>
 #include <vector>
 
-#include <apti18n.h>
 									/*}}}*/
 namespace APT {
+// setDefaultConfigurationForCompressors				/*{{{*/
+static void setDefaultConfigurationForCompressors() {
+	// Set default application paths to check for optional compression types
+	_config->CndSet("Dir::Bin::gzip", "/bin/gzip");
+	_config->CndSet("Dir::Bin::bzip2", "/bin/bzip2");
+	_config->CndSet("Dir::Bin::xz", "/usr/bin/xz");
+	_config->CndSet("Dir::Bin::lz4", "/usr/bin/lz4");
+	if (FileExists(_config->Find("Dir::Bin::xz")) == true) {
+		_config->Set("Dir::Bin::lzma", _config->Find("Dir::Bin::xz"));
+		_config->Set("APT::Compressor::lzma::Binary", "xz");
+		if (_config->Exists("APT::Compressor::lzma::CompressArg") == false) {
+			_config->Set("APT::Compressor::lzma::CompressArg::", "--format=lzma");
+			_config->Set("APT::Compressor::lzma::CompressArg::", "-6");
+		}
+		if (_config->Exists("APT::Compressor::lzma::UncompressArg") == false) {
+			_config->Set("APT::Compressor::lzma::UncompressArg::", "--format=lzma");
+			_config->Set("APT::Compressor::lzma::UncompressArg::", "-d");
+		}
+	} else {
+		_config->CndSet("Dir::Bin::lzma", "/usr/bin/lzma");
+		if (_config->Exists("APT::Compressor::lzma::CompressArg") == false) {
+			_config->Set("APT::Compressor::lzma::CompressArg::", "--suffix=");
+			_config->Set("APT::Compressor::lzma::CompressArg::", "-6");
+		}
+		if (_config->Exists("APT::Compressor::lzma::UncompressArg") == false) {
+			_config->Set("APT::Compressor::lzma::UncompressArg::", "--suffix=");
+			_config->Set("APT::Compressor::lzma::UncompressArg::", "-d");
+		}
+	}
+	// setup the defaults for the compressiontypes => method mapping
+	_config->CndSet("Acquire::CompressionTypes::xz","xz");
+	_config->CndSet("Acquire::CompressionTypes::bz2","bzip2");
+	_config->CndSet("Acquire::CompressionTypes::lzma","lzma");
+	_config->CndSet("Acquire::CompressionTypes::gz","gzip");
+	_config->CndSet("Acquire::CompressionTypes::lz4","lz4");
+}
+									/*}}}*/
 // getCompressionTypes - Return Vector of usable compressiontypes	/*{{{*/
 // ---------------------------------------------------------------------
 /* return a vector of compression types in the preferred order. */
@@ -45,13 +82,6 @@ const Configuration::getCompressionTypes(bool const &Cached) {
 			types.clear();
 	}
 
-	// setup the defaults for the compressiontypes => method mapping
-	_config->CndSet("Acquire::CompressionTypes::bz2","bzip2");
-	_config->CndSet("Acquire::CompressionTypes::xz","xz");
-	_config->CndSet("Acquire::CompressionTypes::lzma","lzma");
-	_config->CndSet("Acquire::CompressionTypes::gz","gzip");
-
-	setDefaultConfigurationForCompressors();
 	std::vector<APT::Configuration::Compressor> const compressors = getCompressors();
 
 	// load the order setting into our vector
@@ -66,11 +96,9 @@ const Configuration::getCompressionTypes(bool const &Cached) {
 			continue;
 		// ignore types we have no app ready to use
 		std::string const app = _config->Find(method);
-		std::vector<APT::Configuration::Compressor>::const_iterator c = compressors.begin();
-		for (; c != compressors.end(); ++c)
-			if (c->Name == app)
-				break;
-		if (c == compressors.end())
+		if (std::find_if(compressors.begin(), compressors.end(), [&app](APT::Configuration::Compressor const &c) {
+				return c.Name == app;
+			}) == compressors.end())
 			continue;
 		types.push_back(*o);
 	}
@@ -87,11 +115,9 @@ const Configuration::getCompressionTypes(bool const &Cached) {
 		if (std::find(types.begin(),types.end(),Types->Tag) != types.end())
 			continue;
 		// ignore types we have no app ready to use
-		std::vector<APT::Configuration::Compressor>::const_iterator c = compressors.begin();
-		for (; c != compressors.end(); ++c)
-			if (c->Name == Types->Value)
-				break;
-		if (c == compressors.end())
+		if (std::find_if(compressors.begin(), compressors.end(), [&Types](APT::Configuration::Compressor const &c) {
+				return c.Name == Types->Value;
+			}) == compressors.end())
 			continue;
 		types.push_back(Types->Tag);
 	}
@@ -99,7 +125,7 @@ const Configuration::getCompressionTypes(bool const &Cached) {
 	// add the special "uncompressed" type
 	if (std::find(types.begin(), types.end(), "uncompressed") == types.end())
 	{
-		std::string const uncompr = _config->FindFile("Dir::Bin::uncompressed", "");
+		std::string const uncompr = _config->Find("Dir::Bin::uncompressed", "");
 		if (uncompr.empty() == true || FileExists(uncompr) == true)
 			types.push_back("uncompressed");
 	}
@@ -193,7 +219,7 @@ std::vector<std::string> const Configuration::getLanguages(bool const &All,
 	// get the environment language codes: LC_MESSAGES (and later LANGUAGE)
 	// we extract both, a long and a short code and then we will
 	// check if we actually need both (rare) or if the short is enough
-	string const envMsg = string(Locale == 0 ? std::setlocale(LC_MESSAGES, NULL) : *Locale);
+	string const envMsg = string(Locale == 0 ? ::setlocale(LC_MESSAGES, NULL) : *Locale);
 	size_t const lenShort = (envMsg.find('_') != string::npos) ? envMsg.find('_') : 2;
 	size_t const lenLong = (envMsg.find_first_of(".@") != string::npos) ? envMsg.find_first_of(".@") : (lenShort + 3);
 
@@ -296,87 +322,8 @@ std::vector<std::string> const Configuration::getArchitectures(bool const &Cache
 	string const arch = _config->Find("APT::Architecture");
 	archs = _config->FindVector("APT::Architectures");
 
-	if (unlikely(arch.empty() == true))
-		return archs;
-
-	// FIXME: It is a bit unclean to have debian specific code here…
-	if (archs.empty() == true) {
-		archs.push_back(arch);
-
-		// Generate the base argument list for dpkg
-		std::vector<const char *> Args;
-		string Tmp = _config->Find("Dir::Bin::dpkg","dpkg");
-		{
-			string const dpkgChrootDir = _config->FindDir("DPkg::Chroot-Directory", "/");
-			size_t dpkgChrootLen = dpkgChrootDir.length();
-			if (dpkgChrootDir != "/" && Tmp.find(dpkgChrootDir) == 0) {
-				if (dpkgChrootDir[dpkgChrootLen - 1] == '/')
-					--dpkgChrootLen;
-				Tmp = Tmp.substr(dpkgChrootLen);
-			}
-		}
-		Args.push_back(Tmp.c_str());
-
-		// Stick in any custom dpkg options
-		::Configuration::Item const *Opts = _config->Tree("DPkg::Options");
-		if (Opts != 0) {
-			Opts = Opts->Child;
-			for (; Opts != 0; Opts = Opts->Next)
-			{
-				if (Opts->Value.empty() == true)
-					continue;
-				Args.push_back(Opts->Value.c_str());
-			}
-		}
-
-		Args.push_back("--print-foreign-architectures");
-		Args.push_back(NULL);
-
-		int external[2] = {-1, -1};
-		if (pipe(external) != 0)
-		{
-			_error->WarningE("getArchitecture", "Can't create IPC pipe for dpkg --print-foreign-architectures");
-			return archs;
-		}
-
-		pid_t dpkgMultiArch = ExecFork();
-		if (dpkgMultiArch == 0) {
-			close(external[0]);
-			std::string const chrootDir = _config->FindDir("DPkg::Chroot-Directory");
-			int const nullfd = open("/dev/null", O_RDONLY);
-			dup2(nullfd, STDIN_FILENO);
-			dup2(external[1], STDOUT_FILENO);
-			dup2(nullfd, STDERR_FILENO);
-			if (chrootDir != "/" && chroot(chrootDir.c_str()) != 0 && chdir("/") != 0)
-				_error->WarningE("getArchitecture", "Couldn't chroot into %s for dpkg --print-foreign-architectures", chrootDir.c_str());
-			execvp(Args[0], (char**) &Args[0]);
-			_error->WarningE("getArchitecture", "Can't detect foreign architectures supported by dpkg!");
-			_exit(100);
-		}
-		close(external[1]);
-
-		FILE *dpkg = fdopen(external[0], "r");
-		if(dpkg != NULL) {
-			char buf[1024];
-			while (fgets(buf, sizeof(buf), dpkg) != NULL) {
-				char* arch = strtok(buf, " ");
-				while (arch != NULL) {
-					for (; isspace(*arch) != 0; ++arch);
-					if (arch[0] != '\0') {
-						char const* archend = arch;
-						for (; isspace(*archend) == 0 && *archend != '\0'; ++archend);
-						string a(arch, (archend - arch));
-						if (std::find(archs.begin(), archs.end(), a) == archs.end())
-							archs.push_back(a);
-					}
-					arch = strtok(NULL, " ");
-				}
-			}
-			fclose(dpkg);
-		}
-		ExecWait(dpkgMultiArch, "dpkg --print-foreign-architectures", true);
-		return archs;
-	}
+	if (archs.empty() == true && _system != nullptr)
+	   archs = _system->ArchitecturesSupported();
 
 	if (archs.empty() == true ||
 	    std::find(archs.begin(), archs.end(), arch) == archs.end())
@@ -402,35 +349,6 @@ bool Configuration::checkArchitecture(std::string const &Arch) {
 	return (std::find(archs.begin(), archs.end(), Arch) != archs.end());
 }
 									/*}}}*/
-// setDefaultConfigurationForCompressors				/*{{{*/
-void Configuration::setDefaultConfigurationForCompressors() {
-	// Set default application paths to check for optional compression types
-	_config->CndSet("Dir::Bin::bzip2", "/bin/bzip2");
-	_config->CndSet("Dir::Bin::xz", "/usr/bin/xz");
-	if (FileExists(_config->FindFile("Dir::Bin::xz")) == true) {
-		_config->Set("Dir::Bin::lzma", _config->FindFile("Dir::Bin::xz"));
-		_config->Set("APT::Compressor::lzma::Binary", "xz");
-		if (_config->Exists("APT::Compressor::lzma::CompressArg") == false) {
-			_config->Set("APT::Compressor::lzma::CompressArg::", "--format=lzma");
-			_config->Set("APT::Compressor::lzma::CompressArg::", "-9");
-		}
-		if (_config->Exists("APT::Compressor::lzma::UncompressArg") == false) {
-			_config->Set("APT::Compressor::lzma::UncompressArg::", "--format=lzma");
-			_config->Set("APT::Compressor::lzma::UncompressArg::", "-d");
-		}
-	} else {
-		_config->CndSet("Dir::Bin::lzma", "/usr/bin/lzma");
-		if (_config->Exists("APT::Compressor::lzma::CompressArg") == false) {
-			_config->Set("APT::Compressor::lzma::CompressArg::", "--suffix=");
-			_config->Set("APT::Compressor::lzma::CompressArg::", "-9");
-		}
-		if (_config->Exists("APT::Compressor::lzma::UncompressArg") == false) {
-			_config->Set("APT::Compressor::lzma::UncompressArg::", "--suffix=");
-			_config->Set("APT::Compressor::lzma::UncompressArg::", "-d");
-		}
-	}
-}
-									/*}}}*/
 // getCompressors - Return Vector of usealbe compressors		/*{{{*/
 // ---------------------------------------------------------------------
 /* return a vector of compressors used by apt-ftparchive in the
@@ -447,38 +365,47 @@ const Configuration::getCompressors(bool const Cached) {
 
 	setDefaultConfigurationForCompressors();
 
-	compressors.push_back(Compressor(".", "", "", NULL, NULL, 1));
-	if (_config->Exists("Dir::Bin::gzip") == false || FileExists(_config->FindFile("Dir::Bin::gzip")) == true)
-		compressors.push_back(Compressor("gzip",".gz","gzip","-9n","-d",2));
+	std::vector<std::string> CompressorsDone;
+# define APT_ADD_COMPRESSOR(NAME, EXT, BINARY, ARG, DEARG, COST) \
+	{ CompressorsDone.push_back(NAME); compressors.emplace_back(NAME, EXT, BINARY, ARG, DEARG, COST); }
+	APT_ADD_COMPRESSOR(".", "", "", nullptr, nullptr, 0)
+	if (_config->Exists("Dir::Bin::lz4") == false || FileExists(_config->Find("Dir::Bin::lz4")) == true)
+		APT_ADD_COMPRESSOR("lz4",".lz4","lz4","-1","-d",50)
+#ifdef HAVE_LZ4
+	else
+		APT_ADD_COMPRESSOR("lz4",".lz4","false", nullptr, nullptr, 50)
+#endif
+	if (_config->Exists("Dir::Bin::gzip") == false || FileExists(_config->Find("Dir::Bin::gzip")) == true)
+		APT_ADD_COMPRESSOR("gzip",".gz","gzip","-6n","-d",100)
 #ifdef HAVE_ZLIB
 	else
-		compressors.push_back(Compressor("gzip",".gz","false", NULL, NULL, 2));
+		APT_ADD_COMPRESSOR("gzip",".gz","false", nullptr, nullptr, 100)
 #endif
-	if (_config->Exists("Dir::Bin::bzip2") == false || FileExists(_config->FindFile("Dir::Bin::bzip2")) == true)
-		compressors.push_back(Compressor("bzip2",".bz2","bzip2","-9","-d",3));
+	if (_config->Exists("Dir::Bin::xz") == false || FileExists(_config->Find("Dir::Bin::xz")) == true)
+		APT_ADD_COMPRESSOR("xz",".xz","xz","-6","-d",200)
+#ifdef HAVE_LZMA
+	else
+		APT_ADD_COMPRESSOR("xz",".xz","false", nullptr, nullptr, 200)
+#endif
+	if (_config->Exists("Dir::Bin::bzip2") == false || FileExists(_config->Find("Dir::Bin::bzip2")) == true)
+		APT_ADD_COMPRESSOR("bzip2",".bz2","bzip2","-6","-d",300)
 #ifdef HAVE_BZ2
 	else
-		compressors.push_back(Compressor("bzip2",".bz2","false", NULL, NULL, 3));
+		APT_ADD_COMPRESSOR("bzip2",".bz2","false", nullptr, nullptr, 300)
 #endif
-	if (_config->Exists("Dir::Bin::xz") == false || FileExists(_config->FindFile("Dir::Bin::xz")) == true)
-		compressors.push_back(Compressor("xz",".xz","xz","-6","-d",4));
+	if (_config->Exists("Dir::Bin::lzma") == false || FileExists(_config->Find("Dir::Bin::lzma")) == true)
+		APT_ADD_COMPRESSOR("lzma",".lzma","lzma","-6","-d",400)
 #ifdef HAVE_LZMA
 	else
-		compressors.push_back(Compressor("xz",".xz","false", NULL, NULL, 4));
-#endif
-	if (_config->Exists("Dir::Bin::lzma") == false || FileExists(_config->FindFile("Dir::Bin::lzma")) == true)
-		compressors.push_back(Compressor("lzma",".lzma","lzma","-9","-d",5));
-#ifdef HAVE_LZMA
-	else
-		compressors.push_back(Compressor("lzma",".lzma","false", NULL, NULL, 5));
+		APT_ADD_COMPRESSOR("lzma",".lzma","false", nullptr, nullptr, 400)
 #endif
 
-	std::vector<std::string> const comp = _config->FindVector("APT::Compressor");
-	for (std::vector<std::string>::const_iterator c = comp.begin();
-	     c != comp.end(); ++c) {
-		if (c->empty() || *c == "." || *c == "gzip" || *c == "bzip2" || *c == "lzma" || *c == "xz")
+	std::vector<std::string> const comp = _config->FindVector("APT::Compressor", "", true);
+	for (auto const &c: comp)
+	{
+		if (c.empty() || std::find(CompressorsDone.begin(), CompressorsDone.end(), c) != CompressorsDone.end())
 			continue;
-		compressors.push_back(Compressor(c->c_str(), std::string(".").append(*c).c_str(), c->c_str(), "-9", "-d", 100));
+		compressors.push_back(Compressor(c.c_str(), std::string(".").append(c).c_str(), c.c_str(), nullptr, nullptr, 1000));
 	}
 
 	return compressors;
@@ -540,7 +467,7 @@ std::string const Configuration::getBuildProfilesString() {
 		return "";
 	std::vector<std::string>::const_iterator p = profiles.begin();
 	std::string list = *p;
-	for (; p != profiles.end(); ++p)
+	for (++p; p != profiles.end(); ++p)
 	   list.append(",").append(*p);
 	return list;
 }
