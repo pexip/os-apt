@@ -7,12 +7,14 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<apt-pkg/configuration.h>
-#include<apt-pkg/error.h>
-#include<apt-pkg/fileutl.h>
-#include<apt-pkg/strutl.h>
+#include <apt-pkg/configuration.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/strutl.h>
 
-#include<iostream>
+#include <algorithm>
+#include <iostream>
+#include <fcntl.h>
 #include <unistd.h>
 
 #include "proxy.h"
@@ -21,6 +23,13 @@
 // AutoDetectProxy - auto detect proxy					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
+static std::vector<std::string> CompatibleProxies(URI const &URL)
+{
+   if (URL.Access == "http" || URL.Access == "https")
+      return {"http", "https", "socks5h"};
+   return {URL.Access};
+}
+
 bool AutoDetectProxy(URI &URL)
 {
    // we support both http/https debug options
@@ -41,6 +50,9 @@ bool AutoDetectProxy(URI &URL)
    if (Debug)
       std::clog << "Using auto proxy detect command: " << AutoDetectProxyCmd << std::endl;
 
+   if (faccessat(AT_FDCWD, AutoDetectProxyCmd.c_str(), R_OK | X_OK, AT_EACCESS) != 0)
+      return _error->Errno("access", "ProxyAutoDetect command '%s' can not be executed!", AutoDetectProxyCmd.c_str());
+
    std::string const urlstring = URL;
    std::vector<const char *> Args;
    Args.push_back(AutoDetectProxyCmd.c_str());
@@ -48,7 +60,7 @@ bool AutoDetectProxy(URI &URL)
    Args.push_back(nullptr);
    FileFd PipeFd;
    pid_t Child;
-   if(Popen(&Args[0], PipeFd, Child, FileFd::ReadOnly, false) == false)
+   if (Popen(&Args[0], PipeFd, Child, FileFd::ReadOnly, false, true) == false)
       return _error->Error("ProxyAutoDetect command '%s' failed!", AutoDetectProxyCmd.c_str());
    char buf[512];
    bool const goodread = PipeFd.ReadLine(buf, sizeof(buf)) != nullptr;
@@ -70,7 +82,14 @@ bool AutoDetectProxy(URI &URL)
    if (Debug)
       std::clog << "auto detect command returned: '" << cleanedbuf << "'" << std::endl;
 
-   if (strstr(cleanedbuf, URL.Access.c_str()) == cleanedbuf || strcmp(cleanedbuf, "DIRECT") == 0)
+   auto compatibleTypes = CompatibleProxies(URL);
+   bool compatible = strcmp(cleanedbuf, "DIRECT") == 0 ||
+		     compatibleTypes.end() != std::find_if(compatibleTypes.begin(),
+							   compatibleTypes.end(), [cleanedbuf](std::string &compat) {
+							      return strstr(cleanedbuf, compat.c_str()) == cleanedbuf;
+							   });
+
+   if (compatible)
       _config->Set("Acquire::"+URL.Access+"::proxy::"+URL.Host, cleanedbuf);
 
    return true;

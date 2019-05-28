@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: strutl.cc,v 1.48 2003/07/18 14:15:11 mdz Exp $
 /* ######################################################################
 
    String Util - Some useful string functions.
@@ -17,30 +16,30 @@
 // Includes								/*{{{*/
 #include <config.h>
 
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/fileutl.h>
 #include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/strutl.h>
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <iomanip>
 #include <locale>
 #include <sstream>
-#include <string>
 #include <sstream>
+#include <string>
 #include <vector>
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <time.h>
 #include <ctype.h>
-#include <string.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <regex.h>
 #include <errno.h>
-#include <stdarg.h>
 #include <iconv.h>
+#include <regex.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -692,42 +691,88 @@ int stringcasecmp(string::const_iterator A,string::const_iterator AEnd,
 }
 #endif
 									/*}}}*/
-// LookupTag - Lookup the value of a tag in a taged string		/*{{{*/
+// LookupTag - Lookup the value of a tag in a tagged string		/*{{{*/
 // ---------------------------------------------------------------------
-/* The format is like those used in package files and the method 
+/* The format is like those used in package files and the method
    communication system */
-string LookupTag(const string &Message,const char *Tag,const char *Default)
+std::string LookupTag(const std::string &Message, const char *TagC, const char *Default)
 {
-   // Look for a matching tag.
-   int Length = strlen(Tag);
-   for (string::const_iterator I = Message.begin(); I + Length < Message.end(); ++I)
+   std::string tag = std::string("\n") + TagC + ":";
+   if (Default == nullptr)
+      Default = "";
+   if (Message.length() < tag.length())
+      return Default;
+   std::transform(tag.begin(), tag.end(), tag.begin(), tolower_ascii);
+   auto valuestart = Message.cbegin();
+   // maybe the message starts directly with tag
+   if (Message[tag.length() - 2] == ':')
    {
-      // Found the tag
-      if (I[Length] == ':' && stringcasecmp(I,I+Length,Tag) == 0)
+      std::string lowstart = std::string("\n") + Message.substr(0, tag.length() - 1);
+      std::transform(lowstart.begin(), lowstart.end(), lowstart.begin(), tolower_ascii);
+      if (lowstart == tag)
+	 valuestart = std::next(valuestart, tag.length() - 1);
+   }
+   // the tag is somewhere in the message
+   if (valuestart == Message.cbegin())
+   {
+      auto const tagbegin = std::search(Message.cbegin(), Message.cend(), tag.cbegin(), tag.cend(),
+					[](char const a, char const b) { return tolower_ascii(a) == b; });
+      if (tagbegin == Message.cend())
+	 return Default;
+      valuestart = std::next(tagbegin, tag.length());
+   }
+   auto const is_whitespace = [](char const c) { return isspace_ascii(c) != 0 && c != '\n'; };
+   auto const is_newline = [](char const c) { return c == '\n'; };
+   std::string result;
+   valuestart = std::find_if_not(valuestart, Message.cend(), is_whitespace);
+   // is the first line of the value empty?
+   if (valuestart != Message.cend() && *valuestart == '\n')
+   {
+      valuestart = std::next(valuestart);
+      if (valuestart != Message.cend() && *valuestart == ' ')
+	 valuestart = std::next(valuestart);
+   }
+   // extract the value over multiple lines removing trailing whitespace
+   while (valuestart < Message.cend())
+   {
+      auto const linebreak = std::find_if(valuestart, Message.cend(), is_newline);
+      auto valueend = std::prev(linebreak);
+      // skip spaces at the end of the line
+      while (valueend > valuestart && is_whitespace(*valueend))
+	 valueend = std::prev(valueend);
+      // append found line to result
       {
-	 // Find the end of line and strip the leading/trailing spaces
-	 string::const_iterator J;
-	 I += Length + 1;
-	 for (; isspace_ascii(*I) != 0 && I < Message.end(); ++I);
-	 for (J = I; *J != '\n' && J < Message.end(); ++J);
-	 for (; J > I && isspace_ascii(J[-1]) != 0; --J);
-	 
-	 return string(I,J);
+	 std::string tmp(valuestart, std::next(valueend));
+	 if (tmp != ".")
+	 {
+	    if (result.empty())
+	       result.assign(std::move(tmp));
+	    else
+	       result.append(tmp);
+	 }
       }
-      
-      for (; *I != '\n' && I < Message.end(); ++I);
-   }   
-   
-   // Failed to find a match
-   if (Default == 0)
-      return string();
-   return Default;
+      // see if the value is multiline
+      if (linebreak == Message.cend())
+	 break;
+      valuestart = std::next(linebreak);
+      if (valuestart == Message.cend() || *valuestart != ' ')
+	 break;
+      result.append("\n");
+      // skip the space leading a multiline (Keep all other whitespaces in the value)
+      valuestart = std::next(valuestart);
+   }
+   auto const valueend = result.find_last_not_of("\n");
+   if (valueend == std::string::npos)
+      result.clear();
+   else
+      result.erase(valueend + 1);
+   return result;
 }
 									/*}}}*/
 // StringToBool - Converts a string into a boolean			/*{{{*/
 // ---------------------------------------------------------------------
 /* This inspects the string to see if it is true or if it is false and
-   then returns the result. Several varients on true/false are checked. */
+   then returns the result. Several variants on true/false are checked. */
 int StringToBool(const string &Text,int Default)
 {
    char *ParseEnd;
@@ -944,7 +989,7 @@ static time_t timegm(struct tm *t)
 }
 #endif
 									/*}}}*/
-// RFC1123StrToTime - Converts a HTTP1.1 full date strings into a time_t	/*{{{*/
+// RFC1123StrToTime - Converts an HTTP1.1 full date strings into a time_t	/*{{{*/
 // ---------------------------------------------------------------------
 /* tries to parses a full date as specified in RFC7231 §7.1.1.1
    with one exception: HTTP/1.1 valid dates need to have GMT as timezone.
@@ -955,7 +1000,7 @@ static time_t timegm(struct tm *t)
 bool RFC1123StrToTime(const char* const str,time_t &time)
 {
    unsigned short day = 0;
-   signed int year = 0; // yes, Y23K problem – we gonna worry then…
+   signed int year = 0; // yes, Y23K problem – we going to worry then…
    std::string weekday, month, datespec, timespec, zone;
    std::istringstream ss(str);
    auto const &posix = std::locale::classic();
@@ -1482,7 +1527,7 @@ string StripEpoch(const string &VerStr)
    standard tolower/toupper and as a bonus avoids problems with different
    locales - we only operate on ascii chars anyway. */
 #undef tolower_ascii
-int tolower_ascii(int const c) APT_CONST APT_COLD;
+int tolower_ascii(int const c) APT_PURE APT_COLD;
 int tolower_ascii(int const c)
 {
    return tolower_ascii_inline(c);
@@ -1496,7 +1541,7 @@ int tolower_ascii(int const c)
    standard isspace() and as a bonus avoids problems with different
    locales - we only operate on ascii chars anyway. */
 #undef isspace_ascii
-int isspace_ascii(int const c) APT_CONST APT_COLD;
+int isspace_ascii(int const c) APT_PURE APT_COLD;
 int isspace_ascii(int const c)
 {
    return isspace_ascii_inline(c);

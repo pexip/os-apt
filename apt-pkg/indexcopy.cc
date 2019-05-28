@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: indexcopy.cc,v 1.10 2002/03/26 07:38:58 jgg Exp $
 /* ######################################################################
 
    Index Copying - Aid for copying and verifying the index files
@@ -10,28 +9,28 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
-#include <apt-pkg/error.h>
-#include <apt-pkg/progress.h>
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/fileutl.h>
 #include <apt-pkg/aptconfiguration.h>
-#include <apt-pkg/configuration.h>
-#include <apt-pkg/tagfile.h>
-#include <apt-pkg/metaindex.h>
 #include <apt-pkg/cdrom.h>
+#include <apt-pkg/configuration.h>
+#include <apt-pkg/debmetaindex.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
 #include <apt-pkg/gpgv.h>
 #include <apt-pkg/hashes.h>
-#include <apt-pkg/debmetaindex.h>
+#include <apt-pkg/metaindex.h>
+#include <apt-pkg/progress.h>
+#include <apt-pkg/strutl.h>
+#include <apt-pkg/tagfile.h>
 
 #include <iostream>
-#include <unistd.h>
-#include <sys/stat.h>
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sstream>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "indexcopy.h"
 #include <apti18n.h>
@@ -58,15 +57,14 @@ bool IndexCopy::CopyPackages(string CDROM,string Name,vector<string> &List,
    // Prepare the progress indicator
    off_t TotalSize = 0;
    std::vector<APT::Configuration::Compressor> const compressor = APT::Configuration::getCompressors();
-   for (vector<string>::iterator I = List.begin(); I != List.end(); ++I)
+   for (auto const &F : List)
    {
       struct stat Buf;
       bool found = false;
-      std::string file = std::string(*I).append(GetFileName());
-      for (std::vector<APT::Configuration::Compressor>::const_iterator c = compressor.begin();
-	   c != compressor.end(); ++c)
+      auto const file = F + GetFileName();
+      for (auto const &c : compressor)
       {
-	 if (stat((file + c->Extension).c_str(), &Buf) != 0)
+	 if (stat((file + c.Extension).c_str(), &Buf) != 0)
 	    continue;
 	 found = true;
 	 break;
@@ -82,9 +80,9 @@ bool IndexCopy::CopyPackages(string CDROM,string Name,vector<string> &List,
    unsigned int WrongSize = 0;
    unsigned int Packages = 0;
    for (vector<string>::iterator I = List.begin(); I != List.end(); ++I)
-   {      
-      string OrigPath = string(*I,CDROM.length());
-      
+   {
+      std::string OrigPath(*I,CDROM.length());
+
       // Open the package file
       FileFd Pkg(*I + GetFileName(), FileFd::ReadOnly, FileFd::Auto);
       off_t const FileSize = Pkg.Size();
@@ -438,7 +436,21 @@ bool PackageCopy::RewriteEntry(FileFd &Target,string const &File)
 /* */
 bool SourceCopy::GetFile(string &File,unsigned long long &Size)
 {
-   string Files = Section->FindS("Files");
+   string Files;
+
+   for (char const *const *type = HashString::SupportedHashes(); *type != NULL; ++type)
+   {
+      // derive field from checksum type
+      std::string checksumField("Checksums-");
+      if (strcmp(*type, "MD5Sum") == 0)
+	 checksumField = "Files"; // historic name for MD5 checksums
+      else
+	 checksumField.append(*type);
+
+      Files = Section->FindS(checksumField.c_str());
+      if (Files.empty() == false)
+	 break;
+   }
    if (Files.empty() == true)
       return false;
 
@@ -772,13 +784,13 @@ bool TranslationsCopy::CopyTranslations(string CDROM,string Name,	/*{{{*/
 									/*}}}*/
 
 IndexCopy::IndexCopy() : d(nullptr), Section(nullptr) {}
-APT_CONST IndexCopy::~IndexCopy() {}
+IndexCopy::~IndexCopy() {}
 
 PackageCopy::PackageCopy() : IndexCopy(), d(NULL) {}
-APT_CONST PackageCopy::~PackageCopy() {}
+PackageCopy::~PackageCopy() {}
 SourceCopy::SourceCopy() : IndexCopy(), d(NULL) {}
-APT_CONST SourceCopy::~SourceCopy() {}
+SourceCopy::~SourceCopy() {}
 TranslationsCopy::TranslationsCopy() : d(nullptr), Section(nullptr) {}
-APT_CONST TranslationsCopy::~TranslationsCopy() {}
+TranslationsCopy::~TranslationsCopy() {}
 SigVerify::SigVerify() : d(NULL) {}
-APT_CONST SigVerify::~SigVerify() {}
+SigVerify::~SigVerify() {}

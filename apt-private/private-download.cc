@@ -1,30 +1,30 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
-#include <apt-pkg/acquire.h>
 #include <apt-pkg/acquire-item.h>
+#include <apt-pkg/acquire.h>
 #include <apt-pkg/cacheset.h>
-#include <apt-pkg/cmndline.h>
 #include <apt-pkg/clean.h>
+#include <apt-pkg/cmndline.h>
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/strutl.h>
 
+#include <apt-private/acqprogress.h>
 #include <apt-private/private-cachefile.h>
 #include <apt-private/private-download.h>
 #include <apt-private/private-output.h>
 #include <apt-private/private-utils.h>
-#include <apt-private/acqprogress.h>
 
 #include <fstream>
 #include <string>
 #include <vector>
 
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
 #include <fcntl.h>
+#include <pwd.h>
+#include <sys/types.h>
+#include <unistd.h>
 #ifdef HAVE_VFS_H
 #include <sys/vfs.h>
 #else
@@ -33,9 +33,9 @@
 #endif
 #include <sys/mount.h>
 #endif
-#include <sys/statvfs.h>
-#include <sys/stat.h>
 #include <errno.h>
+#include <sys/stat.h>
+#include <sys/statvfs.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -79,7 +79,6 @@ bool AuthPrompt(std::vector<std::string> const &UntrustedList, bool const Prompt
       return true;
    }
    else if (_config->FindB("APT::Get::Force-Yes",false) == true) {
-      _error->Warning(_("--force-yes is deprecated, use one of the options starting with --allow instead."));
       return true;
    }
 
@@ -226,7 +225,8 @@ bool DoDownload(CommandLine &CmdL)
       std::string const filename = cwd + flNotDir((*I)->DestFile);
       if ((*I)->Local == true &&
           filename != (*I)->DestFile &&
-          (*I)->Status == pkgAcquire::Item::StatDone)
+          (*I)->Status == pkgAcquire::Item::StatDone &&
+	  dynamic_cast<pkgAcqArchive*>(*I) != nullptr)
       {
 	 std::ifstream src((*I)->DestFile.c_str(), std::ios::binary);
 	 std::ofstream dst(filename.c_str(), std::ios::binary);
@@ -248,7 +248,7 @@ bool DoChangelog(CommandLine &CmdL)
    APT::VersionList verset = APT::VersionList::FromCommandLine(Cache,
 		CmdL.FileList + 1, APT::CacheSetHelper::CANDIDATE, helper);
    if (verset.empty() == true)
-      return false;
+      return _error->Error(_("No packages found"));
 
    bool const downOnly = _config->FindB("APT::Get::Download-Only", false);
    bool const printOnly = _config->FindB("APT::Get::Print-URIs", false);
@@ -339,15 +339,15 @@ bool DoClean(CommandLine &)
 // ---------------------------------------------------------------------
 /* This is similar to clean but it only purges things that cannot be 
    downloaded, that is old versions of cached packages. */
- class LogCleaner : public pkgArchiveCleaner
+ class LogCleaner : public pkgArchiveCleaner2
 {
    protected:
-      virtual void Erase(const char *File, std::string Pkg, std::string Ver,struct stat &St) APT_OVERRIDE
+      virtual void Erase(int const dirfd, char const * const File, std::string const &Pkg, std::string const &Ver,struct stat const &St) APT_OVERRIDE
       {
 	 c1out << "Del " << Pkg << " " << Ver << " [" << SizeToStr(St.st_size) << "B]" << std::endl;
 
 	 if (_config->FindB("APT::Get::Simulate") == false)
-	    RemoveFile("Cleaner::Erase", File);
+	    RemoveFileAt("Cleaner::Erase", dirfd, File);
       };
 };
 bool DoAutoClean(CommandLine &)

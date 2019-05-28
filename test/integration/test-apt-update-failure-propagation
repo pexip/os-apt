@@ -47,24 +47,9 @@ mv aptarchive/dists/stable aptarchive/dists/stable.good
 testfailuremsg "E: The repository 'https://localhost:${APTHTTPSPORT} stable Release' does not have a Release file.
 N: Updating from such a repository can't be done securely, and is therefore disabled by default.
 N: See apt-secure(8) manpage for repository creation and user configuration details." apt update
-testfailure aptget update --no-allow-insecure-repositories
-testequalor2 "Hit:1 http://localhost:${APTHTTPPORT} sid InRelease
-Ign:2 https://localhost:${APTHTTPSPORT} stable InRelease
-  404  Not Found
-Err:3 https://localhost:${APTHTTPSPORT} stable Release
-  404  Not Found
-Reading package lists...
-E: The repository 'https://localhost:${APTHTTPSPORT} stable Release' does not have a Release file.
+testfailuremsg "E: The repository 'https://localhost:${APTHTTPSPORT} stable Release' does not have a Release file.
 N: Updating from such a repository can't be done securely, and is therefore disabled by default.
-N: See apt-secure(8) manpage for repository creation and user configuration details." "Ign:1 https://localhost:${APTHTTPSPORT} stable InRelease
-  404  Not Found
-Err:2 https://localhost:${APTHTTPSPORT} stable Release
-  404  Not Found
-Hit:3 http://localhost:${APTHTTPPORT} sid InRelease
-Reading package lists...
-E: The repository 'https://localhost:${APTHTTPSPORT} stable Release' does not have a Release file.
-N: Updating from such a repository can't be done securely, and is therefore disabled by default.
-N: See apt-secure(8) manpage for repository creation and user configuration details." cat rootdir/tmp/testfailure.output
+N: See apt-secure(8) manpage for repository creation and user configuration details."  aptget update
 
 mv aptarchive/dists/stable.good aptarchive/dists/stable
 posttest() {
@@ -100,7 +85,6 @@ for FILE in rootdir/etc/apt/sources.list.d/*-stable-* ; do
 	sed -i -e "s#:${APTHTTPSPORT}/#:666/#" "$FILE"
 done
 testwarning aptget update -o Dir::Bin::Methods::https="${OLDMETHODS}/https"
-testequalor2 "W: Failed to fetch https://localhost:666/dists/stable/InRelease  Failed to connect to localhost port 666: Connection refused
-W: Some index files failed to download. They have been ignored, or old ones used instead." "W: Failed to fetch https://localhost:666/dists/stable/InRelease  couldn't connect to host
-W: Some index files failed to download. They have been ignored, or old ones used instead." tail -n 2 rootdir/tmp/testwarning.output
+testsuccess grep '^W: Failed to fetch https://localhost:666/dists/stable/InRelease ' rootdir/tmp/testwarning.output
+testequal 'W: Some index files failed to download. They have been ignored, or old ones used instead.' tail -n 1 rootdir/tmp/testwarning.output
 posttest

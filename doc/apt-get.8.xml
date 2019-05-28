@@ -14,7 +14,7 @@
    &apt-email;
    &apt-product;
    <!-- The last update date -->
-   <date>2017-02-22T00:00:00Z</date>
+   <date>2019-01-27T00:00:00Z</date>
  </refentryinfo>
  
  <refmeta>
@@ -143,6 +143,10 @@
      with a '^' or '$' character, or create a more specific regular expression.</para></listitem>
      </varlistentry>
 
+     <varlistentry><term><option>reinstall</option></term>
+     <listitem><para><literal>reinstall</literal> is an alias for <literal>install --reinstall</literal>.</para></listitem>
+     </varlistentry>
+
      <varlistentry><term><option>remove</option></term>
      <listitem><para><literal>remove</literal> is identical to <literal>install</literal> except that packages are 
 	 removed instead of installed. Note that removing a package leaves its
@@ -164,6 +168,9 @@
      default release, set with the option <literal>APT::Default-Release</literal>,
      the <option>-t</option> option or per package with the
      <literal>pkg/release</literal> syntax, if possible.</para>
+
+    <para>The arguments are interpreted as binary and source package names.
+    See the <option>--only-source</option> option if you want to change that.</para>
 
      <para>Source packages are tracked separately
      from binary packages via <literal>deb-src</literal> lines 
@@ -193,7 +200,9 @@
      <listitem><para><literal>build-dep</literal> causes apt-get to install/remove packages in an 
      attempt to satisfy the build dependencies for a source package. By default the dependencies are
      satisfied to build the package natively. If desired a host-architecture can be specified
-     with the <option>--host-architecture</option> option instead.</para></listitem>
+     with the <option>--host-architecture</option> option instead.</para><para>The arguments are
+     interpreted as binary or source package names. See the <option>--only-source</option>
+     option if you want to change that.</para></listitem>
      </varlistentry>
 
      <varlistentry><term><option>check</option></term>
@@ -347,7 +356,7 @@
                    <term><option>--assume-yes</option></term>
      <listitem><para>Automatic yes to prompts; assume "yes" as answer to all prompts and run
      non-interactively. If an undesirable situation, such as changing a held
-     package, trying to install a unauthenticated package or removing an essential package 
+     package, trying to install an unauthenticated package or removing an essential package 
      occurs then <literal>apt-get</literal> will abort. 
      Configuration Item: <literal>APT::Get::Assume-Yes</literal>.</para></listitem>
      </varlistentry>
@@ -404,7 +413,7 @@
      <varlistentry><term><option>--with-new-pkgs</option></term>
      <listitem><para>Allow installing new packages when used in
      conjunction with <literal>upgrade</literal>.  This is useful if
-     the update of a installed package requires new dependencies to be
+     the update of an installed package requires new dependencies to be
      installed. Instead of holding the package back <literal>upgrade</literal>
      will upgrade the package and install the new dependencies. Note that
      <literal>upgrade</literal> with this option will never remove packages,
@@ -457,7 +466,11 @@
      without prompting if it is doing something potentially harmful. It 
      should not be used except in very special situations. Using 
      <literal>force-yes</literal> can potentially destroy your system! 
-     Configuration Item: <literal>APT::Get::force-yes</literal>. This is deprecated and replaced by <option>--allow-downgrades</option>, <option>--allow-remove-essential</option>, <option>--allow-change-held-packages</option> in 1.1. </para></listitem>
+     Configuration Item: <literal>APT::Get::force-yes</literal>. This is deprecated and replaced by 
+     <option>--allow-unauthenticated</option>
+     , <option>--allow-downgrades</option>
+     , <option>--allow-remove-essential</option>
+     , <option>--allow-change-held-packages</option> in 1.1. </para></listitem>
      </varlistentry>
 
      <varlistentry><term><option>--print-uris</option></term>
@@ -573,6 +586,23 @@
      also &apt-secure; for details on the concept and the implications.
 
      Configuration Item: <literal>Acquire::AllowInsecureRepositories</literal>.</para></listitem>
+     </varlistentry>
+
+     <varlistentry><term><option>--allow-releaseinfo-change</option></term>
+     <listitem><para>Allow the update command to continue downloading
+     data from a repository which changed its information of the release
+     contained in the repository indicating e.g a new major release.
+     APT will fail at the update command for such repositories until the
+     change is confirmed to ensure the user is prepared for the change.
+     See also &apt-secure; for details on the concept and configuration.
+     </para><para>
+     Specialist options
+     (<literal>--allow-releaseinfo-change-</literal><replaceable>field</replaceable>)
+     exist to allow changes only for certain fields like <literal>origin</literal>,
+     <literal>label</literal>, <literal>codename</literal>, <literal>suite</literal>,
+     <literal>version</literal> and <literal>defaultpin</literal>. See also &apt-preferences;.
+
+     Configuration Item: <literal>Acquire::AllowReleaseInfoChange</literal>.</para></listitem>
      </varlistentry>
 
      <varlistentry><term><option>--show-progress</option></term>

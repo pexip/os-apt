@@ -1,38 +1,36 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: indexfile.cc,v 1.2.2.1 2003/12/24 23:09:17 mdz Exp $
 /* ######################################################################
 
-   Index File - Abstraction for an index of archive/souce file.
+   Index File - Abstraction for an index of archive/source file.
    
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
+#include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/configuration.h>
-#include <apt-pkg/indexfile.h>
+#include <apt-pkg/deblistparser.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
-#include <apt-pkg/aptconfiguration.h>
+#include <apt-pkg/indexfile.h>
+#include <apt-pkg/macros.h>
 #include <apt-pkg/pkgcache.h>
 #include <apt-pkg/pkgcachegen.h>
-#include <apt-pkg/cacheiterators.h>
+#include <apt-pkg/progress.h>
 #include <apt-pkg/srcrecords.h>
 #include <apt-pkg/strutl.h>
-#include <apt-pkg/progress.h>
-#include <apt-pkg/deblistparser.h>
-#include <apt-pkg/macros.h>
 
 #include <apt-pkg/debindexfile.h>
 
 #include <sys/stat.h>
 
-#include <string>
-#include <vector>
 #include <clocale>
 #include <cstring>
 #include <memory>
+#include <string>
+#include <vector>
 									/*}}}*/
 
 // Global list of Item supported
@@ -150,6 +148,7 @@ std::string IndexTarget::Option(OptionKeys const EnumKey) const		/*{{{*/
       APT_CASE(ALLOW_INSECURE);
       APT_CASE(ALLOW_WEAK);
       APT_CASE(ALLOW_DOWNGRADE_TO_INSECURE);
+      APT_CASE(INRELEASE_PATH);
 #undef APT_CASE
       case FILENAME:
       {
@@ -274,6 +273,10 @@ std::string pkgDebianIndexTargetFile::GetProgressDescription() const
 {
    return Target.Description;
 }
+IndexTarget pkgDebianIndexTargetFile::GetIndexTarget() const
+{
+   return Target;
+}
 
 pkgDebianIndexRealFile::pkgDebianIndexRealFile(std::string const &pFile, bool const Trusted) :/*{{{*/
    pkgDebianIndexFile(Trusted), d(NULL)
@@ -338,16 +341,10 @@ pkgCacheListParser * pkgDebianIndexFile::CreateListParser(FileFd &Pkg)
    if (Pkg.IsOpen() == false)
       return nullptr;
    _error->PushToStack();
-   pkgCacheListParser * const Parser = new debListParser(&Pkg);
+   std::unique_ptr<pkgCacheListParser> Parser(new debListParser(&Pkg));
    bool const newError = _error->PendingError();
    _error->MergeWithStack();
-   if (newError)
-   {
-      delete Parser;
-      return nullptr;
-   }
-   else
-      return Parser;
+   return newError ? nullptr : Parser.release();
 }
 bool pkgDebianIndexFile::Merge(pkgCacheGenerator &Gen,OpProgress * const Prog)
 {
@@ -410,6 +407,6 @@ pkgCache::PkgFileIterator pkgDebianIndexFile::FindInCache(pkgCache &Cache) const
    return File;
 }
 
-APT_CONST pkgIndexFile::~pkgIndexFile() {}
-APT_CONST pkgDebianIndexTargetFile::~pkgDebianIndexTargetFile() {}
-APT_CONST pkgDebianIndexRealFile::~pkgDebianIndexRealFile() {}
+pkgIndexFile::~pkgIndexFile() {}
+pkgDebianIndexTargetFile::~pkgDebianIndexTargetFile() {}
+pkgDebianIndexRealFile::~pkgDebianIndexRealFile() {}

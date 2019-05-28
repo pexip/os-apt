@@ -1,12 +1,13 @@
-# SOME DESCRIPTIVE TITLE.
+# Marathi messages for the apt suite.
+#
 # This file is put in the public domain.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Sampada <sampadanakhare@gmail.com>, 2008
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2017-09-13 17:18+0000\n"
+"POT-Creation-Date: 2019-02-04 15:34+0100\n"
 "PO-Revision-Date: 2008-11-20 23:27+0530\n"
 "Last-Translator: Sampada <sampadanakhare@gmail.com>\n"
 "Language-Team: Marathi, janabhaaratii, C-DAC, Mumbai, India "
@@ -146,7 +147,7 @@ msgstr "File %s/%s, %s पॅकेज मधल्या एका वर प�
 #. Only warn if there is no sources.list file.
 #: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
 #: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc methods/mirror.cc
+#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
 #, c-format
 msgid "Unable to read %s"
 msgstr "%s वाचण्यास असमर्थ"
@@ -212,7 +213,7 @@ msgstr "%s संचिका डायव्हर्ट केली आहे
 
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
-msgid "The repository '%s' does no longer have a Release file."
+msgid "The repository '%s' no longer has a Release file."
 msgstr "%s संचिका डायव्हर्ट केली आहे/वळवली आहे"
 
 #: apt-pkg/acquire-item.cc
@@ -292,6 +293,13 @@ msgstr ""
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
+"Skipping acquire of configured file '%s' as repository '%s' doesn't have the "
+"component '%s' (component misspelt in sources.list?)"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
 "Skipping acquire of configured file '%s' as repository '%s' doesn't support "
 "architecture '%s'"
 msgstr ""
@@ -299,8 +307,8 @@ msgstr ""
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
-"Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
-"or malformed file)"
+"Skipping acquire of configured file '%s' as repository '%s' does not seem to "
+"provide it (sources.list entry misspelt?)"
 msgstr ""
 
 #: apt-pkg/acquire-item.cc
@@ -320,10 +328,50 @@ msgid ""
 "repository will not be applied."
 msgstr ""
 
+#. TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+#. the time until the file will be valid - formatted in the same way as in
+#. the download progress display (e.g. 7d 3h 42min 1s)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"Release file for %s is not valid yet (invalid for another %s). Updates for "
+"this repository will not be applied."
+msgstr ""
+
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
+msgstr ""
+
+#. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"More information about this can be found online in the Release notes at: %s"
+msgstr ""
+
+#. TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"This must be accepted explicitly before updates for this repository can be "
+"applied. See %s manpage for details."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc apt-pkg/update.cc apt-private/private-download.cc
+#, c-format
+msgid "Failed to fetch %s  %s"
+msgstr "%s  %s आणणे असफल"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -339,19 +387,18 @@ msgstr ""
 msgid "Can't find a source to download version '%s' of '%s'"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc
-#, c-format
-msgid ""
-"The package index files are corrupted. No Filename: field for package %s."
-msgstr ""
-"पॅकेज यादीची/सुचीची संचिका दूषित/खराब झालेली आहे. संचिका नाव नाही: पॅकेजकरीता क्षेत्र/"
-"ठिकाण %s."
-
 #. TRANSLATOR: %s=%s is sourcename=sourceversion, e.g. apt=1.1
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "%s (%s) ला जोडत आहे"
+
+#: apt-pkg/acquire-worker.cc
+#, c-format
+msgid ""
+"The method '%s' is unsupported and disabled by default. Consider switching "
+"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
+msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -386,13 +433,13 @@ msgstr "कृपया '%s' लेबल असलेली डिस्क '%s
 
 #: apt-pkg/acquire.cc apt-pkg/cdrom.cc
 #, fuzzy, c-format
-msgid "List directory %spartial is missing."
+msgid "List directory %s is missing."
 msgstr "संचयिका यादीत %s पार्शल हरवले आहे."
 
 #: apt-pkg/acquire.cc
 #, fuzzy, c-format
-msgid "Archives directory %spartial is missing."
-msgstr "ऑर्काइव्ह संचयिका %spartial गायब आहे."
+msgid "Archives directory %s is missing."
+msgstr "ऑर्काइव्ह संचयिका %s गायब आहे."
 
 #: apt-pkg/acquire.cc
 #, fuzzy, c-format
@@ -416,14 +463,6 @@ msgstr ""
 msgid "Clean of %s is not supported"
 msgstr "'%s' प्रकारची निर्देशक संचिका सहाय्यकारी नाही"
 
-#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
-#: methods/mirror.cc
-#, c-format
-msgid "Unable to change to %s"
-msgstr "%s मध्ये बदलण्यास असमर्थ"
-
-#. only show the ETA if it makes sense
-#. two days
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -461,7 +500,7 @@ msgstr "पॅकेजच्या याद्या किंवा संच
 msgid "You may want to run apt-get update to correct these problems"
 msgstr "तुम्ही ह्या समस्यांचे निवारण करण्यासाठी  apt-get update प्रोग्राम चालू करु शकता"
 
-#: apt-pkg/cachefile.cc
+#: apt-pkg/cachefile.cc methods/mirror.cc
 msgid "The list of sources could not be read."
 msgstr "उगमांच्या याद्या वाचता येणार नाहीत."
 
@@ -609,6 +648,11 @@ msgstr "ह्या डिस्क/चकती करिता स्त्�
 
 #: apt-pkg/clean.cc
 #, c-format
+msgid "Unable to change to %s"
+msgstr "%s मध्ये बदलण्यास असमर्थ"
+
+#: apt-pkg/clean.cc
+#, c-format
 msgid "Unable to stat %s."
 msgstr "%s स्टॅट करण्यात असमर्थ. "
 
@@ -674,11 +718,6 @@ msgstr "%s अवैध क्रिया"
 #, c-format
 msgid "Unrecognized type abbreviation: '%c'"
 msgstr "संक्षिप्तरुपाचा माहित नसलेला प्रकार: '%c'"
-
-#: apt-pkg/contrib/configuration.cc
-#, c-format
-msgid "Opening configuration file %s"
-msgstr "%s संरचना फाईल उघडत आहे"
 
 #: apt-pkg/contrib/configuration.cc
 #, c-format
@@ -857,12 +896,12 @@ msgstr "संचिकेची syncing समस्या"
 msgid "Problem syncing the file"
 msgstr "संचिकेची syncing समस्या"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, fuzzy, c-format
 msgid "Unable to mkstemp %s"
 msgstr "%s स्टॅट करण्यास असमर्थ"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to write to %s"
 msgstr "%s मध्ये लिहिण्यास असमर्थ "
@@ -1035,13 +1074,12 @@ msgstr "%s पॅकेज फाईल पार्स करण्यात �
 #: apt-pkg/deb/debsystem.cc
 #, c-format
 msgid ""
-"Unable to lock the administration directory (%s), is another process using "
-"it?"
+"Unable to acquire the dpkg frontend lock (%s), is another process using it?"
 msgstr ""
 
 #: apt-pkg/deb/debsystem.cc
 #, fuzzy, c-format
-msgid "Unable to lock the administration directory (%s), are you root?"
+msgid "Unable to acquire the dpkg frontend lock (%s), are you root?"
 msgstr "संचयिका यादीला कुलुप लावण्यात असमर्थ"
 
 #. TRANSLATORS: the %s contains the recovery command, usually
@@ -1053,29 +1091,41 @@ msgid ""
 msgstr ""
 
 #: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid ""
+"Unable to lock the administration directory (%s), is another process using "
+"it?"
+msgstr ""
+
+#: apt-pkg/deb/debsystem.cc
+#, fuzzy, c-format
+msgid "Unable to lock the administration directory (%s), are you root?"
+msgstr "संचयिका यादीला कुलुप लावण्यात असमर्थ"
+
+#: apt-pkg/deb/debsystem.cc
 msgid "Not locked"
 msgstr ""
 
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Installing %s"
-msgstr "%s संस्थापित होत आहे"
+msgid "Preparing %s"
+msgstr "%s तयार करित आहे"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Configuring %s"
-msgstr "%s संरचित होत आहे"
+msgid "Preparing to configure %s"
+msgstr "%s संरचने साठी तयार करत आहे"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removing %s"
-msgstr "%s काढून टाकत आहे"
+msgid "Preparing for removal of %s"
+msgstr "%s ला काढून टाकण्यासाठी तयारी करत आहे"
 
 #: apt-pkg/deb/dpkgpm.cc
-#, fuzzy, c-format
-msgid "Completely removing %s"
-msgstr "%s संपूर्ण काढून टाकले"
+#, c-format
+msgid "Preparing to completely remove %s"
+msgstr "%s संपूर्ण काढून टाकण्याची तयारी करत आहे"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1092,6 +1142,11 @@ msgstr "संस्थापना-पश्चात ट्रिगर %s च
 msgid "Installed %s"
 msgstr "%s संस्थापित झाले"
 
+#: apt-pkg/deb/dpkgpm.cc
+#, c-format
+msgid "Configuring %s"
+msgstr "%s संरचित होत आहे"
+
 #. FIXME: use a better string after freeze
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1105,33 +1160,23 @@ msgstr "%s फाईल उघडता येत नाही"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing %s"
-msgstr "%s तयार करित आहे"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
 msgid "Unpacking %s"
 msgstr "%s सुटे/मोकळे करीत आहे "
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing to configure %s"
-msgstr "%s संरचने साठी तयार करत आहे"
+msgid "Installing %s"
+msgstr "%s संस्थापित होत आहे"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing for removal of %s"
-msgstr "%s ला काढून टाकण्यासाठी तयारी करत आहे"
+msgid "Removing %s"
+msgstr "%s काढून टाकत आहे"
 
 #: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Removed %s"
-msgstr "%s काढून टाकले"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing to completely remove %s"
-msgstr "%s संपूर्ण काढून टाकण्याची तयारी करत आहे"
+#, fuzzy, c-format
+msgid "Completely removing %s"
+msgstr "%s संपूर्ण काढून टाकले"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1292,7 +1337,7 @@ msgstr "योग्य असा पॅकेजिंग प्रणाली
 
 #: apt-pkg/install-progress.cc
 #, c-format
-msgid "Progress: [%3i%%]"
+msgid "Progress: [%3li%%]"
 msgstr ""
 
 #. send status information that we are about to fork dpkg
@@ -1470,6 +1515,12 @@ msgstr "%s पिनचा प्रकार समजलेला नाही
 
 #: apt-pkg/policy.cc
 #, c-format
+msgid ""
+"%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"
+msgstr ""
+
+#: apt-pkg/policy.cc
+#, c-format
 msgid "%s: Value %s is outside the range of valid pin priorities (%d to %d)"
 msgstr ""
 
@@ -1482,11 +1533,6 @@ msgstr "पिन करिता प्राधान्य/अग्रक्
 #, fuzzy, c-format
 msgid "Malformed entry %u in %s file %s (%s)"
 msgstr "व्यंगीत/हिडीस दुर्लक्षित केले %s रेषा %lu #1"
-
-#: apt-pkg/sourcelist.cc
-#, c-format
-msgid "Opening %s"
-msgstr "%s उघडत आहे"
 
 #: apt-pkg/sourcelist.cc
 #, c-format
@@ -1508,7 +1554,7 @@ msgstr "स्त्रोत सुची %2$s (प्रकार) मध्�
 msgid "Type '%s' is not known on stanza %u in source list %s"
 msgstr "%s स्त्रोत सुचीमध्ये %u रेषेवर '%s' प्रकार माहित नाही "
 
-#: apt-pkg/sourcelist.cc
+#: apt-pkg/sourcelist.cc apt-private/private-install.cc
 #, c-format
 msgid "Unsupported file %s given on commandline"
 msgstr ""
@@ -1521,11 +1567,6 @@ msgstr "तुम्ही तुमच्या उगमस्थान या
 #, c-format
 msgid "Cannot convert %s to integer: out of range"
 msgstr ""
-
-#: apt-pkg/update.cc apt-private/private-download.cc
-#, c-format
-msgid "Failed to fetch %s  %s"
-msgstr "%s  %s आणणे असफल"
 
 #: apt-pkg/update.cc
 #, fuzzy
@@ -1586,6 +1627,12 @@ msgstr ""
 "माध्यम बदल: कृपया नाव घातलेली सीडी घाला\n"
 "%s'\n"
 "'%s' ड्राईव्ह मध्ये व एंटर कळ दाबा\n"
+
+#: apt-private/acqprogress.cc
+msgid ""
+"Do you want to accept these changes and continue updating from this "
+"repository?"
+msgstr ""
 
 #: apt-private/private-cachefile.cc
 msgid "Correcting dependencies..."
@@ -1723,8 +1770,14 @@ msgstr "ह्या APT ला सुपर काऊ पॉवर्स आह
 msgid "This APT helper has Super Meep Powers."
 msgstr ""
 
-#: apt-private/private-depends.cc apt-private/private-show.cc
-#: cmdline/apt-mark.cc
+#: apt-private/private-cmndline.cc
+msgid ""
+"--force-yes is deprecated, use one of the options starting with --allow "
+"instead."
+msgstr ""
+
+#: apt-private/private-depends.cc apt-private/private-download.cc
+#: apt-private/private-show.cc cmdline/apt-mark.cc
 msgid "No packages found"
 msgstr "पॅकेजेस सापडले नाहीत"
 
@@ -1744,12 +1797,6 @@ msgstr "काही पॅकेजेसचे प्रमाणिकरण 
 #, fuzzy
 msgid "Install these packages without verification?"
 msgstr "पडताळून पाहिल्याशिवाय ही पॅकेजेस संस्थापित करायची का [हो/नाही]?"
-
-#: apt-private/private-download.cc apt-private/private-install.cc
-msgid ""
-"--force-yes is deprecated, use one of the options starting with --allow "
-"instead."
-msgstr ""
 
 #: apt-private/private-download.cc
 #, fuzzy
@@ -1897,7 +1944,7 @@ msgstr ""
 msgid "Abort."
 msgstr "व्यत्यय/बंद करा."
 
-#: apt-private/private-install.cc
+#: apt-private/private-install.cc cmdline/apt-mark.cc
 #, fuzzy
 msgid "Do you want to continue?"
 msgstr "तुम्हाला पुढे जायचे आहे [Y/n]? "
@@ -2217,11 +2264,6 @@ msgstr "तुम्हाला फक्त एकच नमुना द्�
 msgid "Full Text Search"
 msgstr ""
 
-#: apt-private/private-show.cc cmdline/apt-cache.cc
-#, c-format
-msgid "Package file %s is out of sync."
-msgstr "पॅकेज संचिका %s सिंक्रोनाइज नाहीत"
-
 #: apt-private/private-show.cc
 #, c-format
 msgid "There is %i additional record. Please use the '-a' switch to see it"
@@ -2377,15 +2419,15 @@ msgid "%s has no build depends.\n"
 msgstr "%s ला बांधणी डिपेंडन्स नाहीत.\n"
 
 #: apt-private/private-source.cc
-msgid "Must specify at least one package to check builddeps for"
-msgstr "बिल्डेपस् कशासाठी ते पडताळण्यासाठी किमान एक पॅकेज सांगणे गरजेचे आहे"
-
-#: apt-private/private-source.cc
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
+
+#: apt-private/private-source.cc
+msgid "Must specify at least one package to check builddeps for"
+msgstr "बिल्डेपस् कशासाठी ते पडताळण्यासाठी किमान एक पॅकेज सांगणे गरजेचे आहे"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2408,7 +2450,7 @@ msgstr "%s ला पुनर्नामांकन %s करण्यास 
 
 #: apt-private/private-sources.cc
 #, c-format
-msgid "Your '%s' file changed, please run 'apt-get update'."
+msgid "Your '%s' file changed, please run 'apt-get update'.\n"
 msgstr ""
 
 #: apt-private/private-unmet.cc
@@ -2419,6 +2461,14 @@ msgstr "पॅकेज %s आवृती %s मध्ये एक अनो�
 #: apt-private/private-update.cc
 msgid "The update command takes no arguments"
 msgstr "सुधारित आवृत्तीचा विधान आर्ग्युमेंटस घेऊ    शकत नाही."
+
+#. TRANSLATOR: the first two are manpage references, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid ""
+"Usage of %s should be preferred over embedding login information directly in "
+"the %s entry for '%s'"
+msgstr ""
 
 #: apt-private/private-update.cc
 #, c-format
@@ -2432,9 +2482,9 @@ msgstr[1] ""
 msgid "All packages are up to date."
 msgstr ""
 
-#: cmdline/apt-cache.cc
-#, fuzzy
-msgid "apt-cache stats does not take any arguments"
+#: cmdline/apt-cache.cc cmdline/apt-mark.cc
+#, fuzzy, c-format
+msgid "%s does not take any arguments"
 msgstr "सुधारित आवृत्तीचा विधान आर्ग्युमेंटस घेऊ    शकत नाही."
 
 #: cmdline/apt-cache.cc
@@ -2692,6 +2742,12 @@ msgid "Install new packages (pkg is libc6 not libc6.deb)"
 msgstr "नवीन पॅकेजेस संस्थापित करा(pkg हे libc6 आहे आणि libc6.deb नव्हे)"
 
 #: cmdline/apt-get.cc
+#, fuzzy
+#| msgid "Install new packages (pkg is libc6 not libc6.deb)"
+msgid "Reinstall packages (pkg is libc6 not libc6.deb)"
+msgstr "नवीन पॅकेजेस संस्थापित करा(pkg हे libc6 आहे आणि libc6.deb नव्हे)"
+
+#: cmdline/apt-get.cc
 msgid "Remove packages"
 msgstr "पॅकेजेस कायमची काढा"
 
@@ -2783,6 +2839,14 @@ msgstr ""
 msgid "detect proxy using apt.conf"
 msgstr ""
 
+#: cmdline/apt-helper.cc
+msgid "wait for system to be online"
+msgstr ""
+
+#: cmdline/apt-helper.cc
+msgid "drop privileges before running given command"
+msgstr ""
+
 #: cmdline/apt-internal-planner.cc
 #, fuzzy
 msgid ""
@@ -2837,6 +2901,16 @@ msgstr "%s  स्वहस्ते संस्थापित करायच
 #, fuzzy, c-format
 msgid "%s was already set to automatically installed.\n"
 msgstr "%s  स्वहस्ते संस्थापित करायचे आहे.\n"
+
+#: cmdline/apt-mark.cc
+msgid "No changes necessary"
+msgstr ""
+
+#: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "The following NEW packages will be installed:"
+msgid "The following packages will be marked as automatically installed:"
+msgstr "खालील नविन पॅकेजेस संस्थापित होतील:"
 
 #: cmdline/apt-mark.cc
 #, fuzzy, c-format
@@ -2898,6 +2972,11 @@ msgid "Mark the given packages as manually installed"
 msgstr "'dpkg-dev' पॅकेज संस्थापित केले आहे का ते पडताळून पहा.\n"
 
 #: cmdline/apt-mark.cc
+#, fuzzy
+msgid "Mark all dependencies of meta packages as automatically installed."
+msgstr "%s  स्वहस्ते संस्थापित करायचे आहे.\n"
+
+#: cmdline/apt-mark.cc
 msgid "Mark a package as held back"
 msgstr ""
 
@@ -2916,7 +2995,7 @@ msgid "Print the list of manually installed packages"
 msgstr "%s  स्वहस्ते संस्थापित करायचे आहे.\n"
 
 #: cmdline/apt-mark.cc
-msgid "Print the list of package on hold"
+msgid "Print the list of packages on hold"
 msgstr ""
 
 #: cmdline/apt-sortpkgs.cc
@@ -2961,6 +3040,11 @@ msgstr ""
 #: cmdline/apt.cc
 #, fuzzy
 msgid "install packages"
+msgstr "एकत्रित पॅकेजेस:"
+
+#: cmdline/apt.cc
+#, fuzzy
+msgid "reinstall packages"
 msgstr "एकत्रित पॅकेजेस:"
 
 #: cmdline/apt.cc
@@ -3356,6 +3440,11 @@ msgstr "चुकीचा शीर्षक डाटा"
 msgid "Connection failed"
 msgstr "जोडणी अयशस्वी"
 
+#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#, c-format
+msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
+msgstr ""
+
 #: methods/basehttp.cc
 #, c-format
 msgid ""
@@ -3403,15 +3492,21 @@ msgstr "फाईल सापडली नाही"
 msgid "Direct connection to %s domains is blocked by default."
 msgstr ""
 
-#: methods/connect.cc methods/http.cc
-#, c-format
-msgid "Connecting to %s (%s)"
-msgstr "%s (%s) ला जोडत आहे"
-
 #: methods/connect.cc
 #, c-format
 msgid "[IP: %s %s]"
 msgstr "[आयपी:%s %s]"
+
+#: methods/connect.cc
+#, fuzzy, c-format
+#| msgid "Connecting to %s (%s)"
+msgid "Connected to %s (%s)"
+msgstr "%s (%s) ला जोडत आहे"
+
+#: methods/connect.cc methods/http.cc
+#, c-format
+msgid "Connecting to %s (%s)"
+msgstr "%s (%s) ला जोडत आहे"
 
 #: methods/connect.cc
 #, c-format
@@ -3423,11 +3518,6 @@ msgstr "%s (f=%u t=%u p=%u) साठी सॉकेट तयार करू 
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "%s:%s (%s). साठी जोडणी इनिशिएट/पुढाकारीत करू शकत नाही"
 
-#: methods/connect.cc
-#, c-format
-msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr "%s:%s (%s) ला जोडू शकत नाही,जोडणी वेळेअभावी तुटली"
-
 #: methods/connect.cc methods/ftp.cc methods/rsh.cc
 msgid "Failed"
 msgstr "असमर्थ"
@@ -3436,6 +3526,11 @@ msgstr "असमर्थ"
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
 msgstr "%s:%s (%s) ला जोडू शकत नाही"
+
+#: methods/connect.cc
+#, c-format
+msgid "Could not connect to %s:%s (%s), connection timed out"
+msgstr "%s:%s (%s) ला जोडू शकत नाही,जोडणी वेळेअभावी तुटली"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -3686,30 +3781,6 @@ msgstr "जोडणी वेळेअभावी तुटली"
 msgid "Error writing to output file"
 msgstr "निर्गत फाईल मध्ये लिहिताना त्रुटी/चूक"
 
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "No mirror file '%s' found "
-msgstr ""
-
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, fuzzy, c-format
-msgid "Can not read mirror file '%s'"
-msgstr "%s फाईल उघडता येत नाही"
-
-#: methods/mirror.cc
-#, fuzzy, c-format
-msgid "No entry found in mirror file '%s'"
-msgstr "%s फाईल उघडता येत नाही"
-
-#: methods/mirror.cc
-#, c-format
-msgid "[Mirror: %s]"
-msgstr ""
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "बदलण्याचा वेळ निश्चित करण्यास असमर्थ"
@@ -3721,6 +3792,32 @@ msgstr "जोडणी अकाली बंद झाली"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#~ msgid "Removed %s"
+#~ msgstr "%s काढून टाकले"
+
+#~ msgid "Package file %s is out of sync."
+#~ msgstr "पॅकेज संचिका %s सिंक्रोनाइज नाहीत"
+
+#~ msgid ""
+#~ "The package index files are corrupted. No Filename: field for package %s."
+#~ msgstr ""
+#~ "पॅकेज यादीची/सुचीची संचिका दूषित/खराब झालेली आहे. संचिका नाव नाही: पॅकेजकरीता क्षेत्र/"
+#~ "ठिकाण %s."
+
+#, fuzzy
+#~ msgid "Can not read mirror file '%s'"
+#~ msgstr "%s फाईल उघडता येत नाही"
+
+#, fuzzy
+#~ msgid "No entry found in mirror file '%s'"
+#~ msgstr "%s फाईल उघडता येत नाही"
+
+#~ msgid "Opening configuration file %s"
+#~ msgstr "%s संरचना फाईल उघडत आहे"
+
+#~ msgid "Opening %s"
+#~ msgstr "%s उघडत आहे"
 
 #~ msgid "Unmet dependencies. Try using --fix-broken."
 #~ msgstr "अनमेट डिपेंडन्सीज.--fix-broken.वापरून प्रयत्न करा "

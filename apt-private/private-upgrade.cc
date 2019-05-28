@@ -1,14 +1,14 @@
 // Includes								/*{{{*/
 #include <config.h>
 
-#include <apt-pkg/upgrade.h>
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/error.h>
+#include <apt-pkg/upgrade.h>
 
-#include <apt-private/private-install.h>
 #include <apt-private/private-cachefile.h>
-#include <apt-private/private-upgrade.h>
+#include <apt-private/private-install.h>
 #include <apt-private/private-output.h>
+#include <apt-private/private-upgrade.h>
 
 #include <iostream>
 
@@ -19,8 +19,7 @@
 static bool UpgradeHelper(CommandLine &CmdL, int UpgradeFlags)
 {
    CacheFile Cache;
-   std::vector<std::string> VolatileCmdL;
-   Cache.GetSourceList()->AddVolatileFiles(CmdL, &VolatileCmdL);
+   auto VolatileCmdL = GetPseudoPackages(Cache.GetSourceList(), CmdL, AddVolatileBinaryFile, "");
 
    if (Cache.OpenForInstall() == false || Cache.CheckDeps() == false)
       return false;

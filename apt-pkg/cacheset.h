@@ -13,23 +13,22 @@
 #include <map>
 #include <set>
 #if __cplusplus >= 201103L
-#include <unordered_set>
 #include <forward_list>
 #include <initializer_list>
+#include <unordered_set>
 #endif
-#include <list>
-#include <deque>
-#include <vector>
-#include <string>
-#include <iterator>
 #include <algorithm>
+#include <deque>
+#include <iterator>
+#include <list>
+#include <string>
+#include <vector>
 
 #include <stddef.h>
 
 #include <apt-pkg/error.h>
-#include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/macros.h>
+#include <apt-pkg/pkgcache.h>
 
 #ifndef APT_8_CLEANER_HEADERS
 #include <apt-pkg/cachefile.h>
@@ -480,7 +479,7 @@ APT_IGNORE_DEPRECATED_POP
 		return FromTask(Cache, pattern, helper);
 	}
 
-	/** \brief returns all packages in the cache whose name matchs a given pattern
+	/** \brief returns all packages in the cache whose name matches a given pattern
 
 	    A simple helper responsible for executing a regular expression on all
 	    package names in the cache. Optional it prints a notice about the

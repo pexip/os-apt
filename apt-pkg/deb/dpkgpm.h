@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: dpkgpm.h,v 1.8 2001/05/07 05:05:13 jgg Exp $
 /* ######################################################################
 
    DPKG Package Manager - Provide an interface to dpkg
@@ -10,14 +9,14 @@
 #ifndef PKGLIB_DPKGPM_H
 #define PKGLIB_DPKGPM_H
 
+#include <apt-pkg/macros.h>
 #include <apt-pkg/packagemanager.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/macros.h>
 
-#include <vector>
 #include <map>
-#include <stdio.h>
 #include <string>
+#include <vector>
+#include <stdio.h>
 
 #ifndef APT_10_CLEANER_HEADERS
 #include <apt-pkg/init.h>

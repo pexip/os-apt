@@ -9,17 +9,16 @@
 #include <apt-pkg/cachefile.h>
 #include <apt-pkg/cachefilter.h>
 #include <apt-pkg/error.h>
-#include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
-#include <apt-pkg/strutl.h>
 #include <apt-pkg/macros.h>
+#include <apt-pkg/pkgcache.h>
+#include <apt-pkg/strutl.h>
 
 #include <algorithm>
 #include <string>
 #include <unordered_map>
-#include <string.h>
-#include <regex.h>
 #include <fnmatch.h>
+#include <regex.h>
+#include <string.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -28,8 +27,8 @@ namespace APT {
 APT_HIDDEN std::unordered_map<std::string, std::vector<std::string>> ArchToTupleMap;
 
 namespace CacheFilter {
-APT_CONST Matcher::~Matcher() {}
-APT_CONST PackageMatcher::~PackageMatcher() {}
+Matcher::~Matcher() {}
+PackageMatcher::~PackageMatcher() {}
 
 // Name matches RegEx							/*{{{*/
 PackageNameMatchesRegEx::PackageNameMatchesRegEx(std::string const &Pattern) {
@@ -166,13 +165,13 @@ APT_PURE bool PackageIsNewInstall::operator() (pkgCache::PkgIterator const &Pkg)
 PackageIsNewInstall::~PackageIsNewInstall() {}
 									/*}}}*/
 // Generica like True, False, NOT, AND, OR				/*{{{*/
-APT_CONST bool TrueMatcher::operator() (pkgCache::PkgIterator const &) { return true; }
-APT_CONST bool TrueMatcher::operator() (pkgCache::GrpIterator const &) { return true; }
-APT_CONST bool TrueMatcher::operator() (pkgCache::VerIterator const &) { return true; }
+APT_PURE bool TrueMatcher::operator() (pkgCache::PkgIterator const &) { return true; }
+APT_PURE bool TrueMatcher::operator() (pkgCache::GrpIterator const &) { return true; }
+APT_PURE bool TrueMatcher::operator() (pkgCache::VerIterator const &) { return true; }
 
-APT_CONST bool FalseMatcher::operator() (pkgCache::PkgIterator const &) { return false; }
-APT_CONST bool FalseMatcher::operator() (pkgCache::GrpIterator const &) { return false; }
-APT_CONST bool FalseMatcher::operator() (pkgCache::VerIterator const &) { return false; }
+APT_PURE bool FalseMatcher::operator() (pkgCache::PkgIterator const &) { return false; }
+APT_PURE bool FalseMatcher::operator() (pkgCache::GrpIterator const &) { return false; }
+APT_PURE bool FalseMatcher::operator() (pkgCache::VerIterator const &) { return false; }
 
 NOTMatcher::NOTMatcher(Matcher * const matcher) : matcher(matcher) {}
 bool NOTMatcher::operator() (pkgCache::PkgIterator const &Pkg) { return ! (*matcher)(Pkg); }

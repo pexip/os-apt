@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: debrecords.cc,v 1.10 2001/03/13 06:51:46 jgg Exp $
 /* ######################################################################
    
    Debian Package Records - Parser for debian package records
@@ -10,22 +9,21 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
-#include <apt-pkg/debrecords.h>
-#include <apt-pkg/debindexfile.h>
-#include <apt-pkg/strutl.h>
 #include <apt-pkg/aptconfiguration.h>
-#include <apt-pkg/fileutl.h>
-#include <apt-pkg/cacheiterators.h>
-#include <apt-pkg/pkgcache.h>
-#include <apt-pkg/tagfile.h>
+#include <apt-pkg/debindexfile.h>
+#include <apt-pkg/debrecords.h>
 #include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/pkgcache.h>
+#include <apt-pkg/strutl.h>
+#include <apt-pkg/tagfile.h>
 
-#include <string.h>
 #include <algorithm>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <langinfo.h>
+#include <string.h>
 
 #include <apti18n.h>
 									/*}}}*/

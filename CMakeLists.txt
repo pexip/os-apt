@@ -32,7 +32,7 @@ include(CheckFunctionExists)
 include(CheckStructHasMember)
 include(GNUInstallDirs)
 include(TestBigEndian)
-find_package(Threads)
+find_package(Threads REQUIRED)
 find_package(LFS REQUIRED)
 find_package(Iconv REQUIRED)
 
@@ -68,6 +68,7 @@ add_optional_compile_options(Wmissing-include-dirs)
 add_optional_compile_options(Wnoexcept)
 add_optional_compile_options(Wsign-promo)
 add_optional_compile_options(Wundef)
+add_optional_compile_options(Wdouble-promotion)
 
 # apt-ftparchive dependencies
 find_package(BerkeleyDB REQUIRED)
@@ -75,11 +76,9 @@ if (BERKELEY_DB_FOUND)
   set(HAVE_BDB 1)
 endif()
 
-
-# apt-transport-https dependencies
-find_package(CURL REQUIRED)
-if (CURL_FOUND)
-  set(HAVE_CURL 1)
+find_package(GnuTLS REQUIRED)
+if (GNUTLS_FOUND)
+  set(HAVE_GNUTLS 1)
 endif()
 
 # (De)Compressor libraries
@@ -89,20 +88,41 @@ if (ZLIB_FOUND)
 endif()
 
 
-find_package(BZip2)
+find_package(BZip2 REQUIRED)
 if (BZIP2_FOUND)
   set(HAVE_BZ2 1)
 endif()
 
-find_package(LZMA)
+find_package(LZMA REQUIRED)
 if (LZMA_FOUND)
   set(HAVE_LZMA 1)
 endif()
 
 
-find_package(LZ4)
+find_package(LZ4 REQUIRED)
 if (LZ4_FOUND)
   set(HAVE_LZ4 1)
+endif()
+
+find_package(Zstd)
+if (ZSTD_FOUND)
+  set(HAVE_ZSTD 1)
+endif()
+
+
+find_package(Udev)
+if (UDEV_FOUND)
+  set(HAVE_UDEV 1)
+endif()
+
+find_package(Systemd)
+if (SYSTEMD_FOUND)
+  set(HAVE_SYSTEMD 1)
+endif()
+
+find_package(Seccomp)
+if (SECCOMP_FOUND)
+  set(HAVE_SECCOMP 1)
 endif()
 
 # Mount()ing and stat()ing and friends
@@ -131,10 +151,6 @@ test_big_endian(WORDS_BIGENDIAN)
 
 # FreeBSD
 add_definitions(-D_WITH_GETLINE=1)
-
-if (CMAKE_USE_PTHREADS_INIT)
-  set(HAVE_PTHREAD 1)
-endif()
 
 CHECK_INCLUDE_FILES(machine/endian.h HAVE_MACHINE_ENDIAN_H)
 CHECK_INCLUDE_FILES(sys/endian.h HAVE_SYS_ENDIAN_H)
@@ -169,10 +185,15 @@ else()
     set(RESOLV_LIBRARIES -lresolv)
 endif()
 
+# Check multiversioning
+include(CheckCxxTarget)
+check_cxx_target(HAVE_FMV_SSE42_AND_CRC32 "sse4.2" "__builtin_ia32_crc32si(0, 1llu);")
+check_cxx_target(HAVE_FMV_SSE42_AND_CRC32DI "sse4.2" "__builtin_ia32_crc32di(0, 1llu);")
+
 # Configure some variables like package, version and architecture.
 set(PACKAGE ${PROJECT_NAME})
 set(PACKAGE_MAIL "APT Development Team <deity@lists.debian.org>")
-set(PACKAGE_VERSION "1.4.9")
+set(PACKAGE_VERSION "1.8.2")
 
 if (NOT DEFINED DPKG_DATADIR)
   execute_process(COMMAND ${PERL_EXECUTABLE} -MDpkg -e "print $Dpkg::DATADIR;"
@@ -227,6 +248,7 @@ endif()
 # Create our directories.
 install_empty_directories(
   ${CONF_DIR}/apt.conf.d
+  ${CONF_DIR}/auth.conf.d
   ${CONF_DIR}/preferences.d
   ${CONF_DIR}/sources.list.d
   ${CONF_DIR}/trusted.gpg.d

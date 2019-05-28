@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: cachefile.cc,v 1.8 2002/04/27 04:28:04 jgg Exp $
 /* ######################################################################
    
    CacheFile - Simple wrapper class for opening, generating and whatnot
@@ -15,33 +14,39 @@
 #include <config.h>
 
 #include <apt-pkg/cachefile.h>
-#include <apt-pkg/error.h>
-#include <apt-pkg/sourcelist.h>
-#include <apt-pkg/pkgcachegen.h>
 #include <apt-pkg/configuration.h>
-#include <apt-pkg/policy.h>
-#include <apt-pkg/pkgsystem.h>
-#include <apt-pkg/fileutl.h>
-#include <apt-pkg/progress.h>
 #include <apt-pkg/depcache.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/indexfile.h>
 #include <apt-pkg/mmap.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/indexfile.h>
+#include <apt-pkg/pkgcachegen.h>
+#include <apt-pkg/pkgsystem.h>
+#include <apt-pkg/policy.h>
+#include <apt-pkg/progress.h>
+#include <apt-pkg/sourcelist.h>
 
-#include <string.h>
-#include <unistd.h>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
+#include <string.h>
+#include <unistd.h>
 
 #include <apti18n.h>
 									/*}}}*/
+
+struct pkgCacheFile::Private
+{
+   bool WithLock = false;
+};
+
 // CacheFile::CacheFile - Constructor					/*{{{*/
-pkgCacheFile::pkgCacheFile() : d(NULL), ExternOwner(false), Map(NULL), Cache(NULL),
+pkgCacheFile::pkgCacheFile() : d(new Private()), ExternOwner(false), Map(NULL), Cache(NULL),
 				DCache(NULL), SrcList(NULL), Policy(NULL)
 {
 }
-pkgCacheFile::pkgCacheFile(pkgDepCache * const Owner) : d(NULL), ExternOwner(true),
+pkgCacheFile::pkgCacheFile(pkgDepCache * const Owner) : d(new Private()), ExternOwner(true),
    Map(&Owner->GetCache().GetMap()), Cache(&Owner->GetCache()),
    DCache(Owner), SrcList(NULL), Policy(NULL)
 {
@@ -60,8 +65,10 @@ pkgCacheFile::~pkgCacheFile()
    }
    delete Policy;
    delete SrcList;
-   if (ExternOwner == false)
+   if (d->WithLock == true)
       _system->UnLock(true);
+
+   delete d;
 }
 									/*}}}*/
 // CacheFile::BuildCaches - Open and build the cache files		/*{{{*/
@@ -98,8 +105,11 @@ bool pkgCacheFile::BuildCaches(OpProgress *Progress, bool WithLock)
    }
 
    if (WithLock == true)
+   {
       if (_system->Lock() == false)
 	 return false;
+      d->WithLock = true;
+   }
 
    if (_error->PendingError() == true)
       return false;
@@ -161,11 +171,11 @@ bool pkgCacheFile::BuildPolicy(OpProgress * /*Progress*/)
    if (_error->PendingError() == true)
       return false;
 
-   if (ReadPinFile(*Policy) == false || ReadPinDir(*Policy) == false)
-      return false;
+   ReadPinFile(*Policy);
+   ReadPinDir(*Policy);
 
    this->Policy = Policy.release();
-   return true;
+   return _error->PendingError() == false;
 }
 									/*}}}*/
 // CacheFile::BuildDepCache - Open and build the dependency cache	/*{{{*/
@@ -338,7 +348,11 @@ void pkgCacheFile::Close()
       ExternOwner = false;
    delete Policy;
    delete SrcList;
-   _system->UnLock(true);
+   if (d->WithLock == true)
+   {
+      _system->UnLock(true);
+      d->WithLock = false;
+   }
 
    Map = NULL;
    DCache = NULL;

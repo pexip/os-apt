@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: debfile.h,v 1.2 2001/02/20 07:03:17 jgg Exp $
 /* ######################################################################
 
    Debian Archive File (.deb)
@@ -23,11 +22,10 @@
 #ifndef PKGLIB_DEBFILE_H
 #define PKGLIB_DEBFILE_H
 
-
 #include <apt-pkg/arfile.h>
 #include <apt-pkg/dirstream.h>
-#include <apt-pkg/tagfile.h>
 #include <apt-pkg/macros.h>
+#include <apt-pkg/tagfile.h>
 
 #include <string>
 

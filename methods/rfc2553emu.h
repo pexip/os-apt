@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: rfc2553emu.h,v 1.4 2000/06/18 06:04:45 jgg Exp $
 /* ######################################################################
 
    RFC 2553 Emulation - Provides emulation for RFC 2553 getaddrinfo,
@@ -23,8 +22,8 @@
 #define RFC2553EMU_H
 
 #include <netdb.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
 // Autosense getaddrinfo
 #if defined(AI_PASSIVE) && defined(EAI_NONAME)

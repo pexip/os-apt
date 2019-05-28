@@ -21,7 +21,6 @@
 #include <apt-pkg/depcache.h>
 #include <apt-pkg/macros.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
 
 #ifndef APT_8_CLEANER_HEADERS
 #include <apt-pkg/acquire.h>
@@ -37,8 +36,9 @@ class OpProgress;
 
 class pkgCacheFile
 {
+   struct Private;
    /** \brief dpointer placeholder (for later in case we need it) */
-   void * const d;
+   Private *const d;
    bool ExternOwner;
 
    protected:

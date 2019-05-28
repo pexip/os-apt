@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: deblistparser.h,v 1.9 2001/02/20 07:03:17 jgg Exp $
 /* ######################################################################
    
    Debian Package List Parser - This implements the abstract parser 
@@ -11,11 +10,11 @@
 #ifndef PKGLIB_DEBLISTPARSER_H
 #define PKGLIB_DEBLISTPARSER_H
 
-#include <apt-pkg/pkgcachegen.h>
-#include <apt-pkg/tagfile.h>
+#include <apt-pkg/macros.h>
 #include <apt-pkg/md5.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/macros.h>
+#include <apt-pkg/pkgcachegen.h>
+#include <apt-pkg/tagfile.h>
 
 #include <string>
 #include <vector>
@@ -46,6 +45,7 @@ class APT_HIDDEN debListParser : public pkgCacheListParser
    std::vector<std::string> forceEssential;
    std::vector<std::string> forceImportant;
    std::string MD5Buffer;
+   std::string myArch;
 
    protected:
    pkgTagFile Tags;
@@ -86,9 +86,6 @@ class APT_HIDDEN debListParser : public pkgCacheListParser
    virtual map_filesize_t Size() APT_OVERRIDE {return Section.size();};
 
    virtual bool Step() APT_OVERRIDE;
-
-   bool LoadReleaseInfo(pkgCache::RlsFileIterator &FileI,FileFd &File,
-			std::string const &section);
 
    APT_PUBLIC static const char *ParseDepends(const char *Start,const char *Stop,
 	 std::string &Package,std::string &Ver,unsigned int &Op);

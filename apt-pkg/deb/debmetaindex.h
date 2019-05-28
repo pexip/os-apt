@@ -1,8 +1,8 @@
 #ifndef PKGLIB_DEBMETAINDEX_H
 #define PKGLIB_DEBMETAINDEX_H
 
-#include <apt-pkg/metaindex.h>
 #include <apt-pkg/macros.h>
+#include <apt-pkg/metaindex.h>
 
 #include <map>
 #include <string>
@@ -55,12 +55,17 @@ class APT_HIDDEN debReleaseIndex : public metaIndex
    bool SetCheckValidUntil(TriState const Trusted);
    bool SetValidUntilMin(time_t const Valid);
    bool SetValidUntilMax(time_t const Valid);
+   bool SetCheckDate(TriState const CheckDate);
+   bool SetDateMaxFuture(time_t const DateMaxFuture);
    bool SetSignedBy(std::string const &SignedBy);
    std::map<std::string, std::string> GetReleaseOptions();
 
    virtual bool IsTrusted() const APT_OVERRIDE;
    bool IsArchitectureSupported(std::string const &arch) const;
    bool IsArchitectureAllSupportedFor(IndexTarget const &target) const;
+   bool HasSupportForComponent(std::string const &component) const;
+
+   APT_PURE time_t GetNotBefore() const;
 
    void AddComponent(std::string const &sourcesEntry,
 	 bool const isSrc, std::string const &Name,

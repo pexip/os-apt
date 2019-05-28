@@ -27,6 +27,8 @@ usr/share/man/*/*/apt-mark.*
 usr/share/man/*/*/apt-secure.*
 usr/share/man/*/*/apt.*
 usr/share/man/*/*/apt_preferences.*
+usr/share/man/*/*/apt_auth.*
+usr/share/man/*/*/apt-transport-*.*
 usr/share/man/*/*/sources.list.*
 usr/share/man/*/apt-cache.*
 usr/share/man/*/apt-cdrom.*
@@ -35,7 +37,11 @@ usr/share/man/*/apt-get.*
 usr/share/man/*/apt-key.*
 usr/share/man/*/apt-mark.*
 usr/share/man/*/apt-secure.*
+usr/share/man/*/apt-transport-http.*
+usr/share/man/*/apt-transport-https.*
+usr/share/man/*/apt-transport-mirror.*
 usr/share/man/*/apt.*
+usr/share/man/*/apt_auth.*
 usr/share/man/*/apt_preferences.*
 usr/share/man/*/sources.list.*
 var/

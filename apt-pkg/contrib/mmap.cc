@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: mmap.cc,v 1.22 2001/05/27 05:19:30 jgg Exp $
 /* ######################################################################
    
    MMap Class - Provides 'real' mmap or a faked mmap using read().
@@ -19,17 +18,16 @@
 #define _DEFAULT_SOURCE
 #include <config.h>
 
-#include <apt-pkg/mmap.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/macros.h>
+#include <apt-pkg/mmap.h>
 
-#include <string>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
 #include <cstring>
+#include <string>
+#include <errno.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -415,7 +413,7 @@ unsigned long DynamicMMap::Allocate(unsigned long ItemSize)
 unsigned long DynamicMMap::WriteString(const char *String,
 				       unsigned long Len)
 {
-   if (Len == (unsigned long)-1)
+   if (Len == std::numeric_limits<unsigned long>::max())
       Len = strlen(String);
 
    _error->PushToStack();

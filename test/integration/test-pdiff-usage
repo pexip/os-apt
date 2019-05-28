@@ -50,7 +50,7 @@ wasmergeused() {
 	if echo "$*" | grep -q -- '-o test::cannot-use-pdiff=1'; then
 		msgtest 'Check if pdiff was' 'not used'
 		cp -a rootdir/tmp/testsuccess.output rootdir/tmp/aptupdate.output
-		testsuccess --nomsg grep "diff/Index with Message: Couldn't parse pdiff index" rootdir/tmp/aptupdate.output
+		testsuccess --nomsg grep "^Ign:.*  Packages\.diff/Index" rootdir/tmp/aptupdate.output
 		return;
 	fi
 
@@ -138,6 +138,8 @@ SHA256-Download:
 	mkdir -p "${BYHASH}"
 	find "${NORMAL}/" -maxdepth 1 -name "Index*" -exec mv '{}' "$BYHASH" \;
 	ln -s "${BYHASH}/Index.gz" "${BYHASH}/$(sha256sum "${BYHASH}/Index.gz" | cut -f1 -d' ')"
+	echo 'foobar' > "${BYHASH}/$(sha256sum "$PATCHFILE" | cut -f1 -d' ')"
+	echo 'foobar' > "${BYHASH}/$(sha256sum "${PATCHFILE}.gz" | cut -f1 -d' ')"
 	rm -rf rootdir/var/lib/apt/lists
 	cp -a rootdir/var/lib/apt/lists-bak rootdir/var/lib/apt/lists
 	wasmergeused "$@" -o Acquire::By-Hash=force
@@ -249,7 +251,13 @@ SHA256-Download:
 	cp Packages-future aptarchive/Packages
 	rm -f rootdir/var/lib/apt/lists/*_Contents-*
 	webserverconfig 'aptwebserver::overwrite::.*Contents-.*::filename' '/hacked-i386.gz'
-	testfailure apt update "$@"
+	# This should work in at least 4% of the cases...
+	for i in $(seq 25); do
+		testfailure apt update "$@"
+		if ! grep 'rred:600' rootdir/tmp/testfailure.output; then
+			break
+		fi
+	done
 	webserverconfig 'aptwebserver::overwrite::.*Contents-.*::filename' '/Contents-i386.gz'
 	cp rootdir/tmp/testfailure.output patchdownload.output
 	testfailure grep 'rred:600' patchdownload.output
@@ -298,9 +306,7 @@ SHA256-Patches:
 SHA256-Download:
  d2a1b33187ed2d248eeae3b1223ea71791ea35f2138a713ed371332a6421f467 197 2010-08-18-2013.28.gz
  $(sha256sum "${PATCHFILE}.gz" | cut -d' ' -f 1) $(stat -c%s "${PATCHFILE}.gz") $(basename "${PATCHFILE}.gz")" > "$PATCHINDEX"
-	# needs to look like a valid command, otherwise the parser will fail before hashes are checked
-	echo '1d' > "$PATCHFILE"
-	cat "$PATCHFILE" | gzip > "${PATCHFILE}.gz"
+	breakfiles "$PATCHFILE" "${PATCHFILE}.gz"
 	generatereleasefiles '+1hour'
 	signreleasefiles
 	testsuccess apt update "$@"
@@ -336,7 +342,37 @@ SHA256-Download:
 	generatereleasefiles '+1hour'
 	signreleasefiles
 	wasmergeused "$@" -o test::cannot-use-pdiff=1
-	testsuccess grep 'bytes (Limit is' rootdir/tmp/aptupdate.output
+	testsuccess grep 'bytes, but limit is' rootdir/tmp/aptupdate.output
+	testnopackage oldstuff
+	testsuccessequal "$(cat "${PKGFILE}-new")
+" aptcache show apt newstuff
+
+	msgmsg "Testcase: pdiff index failed to download: $*"
+	rm -rf rootdir/var/lib/apt/lists
+	cp -a rootdir/var/lib/apt/lists-bak rootdir/var/lib/apt/lists
+	cp "${PKGFILE}-new" aptarchive/Packages
+	compressfile 'aptarchive/Packages'
+	mkdir -p aptarchive/Packages.diff
+	PATCHFILE="aptarchive/Packages.diff/$(date +%Y-%m-%d-%H%M.%S)"
+	diff -e "${PKGFILE}" "${PKGFILE}-new" > "${PATCHFILE}" || true
+	cat "$PATCHFILE" | gzip > "${PATCHFILE}.gz"
+	PATCHINDEX='aptarchive/Packages.diff/Index'
+	echo "SHA256-Current: $(sha256sum "${PKGFILE}-new" | cut -d' ' -f 1) $(stat -c%s "${PKGFILE}-new")
+SHA256-History:
+ 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b 33053002 2010-08-18-2013.28
+ $(sha256sum "$PKGFILE" | cut -d' ' -f 1) $(stat -c%s "$PKGFILE") $(basename "$PATCHFILE")
+SHA256-Patches:
+ e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 19722 2010-08-18-2013.28
+ $(sha256sum "$PATCHFILE" | cut -d' ' -f 1) $(stat -c%s "$PATCHFILE") $(basename "$PATCHFILE")
+SHA256-Download:
+ d2a1b33187ed2d248eeae3b1223ea71791ea35f2138a713ed371332a6421f467 197 2010-08-18-2013.28.gz
+ $(sha256sum "${PATCHFILE}.gz" | cut -d' ' -f 1) $(stat -c%s "${PATCHFILE}.gz") $(basename "${PATCHFILE}.gz")" > "$PATCHINDEX"
+	generatereleasefiles '+1hour'
+	signreleasefiles
+	# we let it fail by removing the files so the webserver reports 404
+	rm -f "$PATCHINDEX" "$PATCHFILE" "${PATCHFILE}.gz"
+	wasmergeused "$@" -o test::cannot-use-pdiff=1
+	testsuccess grep '400%20URI%20Failure.*FailReason.*HttpError404.*Packages\.diff/Index' rootdir/tmp/aptupdate.output
 	testnopackage oldstuff
 	testsuccessequal "$(cat "${PKGFILE}-new")
 " aptcache show apt newstuff
@@ -370,7 +406,8 @@ testcase -o Acquire::IndexTargets::deb::Packages::KeepCompressed=true
 
 
 partialleftovers() { generatepartialleftovers "redirectme_Packages.${LOWCOSTEXT}" "redirectme_Packages-patched.${LOWCOSTEXT}"; }
-webserverconfig 'aptwebserver::redirect::replace::/redirectme/' "http://0.0.0.0:${APTHTTPPORT}/"
+# redirect the InRelease file only – the other files are auto-redirected by apt
+webserverconfig 'aptwebserver::redirect::replace::/redirectme/I' "http://0.0.0.0:${APTHTTPPORT}/I"
 rewritesourceslist "http://localhost:${APTHTTPPORT}/redirectme"
 aptautotest_apt_update() {
 	aptautotest_aptget_update "$@"

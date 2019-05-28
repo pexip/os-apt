@@ -16,16 +16,16 @@ TEST(SrvRecTest, PopFromSrvRecs)
    Meep.emplace_back("bar", 20, 0, 80);
    Meep.emplace_back("baz", 30, 0, 80);
 
-   EXPECT_EQ(Meep.size(), 3);
+   EXPECT_EQ(Meep.size(), 3u);
    SrvRec const result = PopFromSrvRecs(Meep);
    // ensure that pop removed one element
-   EXPECT_EQ(Meep.size(), 2);
+   EXPECT_EQ(Meep.size(), 2u);
    EXPECT_NE(result.target, "baz");
 
    SrvRec const result2 = PopFromSrvRecs(Meep);
    EXPECT_NE(result.target, result2.target);
    EXPECT_NE(result2.target, "baz");
-   EXPECT_EQ(Meep.size(), 1);
+   EXPECT_EQ(Meep.size(), 1u);
 
    SrvRec const result3 = PopFromSrvRecs(Meep);
    EXPECT_EQ(result3.target, "baz");
@@ -77,7 +77,9 @@ TEST(SrvRecTest,Randomness)
    EXPECT_TRUE(std::all_of(first_pull.begin(), first_pull.end(), [](SrvRec const &R) { return R.priority == 20; }));
    EXPECT_TRUE(std::all_of(second_pull.begin(), second_pull.end(), [](SrvRec const &R) { return R.priority == 20; }));
    if (startingClock != -1 && startingClock != clock())
+   {
       EXPECT_FALSE(std::equal(first_pull.begin(), first_pull.end(), second_pull.begin()));
+   }
 
    EXPECT_TRUE(std::all_of(base2.begin(), base2.end(), [](SrvRec const &R) { return R.priority == 30; }));
 }

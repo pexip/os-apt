@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: ftp.cc,v 1.31.2.1 2004/01/16 18:58:50 mdz Exp $
 /* ######################################################################
 
    FTP Acquire Method - This is the FTP acquire method for APT.
@@ -17,33 +16,32 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
-#include <apt-pkg/fileutl.h>
-#include <apt-pkg/error.h>
-#include <apt-pkg/hashes.h>
-#include <apt-pkg/netrc.h>
 #include <apt-pkg/configuration.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/hashes.h>
 #include <apt-pkg/strutl.h>
 
+#include <iostream>
 #include <ctype.h>
+#include <errno.h>
+#include <signal.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <signal.h>
-#include <stdio.h>
-#include <errno.h>
-#include <stdarg.h>
-#include <iostream>
 
 // Internet stuff
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <netdb.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 
-#include "rfc2553emu.h"
 #include "connect.h"
 #include "ftp.h"
+#include "rfc2553emu.h"
 
 #include <apti18n.h>
 									/*}}}*/
@@ -64,7 +62,7 @@ struct AFMap AFMap[] = {{AF_INET,1},{0, 0}};
 struct AFMap AFMap[] = {{AF_INET,1},{AF_INET6,2},{0, 0}};
 #endif
 
-unsigned long TimeOut = 120;
+unsigned long TimeOut = 30;
 URI Proxy;
 string FtpMethod::FailFile;
 int FtpMethod::FailFd = -1;
@@ -73,8 +71,8 @@ time_t FtpMethod::FailTime = 0;
 // FTPConn::FTPConn - Constructor					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-FTPConn::FTPConn(URI Srv) : Len(0), ServerFd(-1), DataFd(-1),
-                            DataListenFd(-1), ServerName(Srv),
+FTPConn::FTPConn(URI Srv) : Len(0), ServerFd(MethodFd::FromFd(-1)), DataFd(-1),
+			    DataListenFd(-1), ServerName(Srv),
 			    ForceExtended(false), TryPassive(true),
 			    PeerAddrLen(0), ServerAddrLen(0)
 {
@@ -96,8 +94,7 @@ FTPConn::~FTPConn()
 /* Just tear down the socket and data socket */
 void FTPConn::Close()
 {
-   close(ServerFd);
-   ServerFd = -1;
+   ServerFd->Close();
    close(DataFd);
    DataFd = -1;
    close(DataListenFd);
@@ -112,12 +109,12 @@ void FTPConn::Close()
 // ---------------------------------------------------------------------
 /* Connect to the server using a non-blocking connection and perform a 
    login. */
-bool FTPConn::Open(pkgAcqMethod *Owner)
+ResultState FTPConn::Open(aptMethod *Owner)
 {
    // Use the already open connection if possible.
-   if (ServerFd != -1)
-      return true;
-   
+   if (ServerFd->Fd() != -1)
+      return ResultState::SUCCESSFUL;
+
    Close();
    
    // Determine the proxy setting
@@ -169,31 +166,40 @@ bool FTPConn::Open(pkgAcqMethod *Owner)
    /* Connect to the remote server. Since FTP is connection oriented we
       want to make sure we get a new server every time we reconnect */
    RotateDNS();
-   if (Connect(Host,Port,"ftp",21,ServerFd,TimeOut,Owner) == false)
-      return false;
+   auto result = Connect(Host, Port, "ftp", 21, ServerFd, TimeOut, Owner);
+   if (result != ResultState::SUCCESSFUL)
+      return result;
 
    // Login must be before getpeername otherwise dante won't work.
    Owner->Status(_("Logging in"));
-   bool Res = Login();
-   
+   result = Login();
+   if (result != ResultState::SUCCESSFUL)
+      return result;
+
    // Get the remote server's address
    PeerAddrLen = sizeof(PeerAddr);
-   if (getpeername(ServerFd,(sockaddr *)&PeerAddr,&PeerAddrLen) != 0)
-      return _error->Errno("getpeername",_("Unable to determine the peer name"));
-   
+   if (getpeername(ServerFd->Fd(), (sockaddr *)&PeerAddr, &PeerAddrLen) != 0)
+   {
+      _error->Errno("getpeername", _("Unable to determine the peer name"));
+      return ResultState::TRANSIENT_ERROR;
+   }
+
    // Get the local machine's address
    ServerAddrLen = sizeof(ServerAddr);
-   if (getsockname(ServerFd,(sockaddr *)&ServerAddr,&ServerAddrLen) != 0)
-      return _error->Errno("getsockname",_("Unable to determine the local name"));
-   
-   return Res;
+   if (getsockname(ServerFd->Fd(), (sockaddr *)&ServerAddr, &ServerAddrLen) != 0)
+   {
+      _error->Errno("getsockname", _("Unable to determine the local name"));
+      return ResultState::TRANSIENT_ERROR;
+   }
+
+   return ResultState::SUCCESSFUL;
 }
 									/*}}}*/
 // FTPConn::Login - Login to the remote server				/*{{{*/
 // ---------------------------------------------------------------------
 /* This performs both normal login and proxy login using a simples script
    stored in the config file. */
-bool FTPConn::Login()
+ResultState FTPConn::Login()
 {
    unsigned int Tag;
    string Msg;
@@ -213,22 +219,31 @@ bool FTPConn::Login()
    {
       // Read the initial response
       if (ReadResp(Tag,Msg) == false)
-	 return false;
+	 return ResultState::TRANSIENT_ERROR;
       if (Tag >= 400)
-	 return _error->Error(_("The server refused the connection and said: %s"),Msg.c_str());
-      
+      {
+	 _error->Error(_("The server refused the connection and said: %s"), Msg.c_str());
+	 return ResultState::FATAL_ERROR;
+      }
+
       // Send the user
       if (WriteMsg(Tag,Msg,"USER %s",User.c_str()) == false)
-	 return false;
+	 return ResultState::TRANSIENT_ERROR;
       if (Tag >= 400)
-	 return _error->Error(_("USER failed, server said: %s"),Msg.c_str());
-      
+      {
+	 _error->Error(_("USER failed, server said: %s"), Msg.c_str());
+	 return ResultState::FATAL_ERROR;
+      }
+
       if (Tag == 331) { // 331 User name okay, need password.
          // Send the Password
          if (WriteMsg(Tag,Msg,"PASS %s",Pass.c_str()) == false)
-            return false;
-         if (Tag >= 400)
-            return _error->Error(_("PASS failed, server said: %s"),Msg.c_str());
+	    return ResultState::TRANSIENT_ERROR;
+	 if (Tag >= 400)
+	 {
+	    _error->Error(_("PASS failed, server said: %s"), Msg.c_str());
+	    return ResultState::FATAL_ERROR;
+	 }
       }
       
       // Enter passive mode
@@ -241,15 +256,21 @@ bool FTPConn::Login()
    {      
       // Read the initial response
       if (ReadResp(Tag,Msg) == false)
-	 return false;
+	 return ResultState::TRANSIENT_ERROR;
       if (Tag >= 400)
-	 return _error->Error(_("The server refused the connection and said: %s"),Msg.c_str());
-      
+      {
+	 _error->Error(_("The server refused the connection and said: %s"), Msg.c_str());
+	 return ResultState::TRANSIENT_ERROR;
+      }
+
       // Perform proxy script execution
       Configuration::Item const *Opts = _config->Tree("Acquire::ftp::ProxyLogin");
       if (Opts == 0 || Opts->Child == 0)
-	 return _error->Error(_("A proxy server was specified but no login "
-			      "script, Acquire::ftp::ProxyLogin is empty."));
+      {
+	 _error->Error(_("A proxy server was specified but no login "
+			 "script, Acquire::ftp::ProxyLogin is empty."));
+	 return ResultState::FATAL_ERROR;
+      }
       Opts = Opts->Child;
 
       // Iterate over the entire login script
@@ -276,9 +297,12 @@ bool FTPConn::Login()
 
 	 // Send the command
 	 if (WriteMsg(Tag,Msg,"%s",Tmp.c_str()) == false)
-	    return false;
+	    return ResultState::TRANSIENT_ERROR;
 	 if (Tag >= 400)
-	    return _error->Error(_("Login script command '%s' failed, server said: %s"),Tmp.c_str(),Msg.c_str());	 
+	 {
+	    _error->Error(_("Login script command '%s' failed, server said: %s"), Tmp.c_str(), Msg.c_str());
+	    return ResultState::FATAL_ERROR;
+	 }
       }
       
       // Enter passive mode
@@ -302,11 +326,13 @@ bool FTPConn::Login()
    
    // Binary mode
    if (WriteMsg(Tag,Msg,"TYPE I") == false)
-      return false;
+      return ResultState::TRANSIENT_ERROR;
    if (Tag >= 400)
-      return _error->Error(_("TYPE failed, server said: %s"),Msg.c_str());
-   
-   return true;
+   {
+      _error->Error(_("TYPE failed, server said: %s"), Msg.c_str());
+      return ResultState::FATAL_ERROR;
+   }
+   return ResultState::SUCCESSFUL;
 }
 									/*}}}*/
 // FTPConn::ReadLine - Read a line from the server			/*{{{*/
@@ -314,7 +340,7 @@ bool FTPConn::Login()
 /* This performs a very simple buffered read. */
 bool FTPConn::ReadLine(string &Text)
 {
-   if (ServerFd == -1)
+   if (ServerFd->Fd() == -1)
       return false;
    
    // Suck in a line
@@ -339,14 +365,14 @@ bool FTPConn::ReadLine(string &Text)
       }
 
       // Wait for some data..
-      if (WaitFd(ServerFd,false,TimeOut) == false)
+      if (WaitFd(ServerFd->Fd(), false, TimeOut) == false)
       {
 	 Close();
 	 return _error->Error(_("Connection timeout"));
       }
       
       // Suck it back
-      int Res = read(ServerFd,Buffer + Len,sizeof(Buffer) - Len);
+      int Res = ServerFd->Read(Buffer + Len, sizeof(Buffer) - Len);
       if (Res == 0)
 	 _error->Error(_("Server closed the connection"));
       if (Res <= 0)
@@ -451,13 +477,13 @@ bool FTPConn::WriteMsg(unsigned int &Ret,string &Text,const char *Fmt,...)
    unsigned long Start = 0;
    while (Len != 0)
    {
-      if (WaitFd(ServerFd,true,TimeOut) == false)
+      if (WaitFd(ServerFd->Fd(), true, TimeOut) == false)
       {
 	 Close();
 	 return _error->Error(_("Connection timeout"));
       }
-      
-      int Res = write(ServerFd,S + Start,Len);
+
+      int Res = ServerFd->Write(S + Start, Len);
       if (Res <= 0)
       {
 	 _error->Errno("write",_("Write error"));
@@ -941,8 +967,8 @@ bool FTPConn::Get(const char *Path,FileFd &To,unsigned long long Resume,
       if (MaximumSize > 0 && To.Tell() > MaximumSize)
       {
          Owner->SetFailReason("MaximumSizeExceeded");
-         return _error->Error("Writing more data than expected (%llu > %llu)",
-                              To.Tell(), MaximumSize);
+	 return _error->Error(_("File has unexpected size (%llu != %llu). Mirror sync in progress?"),
+			      To.Tell(), MaximumSize);
       }
    }
 
@@ -962,8 +988,9 @@ bool FTPConn::Get(const char *Path,FileFd &To,unsigned long long Resume,
 // FtpMethod::FtpMethod - Constructor					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-FtpMethod::FtpMethod() : aptMethod("ftp","1.0",SendConfig)
+FtpMethod::FtpMethod() : aptAuthConfMethod("ftp", "1.0", SendConfig)
 {
+   SeccompFlags = aptMethod::BASE | aptMethod::NETWORK;
    signal(SIGTERM,SigTerm);
    signal(SIGINT,SigTerm);
    
@@ -997,7 +1024,7 @@ void FtpMethod::SigTerm(int)
 /* We stash the desired pipeline depth */
 bool FtpMethod::Configuration(string Message)
 {
-   if (aptMethod::Configuration(Message) == false)
+   if (aptAuthConfMethod::Configuration(Message) == false)
       return false;
 
    TimeOut = _config->FindI("Acquire::Ftp::Timeout",TimeOut);
@@ -1016,7 +1043,7 @@ bool FtpMethod::Fetch(FetchItem *Itm)
    Res.Filename = Itm->DestFile;
    Res.IMSHit = false;
 
-   maybe_add_auth (Get, _config->FindFile("Dir::Etc::netrc"));
+   MaybeAddAuthTo(Get);
 
    // Connect to the server
    if (Server == 0 || Server->Comp(Get) == false)
@@ -1024,15 +1051,22 @@ bool FtpMethod::Fetch(FetchItem *Itm)
       delete Server;
       Server = new FTPConn(Get);
    }
-  
+
    // Could not connect is a transient error..
-   if (Server->Open(this) == false)
+   switch (Server->Open(this))
    {
+   case ResultState::TRANSIENT_ERROR:
       Server->Close();
       Fail(true);
       return true;
+   case ResultState::FATAL_ERROR:
+      Server->Close();
+      Fail(false);
+      return true;
+   case ResultState::SUCCESSFUL:
+      break;
    }
-   
+
    // Get the files information
    Status(_("Query"));
    unsigned long long Size;

@@ -15,6 +15,12 @@
   </citerefentry>"
 >
 
+<!ENTITY apt-authconf "<citerefentry>
+    <refentrytitle><filename>apt_auth.conf</filename></refentrytitle>
+    <manvolnum>5</manvolnum>
+  </citerefentry>"
+>
+
 <!ENTITY apt-get "<citerefentry>
     <refentrytitle><command>apt-get</command></refentrytitle>
     <manvolnum>8</manvolnum>
@@ -75,6 +81,23 @@
   </citerefentry>"
 >
 
+<!ENTITY apt-transport-http "<citerefentry>
+    <refentrytitle><command>apt-transport-http</command></refentrytitle>
+    <manvolnum>1</manvolnum>
+  </citerefentry>"
+>
+
+<!ENTITY apt-transport-https "<citerefentry>
+    <refentrytitle><command>apt-transport-https</command></refentrytitle>
+    <manvolnum>1</manvolnum>
+  </citerefentry>"
+>
+
+<!ENTITY apt-transport-mirror "<citerefentry>
+    <refentrytitle><command>apt-transport-mirror</command></refentrytitle>
+    <manvolnum>1</manvolnum>
+  </citerefentry>"
+>
 
 <!ENTITY sources-list "<citerefentry>
     <refentrytitle><filename>sources.list</filename></refentrytitle>
@@ -142,6 +165,12 @@
   </citerefentry>"
 >
 
+<!ENTITY auto-apt-proxy "<citerefentry>
+    <refentrytitle><command>auto-apt-proxy</command></refentrytitle>
+    <manvolnum>1</manvolnum>
+  </citerefentry>"
+>
+
 <!ENTITY debsign "<citerefentry>
     <refentrytitle><command>debsign</command></refentrytitle>
     <manvolnum>1</manvolnum>
@@ -196,7 +225,7 @@
   </citerefentry>"
 >
 
-<!ENTITY apt-acquire-additional-files "<literal><filename>/usr/share/doc/apt-doc/acquire-additional-files.txt</filename></literal>">
+<!ENTITY apt-acquire-additional-files "<literal><filename>/usr/share/doc/apt-doc/acquire-additional-files.md.gz</filename></literal>">
 
 <!-- Boiler plate docinfo section -->
 <!ENTITY apt-email "
@@ -239,14 +268,14 @@
 ">
 
 <!-- this will be updated by 'prepare-release' -->
-<!ENTITY apt-product-version "1.4.9">
+<!ENTITY apt-product-version "1.8.2">
 
 <!-- (Code)names for various things used all over the place -->
-<!ENTITY debian-oldstable-codename "jessie">
-<!ENTITY debian-stable-codename "stretch">
-<!ENTITY debian-testing-codename "buster">
-<!ENTITY debian-stable-version "9">
-<!ENTITY ubuntu-codename "xenial">
+<!ENTITY debian-oldstable-codename "stretch">
+<!ENTITY debian-stable-codename "buster">
+<!ENTITY debian-testing-codename "bullseye">
+<!ENTITY debian-stable-version "10">
+<!ENTITY ubuntu-codename "disco">
 
 <!-- good and bad just refers to matching and not matching a pattern…
      It is not a remark about the specific perl version.

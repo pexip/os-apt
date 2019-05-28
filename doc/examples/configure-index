@@ -29,10 +29,20 @@
    and the syntax of configuration files and commandline options!
 */
 
-quiet "<INT>";
-quiet::NoUpdate "<BOOL>"; // never update progress information - included in -q=1
-quiet::NoProgress "<BOOL>"; // disables the 0% → 100% progress on cache generation and stuff
-quiet::NoStatistic "<BOOL>"; // no "42 kB downloaded" stats in update
+quiet "<INT>" {
+  NoUpdate "<BOOL>"; // never update progress information - included in -q=1
+  NoProgress "<BOOL>"; // disables the 0% → 100% progress on cache generation and stuff
+  NoStatistic "<BOOL>"; // no "42 kB downloaded" stats in update
+  ReleaseInfoChange "<BOOL>" // don't even print the notices if the info change is allowed
+  {
+    Origin "<BOOL>";
+    Label "<BOOL>";
+    Version "<BOOL>";
+    Codename "<BOOL>";
+    Suite "<BOOL>";
+    DefaultPin "<BOOL>";
+  };
+};
 
 // Options for APT in general
 APT
@@ -96,6 +106,12 @@ APT
      CallResolver "<BOOL>";
      IndexTargets::ReleaseInfo "<BOOL>";
      IndexTargets::format "<STRING>";
+
+     Update
+     {
+        InteractiveReleaseInfoChanges "<BOOL>";
+        SourceListWarnings "<BOOL>";
+     };
   };
 
   Cache
@@ -206,6 +222,8 @@ Acquire
   Source-Symlinks "<BOOL>";
   ForceHash "<STRING>"; // hashmethod used for expected hash: sha256, sha1 or md5sum
 
+  AllowTLS "<BOOL>";    // whether support for tls is enabled
+
   PDiffs "<BOOL>"; // try to get the IndexFile diffs
   PDiffs::FileLimit "<INT>"; // don't use diffs if we would need more than 4 diffs
   PDiffs::SizeLimit "<INT>"; // don't use diffs if size of all patches excess X% of the size of the original file
@@ -216,15 +234,33 @@ Acquire
   Max-ValidTime::* "<INT>"; // repository label specific configuration
   Min-ValidTime "<INT>"; // time in seconds
   Min-ValidTime::* "<INT>"; // repository label specific configuration
+  Check-Date "<BOOL>"; // whether to check the "Date" field
+  Max-FutureTime "<INT>"; // seconds to allow release file's Date field to be in the future (default 10)
+  Max-FutureTime::* "<INT>"; // repository label specific configuration
 
   SameMirrorForAllIndexes "<BOOL>"; // use the mirror serving the Release file for Packages & co
+
+  AllowInsecureRepositories "<BOOL>";
+  AllowWeakRepositories "<BOOL>";
+  AllowDowngradeToInsecureRepositories "<BOOL>";
+  // allow repositories to change information potentially breaking user config like pinning
+  AllowReleaseInfoChange "<BOOL>"
+  {
+    Origin "<BOOL>";
+    Label "<BOOL>";
+    Version "<BOOL>"; // allowed by default
+    Codename "<BOOL>";
+    Suite "<BOOL>";
+    DefaultPin "<BOOL>";
+  };
 
   // HTTP method configuration
   http
   {
     Proxy "http://127.0.0.1:3128";
     Proxy::http.us.debian.org "DIRECT";  // Specific per-host setting
-    Timeout "120";
+    Timeout "30";
+    ConnectionAttemptDelayMsec "250";
     Pipeline-Depth "5";
     AllowRedirect  "true";
 
@@ -234,6 +270,7 @@ Acquire
     No-Store "false";    // Prevent the cache from storing archives
     Dl-Limit "<INT>"; // Kb/sec maximum download rate
     User-Agent "Debian APT-HTTP/1.3";
+    Referer "<STRING>"; // Set the HTTP Referer [sic!] header to given value
   };
 
   // HTTPS method configuration: uses the http
@@ -241,9 +278,6 @@ Acquire
   // - cache-control values
   // - Dl-Limit, Timeout, ... values
   // if not set explicit for https
-  //
-  // see /usr/share/doc/apt/examples/apt-https-method-example.conf.gz
-  // for more examples
   https
   {
 	Verify-Peer "false";
@@ -252,7 +286,8 @@ Acquire
 	Verify-Host "true";
 	AllowRedirect  "true";
 
-	Timeout "120";
+	Timeout "30";
+	ConnectionAttemptDelayMsec "250";
 	AllowRedirect  "true";
 
 	// Cache Control. Note these do not work with Squid 2.0.2
@@ -279,7 +314,8 @@ Acquire
        "PASS $(SITE_PASS)";
     };
     
-    Timeout "120";
+    Timeout "30";
+    ConnectionAttemptDelayMsec "250";
     
     /* Passive mode control, proxy, non-proxy and per-host. Pasv mode
        is preferred if possible */
@@ -327,7 +363,7 @@ Acquire
   // Location of the changelogs with the placeholder @CHANGEPATH@ (e.g. "main/a/apt/apt_1.1")
   Changelogs::URI
   {
-    // Origin::Debian "http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog";
+    // Origin::Debian "https://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog";
     Origin::* "<STRING>";
     Label::* "<STRING>";
     Override::Origin::* "<STRING>";
@@ -363,6 +399,7 @@ Dir "<DIR>"
   Etc "<DIR>" {
      Main "<FILE>";
      Netrc "<FILE>";
+     NetrcParts "<DIR>";
      Parts "<DIR>";
      Preferences "<FILE>";
      PreferencesParts "<DIR>";
@@ -381,6 +418,7 @@ Dir "<DIR>"
      dpkg-source "<PROGRAM_PATH>";
      dpkg-buildpackage "/usr/bin/dpkg-buildpackage";
      lz4 "<PROGRAM_PATH>";
+     zstd "<PROGRAM_PATH>";
      gzip "<PROGRAM_PATH>";
      xz "<PROGRAM_PATH>";
      bzip2 "<PROGRAM_PATH>";
@@ -424,6 +462,10 @@ DPkg
    // Probably don't want to use force-downgrade..
    Options {"--force-overwrite";"--force-downgrade";}
 
+   // Defaults to /usr/sbin:/usr/bin:/sbin:/bin, might be set to empty
+   // string to inherit from environment
+   Path "<STRING>";
+
    // Auto re-mounting of a readonly /usr
    Pre-Invoke {"mount -o remount,rw /usr";};
    Post-Invoke {"mount -o remount,ro /usr";};
@@ -455,6 +497,15 @@ DPkg
    // controls if apt will apport on the first dpkg error or if it 
    // tries to install as many packages as possible
    StopOnError "true";
+
+   Progress-Fancy {
+      progress-fg "<STRING>";
+      progress-bg "<STRING>";
+      progress-bar "<BOOL>";
+   };
+
+   // Set a shutdown block inhibitor on systemd systems while running dpkg
+   Inhibit-Shutdown "<BOOL>";
 }
 
 /* Options you can set to see some debugging text They correspond to names
@@ -495,10 +546,10 @@ Debug
   pkgAcqArchive::NoQueue "<BOOL>";
   Hashes "<BOOL>";
   APT::FtpArchive::Clean "<BOOL>";
-  NoDropPrivs "<BOOL>";
   EDSP::WriteSolution "<BOOL>";
   InstallProgress::Fancy "<BOOL>";
   APT::Progress::PackageManagerFd "<BOOL>";
+  SetupAPTPartialDirectory::AssumeGood "<BOOL>";
 };
 
 pkgCacheGen
@@ -558,6 +609,25 @@ APT::FTPArchive::release
    Version "<STRING>";
 };
 
+Debug::NoDropPrivs "<BOOL>";
+APT::Sandbox
+{
+   User "<STRING>";
+   ResetEnvironment "<BOOL>";
+   Verify "<BOOL>"
+   {
+      Groups "<BOOL>";
+      IDs "<BOOL>";
+      Regain "<BOOL>";
+   };
+   seccomp "<BOOL>"
+   {
+      print "<BOOL>"; // print what syscall was trapped
+      allow "<LIST>";
+      trap "<LIST>";
+   };
+};
+
 // having both seems wrong
 dpkgpm::progress "<BOOL>";
 dpkg::progress "<BOOL>";
@@ -600,7 +670,6 @@ apt::solver "<STRING>";
 apt::planner "<STRING>";
 apt::system "<STRING>";
 apt::acquire::translation "<STRING>"; // deprecated in favor of Acquire::Languages
-apt::sandbox::user "<STRING>";
 apt::color::highlight "<STRING>";
 apt::color::neutral "<STRING>";
 
@@ -678,9 +747,6 @@ acquire::cdrom::mount "<DIR>";
 acquire::maxreleasefilesize "<INT>";
 acquire::queuehost::limit "<INT>";
 acquire::max-pipeline-depth "<INT>";
-acquire::allowinsecurerepositories "<BOOL>";
-acquire::allowweakrepositories "<BOOL>";
-acquire::allowdowngradetoinsecurerepositories "<BOOL>";
 acquire::progress::diffpercent "<BOOL>";
 acquire::gzipindexes "<BOOL>";
 acquire::indextargets::randomized "<BOOL>";

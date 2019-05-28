@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 0.7.18\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2017-09-13 17:18+0000\n"
+"POT-Creation-Date: 2019-02-04 15:34+0100\n"
 "PO-Revision-Date: 2010-10-02 23:35+0100\n"
 "Last-Translator: Iñigo Varela <ivarela@softastur.org>\n"
 "Language-Team: Asturian (ast)\n"
@@ -144,7 +144,7 @@ msgstr "El ficheru %s/%s sobreescribe al que ta nel paquete %s"
 #. Only warn if there is no sources.list file.
 #: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
 #: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc methods/mirror.cc
+#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
 #, c-format
 msgid "Unable to read %s"
 msgstr "Nun ye a lleer %s"
@@ -210,7 +210,7 @@ msgstr "El direutorio %s ta desviáu"
 
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
-msgid "The repository '%s' does no longer have a Release file."
+msgid "The repository '%s' no longer has a Release file."
 msgstr "El direutorio %s ta desviáu"
 
 #: apt-pkg/acquire-item.cc
@@ -292,6 +292,13 @@ msgstr "Fallu GPG: %s: %s"
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
+"Skipping acquire of configured file '%s' as repository '%s' doesn't have the "
+"component '%s' (component misspelt in sources.list?)"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
 "Skipping acquire of configured file '%s' as repository '%s' doesn't support "
 "architecture '%s'"
 msgstr ""
@@ -299,8 +306,8 @@ msgstr ""
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
-"Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
-"or malformed file)"
+"Skipping acquire of configured file '%s' as repository '%s' does not seem to "
+"provide it (sources.list entry misspelt?)"
 msgstr ""
 
 #: apt-pkg/acquire-item.cc
@@ -320,10 +327,50 @@ msgid ""
 "repository will not be applied."
 msgstr ""
 
+#. TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+#. the time until the file will be valid - formatted in the same way as in
+#. the download progress display (e.g. 7d 3h 42min 1s)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"Release file for %s is not valid yet (invalid for another %s). Updates for "
+"this repository will not be applied."
+msgstr ""
+
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Conflictu de distribución: %s (esperábase %s pero obtúvose %s)"
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
+msgstr ""
+
+#. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"More information about this can be found online in the Release notes at: %s"
+msgstr ""
+
+#. TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"This must be accepted explicitly before updates for this repository can be "
+"applied. See %s manpage for details."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc apt-pkg/update.cc apt-private/private-download.cc
+#, c-format
+msgid "Failed to fetch %s  %s"
+msgstr "Falló algamar %s  %s"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -339,19 +386,18 @@ msgstr ""
 msgid "Can't find a source to download version '%s' of '%s'"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc
-#, c-format
-msgid ""
-"The package index files are corrupted. No Filename: field for package %s."
-msgstr ""
-"Los ficheros d'indiz de paquetes tan corrompíos. Nun hai campu Filename: pal "
-"paquete %s."
-
 #. TRANSLATOR: %s=%s is sourcename=sourceversion, e.g. apt=1.1
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "Coneutando a %s (%s)"
+
+#: apt-pkg/acquire-worker.cc
+#, c-format
+msgid ""
+"The method '%s' is unsupported and disabled by default. Consider switching "
+"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
+msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -386,13 +432,13 @@ msgstr "Por favor, introduz el discu '%s' nel preséu '%s' y calca Intro."
 
 #: apt-pkg/acquire.cc apt-pkg/cdrom.cc
 #, c-format
-msgid "List directory %spartial is missing."
-msgstr "Falta'l direutoriu de llistes %spartial."
+msgid "List directory %s is missing."
+msgstr "Falta'l direutoriu de llistes %s."
 
 #: apt-pkg/acquire.cc
 #, c-format
-msgid "Archives directory %spartial is missing."
-msgstr "Falta'l direutoriu d'archivos %spartial."
+msgid "Archives directory %s is missing."
+msgstr "Falta'l direutoriu d'archivos %s."
 
 #: apt-pkg/acquire.cc
 #, c-format
@@ -416,14 +462,6 @@ msgstr ""
 msgid "Clean of %s is not supported"
 msgstr "La triba de ficheru d'indiz '%s' nun ta sofitada"
 
-#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
-#: methods/mirror.cc
-#, c-format
-msgid "Unable to change to %s"
-msgstr "Nun se pudo cambiar a %s"
-
-#. only show the ETA if it makes sense
-#. two days
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -462,7 +500,7 @@ msgstr ""
 msgid "You may want to run apt-get update to correct these problems"
 msgstr "Has d'executar apt-get update pa iguar estos problemes"
 
-#: apt-pkg/cachefile.cc
+#: apt-pkg/cachefile.cc methods/mirror.cc
 msgid "The list of sources could not be read."
 msgstr "Nun pudo lleese la llista de fontes."
 
@@ -620,6 +658,11 @@ msgstr "Les entraes de la llista d'oríxenes pa esti discu son:\n"
 
 #: apt-pkg/clean.cc
 #, c-format
+msgid "Unable to change to %s"
+msgstr "Nun se pudo cambiar a %s"
+
+#: apt-pkg/clean.cc
+#, c-format
 msgid "Unable to stat %s."
 msgstr "Nun pudo lleese %s."
 
@@ -685,11 +728,6 @@ msgstr "Operación incorreuta: %s"
 #, c-format
 msgid "Unrecognized type abbreviation: '%c'"
 msgstr "Triba d'abreviatura que nun se reconoz: «%c»"
-
-#: apt-pkg/contrib/configuration.cc
-#, c-format
-msgid "Opening configuration file %s"
-msgstr "Abriendo ficheros de configuración %s"
 
 #: apt-pkg/contrib/configuration.cc
 #, c-format
@@ -871,12 +909,12 @@ msgstr "Hai problemes al renomar el ficheru %s a %s"
 msgid "Problem syncing the file"
 msgstr "Hai problemes al sincronizar el ficheru"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, fuzzy, c-format
 msgid "Unable to mkstemp %s"
 msgstr "Nun ye a lleer %s"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to write to %s"
 msgstr "Nun se pue escribir en %s"
@@ -1050,17 +1088,20 @@ msgid "Unable to parse package file %s (%d)"
 msgstr "Nun se pudo tratar el ficheru de paquetes %s (%d)"
 
 #: apt-pkg/deb/debsystem.cc
-#, c-format
+#, fuzzy, c-format
+#| msgid ""
+#| "Unable to lock the administration directory (%s), is another process "
+#| "using it?"
 msgid ""
-"Unable to lock the administration directory (%s), is another process using "
-"it?"
+"Unable to acquire the dpkg frontend lock (%s), is another process using it?"
 msgstr ""
 "Nun pudó bloquease'l direutoriu d'alministración (%s), ¿hai otru procesu "
 "usándolu?"
 
 #: apt-pkg/deb/debsystem.cc
-#, c-format
-msgid "Unable to lock the administration directory (%s), are you root?"
+#, fuzzy, c-format
+#| msgid "Unable to lock the administration directory (%s), are you root?"
+msgid "Unable to acquire the dpkg frontend lock (%s), are you root?"
 msgstr "Nun pudo bloquiase'l direutoriu d'alministración (%s), ¿yes root?"
 
 #. TRANSLATORS: the %s contains the recovery command, usually
@@ -1074,29 +1115,43 @@ msgstr ""
 "problema. "
 
 #: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid ""
+"Unable to lock the administration directory (%s), is another process using "
+"it?"
+msgstr ""
+"Nun pudó bloquease'l direutoriu d'alministración (%s), ¿hai otru procesu "
+"usándolu?"
+
+#: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid "Unable to lock the administration directory (%s), are you root?"
+msgstr "Nun pudo bloquiase'l direutoriu d'alministración (%s), ¿yes root?"
+
+#: apt-pkg/deb/debsystem.cc
 msgid "Not locked"
 msgstr "Non bloquiáu"
 
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Installing %s"
-msgstr "Instalando %s"
+msgid "Preparing %s"
+msgstr "Preparando %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Configuring %s"
-msgstr "Configurando %s"
+msgid "Preparing to configure %s"
+msgstr "Preparándose pa configurar %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removing %s"
-msgstr "Desinstalando %s"
+msgid "Preparing for removal of %s"
+msgstr "Preparándose pa desinstalar %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Completely removing %s"
-msgstr "Desinstalóse dafechu %s"
+msgid "Preparing to completely remove %s"
+msgstr "Preparándose pa desinstalar dafechu %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1113,6 +1168,11 @@ msgstr "Executando activador de post-instalación de %s"
 msgid "Installed %s"
 msgstr "%s instaláu"
 
+#: apt-pkg/deb/dpkgpm.cc
+#, c-format
+msgid "Configuring %s"
+msgstr "Configurando %s"
+
 #. FIXME: use a better string after freeze
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1126,33 +1186,23 @@ msgstr "Nun pudo abrise'l ficheru '%s'"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing %s"
-msgstr "Preparando %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
 msgid "Unpacking %s"
 msgstr "Desempaquetando %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing to configure %s"
-msgstr "Preparándose pa configurar %s"
+msgid "Installing %s"
+msgstr "Instalando %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing for removal of %s"
-msgstr "Preparándose pa desinstalar %s"
+msgid "Removing %s"
+msgstr "Desinstalando %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removed %s"
-msgstr "%s desinstaláu"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing to completely remove %s"
-msgstr "Preparándose pa desinstalar dafechu %s"
+msgid "Completely removing %s"
+msgstr "Desinstalóse dafechu %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1326,7 +1376,7 @@ msgstr "Nun pudo determinase una triba de sistema d'empaquetáu afayadiza"
 
 #: apt-pkg/install-progress.cc
 #, c-format
-msgid "Progress: [%3i%%]"
+msgid "Progress: [%3li%%]"
 msgstr ""
 
 #. send status information that we are about to fork dpkg
@@ -1503,6 +1553,12 @@ msgstr "Nun s'entiende'l tipu de pin %s"
 
 #: apt-pkg/policy.cc
 #, c-format
+msgid ""
+"%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"
+msgstr ""
+
+#: apt-pkg/policy.cc
+#, c-format
 msgid "%s: Value %s is outside the range of valid pin priorities (%d to %d)"
 msgstr ""
 
@@ -1515,11 +1571,6 @@ msgstr "Nun hai prioridá (o ye cero) conseñada pa pin"
 #, fuzzy, c-format
 msgid "Malformed entry %u in %s file %s (%s)"
 msgstr "Saltu mal formáu %s llinia %lu #1"
-
-#: apt-pkg/sourcelist.cc
-#, c-format
-msgid "Opening %s"
-msgstr "Abriendo %s"
 
 #: apt-pkg/sourcelist.cc
 #, c-format
@@ -1541,7 +1592,7 @@ msgstr "Llinia %u mal formada na llista d'oríxenes %s (triba)"
 msgid "Type '%s' is not known on stanza %u in source list %s"
 msgstr "Triba '%s' desconocida na llinia %u de la llista d'oríxenes %s"
 
-#: apt-pkg/sourcelist.cc
+#: apt-pkg/sourcelist.cc apt-private/private-install.cc
 #, c-format
 msgid "Unsupported file %s given on commandline"
 msgstr ""
@@ -1554,11 +1605,6 @@ msgstr "Has de poner delles URIs 'fonte' nel ficheru sources.list"
 #, c-format
 msgid "Cannot convert %s to integer: out of range"
 msgstr ""
-
-#: apt-pkg/update.cc apt-private/private-download.cc
-#, c-format
-msgid "Failed to fetch %s  %s"
-msgstr "Falló algamar %s  %s"
 
 #: apt-pkg/update.cc
 #, fuzzy
@@ -1619,6 +1665,12 @@ msgstr ""
 "Cambeu de mediu: Por favor meti'l discu etiquetáu\n"
 " '%s'\n"
 "na unidá '%s' y calca Intro\n"
+
+#: apt-private/acqprogress.cc
+msgid ""
+"Do you want to accept these changes and continue updating from this "
+"repository?"
+msgstr ""
 
 #: apt-private/private-cachefile.cc
 msgid "Correcting dependencies..."
@@ -1755,8 +1807,14 @@ msgstr "Esti APT tien Poderes de Super Vaca."
 msgid "This APT helper has Super Meep Powers."
 msgstr ""
 
-#: apt-private/private-depends.cc apt-private/private-show.cc
-#: cmdline/apt-mark.cc
+#: apt-private/private-cmndline.cc
+msgid ""
+"--force-yes is deprecated, use one of the options starting with --allow "
+"instead."
+msgstr ""
+
+#: apt-private/private-depends.cc apt-private/private-download.cc
+#: apt-private/private-show.cc cmdline/apt-mark.cc
 msgid "No packages found"
 msgstr "Nun s'alcontraron paquetes"
 
@@ -1775,12 +1833,6 @@ msgstr "Dellos paquetes nun pudieron autenticase"
 #: apt-private/private-download.cc
 msgid "Install these packages without verification?"
 msgstr "¿Instalar esos paquetes ensin verificación?"
-
-#: apt-private/private-download.cc apt-private/private-install.cc
-msgid ""
-"--force-yes is deprecated, use one of the options starting with --allow "
-"instead."
-msgstr ""
 
 #: apt-private/private-download.cc
 #, fuzzy
@@ -1929,7 +1981,7 @@ msgstr ""
 msgid "Abort."
 msgstr "Encaboxar."
 
-#: apt-private/private-install.cc
+#: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "¿Quies continuar?"
 
@@ -2257,11 +2309,6 @@ msgstr "Has de dar polo menos un patrón de gueta"
 msgid "Full Text Search"
 msgstr ""
 
-#: apt-private/private-show.cc cmdline/apt-cache.cc
-#, c-format
-msgid "Package file %s is out of sync."
-msgstr "El ficheru de paquetes %s nun ta sincronizáu."
-
 #: apt-private/private-show.cc
 #, c-format
 msgid "There is %i additional record. Please use the '-a' switch to see it"
@@ -2424,17 +2471,17 @@ msgid "%s has no build depends.\n"
 msgstr "%s nun tien dependencies de construcción.\n"
 
 #: apt-private/private-source.cc
-msgid "Must specify at least one package to check builddeps for"
-msgstr ""
-"Hai que conseñar polo menos un paquete pa verificar les dependencies de "
-"construcción"
-
-#: apt-private/private-source.cc
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
+
+#: apt-private/private-source.cc
+msgid "Must specify at least one package to check builddeps for"
+msgstr ""
+"Hai que conseñar polo menos un paquete pa verificar les dependencies de "
+"construcción"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2457,7 +2504,7 @@ msgstr "Nun pudo renomase %s como %s"
 
 #: apt-private/private-sources.cc
 #, c-format
-msgid "Your '%s' file changed, please run 'apt-get update'."
+msgid "Your '%s' file changed, please run 'apt-get update'.\n"
 msgstr ""
 
 #: apt-private/private-unmet.cc
@@ -2468,6 +2515,14 @@ msgstr "El paquete %s versión %s nun cumple una dependencia:\n"
 #: apt-private/private-update.cc
 msgid "The update command takes no arguments"
 msgstr "La orde update nun lleva argumentos"
+
+#. TRANSLATOR: the first two are manpage references, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid ""
+"Usage of %s should be preferred over embedding login information directly in "
+"the %s entry for '%s'"
+msgstr ""
 
 #: apt-private/private-update.cc
 #, c-format
@@ -2481,9 +2536,9 @@ msgstr[1] ""
 msgid "All packages are up to date."
 msgstr ""
 
-#: cmdline/apt-cache.cc
-#, fuzzy
-msgid "apt-cache stats does not take any arguments"
+#: cmdline/apt-cache.cc cmdline/apt-mark.cc
+#, fuzzy, c-format
+msgid "%s does not take any arguments"
 msgstr "La orde update nun lleva argumentos"
 
 #: cmdline/apt-cache.cc
@@ -2744,6 +2799,12 @@ msgid "Install new packages (pkg is libc6 not libc6.deb)"
 msgstr "Instalar nuevos paquetes (pkg ye libc6 non libc6.deb)"
 
 #: cmdline/apt-get.cc
+#, fuzzy
+#| msgid "Install new packages (pkg is libc6 not libc6.deb)"
+msgid "Reinstall packages (pkg is libc6 not libc6.deb)"
+msgstr "Instalar nuevos paquetes (pkg ye libc6 non libc6.deb)"
+
+#: cmdline/apt-get.cc
 msgid "Remove packages"
 msgstr "Desaniciar paquetes"
 
@@ -2835,6 +2896,14 @@ msgstr ""
 msgid "detect proxy using apt.conf"
 msgstr ""
 
+#: cmdline/apt-helper.cc
+msgid "wait for system to be online"
+msgstr ""
+
+#: cmdline/apt-helper.cc
+msgid "drop privileges before running given command"
+msgstr ""
+
 #: cmdline/apt-internal-planner.cc
 #, fuzzy
 msgid ""
@@ -2891,6 +2960,16 @@ msgstr "%s axustáu como instaláu manualmente.\n"
 #, fuzzy, c-format
 msgid "%s was already set to automatically installed.\n"
 msgstr "%s axustáu como instaláu automáticamente.\n"
+
+#: cmdline/apt-mark.cc
+msgid "No changes necessary"
+msgstr ""
+
+#: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "The following NEW packages will be installed:"
+msgid "The following packages will be marked as automatically installed:"
+msgstr "Van instalase los siguientes paquetes NUEVOS:"
 
 #: cmdline/apt-mark.cc
 #, fuzzy, c-format
@@ -2952,6 +3031,11 @@ msgid "Mark the given packages as manually installed"
 msgstr "Comprueba qu'el paquete 'dpkg-dev' ta instaláu.\n"
 
 #: cmdline/apt-mark.cc
+#, fuzzy
+msgid "Mark all dependencies of meta packages as automatically installed."
+msgstr "%s axustáu como instaláu automáticamente.\n"
+
+#: cmdline/apt-mark.cc
 msgid "Mark a package as held back"
 msgstr ""
 
@@ -2970,7 +3054,7 @@ msgid "Print the list of manually installed packages"
 msgstr "%s axustáu como instaláu manualmente.\n"
 
 #: cmdline/apt-mark.cc
-msgid "Print the list of package on hold"
+msgid "Print the list of packages on hold"
 msgstr ""
 
 #: cmdline/apt-sortpkgs.cc
@@ -3015,6 +3099,11 @@ msgstr ""
 #: cmdline/apt.cc
 #, fuzzy
 msgid "install packages"
+msgstr "Paquetes na chincheta:"
+
+#: cmdline/apt.cc
+#, fuzzy
+msgid "reinstall packages"
 msgstr "Paquetes na chincheta:"
 
 #: cmdline/apt.cc
@@ -3411,6 +3500,11 @@ msgstr "Datos de testera incorreutos"
 msgid "Connection failed"
 msgstr "Fallo la conexón"
 
+#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#, c-format
+msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
+msgstr ""
+
 #: methods/basehttp.cc
 #, c-format
 msgid ""
@@ -3458,15 +3552,21 @@ msgstr "Nun s'atopa'l ficheru."
 msgid "Direct connection to %s domains is blocked by default."
 msgstr ""
 
-#: methods/connect.cc methods/http.cc
-#, c-format
-msgid "Connecting to %s (%s)"
-msgstr "Coneutando a %s (%s)"
-
 #: methods/connect.cc
 #, c-format
 msgid "[IP: %s %s]"
 msgstr "[IP: %s %s]"
+
+#: methods/connect.cc
+#, fuzzy, c-format
+#| msgid "Connecting to %s (%s)"
+msgid "Connected to %s (%s)"
+msgstr "Coneutando a %s (%s)"
+
+#: methods/connect.cc methods/http.cc
+#, c-format
+msgid "Connecting to %s (%s)"
+msgstr "Coneutando a %s (%s)"
 
 #: methods/connect.cc
 #, c-format
@@ -3478,11 +3578,6 @@ msgstr "Nun se pudo crear un socket pa %s (f=%u t=%u p=%u)"
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "Nun se pudo coneutar a %s:%s (%s)."
 
-#: methods/connect.cc
-#, c-format
-msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr "Nun se pudo coneutar a %s:%s (%s); expiró'l tiempu de conexón"
-
 #: methods/connect.cc methods/ftp.cc methods/rsh.cc
 msgid "Failed"
 msgstr "Falló"
@@ -3491,6 +3586,11 @@ msgstr "Falló"
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
 msgstr "Nun se pudo coneutar a %s:%s (%s)."
+
+#: methods/connect.cc
+#, c-format
+msgid "Could not connect to %s:%s (%s), connection timed out"
+msgstr "Nun se pudo coneutar a %s:%s (%s); expiró'l tiempu de conexón"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -3743,30 +3843,6 @@ msgstr "Gandió'l tiempu de conexón"
 msgid "Error writing to output file"
 msgstr "Fallu al escribir nel ficheru de salida"
 
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "No mirror file '%s' found "
-msgstr "Nun s'alcontró ficheru espeyu '%s'"
-
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, fuzzy, c-format
-msgid "Can not read mirror file '%s'"
-msgstr "Nun s'alcontró ficheru espeyu '%s'"
-
-#: methods/mirror.cc
-#, fuzzy, c-format
-msgid "No entry found in mirror file '%s'"
-msgstr "Nun s'alcontró ficheru espeyu '%s'"
-
-#: methods/mirror.cc
-#, c-format
-msgid "[Mirror: %s]"
-msgstr "[Espeyu: %s]"
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "Nun se pudo afitar la hora de modificación"
@@ -3778,6 +3854,38 @@ msgstr "Conexón encaboxada prematuramente"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#~ msgid "Removed %s"
+#~ msgstr "%s desinstaláu"
+
+#~ msgid "Package file %s is out of sync."
+#~ msgstr "El ficheru de paquetes %s nun ta sincronizáu."
+
+#~ msgid ""
+#~ "The package index files are corrupted. No Filename: field for package %s."
+#~ msgstr ""
+#~ "Los ficheros d'indiz de paquetes tan corrompíos. Nun hai campu Filename: "
+#~ "pal paquete %s."
+
+#~ msgid "No mirror file '%s' found "
+#~ msgstr "Nun s'alcontró ficheru espeyu '%s'"
+
+#, fuzzy
+#~ msgid "Can not read mirror file '%s'"
+#~ msgstr "Nun s'alcontró ficheru espeyu '%s'"
+
+#, fuzzy
+#~ msgid "No entry found in mirror file '%s'"
+#~ msgstr "Nun s'alcontró ficheru espeyu '%s'"
+
+#~ msgid "[Mirror: %s]"
+#~ msgstr "[Espeyu: %s]"
+
+#~ msgid "Opening configuration file %s"
+#~ msgstr "Abriendo ficheros de configuración %s"
+
+#~ msgid "Opening %s"
+#~ msgstr "Abriendo %s"
 
 #~ msgid "Unmet dependencies. Try using --fix-broken."
 #~ msgstr "Dependencies incumplíes. Téntalo usando --fix-broken."

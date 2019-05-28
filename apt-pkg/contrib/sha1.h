@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: sha1.h,v 1.3 2001/05/07 05:05:47 jgg Exp $
 /* ######################################################################
 
    SHA1SumValue - Storage for a SHA-1 hash.
@@ -17,9 +16,9 @@
 #include "hashsum_template.h"
 
 #ifndef APT_10_CLEANER_HEADERS
-#include <string>
-#include <cstring>
 #include <algorithm>
+#include <cstring>
+#include <string>
 #endif
 #ifndef APT_8_CLEANER_HEADERS
 using std::string;

@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: cmndline.cc,v 1.15 2003/02/10 01:40:58 doogie Exp $
 /* ######################################################################
 
    Command Line Class - Sophisticated command line parser
@@ -11,17 +10,17 @@
    ##################################################################### */
 									/*}}}*/
 // Include files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
-#include <apt-pkg/configuration.h>
 #include <apt-pkg/cmndline.h>
+#include <apt-pkg/configuration.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/strutl.h>
 
+#include <string>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <string>
 
 #include <apti18n.h>
 									/*}}}*/

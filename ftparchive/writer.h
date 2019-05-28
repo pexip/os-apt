@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: writer.h,v 1.4.2.2 2003/12/26 22:55:43 mdz Exp $
 /* ######################################################################
 
    Writer 
@@ -15,19 +14,20 @@
 
 #include <apt-pkg/hashes.h>
 
-#include <string>
-#include <stdio.h>
 #include <iostream>
-#include <vector>
 #include <map>
 #include <set>
+#include <string>
+#include <utility>
+#include <vector>
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 
-#include "contents.h"
-#include "cachedb.h"
-#include "override.h"
 #include "apt-ftparchive.h"
+#include "cachedb.h"
+#include "contents.h"
+#include "override.h"
 
 using std::string;
 using std::cout;
@@ -39,6 +39,7 @@ class FTWScanner
 {
    protected:
    vector<string> Patterns;
+   vector<std::pair<string, bool>> FilesToProcess;
    string Arch;
    bool IncludeArchAll;
    const char *OriginalPath;
@@ -49,7 +50,8 @@ class FTWScanner
 
    static FTWScanner *Owner;
    static int ScannerFTW(const char *File,const struct stat *sb,int Flag);
-   static int ScannerFile(const char *File, bool const &ReadLink);
+   static int ScannerFile(const char *const File, bool const ReadLink);
+   static int ProcessFile(const char *const File, bool const ReadLink);
 
    bool Delink(string &FileName,const char *OriginalPath,
 	       unsigned long long &Bytes,unsigned long long const &FileSize);

@@ -73,7 +73,8 @@
 #if APT_GCC_VERSION >= 0x0300
 	#define APT_DEPRECATED	__attribute__ ((deprecated))
 	#define APT_DEPRECATED_MSG(X)	__attribute__ ((deprecated(X)))
-	#define APT_CONST	__attribute__((const))
+	// __attribute__((const)) is too dangerous for us, we end up using it wrongly
+	#define APT_CONST	__attribute__((pure))
 	#define APT_PURE	__attribute__((pure))
 	#define APT_NORETURN	__attribute__((noreturn))
 	#define APT_PRINTF(n)	__attribute__((format(printf, n, n + 1)))
@@ -142,6 +143,7 @@
 		_Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
 	#define APT_IGNORE_DEPRECATED_POP \
 		_Pragma("GCC diagnostic pop")
+	/* gcc has various problems with this shortcut, so prefer the long form */
 	#define APT_IGNORE_DEPRECATED(XXX) \
 		APT_IGNORE_DEPRECATED_PUSH \
 		XXX \
@@ -165,7 +167,7 @@
 // See also buildlib/libversion.mak
 #define APT_PKG_MAJOR 5
 #define APT_PKG_MINOR 0
-#define APT_PKG_RELEASE 1
+#define APT_PKG_RELEASE 2
 #define APT_PKG_ABI ((APT_PKG_MAJOR * 100) + APT_PKG_MINOR)
 
 #endif

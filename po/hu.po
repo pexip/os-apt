@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2017-09-13 17:18+0000\n"
+"POT-Creation-Date: 2019-02-04 15:34+0100\n"
 "PO-Revision-Date: 2016-04-10 19:46+0200\n"
 "Last-Translator: Gabor Kelemen <kelemeng@ubuntu.com>\n"
 "Language-Team: Hungarian <gnome-hu-list@gnome.org>\n"
@@ -148,7 +148,7 @@ msgstr "A(z) %s/%s fájl felülírja a(z) %s csomagban levőt"
 #. Only warn if there is no sources.list file.
 #: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
 #: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc methods/mirror.cc
+#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
 #, c-format
 msgid "Unable to read %s"
 msgstr "%s nem olvasható"
@@ -220,7 +220,7 @@ msgstr "A(z) „%s” tároló már nincs aláírva."
 
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
-msgid "The repository '%s' does no longer have a Release file."
+msgid "The repository '%s' no longer has a Release file."
 msgstr "A(z) „%s” tárolónak nincs Release fájlja."
 
 #: apt-pkg/acquire-item.cc
@@ -305,6 +305,18 @@ msgid "GPG error: %s: %s"
 msgstr "GPG hiba: %s: %s"
 
 #: apt-pkg/acquire-item.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Skipping acquire of configured file '%s' as repository '%s' doesn't "
+#| "support architecture '%s'"
+msgid ""
+"Skipping acquire of configured file '%s' as repository '%s' doesn't have the "
+"component '%s' (component misspelt in sources.list?)"
+msgstr ""
+"A beállított „%s” fájl beszerzésének kihagyása, mert a(z) „%s” tároló nem "
+"támogatja a(z) „%s” architektúrát"
+
+#: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
 "Skipping acquire of configured file '%s' as repository '%s' doesn't support "
@@ -314,13 +326,16 @@ msgstr ""
 "támogatja a(z) „%s” architektúrát"
 
 #: apt-pkg/acquire-item.cc
-#, c-format
+#, fuzzy, c-format
+#| msgid ""
+#| "Skipping acquire of configured file '%s' as repository '%s' doesn't "
+#| "support architecture '%s'"
 msgid ""
-"Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
-"or malformed file)"
+"Skipping acquire of configured file '%s' as repository '%s' does not seem to "
+"provide it (sources.list entry misspelt?)"
 msgstr ""
-"A várt „%s” bejegyzés nem található a Release fájlban (Rossz sources.list "
-"bejegyzés vagy helytelenül formázott fájl)"
+"A beállított „%s” fájl beszerzésének kihagyása, mert a(z) „%s” tároló nem "
+"támogatja a(z) „%s” architektúrát"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -343,10 +358,55 @@ msgstr ""
 "A Release fájl elavult ehhez: %s (érvénytelen ez óta: %s). A tároló "
 "frissítései nem kerülnek alkalmazásra."
 
+#. TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+#. the time until the file will be valid - formatted in the same way as in
+#. the download progress display (e.g. 7d 3h 42min 1s)
+#: apt-pkg/acquire-item.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Release file for %s is expired (invalid since %s). Updates for this "
+#| "repository will not be applied."
+msgid ""
+"Release file for %s is not valid yet (invalid for another %s). Updates for "
+"this repository will not be applied."
+msgstr ""
+"A Release fájl elavult ehhez: %s (érvénytelen ez óta: %s). A tároló "
+"frissítései nem kerülnek alkalmazásra."
+
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Ütköző disztribúció: %s (a várt %s helyett %s érkezett)"
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
+msgstr ""
+
+#. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"More information about this can be found online in the Release notes at: %s"
+msgstr ""
+
+#. TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"This must be accepted explicitly before updates for this repository can be "
+"applied. See %s manpage for details."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc apt-pkg/update.cc apt-private/private-download.cc
+#, c-format
+msgid "Failed to fetch %s  %s"
+msgstr "Sikertelen letöltés: %s  %s"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -362,18 +422,18 @@ msgstr ""
 msgid "Can't find a source to download version '%s' of '%s'"
 msgstr "Nem található forrás a(z) „%2$s” „%1$s” verziójának letöltéséhez"
 
-#: apt-pkg/acquire-item.cc
-#, c-format
-msgid ""
-"The package index files are corrupted. No Filename: field for package %s."
-msgstr ""
-"A csomagindexfájlok megsérültek. Nincs Filename: mező a(z) %s csomaghoz."
-
 #. TRANSLATOR: %s=%s is sourcename=sourceversion, e.g. apt=1.1
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "Nem érhető el változásnapló ehhez: %s=%s"
+
+#: apt-pkg/acquire-worker.cc
+#, c-format
+msgid ""
+"The method '%s' is unsupported and disabled by default. Consider switching "
+"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
+msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -410,13 +470,13 @@ msgstr ""
 
 #: apt-pkg/acquire.cc apt-pkg/cdrom.cc
 #, c-format
-msgid "List directory %spartial is missing."
-msgstr "A(z) %spartial listakönyvtár hiányzik."
+msgid "List directory %s is missing."
+msgstr "A(z) %s listakönyvtár hiányzik."
 
 #: apt-pkg/acquire.cc
 #, c-format
-msgid "Archives directory %spartial is missing."
-msgstr "A(z) %spartial archívumkönyvtár hiányzik."
+msgid "Archives directory %s is missing."
+msgstr "A(z) %s archívumkönyvtár hiányzik."
 
 #: apt-pkg/acquire.cc
 #, c-format
@@ -445,14 +505,6 @@ msgstr ""
 msgid "Clean of %s is not supported"
 msgstr "A(z) „%s” tisztítása nem támogatott"
 
-#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
-#: methods/mirror.cc
-#, c-format
-msgid "Unable to change to %s"
-msgstr "Nem sikerült ide váltani: %s"
-
-#. only show the ETA if it makes sense
-#. two days
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -492,7 +544,7 @@ msgstr ""
 msgid "You may want to run apt-get update to correct these problems"
 msgstr "Próbálja futtatni az „apt-get update” parancsot ezen hibák javításához"
 
-#: apt-pkg/cachefile.cc
+#: apt-pkg/cachefile.cc methods/mirror.cc
 msgid "The list of sources could not be read."
 msgstr "A források listája olvashatatlan."
 
@@ -647,6 +699,11 @@ msgstr "A lemezhez tartozó forráslista-bejegyzések a következők:\n"
 
 #: apt-pkg/clean.cc
 #, c-format
+msgid "Unable to change to %s"
+msgstr "Nem sikerült ide váltani: %s"
+
+#: apt-pkg/clean.cc
+#, c-format
 msgid "Unable to stat %s."
 msgstr "%s nem érhető el."
 
@@ -717,11 +774,6 @@ msgstr "%s érvénytelen művelet"
 #, c-format
 msgid "Unrecognized type abbreviation: '%c'"
 msgstr "Ismeretlen típusrövidítés: „%c”"
-
-#: apt-pkg/contrib/configuration.cc
-#, c-format
-msgid "Opening configuration file %s"
-msgstr "%s konfigurációs fájl megnyitása"
 
 #: apt-pkg/contrib/configuration.cc
 #, c-format
@@ -907,12 +959,12 @@ msgstr "Hiba a(z) %s fájl átnevezésekor erre: %s"
 msgid "Problem syncing the file"
 msgstr "Hiba a fájl szinkronizálásakor"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to mkstemp %s"
 msgstr "Az mkstemp %s meghiúsult"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to write to %s"
 msgstr "Nem lehet írni ebbe: %s"
@@ -1097,17 +1149,20 @@ msgid "Unable to parse package file %s (%d)"
 msgstr "Nem lehet a(z) %s csomagfájlt feldolgozni (%d)"
 
 #: apt-pkg/deb/debsystem.cc
-#, c-format
+#, fuzzy, c-format
+#| msgid ""
+#| "Unable to lock the administration directory (%s), is another process "
+#| "using it?"
 msgid ""
-"Unable to lock the administration directory (%s), is another process using "
-"it?"
+"Unable to acquire the dpkg frontend lock (%s), is another process using it?"
 msgstr ""
 "Az adminisztrációs könyvtár (%s) nem zárolható, lehet hogy másik folyamat "
 "használja?"
 
 #: apt-pkg/deb/debsystem.cc
-#, c-format
-msgid "Unable to lock the administration directory (%s), are you root?"
+#, fuzzy, c-format
+#| msgid "Unable to lock the administration directory (%s), are you root?"
+msgid "Unable to acquire the dpkg frontend lock (%s), are you root?"
 msgstr ""
 "Az adminisztrációs könyvtár (%s) nem zárolható, rendszergazdaként próbálja?"
 
@@ -1122,29 +1177,44 @@ msgstr ""
 "probléma megoldásához. "
 
 #: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid ""
+"Unable to lock the administration directory (%s), is another process using "
+"it?"
+msgstr ""
+"Az adminisztrációs könyvtár (%s) nem zárolható, lehet hogy másik folyamat "
+"használja?"
+
+#: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid "Unable to lock the administration directory (%s), are you root?"
+msgstr ""
+"Az adminisztrációs könyvtár (%s) nem zárolható, rendszergazdaként próbálja?"
+
+#: apt-pkg/deb/debsystem.cc
 msgid "Not locked"
 msgstr "Nincs zárolva"
 
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Installing %s"
-msgstr "%s telepítése"
+msgid "Preparing %s"
+msgstr "%s előkészítése"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Configuring %s"
-msgstr "%s konfigurálása"
+msgid "Preparing to configure %s"
+msgstr "%s konfigurálásának előkészítése"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removing %s"
-msgstr "%s eltávolítása"
+msgid "Preparing for removal of %s"
+msgstr "%s eltávolításának előkészítése"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Completely removing %s"
-msgstr "%s teljes eltávolítása"
+msgid "Preparing to completely remove %s"
+msgstr "%s teljes eltávolításának előkészítése"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1161,6 +1231,11 @@ msgstr "A(z) %s telepítés utáni trigger futtatása"
 msgid "Installed %s"
 msgstr "%s telepítve"
 
+#: apt-pkg/deb/dpkgpm.cc
+#, c-format
+msgid "Configuring %s"
+msgstr "%s konfigurálása"
+
 #. FIXME: use a better string after freeze
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1174,33 +1249,23 @@ msgstr "A(z) „%s” fájl megnyitása sikertelen"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing %s"
-msgstr "%s előkészítése"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
 msgid "Unpacking %s"
 msgstr "%s kicsomagolása"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing to configure %s"
-msgstr "%s konfigurálásának előkészítése"
+msgid "Installing %s"
+msgstr "%s telepítése"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing for removal of %s"
-msgstr "%s eltávolításának előkészítése"
+msgid "Removing %s"
+msgstr "%s eltávolítása"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removed %s"
-msgstr "%s eltávolítva"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing to completely remove %s"
-msgstr "%s teljes eltávolításának előkészítése"
+msgid "Completely removing %s"
+msgstr "%s teljes eltávolítása"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1374,8 +1439,8 @@ msgstr "A megfelelő csomagrendszertípus nem határozható meg"
 
 #: apt-pkg/install-progress.cc
 #, c-format
-msgid "Progress: [%3i%%]"
-msgstr "Haladás: [%3i%%]"
+msgid "Progress: [%3li%%]"
+msgstr "Haladás: [%3li%%]"
 
 #. send status information that we are about to fork dpkg
 #: apt-pkg/install-progress.cc
@@ -1550,6 +1615,12 @@ msgstr "A(z) %s rögzítéstípus nem értelmezhető"
 
 #: apt-pkg/policy.cc
 #, c-format
+msgid ""
+"%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"
+msgstr ""
+
+#: apt-pkg/policy.cc
+#, c-format
 msgid "%s: Value %s is outside the range of valid pin priorities (%d to %d)"
 msgstr ""
 "%s: A(z) %s érték kívül esik az érvényes rögzítési prioritások tartományán "
@@ -1564,11 +1635,6 @@ msgstr "Nincs prioritás (vagy nulla) megadva a rögzítéshez"
 #, c-format
 msgid "Malformed entry %u in %s file %s (%s)"
 msgstr "%u. bejegyzés rosszul formált a(z) %s %s fájlban (%s)"
-
-#: apt-pkg/sourcelist.cc
-#, c-format
-msgid "Opening %s"
-msgstr "%s megnyitása"
 
 #: apt-pkg/sourcelist.cc
 #, c-format
@@ -1590,7 +1656,7 @@ msgstr "A(z) %u. utasítás hibás a(z) %s forráslistában (típus)"
 msgid "Type '%s' is not known on stanza %u in source list %s"
 msgstr "„%1$s” típus nem ismert a(z) %3$s forráslista %2$u. utasításában"
 
-#: apt-pkg/sourcelist.cc
+#: apt-pkg/sourcelist.cc apt-private/private-install.cc
 #, c-format
 msgid "Unsupported file %s given on commandline"
 msgstr "Nem támogatott %s fájlt adott meg a parancssorban"
@@ -1603,11 +1669,6 @@ msgstr "Néhány „source” URI-t el kell helyezni a sources.list fájlban"
 #, c-format
 msgid "Cannot convert %s to integer: out of range"
 msgstr "%s nem alakítható egésszé: kívül esik a tartományon"
-
-#: apt-pkg/update.cc apt-private/private-download.cc
-#, c-format
-msgid "Failed to fetch %s  %s"
-msgstr "Sikertelen letöltés: %s  %s"
 
 #: apt-pkg/update.cc
 msgid ""
@@ -1667,6 +1728,12 @@ msgstr ""
 "Helyezze be a(z)\n"
 " „%s”\n"
 "címkéjű lemezt a(z) %s meghajtóba, és nyomja meg az Entert\n"
+
+#: apt-private/acqprogress.cc
+msgid ""
+"Do you want to accept these changes and continue updating from this "
+"repository?"
+msgstr ""
 
 #: apt-private/private-cachefile.cc
 msgid "Correcting dependencies..."
@@ -1810,8 +1877,14 @@ msgstr "Ez az APT a SzuperTehén Hatalmával rendelkezik."
 msgid "This APT helper has Super Meep Powers."
 msgstr "Ez az APT segéd a Szuper Meep Hatalmával rendelkezik."
 
-#: apt-private/private-depends.cc apt-private/private-show.cc
-#: cmdline/apt-mark.cc
+#: apt-private/private-cmndline.cc
+msgid ""
+"--force-yes is deprecated, use one of the options starting with --allow "
+"instead."
+msgstr "a --force-yes elavult, használja a --allow kezdetű kapcsolók egyikét."
+
+#: apt-private/private-depends.cc apt-private/private-download.cc
+#: apt-private/private-show.cc cmdline/apt-mark.cc
 msgid "No packages found"
 msgstr "Nem találhatók csomagok"
 
@@ -1830,12 +1903,6 @@ msgstr "Néhány csomag nem hitelesíthető"
 #: apt-private/private-download.cc
 msgid "Install these packages without verification?"
 msgstr "Valóban ellenőrzés nélkül telepíti a csomagokat?"
-
-#: apt-private/private-download.cc apt-private/private-install.cc
-msgid ""
-"--force-yes is deprecated, use one of the options starting with --allow "
-"instead."
-msgstr "a --force-yes elavult, használja a --allow kezdetű kapcsolók egyikét."
 
 #: apt-private/private-download.cc
 msgid ""
@@ -1988,7 +2055,7 @@ msgstr ""
 msgid "Abort."
 msgstr "Megszakítva."
 
-#: apt-private/private-install.cc
+#: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Folytatni akarja?"
 
@@ -2314,11 +2381,6 @@ msgstr "Legalább egy keresési mintát meg kell adnia"
 msgid "Full Text Search"
 msgstr "Keresés a teljes szövegben"
 
-#: apt-private/private-show.cc cmdline/apt-cache.cc
-#, c-format
-msgid "Package file %s is out of sync."
-msgstr "%s csomagfájl nincs szinkronban."
-
 #: apt-private/private-show.cc
 #, c-format
 msgid "There is %i additional record. Please use the '-a' switch to see it"
@@ -2484,12 +2546,6 @@ msgid "%s has no build depends.\n"
 msgstr "Nincs fordítási függősége a következőnek: %s.\n"
 
 #: apt-private/private-source.cc
-msgid "Must specify at least one package to check builddeps for"
-msgstr ""
-"Legalább egy csomagot adjon meg, amelynek fordítási függőségeit ellenőrizni "
-"kell"
-
-#: apt-private/private-source.cc
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
@@ -2497,6 +2553,12 @@ msgid ""
 msgstr ""
 "Nem érhetők el architektúrainformációk ehhez: %s. A beállításokkal "
 "kapcsolatban lásd az apt.conf(5) APT::Architectures részét."
+
+#: apt-private/private-source.cc
+msgid "Must specify at least one package to check builddeps for"
+msgstr ""
+"Legalább egy csomagot adjon meg, amelynek fordítási függőségeit ellenőrizni "
+"kell"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2520,8 +2582,8 @@ msgstr "%s feldolgozása sikertelen. Újra szerkeszti? "
 
 #: apt-private/private-sources.cc
 #, c-format
-msgid "Your '%s' file changed, please run 'apt-get update'."
-msgstr "A(z) „%s” fájl megváltozott, adja ki az „apt-get update” parancsot."
+msgid "Your '%s' file changed, please run 'apt-get update'.\n"
+msgstr "A(z) „%s” fájl megváltozott, adja ki az „apt-get update” parancsot.\n"
 
 #: apt-private/private-unmet.cc
 #, c-format
@@ -2531,6 +2593,14 @@ msgstr "%s csomag %s verziójának teljesítetlen függősége van:\n"
 #: apt-private/private-update.cc
 msgid "The update command takes no arguments"
 msgstr "Az update parancsnak nincsenek argumentumai"
+
+#. TRANSLATOR: the first two are manpage references, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid ""
+"Usage of %s should be preferred over embedding login information directly in "
+"the %s entry for '%s'"
+msgstr ""
 
 #: apt-private/private-update.cc
 #, c-format
@@ -2548,9 +2618,10 @@ msgstr[1] ""
 msgid "All packages are up to date."
 msgstr "Minden csomag naprakész."
 
-#: cmdline/apt-cache.cc
-msgid "apt-cache stats does not take any arguments"
-msgstr "Az apt-cache stats parancsnak nincsenek argumentumai"
+#: cmdline/apt-cache.cc cmdline/apt-mark.cc
+#, c-format
+msgid "%s does not take any arguments"
+msgstr "Az %s parancsnak nincsenek argumentumai"
 
 #: cmdline/apt-cache.cc
 msgid "Total package names: "
@@ -2824,6 +2895,12 @@ msgid "Install new packages (pkg is libc6 not libc6.deb)"
 msgstr "Új csomagok telepítése (csomag a libc6 és nem a libc6.deb)"
 
 #: cmdline/apt-get.cc
+#, fuzzy
+#| msgid "Install new packages (pkg is libc6 not libc6.deb)"
+msgid "Reinstall packages (pkg is libc6 not libc6.deb)"
+msgstr "Új csomagok telepítése (csomag a libc6 és nem a libc6.deb)"
+
+#: cmdline/apt-get.cc
 msgid "Remove packages"
 msgstr "Csomagok eltávolítása"
 
@@ -2921,6 +2998,14 @@ msgstr "fájlok összefűzése, automatikus kibontással"
 msgid "detect proxy using apt.conf"
 msgstr "proxyfelismerés az apt-conf használatával"
 
+#: cmdline/apt-helper.cc
+msgid "wait for system to be online"
+msgstr ""
+
+#: cmdline/apt-helper.cc
+msgid "drop privileges before running given command"
+msgstr ""
+
 #: cmdline/apt-internal-planner.cc
 #, fuzzy
 msgid ""
@@ -2962,6 +3047,16 @@ msgstr "%s már be van állítva kézi telepítésűre.\n"
 #, c-format
 msgid "%s was already set to automatically installed.\n"
 msgstr "%s már meg van jelölve automatikusan telepítettként.\n"
+
+#: cmdline/apt-mark.cc
+msgid "No changes necessary"
+msgstr ""
+
+#: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "The following NEW packages will be installed:"
+msgid "The following packages will be marked as automatically installed:"
+msgstr "Az alábbi ÚJ csomagok lesznek telepítve:"
 
 #: cmdline/apt-mark.cc
 #, c-format
@@ -3027,6 +3122,12 @@ msgid "Mark the given packages as manually installed"
 msgstr "Az adott csomagok megjelölése kézzel telepítettként"
 
 #: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "Mark the given packages as automatically installed"
+msgid "Mark all dependencies of meta packages as automatically installed."
+msgstr "Az adott csomagok megjelölése automatikusan telepítettként"
+
+#: cmdline/apt-mark.cc
 msgid "Mark a package as held back"
 msgstr "Csomag megjelölése visszatartottként"
 
@@ -3043,7 +3144,7 @@ msgid "Print the list of manually installed packages"
 msgstr "Kézileg telepített csomagok listájának kiírása"
 
 #: cmdline/apt-mark.cc
-msgid "Print the list of package on hold"
+msgid "Print the list of packages on hold"
 msgstr "Visszatartott csomagok listájának megjelölése"
 
 #: cmdline/apt-sortpkgs.cc
@@ -3099,6 +3200,12 @@ msgstr "csomagrészletek megjelenítése"
 #. package stuff
 #: cmdline/apt.cc
 msgid "install packages"
+msgstr "csomagok telepítése"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "install packages"
+msgid "reinstall packages"
 msgstr "csomagok telepítése"
 
 #: cmdline/apt.cc
@@ -3489,6 +3596,11 @@ msgstr "Rossz fejlécadatok"
 msgid "Connection failed"
 msgstr "Sikertelen kapcsolódás"
 
+#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#, c-format
+msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
+msgstr ""
+
 #: methods/basehttp.cc
 #, c-format
 msgid ""
@@ -3539,15 +3651,21 @@ msgstr "A fájl nem található"
 msgid "Direct connection to %s domains is blocked by default."
 msgstr ""
 
-#: methods/connect.cc methods/http.cc
-#, c-format
-msgid "Connecting to %s (%s)"
-msgstr "Csatlakozás: %s (%s)"
-
 #: methods/connect.cc
 #, c-format
 msgid "[IP: %s %s]"
 msgstr "[IP: %s %s]"
+
+#: methods/connect.cc
+#, fuzzy, c-format
+#| msgid "Connecting to %s (%s)"
+msgid "Connected to %s (%s)"
+msgstr "Csatlakozás: %s (%s)"
+
+#: methods/connect.cc methods/http.cc
+#, c-format
+msgid "Connecting to %s (%s)"
+msgstr "Csatlakozás: %s (%s)"
 
 #: methods/connect.cc
 #, c-format
@@ -3559,11 +3677,6 @@ msgstr "Foglalat létrehozása sikertelen ehhez: %s (f=%u t=%u p=%u)"
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "Kapcsolat létrehozása sikertelen ehhez: %s: %s (%s)."
 
-#: methods/connect.cc
-#, c-format
-msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr "Időtúllépés miatt nem lehet kapcsolódni a következőhöz: %s: %s (%s)"
-
 #: methods/connect.cc methods/ftp.cc methods/rsh.cc
 msgid "Failed"
 msgstr "Sikertelen"
@@ -3572,6 +3685,11 @@ msgstr "Sikertelen"
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
 msgstr "Nem lehet kapcsolódni ehhez: %s: %s (%s)."
+
+#: methods/connect.cc
+#, c-format
+msgid "Could not connect to %s:%s (%s), connection timed out"
+msgstr "Időtúllépés miatt nem lehet kapcsolódni a következőhöz: %s: %s (%s)"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -3829,30 +3947,6 @@ msgstr "Időtúllépés a kapcsolatban"
 msgid "Error writing to output file"
 msgstr "Hiba a kimeneti fájl írásakor"
 
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "No mirror file '%s' found "
-msgstr "Nem található a(z) „%s” tükörfájl "
-
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "Can not read mirror file '%s'"
-msgstr "A(z) „%s” tükörfájl nem olvasható"
-
-#: methods/mirror.cc
-#, c-format
-msgid "No entry found in mirror file '%s'"
-msgstr "Nem található bejegyzés a(z) „%s” tükörfájlban"
-
-#: methods/mirror.cc
-#, c-format
-msgid "[Mirror: %s]"
-msgstr "[Tükör: %s]"
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "A módosítási idő beállítása sikertelen"
@@ -3864,6 +3958,42 @@ msgstr "A kapcsolat idő előtt lezárult"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "Az üres fájlok biztosan nem érvényes csomagok"
+
+#~ msgid "Removed %s"
+#~ msgstr "%s eltávolítva"
+
+#~ msgid "Package file %s is out of sync."
+#~ msgstr "%s csomagfájl nincs szinkronban."
+
+#~ msgid ""
+#~ "The package index files are corrupted. No Filename: field for package %s."
+#~ msgstr ""
+#~ "A csomagindexfájlok megsérültek. Nincs Filename: mező a(z) %s csomaghoz."
+
+#~ msgid "No mirror file '%s' found "
+#~ msgstr "Nem található a(z) „%s” tükörfájl "
+
+#~ msgid "Can not read mirror file '%s'"
+#~ msgstr "A(z) „%s” tükörfájl nem olvasható"
+
+#~ msgid "No entry found in mirror file '%s'"
+#~ msgstr "Nem található bejegyzés a(z) „%s” tükörfájlban"
+
+#~ msgid "[Mirror: %s]"
+#~ msgstr "[Tükör: %s]"
+
+#~ msgid "Opening configuration file %s"
+#~ msgstr "%s konfigurációs fájl megnyitása"
+
+#~ msgid "Opening %s"
+#~ msgstr "%s megnyitása"
+
+#~ msgid ""
+#~ "Unable to find expected entry '%s' in Release file (Wrong sources.list "
+#~ "entry or malformed file)"
+#~ msgstr ""
+#~ "A várt „%s” bejegyzés nem található a Release fájlban (Rossz sources.list "
+#~ "bejegyzés vagy helytelenül formázott fájl)"
 
 #~ msgid "Unmet dependencies. Try using --fix-broken."
 #~ msgstr "Teljesítetlen függőségek. Próbálja a --fix-broken használatával."

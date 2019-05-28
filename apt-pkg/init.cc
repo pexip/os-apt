@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: init.cc,v 1.20 2003/02/09 20:31:05 doogie Exp $
 /* ######################################################################
 
    Init - Initialize the package library
@@ -8,23 +7,23 @@
    ##################################################################### */
 									/*}}}*/
 // Include files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
-#include <apt-pkg/init.h>
-#include <apt-pkg/fileutl.h>
-#include <apt-pkg/error.h>
-#include <apt-pkg/pkgsystem.h>
 #include <apt-pkg/configuration.h>
-#include <apt-pkg/strutl.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/init.h>
 #include <apt-pkg/macros.h>
+#include <apt-pkg/pkgsystem.h>
+#include <apt-pkg/strutl.h>
 
-#include <string.h>
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <string.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -123,7 +122,7 @@ static bool pkgInitArchTupleMap()
 // ---------------------------------------------------------------------
 /* Directories are specified in such a way that the FindDir function will
    understand them. That is, if they don't start with a / then their parent
-   is prepended, this allows a fair degree of flexability. */
+   is prepended, this allows a fair degree of flexibility. */
 bool pkgInitConfig(Configuration &Cnf)
 {
    // General APT things
@@ -138,7 +137,6 @@ bool pkgInitConfig(Configuration &Cnf)
    Cnf.CndSet("Dir::State", STATE_DIR + 1);
    Cnf.CndSet("Dir::State::lists","lists/");
    Cnf.CndSet("Dir::State::cdroms","cdroms.list");
-   Cnf.CndSet("Dir::State::mirrors","mirrors/");
 
    // Cache
    Cnf.CndSet("Dir::Cache", CACHE_DIR + 1);
@@ -152,6 +150,7 @@ bool pkgInitConfig(Configuration &Cnf)
    Cnf.CndSet("Dir::Etc::sourceparts","sources.list.d");
    Cnf.CndSet("Dir::Etc::main","apt.conf");
    Cnf.CndSet("Dir::Etc::netrc", "auth.conf");
+   Cnf.CndSet("Dir::Etc::netrcparts", "auth.conf.d");
    Cnf.CndSet("Dir::Etc::parts","apt.conf.d");
    Cnf.CndSet("Dir::Etc::preferences","preferences");
    Cnf.CndSet("Dir::Etc::preferencesparts","preferences.d");
@@ -206,20 +205,20 @@ bool pkgInitConfig(Configuration &Cnf)
    Cnf.CndSet("Acquire::IndexTargets::deb-src::Sources::flatDescription", "$(RELEASE) Sources");
    Cnf.CndSet("Acquire::IndexTargets::deb-src::Sources::Optional", false);
 
-   Cnf.CndSet("Acquire::Changelogs::URI::Origin::Debian", "http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog");
-   Cnf.CndSet("Acquire::Changelogs::URI::Origin::Tanglu", "http://metadata.tanglu.org/changelogs/@CHANGEPATH@_changelog");
-   Cnf.CndSet("Acquire::Changelogs::URI::Origin::Ubuntu", "http://changelogs.ubuntu.com/changelogs/pool/@CHANGEPATH@/changelog");
-   Cnf.CndSet("Acquire::Changelogs::URI::Origin::Ultimedia", "http://packages.ultimediaos.com/changelogs/pool/@CHANGEPATH@/changelog.txt");
+   Cnf.CndSet("Acquire::Changelogs::URI::Origin::Debian", "https://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog");
+   Cnf.CndSet("Acquire::Changelogs::URI::Origin::Ubuntu", "https://changelogs.ubuntu.com/changelogs/pool/@CHANGEPATH@/changelog");
    Cnf.CndSet("Acquire::Changelogs::AlwaysOnline::Origin::Ubuntu", true);
 
-   bool Res = true;
+
+   Cnf.CndSet("DPkg::Path", "/usr/sbin:/usr/bin:/sbin:/bin");
 
    // Read an alternate config file
+   _error->PushToStack();
    const char *Cfg = getenv("APT_CONFIG");
    if (Cfg != 0 && strlen(Cfg) != 0)
    {
       if (RealFileExists(Cfg) == true)
-	 Res &= ReadConfigFile(Cnf,Cfg);
+	 ReadConfigFile(Cnf, Cfg);
       else
 	 _error->WarningE("RealFileExists",_("Unable to read %s"),Cfg);
    }
@@ -227,33 +226,32 @@ bool pkgInitConfig(Configuration &Cnf)
    // Read the configuration parts dir
    std::string const Parts = Cnf.FindDir("Dir::Etc::parts", "/dev/null");
    if (DirectoryExists(Parts) == true)
-      Res &= ReadConfigDir(Cnf,Parts);
+      ReadConfigDir(Cnf, Parts);
    else if (APT::String::Endswith(Parts, "/dev/null") == false)
       _error->WarningE("DirectoryExists",_("Unable to read %s"),Parts.c_str());
 
    // Read the main config file
    std::string const FName = Cnf.FindFile("Dir::Etc::main", "/dev/null");
    if (RealFileExists(FName) == true)
-      Res &= ReadConfigFile(Cnf,FName);
-
-   if (Res == false)
-      return false;
+      ReadConfigFile(Cnf, FName);
 
    if (Cnf.FindB("Debug::pkgInitConfig",false) == true)
       Cnf.Dump();
-   
+
 #ifdef APT_DOMAIN
    if (Cnf.Exists("Dir::Locale"))
-   {  
+   {
       bindtextdomain(APT_DOMAIN,Cnf.FindDir("Dir::Locale").c_str());
       bindtextdomain(textdomain(0),Cnf.FindDir("Dir::Locale").c_str());
    }
 #endif
 
-   return true;
+   auto const good = _error->PendingError() == false;
+   _error->MergeWithStack();
+   return good;
 }
 									/*}}}*/
-// pkgInitSystem - Initialize the _system calss				/*{{{*/
+// pkgInitSystem - Initialize the _system class				/*{{{*/
 // ---------------------------------------------------------------------
 /* */
 bool pkgInitSystem(Configuration &Cnf,pkgSystem *&Sys)

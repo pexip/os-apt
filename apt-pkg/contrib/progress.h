@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: progress.h,v 1.6 2001/05/07 05:06:52 jgg Exp $
 /* ######################################################################
    
    OpProgress - Operation Progress
@@ -21,10 +20,9 @@
 #ifndef PKGLIB_PROGRESS_H
 #define PKGLIB_PROGRESS_H
 
-
+#include <apt-pkg/macros.h>
 #include <string>
 #include <sys/time.h>
-#include <apt-pkg/macros.h>
 
 #ifndef APT_8_CLEANER_HEADERS
 using std::string;

@@ -17,47 +17,26 @@
 
 #include <apt-pkg/error.h>
 
+#include <algorithm>
+#include <cstring>
+#include <iostream>
+#include <list>
+#include <string>
+#include <errno.h>
 #include <stdarg.h>
 #include <stddef.h>
-#include <list>
-#include <iostream>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string>
-#include <cstring>
-#include <algorithm>
 
 									/*}}}*/
 
 // Global Error Object							/*{{{*/
-/* If the implementation supports posix threads then the accessor function
-   is compiled to be thread safe otherwise a non-safe version is used. A
-   Per-Thread error object is maintained in much the same manner as libc
-   manages errno */
-#if defined(_POSIX_THREADS) && defined(HAVE_PTHREAD)
-	#include <pthread.h>
-
-	static pthread_key_t ErrorKey;
-	static void ErrorDestroy(void *Obj) {delete (GlobalError *)Obj;};
-	static void KeyAlloc() {pthread_key_create(&ErrorKey,ErrorDestroy);};
-
-	GlobalError *_GetErrorObj() {
-		static pthread_once_t Once = PTHREAD_ONCE_INIT;
-		pthread_once(&Once,KeyAlloc);
-
-		void *Res = pthread_getspecific(ErrorKey);
-		if (Res == 0)
-			pthread_setspecific(ErrorKey,Res = new GlobalError);
-		return (GlobalError *)Res;
-	}
-#else
-	GlobalError *_GetErrorObj() {
-		static GlobalError *Obj = new GlobalError;
-		return Obj;
-	}
-#endif
+GlobalError *_GetErrorObj()
+{
+   static thread_local GlobalError Obj;
+   return &Obj;
+}
 									/*}}}*/
 // GlobalError::GlobalError - Constructor				/*{{{*/
 GlobalError::GlobalError() : PendingFlag(false) {}

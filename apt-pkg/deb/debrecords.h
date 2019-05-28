@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: debrecords.h,v 1.8 2001/03/13 06:51:46 jgg Exp $
 /* ######################################################################
    
    Debian Package Records - Parser for debian package records
@@ -14,10 +13,10 @@
 #ifndef PKGLIB_DEBRECORDS_H
 #define PKGLIB_DEBRECORDS_H
 
-#include <apt-pkg/pkgrecords.h>
-#include <apt-pkg/tagfile.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/pkgcache.h>
+#include <apt-pkg/pkgrecords.h>
+#include <apt-pkg/tagfile.h>
 
 #include <string>
 

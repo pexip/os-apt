@@ -2,19 +2,19 @@
 
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/fileutl.h>
-#include <apt-pkg/strutl.h>
 #include <apt-pkg/install-progress.h>
+#include <apt-pkg/strutl.h>
 
-#include <signal.h>
-#include <unistd.h>
-#include <iostream>
-#include <vector>
-#include <sys/ioctl.h>
-#include <fcntl.h>
 #include <algorithm>
-#include <stdio.h>
-#include <sstream>
 #include <cmath>
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <fcntl.h>
+#include <signal.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 #include <apti18n.h>
 
@@ -55,8 +55,8 @@ bool PackageManager::StatusChanged(std::string /*PackageName*/,
                                    std::string /*HumanReadableAction*/)
 {
    int reporting_steps = _config->FindI("DpkgPM::Reporting-Steps", 1);
-   percentage = StepsDone/(float)TotalSteps * 100.0;
-   strprintf(progress_str, _("Progress: [%3i%%]"), (int)percentage);
+   percentage = StepsDone/(double)TotalSteps * 100.0;
+   strprintf(progress_str, _("Progress: [%3li%%]"), std::lround(percentage));
 
    if(percentage < (last_reported_progress + reporting_steps))
       return false;
@@ -103,7 +103,7 @@ void PackageManagerProgressFd::StartDpkg()
    WriteToStatusFd(GetProgressFdString("pmstatus", "dpkg-exec", StepsDone, StepsTotal, _("Running dpkg")));
 }
 
-APT_CONST void PackageManagerProgressFd::Stop()
+void PackageManagerProgressFd::Stop()
 {
 }
 
@@ -184,7 +184,7 @@ void PackageManagerProgressDeb822Fd::StartDpkg()
    WriteToStatusFd(GetProgressDeb822String("progress", nullptr, StepsDone, StepsTotal, _("Running dpkg")));
 }
 
-APT_CONST void PackageManagerProgressDeb822Fd::Stop()
+void PackageManagerProgressDeb822Fd::Stop()
 {
 }
 
@@ -382,8 +382,8 @@ bool PackageManagerFancy::DrawStatusLine()
    if (_config->FindB("Dpkg::Progress-Fancy::Progress-Bar", true))
    {
       int padding = 4;
-      float progressbar_size = size.columns - padding - progress_str.size();
-      float current_percent = percentage / 100.0;
+      auto const progressbar_size = size.columns - padding - progress_str.size();
+      auto const current_percent = percentage / 100.0f;
       std::cout << " " 
                 << GetTextProgressStr(current_percent, progressbar_size)
                 << " ";

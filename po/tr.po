@@ -1,15 +1,15 @@
 # Turkish translation for apt
 # Copyright (c) 2009 Rosetta Contributors and Canonical Ltd 2009
 # Copyright (c) 2013 Debian L10n Turkish 2013
-# Mert Dirik <mertdirik@gmail.com>, 2013-2014.
+# Mert Dirik <mertdirik@gmail.com>, 2013-2018.
 # This file is distributed under the same license as the apt package.
 # Rosetta Contributors, 2009.
 msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2017-09-13 17:18+0000\n"
-"PO-Revision-Date: 2016-09-24 03:24+0300\n"
+"POT-Creation-Date: 2019-02-04 15:34+0100\n"
+"PO-Revision-Date: 2018-01-03 16:32+0300\n"
 "Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
 "Language-Team: Debian l10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
 "Language: tr\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n!=1;\n"
-"X-Generator: Poedit 1.8.7.1\n"
+"X-Generator: Poedit 1.8.11\n"
 "X-Launchpad-Export-Date: 2013-02-04 12:16+0000\n"
 "X-Poedit-SearchPath-0: .\n"
 
@@ -150,7 +150,7 @@ msgstr "%s/%s dosyası %s paketindeki aynı adlı dosyanın üzerine yazmak isti
 #. Only warn if there is no sources.list file.
 #: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
 #: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc methods/mirror.cc
+#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
 #, c-format
 msgid "Unable to read %s"
 msgstr "%s okunamadı"
@@ -222,7 +222,7 @@ msgstr "'%s' deposu imzalanmamış"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
-msgid "The repository '%s' does no longer have a Release file."
+msgid "The repository '%s' no longer has a Release file."
 msgstr "'%s' deposu artık Release dosyası barındırmıyor."
 
 #: apt-pkg/acquire-item.cc
@@ -309,6 +309,16 @@ msgstr "GPG hatası: %s: %s"
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
+"Skipping acquire of configured file '%s' as repository '%s' doesn't have the "
+"component '%s' (component misspelt in sources.list?)"
+msgstr ""
+"'%2$s' deposunda '%3$s' adlı bir bileşen mevcut olmadığı için '%1$s' dosyası "
+"alınmıyor (sources.list dosyasındaki bileşen adı yanlış yazılmış olabilir "
+"mi?)"
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
 "Skipping acquire of configured file '%s' as repository '%s' doesn't support "
 "architecture '%s'"
 msgstr ""
@@ -318,11 +328,11 @@ msgstr ""
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
-"Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
-"or malformed file)"
+"Skipping acquire of configured file '%s' as repository '%s' does not seem to "
+"provide it (sources.list entry misspelt?)"
 msgstr ""
-"'Release' dosyasında olması beklenilen '%s' girdisi bulunamadı (sources.list "
-"dosyasındaki girdi ya da satır hatalı)"
+"'%2$s' deposunda mevcut olmadığı için yapılandırılmış '%1$s' dosyası "
+"alınmıyor (sources.list girdisi yanlış yazılmış olabilir mi?)"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -345,10 +355,61 @@ msgstr ""
 "%s konumundaki 'Release' dosyasının vâdesi dolmuş (%s önce). Bu deponun "
 "güncelleştirmeleri uygulanmayacak."
 
+#. TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+#. the time until the file will be valid - formatted in the same way as in
+#. the download progress display (e.g. 7d 3h 42min 1s)
+#: apt-pkg/acquire-item.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Release file for %s is expired (invalid since %s). Updates for this "
+#| "repository will not be applied."
+msgid ""
+"Release file for %s is not valid yet (invalid for another %s). Updates for "
+"this repository will not be applied."
+msgstr ""
+"%s konumundaki 'Release' dosyasının vâdesi dolmuş (%s önce). Bu deponun "
+"güncelleştirmeleri uygulanmayacak."
+
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Dağıtım çakışması: %s (beklenen %s ama eldeki %s)"
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
+msgstr "'%s' deposu '%s' değerini '%s' yerine '%s' olarak değiştirmiş"
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
+msgstr ""
+"'%s' deposu %s için öntanımlı önceliğini %hi değerinden %hi değerine "
+"değiştirdi."
+
+#. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"More information about this can be found online in the Release notes at: %s"
+msgstr ""
+"Bu durumla ilgili daha fazla bilgi şu adresten ulaşılabilen Sürüm notlarında "
+"bulunabilir: %s"
+
+#. TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"This must be accepted explicitly before updates for this repository can be "
+"applied. See %s manpage for details."
+msgstr ""
+"Bu depodaki güncellemelerin uygulanabilmesi için bu duruma onay "
+"verilmelidir. Ayrıntılar için %s rehber sayfasına bakın."
+
+#: apt-pkg/acquire-item.cc apt-pkg/update.cc apt-private/private-download.cc
+#, c-format
+msgid "Failed to fetch %s  %s"
+msgstr "%s alınamadı %s"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -364,17 +425,18 @@ msgstr ""
 msgid "Can't find a source to download version '%s' of '%s'"
 msgstr "'%2$s' paketinin '%1$s' sürümü hiçbir kaynakta bulunamadı"
 
-#: apt-pkg/acquire-item.cc
-#, c-format
-msgid ""
-"The package index files are corrupted. No Filename: field for package %s."
-msgstr "Paket indeks dosyaları bozuk. %s paketinin 'Filename:' alanı yok."
-
 #. TRANSLATOR: %s=%s is sourcename=sourceversion, e.g. apt=1.1
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "%s=%s için değişim günlüğü mevcut değil"
+
+#: apt-pkg/acquire-worker.cc
+#, c-format
+msgid ""
+"The method '%s' is unsupported and disabled by default. Consider switching "
+"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
+msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -411,13 +473,13 @@ msgstr ""
 
 #: apt-pkg/acquire.cc apt-pkg/cdrom.cc
 #, c-format
-msgid "List directory %spartial is missing."
-msgstr "Liste dizini %spartial bulunamadı."
+msgid "List directory %s is missing."
+msgstr "Liste dizini %s bulunamadı."
 
 #: apt-pkg/acquire.cc
 #, c-format
-msgid "Archives directory %spartial is missing."
-msgstr "Arşiv dizini %spartial bulunamadı."
+msgid "Archives directory %s is missing."
+msgstr "Arşiv dizini %s bulunamadı."
 
 #: apt-pkg/acquire.cc
 #, c-format
@@ -431,30 +493,19 @@ msgstr ""
 "'%s' kullanıcısı sistemde mevcut olmadığı için ayrıcalıklar bırakılamıyor"
 
 #: apt-pkg/acquire.cc
-#, fuzzy, c-format
-#| msgid ""
-#| "Can't drop privileges for downloading as file '%s' couldn't be accessed "
-#| "by user '%s'."
+#, c-format
 msgid ""
 "Download is performed unsandboxed as root as file '%s' couldn't be accessed "
 "by user '%s'."
 msgstr ""
-"'%2$s' kullanıcısının '%1$s' dosyasına erişimi olmadığı için dosya "
-"indirilirken ayrıcalıklar bırakılamıyor."
+"'%2$s' kullanıcısının '%1$s' dosyasına erişimi olmadığı için indirme işlemi "
+"root kullanıcısı olarak yapılıyor."
 
 #: apt-pkg/acquire.cc apt-pkg/clean.cc
 #, c-format
 msgid "Clean of %s is not supported"
 msgstr "%s temizliği desteklenmiyor"
 
-#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
-#: methods/mirror.cc
-#, c-format
-msgid "Unable to change to %s"
-msgstr "%s olarak değiştirilemedi"
-
-#. only show the ETA if it makes sense
-#. two days
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -493,7 +544,7 @@ msgstr "Paket listeleri ya da durum dosyası ayrıştırılamadı ya da açılam
 msgid "You may want to run apt-get update to correct these problems"
 msgstr "Bu sorunları gidermek için apt-get update komutunu çalıştırabilirsiniz"
 
-#: apt-pkg/cachefile.cc
+#: apt-pkg/cachefile.cc methods/mirror.cc
 msgid "The list of sources could not be read."
 msgstr "Kaynak listesi okunamadı."
 
@@ -645,6 +696,11 @@ msgstr "Bu disk için olan kaynak listesi girdileri:\n"
 
 #: apt-pkg/clean.cc
 #, c-format
+msgid "Unable to change to %s"
+msgstr "%s olarak değiştirilemedi"
+
+#: apt-pkg/clean.cc
+#, c-format
 msgid "Unable to stat %s."
 msgstr "%s için dosya bilgisi alınamadı."
 
@@ -715,11 +771,6 @@ msgstr "Geçersiz işlem: %s"
 #, c-format
 msgid "Unrecognized type abbreviation: '%c'"
 msgstr "Tanınamayan tür kısaltması: '%c'"
-
-#: apt-pkg/contrib/configuration.cc
-#, c-format
-msgid "Opening configuration file %s"
-msgstr "Yapılandırma dosyası (%s) açılıyor"
 
 #: apt-pkg/contrib/configuration.cc
 #, c-format
@@ -904,12 +955,12 @@ msgstr "%s dosyası %s olarak yeniden adlandırılamadı"
 msgid "Problem syncing the file"
 msgstr "Dosya eşitlenirken sorun çıktı"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to mkstemp %s"
 msgstr "mkstemp %s başarısız oldu"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to write to %s"
 msgstr "%s dosyasına yazılamıyor"
@@ -1085,6 +1136,32 @@ msgid "Unable to parse package file %s (%d)"
 msgstr "Paket dosyası (%s) ayrıştırılamadı (%d)"
 
 #: apt-pkg/deb/debsystem.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Unable to lock the administration directory (%s), is another process "
+#| "using it?"
+msgid ""
+"Unable to acquire the dpkg frontend lock (%s), is another process using it?"
+msgstr ""
+"Yönetim dizini (%s) kilitlenemiyor, başka bir işlem tarafından kullanılıyor "
+"olmasın?"
+
+#: apt-pkg/deb/debsystem.cc
+#, fuzzy, c-format
+#| msgid "Unable to lock the administration directory (%s), are you root?"
+msgid "Unable to acquire the dpkg frontend lock (%s), are you root?"
+msgstr "Yönetim dizini (%s) kilitlenemiyor, root kullanıcısı mısınız?"
+
+#. TRANSLATORS: the %s contains the recovery command, usually
+#. dpkg --configure -a
+#: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid ""
+"dpkg was interrupted, you must manually run '%s' to correct the problem. "
+msgstr ""
+"dpkg kesintiye uğradı, sorunu düzeltmek için elle '%s' komutunu çalıştırın. "
+
+#: apt-pkg/deb/debsystem.cc
 #, c-format
 msgid ""
 "Unable to lock the administration directory (%s), is another process using "
@@ -1098,15 +1175,6 @@ msgstr ""
 msgid "Unable to lock the administration directory (%s), are you root?"
 msgstr "Yönetim dizini (%s) kilitlenemiyor, root kullanıcısı mısınız?"
 
-#. TRANSLATORS: the %s contains the recovery command, usually
-#. dpkg --configure -a
-#: apt-pkg/deb/debsystem.cc
-#, c-format
-msgid ""
-"dpkg was interrupted, you must manually run '%s' to correct the problem. "
-msgstr ""
-"dpkg kesintiye uğradı, sorunu düzeltmek için elle '%s' komutunu çalıştırın. "
-
 #: apt-pkg/deb/debsystem.cc
 msgid "Not locked"
 msgstr "Kilitlenmemiş"
@@ -1114,23 +1182,23 @@ msgstr "Kilitlenmemiş"
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Installing %s"
-msgstr "%s kuruluyor"
+msgid "Preparing %s"
+msgstr "%s hazırlanıyor"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Configuring %s"
-msgstr "%s yapılandırılıyor"
+msgid "Preparing to configure %s"
+msgstr "%s paketini yapılandırmaya hazırlanılıyor"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removing %s"
-msgstr "%s kaldırılıyor"
+msgid "Preparing for removal of %s"
+msgstr "%s paketinin kaldırılmasına hazırlanılıyor"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Completely removing %s"
-msgstr "%s tamamen kaldırılıyor"
+msgid "Preparing to completely remove %s"
+msgstr "%s paketinin tamamen kaldırılmasına hazırlanılıyor"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1147,6 +1215,11 @@ msgstr "Kurulum sonrası tetikleyicisi %s çalıştırılıyor"
 msgid "Installed %s"
 msgstr "%s kuruldu"
 
+#: apt-pkg/deb/dpkgpm.cc
+#, c-format
+msgid "Configuring %s"
+msgstr "%s yapılandırılıyor"
+
 #. FIXME: use a better string after freeze
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1160,33 +1233,23 @@ msgstr "'%s' dosyası açılamadı"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing %s"
-msgstr "%s hazırlanıyor"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
 msgid "Unpacking %s"
 msgstr "%s paketi açılıyor"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing to configure %s"
-msgstr "%s paketini yapılandırmaya hazırlanılıyor"
+msgid "Installing %s"
+msgstr "%s kuruluyor"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing for removal of %s"
-msgstr "%s paketinin kaldırılmasına hazırlanılıyor"
+msgid "Removing %s"
+msgstr "%s kaldırılıyor"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removed %s"
-msgstr "%s kaldırıldı"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing to completely remove %s"
-msgstr "%s paketinin tamamen kaldırılmasına hazırlanılıyor"
+msgid "Completely removing %s"
+msgstr "%s tamamen kaldırılıyor"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1357,8 +1420,8 @@ msgstr "Uygun bir paketleme sistemi türü bulunamıyor"
 
 #: apt-pkg/install-progress.cc
 #, c-format
-msgid "Progress: [%3i%%]"
-msgstr "Durum: [%3i%%]"
+msgid "Progress: [%3li%%]"
+msgstr "Durum: [%3li%%]"
 
 #. send status information that we are about to fork dpkg
 #: apt-pkg/install-progress.cc
@@ -1535,6 +1598,12 @@ msgstr "İğne türü %s anlaşılamadı"
 
 #: apt-pkg/policy.cc
 #, c-format
+msgid ""
+"%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"
+msgstr ""
+
+#: apt-pkg/policy.cc
+#, c-format
 msgid "%s: Value %s is outside the range of valid pin priorities (%d to %d)"
 msgstr "%s: %s değeri geçerli iğne önceliği aralığının dışında (%d - %d arası)"
 
@@ -1547,11 +1616,6 @@ msgstr "İğne için öncelik belirlenmedi (ya da sıfır)"
 #, c-format
 msgid "Malformed entry %u in %s file %s (%s)"
 msgstr "Hatalı girdi satır %u %s dosya %s (%s)"
-
-#: apt-pkg/sourcelist.cc
-#, c-format
-msgid "Opening %s"
-msgstr "%s Açılıyor"
 
 #: apt-pkg/sourcelist.cc
 #, c-format
@@ -1573,7 +1637,7 @@ msgstr "%2$s kaynak listesinin %1$u kısmı hatalı (tür)"
 msgid "Type '%s' is not known on stanza %u in source list %s"
 msgstr "'%s' türü bilinmiyor (girdi: %u, kaynak listesi: %s)"
 
-#: apt-pkg/sourcelist.cc
+#: apt-pkg/sourcelist.cc apt-private/private-install.cc
 #, c-format
 msgid "Unsupported file %s given on commandline"
 msgstr "Komut satırında desteklenmeyen bir dosya (%s) verildi"
@@ -1586,11 +1650,6 @@ msgstr "'sources.list' dosyası içine bazı 'source' adresleri koymalısınız"
 #, c-format
 msgid "Cannot convert %s to integer: out of range"
 msgstr "%s metni tam sayıya dönüştürülemiyor: aralığın dışında"
-
-#: apt-pkg/update.cc apt-private/private-download.cc
-#, c-format
-msgid "Failed to fetch %s  %s"
-msgstr "%s alınamadı %s"
 
 #: apt-pkg/update.cc
 msgid ""
@@ -1650,6 +1709,14 @@ msgstr ""
 "Ortam değişimi: Lütfen '%2$s' sürücüsüne\n"
 " '%1$s'\n"
 "olarak etiketlenmiş diski takın ve [Enter] tuşuna basın\n"
+
+#: apt-private/acqprogress.cc
+msgid ""
+"Do you want to accept these changes and continue updating from this "
+"repository?"
+msgstr ""
+"Bu değişiklikleri onaylamak ve bu depodan güncelleme yapmaya devam etmek "
+"istiyor musunuz?"
 
 #: apt-private/private-cachefile.cc
 msgid "Correcting dependencies..."
@@ -1796,8 +1863,16 @@ msgstr "Bu APT'nin Süper İnek Güçleri vardır."
 msgid "This APT helper has Super Meep Powers."
 msgstr "Bu APT yardımcısının Süper Meep Güçleri var."
 
-#: apt-private/private-depends.cc apt-private/private-show.cc
-#: cmdline/apt-mark.cc
+#: apt-private/private-cmndline.cc
+msgid ""
+"--force-yes is deprecated, use one of the options starting with --allow "
+"instead."
+msgstr ""
+"--force-yes seçeneği kullanımdan kaldırılmıştır, bunun yerine --allow ile "
+"başlayan seçeneklerden birini kullanabilirsiniz."
+
+#: apt-private/private-depends.cc apt-private/private-download.cc
+#: apt-private/private-show.cc cmdline/apt-mark.cc
 msgid "No packages found"
 msgstr "Hiç paket bulunamadı"
 
@@ -1816,14 +1891,6 @@ msgstr "Bazı paketlerin aslına uygunluğu doğrulanamadı"
 #: apt-private/private-download.cc
 msgid "Install these packages without verification?"
 msgstr "Paketler doğrulanmadan kurulsun mu?"
-
-#: apt-private/private-download.cc apt-private/private-install.cc
-msgid ""
-"--force-yes is deprecated, use one of the options starting with --allow "
-"instead."
-msgstr ""
-"--force-yes seçeneği kullanımdan kaldırılmıştır, bunun yerine --allow ile "
-"başlayan seçeneklerden birini kullanabilirsiniz."
 
 #: apt-private/private-download.cc
 msgid ""
@@ -1980,7 +2047,7 @@ msgstr ""
 msgid "Abort."
 msgstr "Vazgeç."
 
-#: apt-private/private-install.cc
+#: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Devam etmek istiyor musunuz?"
 
@@ -2307,11 +2374,6 @@ msgstr "En az bir arama örüntüsü vermelisiniz"
 msgid "Full Text Search"
 msgstr "Tam Metin Arama"
 
-#: apt-private/private-show.cc cmdline/apt-cache.cc
-#, c-format
-msgid "Package file %s is out of sync."
-msgstr "%s paket dosyası eş zamanlı değil."
-
 #: apt-private/private-show.cc
 #, c-format
 msgid "There is %i additional record. Please use the '-a' switch to see it"
@@ -2477,10 +2539,6 @@ msgid "%s has no build depends.\n"
 msgstr "%s paketinin hiç inşa bağımlılığı yok.\n"
 
 #: apt-private/private-source.cc
-msgid "Must specify at least one package to check builddeps for"
-msgstr "İnşa bağımlılıklarının denetleneceği en az bir paket belirtilmelidir"
-
-#: apt-private/private-source.cc
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
@@ -2488,6 +2546,10 @@ msgid ""
 msgstr ""
 "%s mimarisinin bilgileri mevcut değil. Kurulum için apt.conf(5) rehber "
 "sayfasındaki APT::Architectures kısmına göz atın"
+
+#: apt-private/private-source.cc
+msgid "Must specify at least one package to check builddeps for"
+msgstr "İnşa bağımlılıklarının denetleneceği en az bir paket belirtilmelidir"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2510,8 +2572,8 @@ msgstr "%s ayrıştırılamadı. Tekrar düzenlemek ister misiniz? "
 
 #: apt-private/private-sources.cc
 #, c-format
-msgid "Your '%s' file changed, please run 'apt-get update'."
-msgstr "'%s' dosyası değişti, lütfen 'apt-get update' komutunu çalıştırın."
+msgid "Your '%s' file changed, please run 'apt-get update'.\n"
+msgstr "'%s' dosyası değişti, lütfen 'apt-get update' komutunu çalıştırın.\n"
 
 #: apt-private/private-unmet.cc
 #, c-format
@@ -2521,6 +2583,16 @@ msgstr "%s paketinin (sürüm %s) karşılanamayan bir bağımlılığı var:\n"
 #: apt-private/private-update.cc
 msgid "The update command takes no arguments"
 msgstr "'update' komutu argüman almaz"
+
+#. TRANSLATOR: the first two are manpage references, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid ""
+"Usage of %s should be preferred over embedding login information directly in "
+"the %s entry for '%s'"
+msgstr ""
+"Oturum açma ayrıcalıklarını '%3$s' '%2$s' girdisinin içinde doğrudan "
+"belirtmek yerine '%1$s' kullanmayı tercih edin"
 
 #: apt-private/private-update.cc
 #, c-format
@@ -2538,9 +2610,10 @@ msgstr[1] ""
 msgid "All packages are up to date."
 msgstr "Tüm paketler güncel."
 
-#: cmdline/apt-cache.cc
-msgid "apt-cache stats does not take any arguments"
-msgstr "apt-cache stats komutu argüman almaz"
+#: cmdline/apt-cache.cc cmdline/apt-mark.cc
+#, c-format
+msgid "%s does not take any arguments"
+msgstr "%s komutu argüman almaz"
 
 #: cmdline/apt-cache.cc
 msgid "Total package names: "
@@ -2818,6 +2891,12 @@ msgid "Install new packages (pkg is libc6 not libc6.deb)"
 msgstr "Yeni paket kur (paket libc6.deb değil libc6 şeklinde olmalıdır)"
 
 #: cmdline/apt-get.cc
+#, fuzzy
+#| msgid "Install new packages (pkg is libc6 not libc6.deb)"
+msgid "Reinstall packages (pkg is libc6 not libc6.deb)"
+msgstr "Yeni paket kur (paket libc6.deb değil libc6 şeklinde olmalıdır)"
+
+#: cmdline/apt-get.cc
 msgid "Remove packages"
 msgstr "Paket(leri) kaldır"
 
@@ -2915,6 +2994,14 @@ msgstr "dosyaları birleştir, otomatik olarak aç"
 msgid "detect proxy using apt.conf"
 msgstr "apt.conf kullanarak vekil sunucuyu algıla"
 
+#: cmdline/apt-helper.cc
+msgid "wait for system to be online"
+msgstr "sistemin çevrimiçi olmasını bekle"
+
+#: cmdline/apt-helper.cc
+msgid "drop privileges before running given command"
+msgstr ""
+
 #: cmdline/apt-internal-planner.cc
 msgid ""
 "Usage: apt-internal-planner\n"
@@ -2955,6 +3042,16 @@ msgstr "%s zaten elle kurulmuş olarak ayarlı.\n"
 #, c-format
 msgid "%s was already set to automatically installed.\n"
 msgstr "%s zaten otomatik kurulmuş olarak ayarlı.\n"
+
+#: cmdline/apt-mark.cc
+msgid "No changes necessary"
+msgstr ""
+
+#: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "The following NEW packages will be installed:"
+msgid "The following packages will be marked as automatically installed:"
+msgstr "Aşağıdaki YENİ paketler kurulacak:"
 
 #: cmdline/apt-mark.cc
 #, c-format
@@ -3021,6 +3118,12 @@ msgid "Mark the given packages as manually installed"
 msgstr "Belirtilen paketleri elle kurulmuş olarak işaretle"
 
 #: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "Mark the given packages as automatically installed"
+msgid "Mark all dependencies of meta packages as automatically installed."
+msgstr "Belirtilen paketleri otomatik kurulmuş olarak işaretle"
+
+#: cmdline/apt-mark.cc
 msgid "Mark a package as held back"
 msgstr "Paketi tutulacak şekilde işaretle"
 
@@ -3037,7 +3140,7 @@ msgid "Print the list of manually installed packages"
 msgstr "Elle kurulmuş paketlerin listesini görüntüle"
 
 #: cmdline/apt-mark.cc
-msgid "Print the list of package on hold"
+msgid "Print the list of packages on hold"
 msgstr "Tutulur durumda olan paketlerin listesini görüntüle"
 
 #: cmdline/apt-sortpkgs.cc
@@ -3091,6 +3194,12 @@ msgstr "Paket ayrıntılarını görüntüle"
 #. package stuff
 #: cmdline/apt.cc
 msgid "install packages"
+msgstr "paket kur"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "install packages"
+msgid "reinstall packages"
 msgstr "paket kur"
 
 #: cmdline/apt.cc
@@ -3484,6 +3593,13 @@ msgstr "Kötü başlık verisi"
 msgid "Connection failed"
 msgstr "Bağlantı başarısız"
 
+#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#, c-format
+msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
+msgstr ""
+"Dosya boyutu beklenenden farklı (%llu != %llu). Yansı güncelleme işlemi "
+"devam ediyor olabilir."
+
 #: methods/basehttp.cc
 #, c-format
 msgid ""
@@ -3533,15 +3649,20 @@ msgstr "Dosya bulunamadı"
 msgid "Direct connection to %s domains is blocked by default."
 msgstr "%s alan adına doğrudan bağlantılar öntanımlı olarak engellenmiştir."
 
-#: methods/connect.cc methods/http.cc
-#, c-format
-msgid "Connecting to %s (%s)"
-msgstr "Bağlanılıyor %s (%s)"
-
 #: methods/connect.cc
 #, c-format
 msgid "[IP: %s %s]"
 msgstr "[IP: %s %s]"
+
+#: methods/connect.cc
+#, c-format
+msgid "Connected to %s (%s)"
+msgstr "Bağlanıldı %s (%s)"
+
+#: methods/connect.cc methods/http.cc
+#, c-format
+msgid "Connecting to %s (%s)"
+msgstr "Bağlanılıyor %s (%s)"
 
 #: methods/connect.cc
 #, c-format
@@ -3553,11 +3674,6 @@ msgstr "%s için bir soket oluşturulamadı (f=%u t=%u p=%u)"
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "%s:%s bağlantısı başlatılamıyor (%s)."
 
-#: methods/connect.cc
-#, c-format
-msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr "Adrese bağlanılamadı: %s:%s (%s), bağlantı zaman aşımına uğradı"
-
 #: methods/connect.cc methods/ftp.cc methods/rsh.cc
 msgid "Failed"
 msgstr "Başarısız"
@@ -3566,6 +3682,11 @@ msgstr "Başarısız"
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
 msgstr "Adrese bağlanılamadı: %s:%s (%s)."
+
+#: methods/connect.cc
+#, c-format
+msgid "Could not connect to %s:%s (%s), connection timed out"
+msgstr "Adrese bağlanılamadı: %s:%s (%s), bağlantı zaman aşımına uğradı"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -3816,30 +3937,6 @@ msgstr "Bağlantı zaman aşımına uğradı"
 msgid "Error writing to output file"
 msgstr "Çıktı dosyasına yazılırken hata"
 
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "No mirror file '%s' found "
-msgstr "'%s' yansı dosyası bulunamadı "
-
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "Can not read mirror file '%s'"
-msgstr "Yansı dosyası %s okunamıyor"
-
-#: methods/mirror.cc
-#, c-format
-msgid "No entry found in mirror file '%s'"
-msgstr "'%s' yansı dosyasında hiç girdi bulunmuyor"
-
-#: methods/mirror.cc
-#, c-format
-msgid "[Mirror: %s]"
-msgstr "[Yansı: %s]"
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "Değişiklik zamanı ayarlanamadı"
@@ -3851,6 +3948,41 @@ msgstr "Bağlantı vaktinden önce kapandı"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "Boş dosyalar geçerli birer arşiv dosyası olamazlar"
+
+#~ msgid "Removed %s"
+#~ msgstr "%s kaldırıldı"
+
+#~ msgid "Package file %s is out of sync."
+#~ msgstr "%s paket dosyası eş zamanlı değil."
+
+#~ msgid ""
+#~ "The package index files are corrupted. No Filename: field for package %s."
+#~ msgstr "Paket indeks dosyaları bozuk. %s paketinin 'Filename:' alanı yok."
+
+#~ msgid "No mirror file '%s' found "
+#~ msgstr "'%s' yansı dosyası bulunamadı "
+
+#~ msgid "Can not read mirror file '%s'"
+#~ msgstr "Yansı dosyası %s okunamıyor"
+
+#~ msgid "No entry found in mirror file '%s'"
+#~ msgstr "'%s' yansı dosyasında hiç girdi bulunmuyor"
+
+#~ msgid "[Mirror: %s]"
+#~ msgstr "[Yansı: %s]"
+
+#~ msgid "Opening configuration file %s"
+#~ msgstr "Yapılandırma dosyası (%s) açılıyor"
+
+#~ msgid "Opening %s"
+#~ msgstr "%s Açılıyor"
+
+#~ msgid ""
+#~ "Unable to find expected entry '%s' in Release file (Wrong sources.list "
+#~ "entry or malformed file)"
+#~ msgstr ""
+#~ "'Release' dosyasında olması beklenilen '%s' girdisi bulunamadı (sources."
+#~ "list dosyasındaki girdi ya da satır hatalı)"
 
 #~ msgid "Unmet dependencies. Try using --fix-broken."
 #~ msgstr "Karşılanmayan bağımlılıklar. --fix-broken kullanmayı deneyin."

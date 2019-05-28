@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2017-09-13 17:18+0000\n"
+"POT-Creation-Date: 2019-02-04 15:34+0100\n"
 "PO-Revision-Date: 2010-08-30 02:31+0900\n"
 "Last-Translator: Changwoo Ryu <cwryu@debian.org>\n"
 "Language-Team: Korean <debian-l10n-korean@lists.debian.org>\n"
@@ -144,7 +144,7 @@ msgstr "%s/%s 파일은 %s 패키지에 있는 파일을 덮어 씁니다"
 #. Only warn if there is no sources.list file.
 #: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
 #: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc methods/mirror.cc
+#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
 #, c-format
 msgid "Unable to read %s"
 msgstr "%s을(를) 읽을 수 없습니다"
@@ -210,7 +210,7 @@ msgstr "%s 디렉터리가 전환되었습니다"
 
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
-msgid "The repository '%s' does no longer have a Release file."
+msgid "The repository '%s' no longer has a Release file."
 msgstr "%s 디렉터리가 전환되었습니다"
 
 #: apt-pkg/acquire-item.cc
@@ -292,6 +292,13 @@ msgstr "GPG 오류: %s: %s"
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
+"Skipping acquire of configured file '%s' as repository '%s' doesn't have the "
+"component '%s' (component misspelt in sources.list?)"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
 "Skipping acquire of configured file '%s' as repository '%s' doesn't support "
 "architecture '%s'"
 msgstr ""
@@ -299,8 +306,8 @@ msgstr ""
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
-"Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
-"or malformed file)"
+"Skipping acquire of configured file '%s' as repository '%s' does not seem to "
+"provide it (sources.list entry misspelt?)"
 msgstr ""
 
 #: apt-pkg/acquire-item.cc
@@ -320,10 +327,50 @@ msgid ""
 "repository will not be applied."
 msgstr ""
 
+#. TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+#. the time until the file will be valid - formatted in the same way as in
+#. the download progress display (e.g. 7d 3h 42min 1s)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"Release file for %s is not valid yet (invalid for another %s). Updates for "
+"this repository will not be applied."
+msgstr ""
+
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "배포판 충돌: %s (예상값 %s, 실제값 %s)"
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
+msgstr ""
+
+#. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"More information about this can be found online in the Release notes at: %s"
+msgstr ""
+
+#. TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"This must be accepted explicitly before updates for this repository can be "
+"applied. See %s manpage for details."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc apt-pkg/update.cc apt-private/private-download.cc
+#, c-format
+msgid "Failed to fetch %s  %s"
+msgstr "%s 파일을 받는데 실패했습니다  %s"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -339,18 +386,18 @@ msgstr ""
 msgid "Can't find a source to download version '%s' of '%s'"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc
-#, c-format
-msgid ""
-"The package index files are corrupted. No Filename: field for package %s."
-msgstr ""
-"패키지 인덱스 파일이 손상되었습니다. %s 패키지에 Filename: 필드가 없습니다."
-
 #. TRANSLATOR: %s=%s is sourcename=sourceversion, e.g. apt=1.1
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "%s(%s)에 연결하는 중입니다"
+
+#: apt-pkg/acquire-worker.cc
+#, c-format
+msgid ""
+"The method '%s' is unsupported and disabled by default. Consider switching "
+"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
+msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -386,13 +433,13 @@ msgstr ""
 
 #: apt-pkg/acquire.cc apt-pkg/cdrom.cc
 #, c-format
-msgid "List directory %spartial is missing."
-msgstr "목록 디렉터리 %spartial이 빠졌습니다."
+msgid "List directory %s is missing."
+msgstr "목록 디렉터리 %s이 빠졌습니다."
 
 #: apt-pkg/acquire.cc
 #, c-format
-msgid "Archives directory %spartial is missing."
-msgstr "아카이브 디렉터리 %spartial이 빠졌습니다."
+msgid "Archives directory %s is missing."
+msgstr "아카이브 디렉터리 %s이 빠졌습니다."
 
 #: apt-pkg/acquire.cc
 #, c-format
@@ -416,14 +463,6 @@ msgstr ""
 msgid "Clean of %s is not supported"
 msgstr "인덱스 파일 타입 '%s' 타입은 지원하지 않습니다"
 
-#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
-#: methods/mirror.cc
-#, c-format
-msgid "Unable to change to %s"
-msgstr "%s 디렉토리로 이동할 수 없습니다"
-
-#. only show the ETA if it makes sense
-#. two days
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -461,7 +500,7 @@ msgstr "패키지 목록이나 상태 파일을 파싱할 수 없거나 열 수 
 msgid "You may want to run apt-get update to correct these problems"
 msgstr "apt-get update를 실행하면 이 문제를 바로잡을 수도 있습니다."
 
-#: apt-pkg/cachefile.cc
+#: apt-pkg/cachefile.cc methods/mirror.cc
 msgid "The list of sources could not be read."
 msgstr "소스 목록을 읽을 수 없습니다."
 
@@ -611,6 +650,11 @@ msgstr "이 디스크의 소스 리스트 항목은 다음과 같습니다:\n"
 
 #: apt-pkg/clean.cc
 #, c-format
+msgid "Unable to change to %s"
+msgstr "%s 디렉토리로 이동할 수 없습니다"
+
+#: apt-pkg/clean.cc
+#, c-format
 msgid "Unable to stat %s."
 msgstr "%s의 정보를 읽을 수 없습니다."
 
@@ -676,11 +720,6 @@ msgstr "잘못된 작업 %s"
 #, c-format
 msgid "Unrecognized type abbreviation: '%c'"
 msgstr "이 타입 줄임말을 알 수 없습니다: '%c'"
-
-#: apt-pkg/contrib/configuration.cc
-#, c-format
-msgid "Opening configuration file %s"
-msgstr "설정 파일 %s 파일을 여는 중입니다"
 
 #: apt-pkg/contrib/configuration.cc
 #, c-format
@@ -859,12 +898,12 @@ msgstr "%s 파일을 %s(으)로 이름을 바꾸는데 문제가 있습니다"
 msgid "Problem syncing the file"
 msgstr "파일을 동기화하는데 문제가 있습니다"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, fuzzy, c-format
 msgid "Unable to mkstemp %s"
 msgstr "%s의 정보를 읽을 수 없습니다"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to write to %s"
 msgstr "%s에 쓸 수 없습니다"
@@ -1036,6 +1075,32 @@ msgid "Unable to parse package file %s (%d)"
 msgstr "패키지 파일 %s 파일을 파싱할 수 없습니다 (%d)"
 
 #: apt-pkg/deb/debsystem.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Unable to lock the administration directory (%s), is another process "
+#| "using it?"
+msgid ""
+"Unable to acquire the dpkg frontend lock (%s), is another process using it?"
+msgstr ""
+"관리 디렉터리를 (%s) 잠글 수 없습니다. 다른 프로세스가 사용하고 있지 않습니"
+"까?"
+
+#: apt-pkg/deb/debsystem.cc
+#, fuzzy, c-format
+#| msgid "Unable to lock the administration directory (%s), are you root?"
+msgid "Unable to acquire the dpkg frontend lock (%s), are you root?"
+msgstr "관리 디렉터리를 (%s) 잠글 수 없습니다. 루트 사용자가 맞습니까?"
+
+#. TRANSLATORS: the %s contains the recovery command, usually
+#. dpkg --configure -a
+#: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid ""
+"dpkg was interrupted, you must manually run '%s' to correct the problem. "
+msgstr ""
+"dpkg가 중단되었습니다. 수동으로 '%s' 명령을 실행해 문제점을 바로잡으십시오."
+
+#: apt-pkg/deb/debsystem.cc
 #, c-format
 msgid ""
 "Unable to lock the administration directory (%s), is another process using "
@@ -1049,15 +1114,6 @@ msgstr ""
 msgid "Unable to lock the administration directory (%s), are you root?"
 msgstr "관리 디렉터리를 (%s) 잠글 수 없습니다. 루트 사용자가 맞습니까?"
 
-#. TRANSLATORS: the %s contains the recovery command, usually
-#. dpkg --configure -a
-#: apt-pkg/deb/debsystem.cc
-#, c-format
-msgid ""
-"dpkg was interrupted, you must manually run '%s' to correct the problem. "
-msgstr ""
-"dpkg가 중단되었습니다. 수동으로 '%s' 명령을 실행해 문제점을 바로잡으십시오."
-
 #: apt-pkg/deb/debsystem.cc
 msgid "Not locked"
 msgstr "잠기지 않음"
@@ -1065,23 +1121,23 @@ msgstr "잠기지 않음"
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Installing %s"
-msgstr "%s 설치하는 중입니다"
+msgid "Preparing %s"
+msgstr "%s 준비 중입니다"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Configuring %s"
-msgstr "%s 설정 중입니다"
+msgid "Preparing to configure %s"
+msgstr "%s 패키지를 설정할 준비하는 중입니다"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removing %s"
-msgstr "%s 패키지를 지우는 중입니다"
+msgid "Preparing for removal of %s"
+msgstr "%s 패키지를 지울 준비하는 중입니다"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Completely removing %s"
-msgstr "%s 패키지를 완전히 지우는 중입니다"
+msgid "Preparing to completely remove %s"
+msgstr "%s 패키지를 완전히 지울 준비를 하는 중입니다"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1098,6 +1154,11 @@ msgstr "설치 후 트리거 %s 실행하는 중입니다"
 msgid "Installed %s"
 msgstr "%s 설치"
 
+#: apt-pkg/deb/dpkgpm.cc
+#, c-format
+msgid "Configuring %s"
+msgstr "%s 설정 중입니다"
+
 #. FIXME: use a better string after freeze
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1111,33 +1172,23 @@ msgstr "'%s' 파일을 열 수 없습니다"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing %s"
-msgstr "%s 준비 중입니다"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
 msgid "Unpacking %s"
 msgstr "%s 푸는 중입니다"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing to configure %s"
-msgstr "%s 패키지를 설정할 준비하는 중입니다"
+msgid "Installing %s"
+msgstr "%s 설치하는 중입니다"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing for removal of %s"
-msgstr "%s 패키지를 지울 준비하는 중입니다"
+msgid "Removing %s"
+msgstr "%s 패키지를 지우는 중입니다"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removed %s"
-msgstr "%s 지움"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing to completely remove %s"
-msgstr "%s 패키지를 완전히 지울 준비를 하는 중입니다"
+msgid "Completely removing %s"
+msgstr "%s 패키지를 완전히 지우는 중입니다"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1304,7 +1355,7 @@ msgstr "올바른 패키지 시스템 타입을 알아낼 수 없습니다"
 
 #: apt-pkg/install-progress.cc
 #, c-format
-msgid "Progress: [%3i%%]"
+msgid "Progress: [%3li%%]"
 msgstr ""
 
 #. send status information that we are about to fork dpkg
@@ -1479,6 +1530,12 @@ msgstr "핀 타입 %s이(가) 무엇인지 이해할 수 없습니다"
 
 #: apt-pkg/policy.cc
 #, c-format
+msgid ""
+"%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"
+msgstr ""
+
+#: apt-pkg/policy.cc
+#, c-format
 msgid "%s: Value %s is outside the range of valid pin priorities (%d to %d)"
 msgstr ""
 
@@ -1491,11 +1548,6 @@ msgstr "핀에 우선순위(혹은 0)를 지정하지 않았습니다"
 #, fuzzy, c-format
 msgid "Malformed entry %u in %s file %s (%s)"
 msgstr "override %s의 %lu번 줄 #1이 잘못되었습니다"
-
-#: apt-pkg/sourcelist.cc
-#, c-format
-msgid "Opening %s"
-msgstr "%s 파일을 여는 중입니다"
 
 #: apt-pkg/sourcelist.cc
 #, c-format
@@ -1517,7 +1569,7 @@ msgstr "소스 리스트 %2$s의 %1$u번 줄이 잘못되었습니다 (타입)"
 msgid "Type '%s' is not known on stanza %u in source list %s"
 msgstr "소스 목록 %3$s의 %2$u번 줄의 '%1$s' 타입을 알 수 없습니다"
 
-#: apt-pkg/sourcelist.cc
+#: apt-pkg/sourcelist.cc apt-private/private-install.cc
 #, c-format
 msgid "Unsupported file %s given on commandline"
 msgstr ""
@@ -1530,11 +1582,6 @@ msgstr "sources.list에 '소스' URI를 써 넣어야 합니다"
 #, c-format
 msgid "Cannot convert %s to integer: out of range"
 msgstr ""
-
-#: apt-pkg/update.cc apt-private/private-download.cc
-#, c-format
-msgid "Failed to fetch %s  %s"
-msgstr "%s 파일을 받는데 실패했습니다  %s"
 
 #: apt-pkg/update.cc
 #, fuzzy
@@ -1595,6 +1642,12 @@ msgstr ""
 "미디어 바꾸기: '%2$s' 드라이브에 다음 레이블이 달린\n"
 "디스크를 넣고 enter를 누르십시오\n"
 " '%1$s'\n"
+
+#: apt-private/acqprogress.cc
+msgid ""
+"Do you want to accept these changes and continue updating from this "
+"repository?"
+msgstr ""
 
 #: apt-private/private-cachefile.cc
 msgid "Correcting dependencies..."
@@ -1734,8 +1787,14 @@ msgstr "이 APT는 Super Cow Powers로 무장했습니다."
 msgid "This APT helper has Super Meep Powers."
 msgstr ""
 
-#: apt-private/private-depends.cc apt-private/private-show.cc
-#: cmdline/apt-mark.cc
+#: apt-private/private-cmndline.cc
+msgid ""
+"--force-yes is deprecated, use one of the options starting with --allow "
+"instead."
+msgstr ""
+
+#: apt-private/private-depends.cc apt-private/private-download.cc
+#: apt-private/private-show.cc cmdline/apt-mark.cc
 msgid "No packages found"
 msgstr "패키지가 없습니다"
 
@@ -1754,12 +1813,6 @@ msgstr "인증할 수 없는 패키지가 있습니다"
 #: apt-private/private-download.cc
 msgid "Install these packages without verification?"
 msgstr "확인하지 않고 패키지를 설치하시겠습니까?"
-
-#: apt-private/private-download.cc apt-private/private-install.cc
-msgid ""
-"--force-yes is deprecated, use one of the options starting with --allow "
-"instead."
-msgstr ""
 
 #: apt-private/private-download.cc
 #, fuzzy
@@ -1911,7 +1964,7 @@ msgstr ""
 msgid "Abort."
 msgstr "중단."
 
-#: apt-private/private-install.cc
+#: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "계속 하시겠습니까?"
 
@@ -2229,11 +2282,6 @@ msgstr "최소 한 개의 검색어를 지정해야 합니다"
 msgid "Full Text Search"
 msgstr ""
 
-#: apt-private/private-show.cc cmdline/apt-cache.cc
-#, c-format
-msgid "Package file %s is out of sync."
-msgstr "패키지 파일 %s 파일이 동기화되지 않았습니다."
-
 #: apt-private/private-show.cc
 #, c-format
 msgid "There is %i additional record. Please use the '-a' switch to see it"
@@ -2393,15 +2441,15 @@ msgid "%s has no build depends.\n"
 msgstr "%s 패키지에 빌드 의존성이 없습니다.\n"
 
 #: apt-private/private-source.cc
-msgid "Must specify at least one package to check builddeps for"
-msgstr "해당되는 빌드 의존성을 검사할 패키지를 최소한 하나 지정해야 합니다"
-
-#: apt-private/private-source.cc
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
+
+#: apt-private/private-source.cc
+msgid "Must specify at least one package to check builddeps for"
+msgstr "해당되는 빌드 의존성을 검사할 패키지를 최소한 하나 지정해야 합니다"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2424,7 +2472,7 @@ msgstr "%s 파일의 이름을 %s(으)로 바꾸는데 실패했습니다"
 
 #: apt-private/private-sources.cc
 #, c-format
-msgid "Your '%s' file changed, please run 'apt-get update'."
+msgid "Your '%s' file changed, please run 'apt-get update'.\n"
 msgstr ""
 
 #: apt-private/private-unmet.cc
@@ -2435,6 +2483,14 @@ msgstr "%s 패키지의 %s 버전의 의존성이 맞지 않습니다:\n"
 #: apt-private/private-update.cc
 msgid "The update command takes no arguments"
 msgstr "update 명령은 인수를 받지 않습니다"
+
+#. TRANSLATOR: the first two are manpage references, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid ""
+"Usage of %s should be preferred over embedding login information directly in "
+"the %s entry for '%s'"
+msgstr ""
 
 #: apt-private/private-update.cc
 #, c-format
@@ -2447,9 +2503,9 @@ msgstr[0] ""
 msgid "All packages are up to date."
 msgstr ""
 
-#: cmdline/apt-cache.cc
-#, fuzzy
-msgid "apt-cache stats does not take any arguments"
+#: cmdline/apt-cache.cc cmdline/apt-mark.cc
+#, fuzzy, c-format
+msgid "%s does not take any arguments"
 msgstr "update 명령은 인수를 받지 않습니다"
 
 #: cmdline/apt-cache.cc
@@ -2708,6 +2764,12 @@ msgid "Install new packages (pkg is libc6 not libc6.deb)"
 msgstr "새 패키지를 설치합니다 (패키지는 libc6 식으로. libc6.deb 아님)"
 
 #: cmdline/apt-get.cc
+#, fuzzy
+#| msgid "Install new packages (pkg is libc6 not libc6.deb)"
+msgid "Reinstall packages (pkg is libc6 not libc6.deb)"
+msgstr "새 패키지를 설치합니다 (패키지는 libc6 식으로. libc6.deb 아님)"
+
+#: cmdline/apt-get.cc
 msgid "Remove packages"
 msgstr "패키지를 지웁니다"
 
@@ -2799,6 +2861,14 @@ msgstr ""
 msgid "detect proxy using apt.conf"
 msgstr ""
 
+#: cmdline/apt-helper.cc
+msgid "wait for system to be online"
+msgstr ""
+
+#: cmdline/apt-helper.cc
+msgid "drop privileges before running given command"
+msgstr ""
+
 #: cmdline/apt-internal-planner.cc
 #, fuzzy
 msgid ""
@@ -2853,6 +2923,16 @@ msgstr "%s 패키지는 이미 수동설치로 지정되어 있습니다.\n"
 #, c-format
 msgid "%s was already set to automatically installed.\n"
 msgstr "%s 패키지는 이미 자동설치로 지정되어 있습니다.\n"
+
+#: cmdline/apt-mark.cc
+msgid "No changes necessary"
+msgstr ""
+
+#: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "The following NEW packages will be installed:"
+msgid "The following packages will be marked as automatically installed:"
+msgstr "다음 새 패키지를 설치할 것입니다:"
 
 #: cmdline/apt-mark.cc
 #, fuzzy, c-format
@@ -2914,6 +2994,11 @@ msgid "Mark the given packages as manually installed"
 msgstr "'dpkg-dev' 패키지가 설치되었는지를 확인하십시오.\n"
 
 #: cmdline/apt-mark.cc
+#, fuzzy
+msgid "Mark all dependencies of meta packages as automatically installed."
+msgstr "%s 패키지는 수동설치로 지정합니다.\n"
+
+#: cmdline/apt-mark.cc
 msgid "Mark a package as held back"
 msgstr ""
 
@@ -2932,7 +3017,7 @@ msgid "Print the list of manually installed packages"
 msgstr "%s 패키지 수동설치로 지정합니다.\n"
 
 #: cmdline/apt-mark.cc
-msgid "Print the list of package on hold"
+msgid "Print the list of packages on hold"
 msgstr ""
 
 #: cmdline/apt-sortpkgs.cc
@@ -2977,6 +3062,11 @@ msgstr ""
 #: cmdline/apt.cc
 #, fuzzy
 msgid "install packages"
+msgstr "핀 패키지:"
+
+#: cmdline/apt.cc
+#, fuzzy
+msgid "reinstall packages"
 msgstr "핀 패키지:"
 
 #: cmdline/apt.cc
@@ -3371,6 +3461,11 @@ msgstr "헤더 데이터가 잘못되었습니다"
 msgid "Connection failed"
 msgstr "연결이 실패했습니다"
 
+#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#, c-format
+msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
+msgstr ""
+
 #: methods/basehttp.cc
 #, c-format
 msgid ""
@@ -3418,15 +3513,21 @@ msgstr "파일이 없습니다"
 msgid "Direct connection to %s domains is blocked by default."
 msgstr ""
 
-#: methods/connect.cc methods/http.cc
-#, c-format
-msgid "Connecting to %s (%s)"
-msgstr "%s(%s)에 연결하는 중입니다"
-
 #: methods/connect.cc
 #, c-format
 msgid "[IP: %s %s]"
 msgstr "[IP: %s %s]"
+
+#: methods/connect.cc
+#, fuzzy, c-format
+#| msgid "Connecting to %s (%s)"
+msgid "Connected to %s (%s)"
+msgstr "%s(%s)에 연결하는 중입니다"
+
+#: methods/connect.cc methods/http.cc
+#, c-format
+msgid "Connecting to %s (%s)"
+msgstr "%s(%s)에 연결하는 중입니다"
 
 #: methods/connect.cc
 #, c-format
@@ -3438,11 +3539,6 @@ msgstr "%s에 대한 소켓을 만들 수 없습니다 (f=%u t=%u p=%u)"
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "%s:%s에 연결을 초기화할 수 없습니다 (%s)."
 
-#: methods/connect.cc
-#, c-format
-msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr "%s:%s에 연결할 수 없습니다 (%s). 연결 제한 시간이 초과했습니다"
-
 #: methods/connect.cc methods/ftp.cc methods/rsh.cc
 msgid "Failed"
 msgstr "실패"
@@ -3451,6 +3547,11 @@ msgstr "실패"
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
 msgstr "%s:%s에 연결할 수 없습니다 (%s)."
+
+#: methods/connect.cc
+#, c-format
+msgid "Could not connect to %s:%s (%s), connection timed out"
+msgstr "%s:%s에 연결할 수 없습니다 (%s). 연결 제한 시간이 초과했습니다"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -3701,30 +3802,6 @@ msgstr "연결 시간이 초과했습니다"
 msgid "Error writing to output file"
 msgstr "출력 파일에 쓰는데 오류가 발생했습니다"
 
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "No mirror file '%s' found "
-msgstr "'%s' 미러 파일이 없습니다 "
-
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, fuzzy, c-format
-msgid "Can not read mirror file '%s'"
-msgstr "'%s' 미러 파일이 없습니다 "
-
-#: methods/mirror.cc
-#, fuzzy, c-format
-msgid "No entry found in mirror file '%s'"
-msgstr "'%s' 미러 파일이 없습니다 "
-
-#: methods/mirror.cc
-#, c-format
-msgid "[Mirror: %s]"
-msgstr "[미러 사이트: %s]"
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "파일 변경 시각을 설정하는데 실패했습니다"
@@ -3736,6 +3813,38 @@ msgstr "연결이 너무 빨리 끊어졌습니다"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#~ msgid "Removed %s"
+#~ msgstr "%s 지움"
+
+#~ msgid "Package file %s is out of sync."
+#~ msgstr "패키지 파일 %s 파일이 동기화되지 않았습니다."
+
+#~ msgid ""
+#~ "The package index files are corrupted. No Filename: field for package %s."
+#~ msgstr ""
+#~ "패키지 인덱스 파일이 손상되었습니다. %s 패키지에 Filename: 필드가 없습니"
+#~ "다."
+
+#~ msgid "No mirror file '%s' found "
+#~ msgstr "'%s' 미러 파일이 없습니다 "
+
+#, fuzzy
+#~ msgid "Can not read mirror file '%s'"
+#~ msgstr "'%s' 미러 파일이 없습니다 "
+
+#, fuzzy
+#~ msgid "No entry found in mirror file '%s'"
+#~ msgstr "'%s' 미러 파일이 없습니다 "
+
+#~ msgid "[Mirror: %s]"
+#~ msgstr "[미러 사이트: %s]"
+
+#~ msgid "Opening configuration file %s"
+#~ msgstr "설정 파일 %s 파일을 여는 중입니다"
+
+#~ msgid "Opening %s"
+#~ msgstr "%s 파일을 여는 중입니다"
 
 #~ msgid "Unmet dependencies. Try using --fix-broken."
 #~ msgstr "의존성이 맞지 않습니다. --fix-broken 옵션을 사용해 보십시오."

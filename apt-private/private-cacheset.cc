@@ -1,14 +1,13 @@
 #include <config.h>
 
-#include <apt-pkg/cachefile.h>
-#include <apt-pkg/pkgcache.h>
-#include <apt-pkg/depcache.h>
-#include <apt-pkg/cacheiterators.h>
-#include <apt-pkg/cachefilter.h>
 #include <apt-pkg/aptconfiguration.h>
+#include <apt-pkg/cachefile.h>
+#include <apt-pkg/cachefilter.h>
 #include <apt-pkg/configuration.h>
-#include <apt-pkg/progress.h>
+#include <apt-pkg/depcache.h>
+#include <apt-pkg/pkgcache.h>
 #include <apt-pkg/policy.h>
+#include <apt-pkg/progress.h>
 #include <apt-pkg/strutl.h>
 
 #include <apt-private/private-cacheset.h>
@@ -359,9 +358,15 @@ APT::VersionSet CacheSetHelperAPTGet::tryVirtualPackage(pkgCacheFile &Cache, pkg
 }
 pkgCache::PkgIterator CacheSetHelperAPTGet::canNotFindPkgName(pkgCacheFile &Cache, std::string const &str)
 {
-   pkgCache::PkgIterator const Pkg = canNotFindPkgName_impl(Cache, str);
+   pkgCache::PkgIterator Pkg = canNotFindPkgName_impl(Cache, str);
    if (Pkg.end())
-      return APT::CacheSetHelper::canNotFindPkgName(Cache, str);
+   {
+      Pkg = APT::CacheSetHelper::canNotFindPkgName(Cache, str);
+      if (Pkg.end() && ShowError)
+      {
+	 notFound.insert(str);
+      }
+   }
    return Pkg;
 }
 									/*}}}*/

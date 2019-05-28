@@ -1,15 +1,18 @@
 language: none
+env:
+  - DEBIAN_FRONTEND=noninteractive
 
 build:
   pre_ci_boot:
     image_name: debian
-    image_tag: stretch
+    image_tag: buster
     pull: true
   ci:
-    - apt-get install -qq build-essential
+    - apt-get install -qq build-essential expect
     - ./prepare-release travis-ci
     - mkdir build
-    - ( cd build && cmake .. )
+    - ( cd build && cmake -DWITH_CURL=OFF .. )
     - make -C build -j 4
+    - rm -f /etc/dpkg/dpkg.cfg.d/excludes
     - CTEST_OUTPUT_ON_FAILURE=1 make -C build test
-    - ./test/integration/run-tests -q
+    - unbuffer ./test/integration/run-tests -q -j 4

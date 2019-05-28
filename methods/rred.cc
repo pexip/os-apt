@@ -7,19 +7,19 @@
 
 #include <config.h>
 
-#include <apt-pkg/init.h>
-#include <apt-pkg/fileutl.h>
-#include <apt-pkg/error.h>
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/hashes.h>
-#include <apt-pkg/configuration.h>
 #include "aptmethod.h"
+#include <apt-pkg/configuration.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/hashes.h>
+#include <apt-pkg/init.h>
+#include <apt-pkg/strutl.h>
 
-#include <stddef.h>
 #include <iostream>
-#include <string>
 #include <list>
+#include <string>
 #include <vector>
+#include <stddef.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -721,7 +721,10 @@ class RredMethod : public aptMethod {
       }
 
    public:
-      RredMethod() : aptMethod("rred", "2.0", SendConfig), Debug(false) {}
+   RredMethod() : aptMethod("rred", "2.0", SendConfig), Debug(false)
+   {
+      SeccompFlags = aptMethod::BASE | aptMethod::DIRECTORY;
+   }
 };
 
 int main(int argc, char **argv)

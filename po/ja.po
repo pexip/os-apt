@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.4\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2017-09-13 17:18+0000\n"
+"POT-Creation-Date: 2019-02-04 15:34+0100\n"
 "PO-Revision-Date: 2017-01-06 04:50+0900\n"
 "Last-Translator: Takuma Yamada <tyamada@takumayamada.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -151,7 +151,7 @@ msgstr "ファイル %s/%s がパッケージ %s のものを上書きします"
 #. Only warn if there is no sources.list file.
 #: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
 #: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc methods/mirror.cc
+#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
 #, c-format
 msgid "Unable to read %s"
 msgstr "%s を読み込むことができません"
@@ -223,7 +223,7 @@ msgstr "リポジトリ %s はもう署名されていません。"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
-msgid "The repository '%s' does no longer have a Release file."
+msgid "The repository '%s' no longer has a Release file."
 msgstr "リポジトリ %s には Release ファイルがなくなっています。"
 
 #: apt-pkg/acquire-item.cc
@@ -305,6 +305,18 @@ msgid "GPG error: %s: %s"
 msgstr "GPG エラー: %s: %s"
 
 #: apt-pkg/acquire-item.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Skipping acquire of configured file '%s' as repository '%s' doesn't "
+#| "support architecture '%s'"
+msgid ""
+"Skipping acquire of configured file '%s' as repository '%s' doesn't have the "
+"component '%s' (component misspelt in sources.list?)"
+msgstr ""
+"リポジトリ '%2$s' がアーキテクチャ '%3$s' をサポートしないため設定ファイル "
+"'%1$s' の取得をスキップ"
+
+#: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
 "Skipping acquire of configured file '%s' as repository '%s' doesn't support "
@@ -314,13 +326,16 @@ msgstr ""
 "'%1$s' の取得をスキップ"
 
 #: apt-pkg/acquire-item.cc
-#, c-format
+#, fuzzy, c-format
+#| msgid ""
+#| "Skipping acquire of configured file '%s' as repository '%s' doesn't "
+#| "support architecture '%s'"
 msgid ""
-"Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
-"or malformed file)"
+"Skipping acquire of configured file '%s' as repository '%s' does not seem to "
+"provide it (sources.list entry misspelt?)"
 msgstr ""
-"期待されるエントリ '%s' が Release ファイル内に見つかりません (誤った "
-"sources.list エントリか、壊れたファイル)"
+"リポジトリ '%2$s' がアーキテクチャ '%3$s' をサポートしないため設定ファイル "
+"'%1$s' の取得をスキップ"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -343,12 +358,57 @@ msgstr ""
 "%s の Release ファイルは期限切れ (%s 以来無効) です。このリポジトリからの更新"
 "物は適用されません。"
 
+#. TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+#. the time until the file will be valid - formatted in the same way as in
+#. the download progress display (e.g. 7d 3h 42min 1s)
+#: apt-pkg/acquire-item.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Release file for %s is expired (invalid since %s). Updates for this "
+#| "repository will not be applied."
+msgid ""
+"Release file for %s is not valid yet (invalid for another %s). Updates for "
+"this repository will not be applied."
+msgstr ""
+"%s の Release ファイルは期限切れ (%s 以来無効) です。このリポジトリからの更新"
+"物は適用されません。"
+
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
 "ディストリビューションが競合しています: %s (%s を期待していたのに %s を取得し"
 "ました)"
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
+msgstr ""
+
+#. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"More information about this can be found online in the Release notes at: %s"
+msgstr ""
+
+#. TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"This must be accepted explicitly before updates for this repository can be "
+"applied. See %s manpage for details."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc apt-pkg/update.cc apt-private/private-download.cc
+#, c-format
+msgid "Failed to fetch %s  %s"
+msgstr "%s の取得に失敗しました  %s"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -364,19 +424,18 @@ msgstr ""
 msgid "Can't find a source to download version '%s' of '%s'"
 msgstr "'%2$s' のバージョン '%1$s' をダウンロードするソースが見つかりません"
 
-#: apt-pkg/acquire-item.cc
-#, c-format
-msgid ""
-"The package index files are corrupted. No Filename: field for package %s."
-msgstr ""
-"パッケージインデックスファイルが壊れています。パッケージ %s に Filename: "
-"フィールドがありません。"
-
 #. TRANSLATOR: %s=%s is sourcename=sourceversion, e.g. apt=1.1
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "%s=%s のため変更履歴が利用できません"
+
+#: apt-pkg/acquire-worker.cc
+#, c-format
+msgid ""
+"The method '%s' is unsupported and disabled by default. Consider switching "
+"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
+msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -414,13 +473,13 @@ msgstr ""
 
 #: apt-pkg/acquire.cc apt-pkg/cdrom.cc
 #, c-format
-msgid "List directory %spartial is missing."
-msgstr "リストディレクトリ %spartial が見つかりません。"
+msgid "List directory %s is missing."
+msgstr "リストディレクトリ %s が見つかりません。"
 
 #: apt-pkg/acquire.cc
 #, c-format
-msgid "Archives directory %spartial is missing."
-msgstr "アーカイブディレクトリ %spartial が見つかりません。"
+msgid "Archives directory %s is missing."
+msgstr "アーカイブディレクトリ %s が見つかりません。"
 
 #: apt-pkg/acquire.cc
 #, c-format
@@ -446,14 +505,6 @@ msgstr ""
 msgid "Clean of %s is not supported"
 msgstr "%s の消去はサポートされていません"
 
-#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
-#: methods/mirror.cc
-#, c-format
-msgid "Unable to change to %s"
-msgstr "%s へ変更することができません"
-
-#. only show the ETA if it makes sense
-#. two days
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -496,7 +547,7 @@ msgstr ""
 "これらの問題を解決するためには apt-get update を実行する必要があるかもしれま"
 "せん"
 
-#: apt-pkg/cachefile.cc
+#: apt-pkg/cachefile.cc methods/mirror.cc
 msgid "The list of sources could not be read."
 msgstr "ソースのリストを読むことができません。"
 
@@ -651,6 +702,11 @@ msgstr "このディスクのソースリストのエントリ:\n"
 
 #: apt-pkg/clean.cc
 #, c-format
+msgid "Unable to change to %s"
+msgstr "%s へ変更することができません"
+
+#: apt-pkg/clean.cc
+#, c-format
 msgid "Unable to stat %s."
 msgstr "%s の状態を取得できません。"
 
@@ -720,11 +776,6 @@ msgstr "不正な操作 %s"
 #, c-format
 msgid "Unrecognized type abbreviation: '%c'"
 msgstr "理解できない省略形式です: '%c'"
-
-#: apt-pkg/contrib/configuration.cc
-#, c-format
-msgid "Opening configuration file %s"
-msgstr "設定ファイル %s をオープンできませんでした"
 
 #: apt-pkg/contrib/configuration.cc
 #, c-format
@@ -908,12 +959,12 @@ msgstr "%s から %s へのファイル名変更中に問題が発生しまし�
 msgid "Problem syncing the file"
 msgstr "ファイルの同期中に問題が発生しました"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to mkstemp %s"
 msgstr "mkstemp %s を実行できません"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to write to %s"
 msgstr "%s に書き込めません"
@@ -1091,17 +1142,20 @@ msgid "Unable to parse package file %s (%d)"
 msgstr "パッケージファイル %s を解釈することができません (%d)"
 
 #: apt-pkg/deb/debsystem.cc
-#, c-format
+#, fuzzy, c-format
+#| msgid ""
+#| "Unable to lock the administration directory (%s), is another process "
+#| "using it?"
 msgid ""
-"Unable to lock the administration directory (%s), is another process using "
-"it?"
+"Unable to acquire the dpkg frontend lock (%s), is another process using it?"
 msgstr ""
 "管理用ディレクトリ (%s) をロックできません。これを使う別のプロセスが動いてい"
 "ませんか?"
 
 #: apt-pkg/deb/debsystem.cc
-#, c-format
-msgid "Unable to lock the administration directory (%s), are you root?"
+#, fuzzy, c-format
+#| msgid "Unable to lock the administration directory (%s), are you root?"
+msgid "Unable to acquire the dpkg frontend lock (%s), are you root?"
 msgstr ""
 "管理用ディレクトリ (%s) をロックできません。root 権限で実行していますか?"
 
@@ -1116,29 +1170,44 @@ msgstr ""
 "す。"
 
 #: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid ""
+"Unable to lock the administration directory (%s), is another process using "
+"it?"
+msgstr ""
+"管理用ディレクトリ (%s) をロックできません。これを使う別のプロセスが動いてい"
+"ませんか?"
+
+#: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid "Unable to lock the administration directory (%s), are you root?"
+msgstr ""
+"管理用ディレクトリ (%s) をロックできません。root 権限で実行していますか?"
+
+#: apt-pkg/deb/debsystem.cc
 msgid "Not locked"
 msgstr "ロックされていません"
 
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Installing %s"
-msgstr "%s をインストールしています"
+msgid "Preparing %s"
+msgstr "%s を準備しています"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Configuring %s"
-msgstr "%s を設定しています"
+msgid "Preparing to configure %s"
+msgstr "%s の設定を準備しています"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removing %s"
-msgstr "%s を削除しています"
+msgid "Preparing for removal of %s"
+msgstr "%s の削除を準備しています"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Completely removing %s"
-msgstr "%s を完全に削除しています"
+msgid "Preparing to completely remove %s"
+msgstr "%s を完全に削除する準備をしています"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1155,6 +1224,11 @@ msgstr "インストール後トリガ %s を実行しています"
 msgid "Installed %s"
 msgstr "%s をインストールしました"
 
+#: apt-pkg/deb/dpkgpm.cc
+#, c-format
+msgid "Configuring %s"
+msgstr "%s を設定しています"
+
 #. FIXME: use a better string after freeze
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1168,33 +1242,23 @@ msgstr "ファイル '%s' をオープンできませんでした"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing %s"
-msgstr "%s を準備しています"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
 msgid "Unpacking %s"
 msgstr "%s を展開しています"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing to configure %s"
-msgstr "%s の設定を準備しています"
+msgid "Installing %s"
+msgstr "%s をインストールしています"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing for removal of %s"
-msgstr "%s の削除を準備しています"
+msgid "Removing %s"
+msgstr "%s を削除しています"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removed %s"
-msgstr "%s を削除しました"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing to completely remove %s"
-msgstr "%s を完全に削除する準備をしています"
+msgid "Completely removing %s"
+msgstr "%s を完全に削除しています"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1367,8 +1431,8 @@ msgstr "適切なパッケージシステムタイプを特定できません"
 
 #: apt-pkg/install-progress.cc
 #, c-format
-msgid "Progress: [%3i%%]"
-msgstr "進捗: [%3i%%]"
+msgid "Progress: [%3li%%]"
+msgstr "進捗: [%3li%%]"
 
 #. send status information that we are about to fork dpkg
 #: apt-pkg/install-progress.cc
@@ -1546,6 +1610,12 @@ msgstr "pin タイプ %s を理解できませんでした"
 
 #: apt-pkg/policy.cc
 #, c-format
+msgid ""
+"%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"
+msgstr ""
+
+#: apt-pkg/policy.cc
+#, c-format
 msgid "%s: Value %s is outside the range of valid pin priorities (%d to %d)"
 msgstr "%s: 値 %s は pin の有効な優先度の範囲外です (%d から %d)"
 
@@ -1558,11 +1628,6 @@ msgstr "pin で優先度 (または 0) が指定されていません"
 #, c-format
 msgid "Malformed entry %u in %s file %s (%s)"
 msgstr "不正なエントリ %u 行目 %s ファイル %s (%s)"
-
-#: apt-pkg/sourcelist.cc
-#, c-format
-msgid "Opening %s"
-msgstr "%s をオープンしています"
 
 #: apt-pkg/sourcelist.cc
 #, c-format
@@ -1584,7 +1649,7 @@ msgstr "ソースリスト %2$s の %1$u 個目の節が不正です (type)"
 msgid "Type '%s' is not known on stanza %u in source list %s"
 msgstr "ソースリスト %3$s の %2$u 個目の節 '%1$s' は不明です"
 
-#: apt-pkg/sourcelist.cc
+#: apt-pkg/sourcelist.cc apt-private/private-install.cc
 #, c-format
 msgid "Unsupported file %s given on commandline"
 msgstr "コマンドラインで指定されたファイル %s はサポートされていません"
@@ -1597,11 +1662,6 @@ msgstr "sources.list に 'ソース' URI を指定する必要があります"
 #, c-format
 msgid "Cannot convert %s to integer: out of range"
 msgstr "%s を整数に変換できません: 範囲外"
-
-#: apt-pkg/update.cc apt-private/private-download.cc
-#, c-format
-msgid "Failed to fetch %s  %s"
-msgstr "%s の取得に失敗しました  %s"
 
 #: apt-pkg/update.cc
 msgid ""
@@ -1662,6 +1722,12 @@ msgstr ""
 " '%s'\n"
 "とラベルの付いたディスクをドライブ '%s' に入れて [Enter] キーを押してくださ"
 "い\n"
+
+#: apt-private/acqprogress.cc
+msgid ""
+"Do you want to accept these changes and continue updating from this "
+"repository?"
+msgstr ""
 
 #: apt-private/private-cachefile.cc
 msgid "Correcting dependencies..."
@@ -1805,8 +1871,16 @@ msgstr "この APT は Super Cow Powers 化されています。"
 msgid "This APT helper has Super Meep Powers."
 msgstr "この APT helper は Super Meep Powers 化されています。"
 
-#: apt-private/private-depends.cc apt-private/private-show.cc
-#: cmdline/apt-mark.cc
+#: apt-private/private-cmndline.cc
+msgid ""
+"--force-yes is deprecated, use one of the options starting with --allow "
+"instead."
+msgstr ""
+"--force-yes は時代遅れです、代わりに --allow で始まるオプションのいずれかを使"
+"用します。"
+
+#: apt-private/private-depends.cc apt-private/private-download.cc
+#: apt-private/private-show.cc cmdline/apt-mark.cc
 msgid "No packages found"
 msgstr "パッケージが見つかりません"
 
@@ -1825,14 +1899,6 @@ msgstr "いくつかのパッケージを認証できませんでした"
 #: apt-private/private-download.cc
 msgid "Install these packages without verification?"
 msgstr "検証なしにこれらのパッケージをインストールしますか?"
-
-#: apt-private/private-download.cc apt-private/private-install.cc
-msgid ""
-"--force-yes is deprecated, use one of the options starting with --allow "
-"instead."
-msgstr ""
-"--force-yes は時代遅れです、代わりに --allow で始まるオプションのいずれかを使"
-"用します。"
 
 #: apt-private/private-download.cc
 msgid ""
@@ -1986,7 +2052,7 @@ msgstr ""
 msgid "Abort."
 msgstr "中断しました。"
 
-#: apt-private/private-install.cc
+#: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "続行しますか?"
 
@@ -2308,11 +2374,6 @@ msgstr "検索パターンはちょうど 1 つだけ指定してください"
 msgid "Full Text Search"
 msgstr "全文検索"
 
-#: apt-private/private-show.cc cmdline/apt-cache.cc
-#, c-format
-msgid "Package file %s is out of sync."
-msgstr "Package ファイル %s が同期していません。"
-
 #: apt-private/private-show.cc
 #, c-format
 msgid "There is %i additional record. Please use the '-a' switch to see it"
@@ -2477,11 +2538,6 @@ msgid "%s has no build depends.\n"
 msgstr "%s にはビルド依存情報が指定されていません。\n"
 
 #: apt-private/private-source.cc
-msgid "Must specify at least one package to check builddeps for"
-msgstr ""
-"ビルド依存関係をチェックするパッケージを少なくとも 1 つ指定する必要があります"
-
-#: apt-private/private-source.cc
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
@@ -2489,6 +2545,11 @@ msgid ""
 msgstr ""
 "%s に利用可能なアーキテクチャ情報がありません。セットアップのために apt."
 "conf(5) の APT::Architectures を参照してください。"
+
+#: apt-private/private-source.cc
+msgid "Must specify at least one package to check builddeps for"
+msgstr ""
+"ビルド依存関係をチェックするパッケージを少なくとも 1 つ指定する必要があります"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2511,9 +2572,9 @@ msgstr "%s の解析に失敗しました。再編集しますか? "
 
 #: apt-private/private-sources.cc
 #, c-format
-msgid "Your '%s' file changed, please run 'apt-get update'."
+msgid "Your '%s' file changed, please run 'apt-get update'.\n"
 msgstr ""
-"'%s' ファイルが変更されています。「apt-get update」を実行してください。"
+"'%s' ファイルが変更されています。「apt-get update」を実行してください。\n"
 
 #: apt-private/private-unmet.cc
 #, c-format
@@ -2523,6 +2584,14 @@ msgstr "パッケージ %s のバージョン %s には解決不可能な依存�
 #: apt-private/private-update.cc
 msgid "The update command takes no arguments"
 msgstr "update コマンドは引数をとりません"
+
+#. TRANSLATOR: the first two are manpage references, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid ""
+"Usage of %s should be preferred over embedding login information directly in "
+"the %s entry for '%s'"
+msgstr ""
 
 #: apt-private/private-update.cc
 #, c-format
@@ -2537,9 +2606,10 @@ msgstr[0] ""
 msgid "All packages are up to date."
 msgstr "パッケージはすべて最新です。"
 
-#: cmdline/apt-cache.cc
-msgid "apt-cache stats does not take any arguments"
-msgstr "apt-cache stats は引数をとりません"
+#: cmdline/apt-cache.cc cmdline/apt-mark.cc
+#, c-format
+msgid "%s does not take any arguments"
+msgstr "%s は引数をとりません"
 
 #: cmdline/apt-cache.cc
 msgid "Total package names: "
@@ -2823,6 +2893,14 @@ msgstr ""
 "定する)"
 
 #: cmdline/apt-get.cc
+#, fuzzy
+#| msgid "Install new packages (pkg is libc6 not libc6.deb)"
+msgid "Reinstall packages (pkg is libc6 not libc6.deb)"
+msgstr ""
+"新規パッケージをインストールする (pkg は libc6.deb ではなく libc6 のように指"
+"定する)"
+
+#: cmdline/apt-get.cc
 msgid "Remove packages"
 msgstr "パッケージを削除する"
 
@@ -2919,6 +2997,14 @@ msgstr "自動解凍とファイル結合"
 msgid "detect proxy using apt.conf"
 msgstr "apt.conf を使ってプロキシを検出する"
 
+#: cmdline/apt-helper.cc
+msgid "wait for system to be online"
+msgstr ""
+
+#: cmdline/apt-helper.cc
+msgid "drop privileges before running given command"
+msgstr ""
+
 #: cmdline/apt-internal-planner.cc
 msgid ""
 "Usage: apt-internal-planner\n"
@@ -2959,6 +3045,16 @@ msgstr "%s は手動でインストールしたとすでに設定されていま
 #, c-format
 msgid "%s was already set to automatically installed.\n"
 msgstr "%s は自動でインストールしたとすでに設定されています。\n"
+
+#: cmdline/apt-mark.cc
+msgid "No changes necessary"
+msgstr ""
+
+#: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "The following NEW packages will be installed:"
+msgid "The following packages will be marked as automatically installed:"
+msgstr "以下のパッケージが新たにインストールされます:"
 
 #: cmdline/apt-mark.cc
 #, c-format
@@ -3024,6 +3120,12 @@ msgid "Mark the given packages as manually installed"
 msgstr "指定のパッケージを手動でインストールしたものとしてマークする"
 
 #: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "Mark the given packages as automatically installed"
+msgid "Mark all dependencies of meta packages as automatically installed."
+msgstr "指定のパッケージを自動でインストールされたものとしてマークする"
+
+#: cmdline/apt-mark.cc
 msgid "Mark a package as held back"
 msgstr "パッケージを保留としてマークする"
 
@@ -3040,7 +3142,7 @@ msgid "Print the list of manually installed packages"
 msgstr "手作業でインストールしたパッケージの一覧を表示する"
 
 #: cmdline/apt-mark.cc
-msgid "Print the list of package on hold"
+msgid "Print the list of packages on hold"
 msgstr "保留されているパッケージの一覧を表示する"
 
 #: cmdline/apt-sortpkgs.cc
@@ -3094,6 +3196,12 @@ msgstr "パッケージの詳細を表示"
 #. package stuff
 #: cmdline/apt.cc
 msgid "install packages"
+msgstr "パッケージをインストール"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "install packages"
+msgid "reinstall packages"
 msgstr "パッケージをインストール"
 
 #: cmdline/apt.cc
@@ -3480,6 +3588,11 @@ msgstr "不正なヘッダです"
 msgid "Connection failed"
 msgstr "接続失敗"
 
+#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#, c-format
+msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
+msgstr ""
+
 #: methods/basehttp.cc
 #, c-format
 msgid ""
@@ -3529,15 +3642,21 @@ msgstr "ファイルが見つかりません"
 msgid "Direct connection to %s domains is blocked by default."
 msgstr "%s ドメインへの直接の接続はデフォルトでブロックされています。"
 
-#: methods/connect.cc methods/http.cc
-#, c-format
-msgid "Connecting to %s (%s)"
-msgstr "%s (%s) へ接続しています"
-
 #: methods/connect.cc
 #, c-format
 msgid "[IP: %s %s]"
 msgstr "[IP: %s %s]"
+
+#: methods/connect.cc
+#, fuzzy, c-format
+#| msgid "Connecting to %s (%s)"
+msgid "Connected to %s (%s)"
+msgstr "%s (%s) へ接続しています"
+
+#: methods/connect.cc methods/http.cc
+#, c-format
+msgid "Connecting to %s (%s)"
+msgstr "%s (%s) へ接続しています"
 
 #: methods/connect.cc
 #, c-format
@@ -3549,11 +3668,6 @@ msgstr "%s (f=%u t=%u p=%u) に対するソケットを作成できません"
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "%s:%s (%s) への接続を開始できません。"
 
-#: methods/connect.cc
-#, c-format
-msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr "%s:%s (%s) へ接続できませんでした。接続がタイムアウトしました"
-
 #: methods/connect.cc methods/ftp.cc methods/rsh.cc
 msgid "Failed"
 msgstr "失敗"
@@ -3562,6 +3676,11 @@ msgstr "失敗"
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
 msgstr "%s:%s (%s) へ接続できませんでした。"
+
+#: methods/connect.cc
+#, c-format
+msgid "Could not connect to %s:%s (%s), connection timed out"
+msgstr "%s:%s (%s) へ接続できませんでした。接続がタイムアウトしました"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -3813,30 +3932,6 @@ msgstr "接続タイムアウト"
 msgid "Error writing to output file"
 msgstr "出力ファイルへの書き込みでエラーが発生しました"
 
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "No mirror file '%s' found "
-msgstr "ミラーファイル '%s' が見つかりません "
-
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "Can not read mirror file '%s'"
-msgstr "ミラーファイル '%s' を読み込めません"
-
-#: methods/mirror.cc
-#, c-format
-msgid "No entry found in mirror file '%s'"
-msgstr "ミラーファイル '%s' のエントリが見つかりません"
-
-#: methods/mirror.cc
-#, c-format
-msgid "[Mirror: %s]"
-msgstr "[ミラー: %s]"
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "変更時刻の設定に失敗しました"
@@ -3848,3 +3943,40 @@ msgstr "途中で接続がクローズされました"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "空のファイルは有効なアーカイブと認められません"
+
+#~ msgid "Removed %s"
+#~ msgstr "%s を削除しました"
+
+#~ msgid "Package file %s is out of sync."
+#~ msgstr "Package ファイル %s が同期していません。"
+
+#~ msgid ""
+#~ "The package index files are corrupted. No Filename: field for package %s."
+#~ msgstr ""
+#~ "パッケージインデックスファイルが壊れています。パッケージ %s に Filename: "
+#~ "フィールドがありません。"
+
+#~ msgid "No mirror file '%s' found "
+#~ msgstr "ミラーファイル '%s' が見つかりません "
+
+#~ msgid "Can not read mirror file '%s'"
+#~ msgstr "ミラーファイル '%s' を読み込めません"
+
+#~ msgid "No entry found in mirror file '%s'"
+#~ msgstr "ミラーファイル '%s' のエントリが見つかりません"
+
+#~ msgid "[Mirror: %s]"
+#~ msgstr "[ミラー: %s]"
+
+#~ msgid "Opening configuration file %s"
+#~ msgstr "設定ファイル %s をオープンできませんでした"
+
+#~ msgid "Opening %s"
+#~ msgstr "%s をオープンしています"
+
+#~ msgid ""
+#~ "Unable to find expected entry '%s' in Release file (Wrong sources.list "
+#~ "entry or malformed file)"
+#~ msgstr ""
+#~ "期待されるエントリ '%s' が Release ファイル内に見つかりません (誤った "
+#~ "sources.list エントリか、壊れたファイル)"

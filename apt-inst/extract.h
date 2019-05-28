@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: extract.h,v 1.2 2001/02/20 07:03:16 jgg Exp $
 /* ######################################################################
 
    Archive Extraction Directory Stream
@@ -20,7 +19,6 @@
 #include <apt-pkg/dirstream.h>
 #include <apt-pkg/filelist.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
 
 #include <string>
 

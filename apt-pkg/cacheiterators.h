@@ -29,17 +29,19 @@
 									/*}}}*/
 #ifndef PKGLIB_CACHEITERATORS_H
 #define PKGLIB_CACHEITERATORS_H
-#include<apt-pkg/pkgcache.h>
-#include<apt-pkg/macros.h>
+#ifndef __PKGLIB_IN_PKGCACHE_H
+#warning apt-pkg/cacheiterators.h should not be included directly, include apt-pkg/pkgcache.h instead
+#endif
+#include <apt-pkg/macros.h>
 
-#include<iterator>
 #include <iosfwd>
+#include <iterator>
 #include <string>
 #ifdef APT_PKG_EXPOSE_STRING_VIEW
 #include <apt-pkg/string_view.h>
 #endif
 
-#include<string.h>
+#include <string.h>
 
 // abstract Iterator template						/*{{{*/
 /* This template provides the very basic iterator methods we
@@ -84,7 +86,7 @@ template<typename Str, typename Itr> class pkgCache::Iterator :
 	void ReMap(void const * const oldMap, void const * const newMap) {
 		if (Owner == 0 || S == 0)
 			return;
-		S += (Str const * const)(newMap) - (Str const * const)(oldMap);
+		S += static_cast<Str const *>(newMap) - static_cast<Str const *>(oldMap);
 	}
 
 	// Constructors - look out for the variable assigning
@@ -339,7 +341,7 @@ class pkgCache::DepIterator : public Iterator<Dependency, DepIterator> {
 		Iterator<Dependency, DepIterator>::ReMap(oldMap, newMap);
 		if (Owner == 0 || S == 0 || S2 == 0)
 			return;
-		S2 += (DependencyData const * const)(newMap) - (DependencyData const * const)(oldMap);
+		S2 += static_cast<DependencyData const *>(newMap) - static_cast<DependencyData const *>(oldMap);
 	}
 
 	//Nice printable representation
@@ -420,6 +422,7 @@ class pkgCache::RlsFileIterator : public Iterator<ReleaseFile, RlsFileIterator> 
 	inline const char *Site() const {return S->Site == 0?0:Owner->StrP + S->Site;}
 	inline bool Flagged(pkgCache::Flag::ReleaseFileFlags const flag) const {return (S->Flags & flag) == flag; }
 
+	APT_DEPRECATED_MSG("Can be remove without replacement; it is a no-op")
 	bool IsOk();
 	std::string RelStr();
 
@@ -455,6 +458,7 @@ class pkgCache::PkgFileIterator : public Iterator<PackageFile, PkgFileIterator> 
 	inline const char *Architecture() const {return S->Architecture == 0?0:Owner->StrP + S->Architecture;}
 	inline const char *IndexType() const {return S->IndexType == 0?0:Owner->StrP + S->IndexType;}
 
+	APT_DEPRECATED_MSG("Can be remove without replacement; it is a no-op")
 	bool IsOk();
 	std::string RelStr();
 

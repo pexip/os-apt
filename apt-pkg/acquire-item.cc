@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: acquire-item.cc,v 1.46.2.9 2004/01/16 18:51:11 mdz Exp $
 /* ######################################################################
 
    Acquire Item - Item to acquire
@@ -16,55 +15,47 @@
 #include <config.h>
 
 #include <apt-pkg/acquire-item.h>
-#include <apt-pkg/configuration.h>
-#include <apt-pkg/aptconfiguration.h>
-#include <apt-pkg/sourcelist.h>
-#include <apt-pkg/error.h>
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/fileutl.h>
-#include <apt-pkg/tagfile.h>
-#include <apt-pkg/metaindex.h>
+#include <apt-pkg/acquire-worker.h>
 #include <apt-pkg/acquire.h>
+#include <apt-pkg/aptconfiguration.h>
+#include <apt-pkg/configuration.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/gpgv.h>
 #include <apt-pkg/hashes.h>
 #include <apt-pkg/indexfile.h>
+#include <apt-pkg/metaindex.h>
+#include <apt-pkg/netrc.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/pkgrecords.h>
-#include <apt-pkg/gpgv.h>
+#include <apt-pkg/sourcelist.h>
+#include <apt-pkg/strutl.h>
+#include <apt-pkg/tagfile.h>
 
 #include <algorithm>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <iostream>
-#include <vector>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string>
-#include <stdio.h>
 #include <ctime>
-#include <sstream>
+#include <chrono>
+#include <iostream>
+#include <memory>
 #include <numeric>
 #include <random>
+#include <sstream>
+#include <string>
+#include <unordered_set>
+#include <vector>
+#include <errno.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <apti18n.h>
 									/*}}}*/
 
 using namespace std;
 
-static void printHashSumComparison(std::string const &URI, HashStringList const &Expected, HashStringList const &Actual) /*{{{*/
-{
-   if (_config->FindB("Debug::Acquire::HashSumMismatch", false) == false)
-      return;
-   std::cerr << std::endl << URI << ":" << std::endl << " Expected Hash: " << std::endl;
-   for (HashStringList::const_iterator hs = Expected.begin(); hs != Expected.end(); ++hs)
-      std::cerr <<  "\t- " << hs->toStr() << std::endl;
-   std::cerr << " Actual Hash: " << std::endl;
-   for (HashStringList::const_iterator hs = Actual.begin(); hs != Actual.end(); ++hs)
-      std::cerr <<  "\t- " << hs->toStr() << std::endl;
-}
-									/*}}}*/
 static std::string GetPartialFileName(std::string const &file)		/*{{{*/
 {
    std::string DestFile = _config->FindDir("Dir::State::lists") + "partial/";
@@ -232,7 +223,7 @@ static bool APT_NONNULL(3, 4, 5) AllowInsecureRepositories(InsecureType const ms
 	 switch (msg)
 	 {
 	    case InsecureType::UNSIGNED: msgstr = _("The repository '%s' is no longer signed."); break;
-	    case InsecureType::NORELEASE: msgstr = _("The repository '%s' does no longer have a Release file."); break;
+	    case InsecureType::NORELEASE: msgstr = _("The repository '%s' no longer has a Release file."); break;
 	    case InsecureType::WEAK: /* unreachable */ break;
 	 }
 	 if (_config->FindB("Acquire::AllowDowngradeToInsecureRepositories") ||
@@ -287,13 +278,34 @@ static HashStringList GetExpectedHashesFromFor(metaIndex * const Parser, std::st
 }
 									/*}}}*/
 
+class pkgAcquire::Item::Private /*{{{*/
+{
+public:
+   struct AlternateURI
+   {
+      std::string URI;
+      std::unordered_map<std::string, std::string> changefields;
+      AlternateURI(std::string &&u, decltype(changefields) &&cf) : URI(u), changefields(cf) {}
+   };
+   std::list<AlternateURI> AlternativeURIs;
+   std::vector<std::string> BadAlternativeSites;
+   std::vector<std::string> PastRedirections;
+   std::unordered_map<std::string, std::string> CustomFields;
+   unsigned int Retries;
+
+   Private() : Retries(_config->FindI("Acquire::Retries", 0))
+   {
+   }
+};
+									/*}}}*/
+
 // all ::HashesRequired and ::GetExpectedHashes implementations		/*{{{*/
 /* ::GetExpectedHashes is abstract and has to be implemented by all subclasses.
    It is best to implement it as broadly as possible, while ::HashesRequired defaults
    to true and should be as restrictive as possible for false cases. Note that if
    a hash is returned by ::GetExpectedHashes it must match. Only if it doesn't
    ::HashesRequired is called to evaluate if its okay to have no hashes. */
-APT_CONST bool pkgAcqTransactionItem::HashesRequired() const
+APT_PURE bool pkgAcqTransactionItem::HashesRequired() const
 {
    /* signed repositories obviously have a parser and good hashes.
       unsigned repositories, too, as even if we can't trust them for security,
@@ -320,7 +332,7 @@ HashStringList pkgAcqTransactionItem::GetExpectedHashes() const
    return GetExpectedHashesFor(GetMetaKey());
 }
 
-APT_CONST bool pkgAcqMetaBase::HashesRequired() const
+APT_PURE bool pkgAcqMetaBase::HashesRequired() const
 {
    // Release and co have no hashes 'by design'.
    return false;
@@ -330,7 +342,7 @@ HashStringList pkgAcqMetaBase::GetExpectedHashes() const
    return HashStringList();
 }
 
-APT_CONST bool pkgAcqIndexDiffs::HashesRequired() const
+APT_PURE bool pkgAcqIndexDiffs::HashesRequired() const
 {
    /* We can't check hashes of rred result as we don't know what the
       hash of the file will be. We just know the hash of the patch(es),
@@ -347,7 +359,7 @@ HashStringList pkgAcqIndexDiffs::GetExpectedHashes() const
    return HashStringList();
 }
 
-APT_CONST bool pkgAcqIndexMergeDiffs::HashesRequired() const
+APT_PURE bool pkgAcqIndexMergeDiffs::HashesRequired() const
 {
    /* @see #pkgAcqIndexDiffs::HashesRequired, with the difference that
       we can check the rred result after all patches are applied as
@@ -365,7 +377,7 @@ HashStringList pkgAcqIndexMergeDiffs::GetExpectedHashes() const
    return HashStringList();
 }
 
-APT_CONST bool pkgAcqArchive::HashesRequired() const
+APT_PURE bool pkgAcqArchive::HashesRequired() const
 {
    return LocalSource == false;
 }
@@ -375,7 +387,7 @@ HashStringList pkgAcqArchive::GetExpectedHashes() const
    return ExpectedHashes;
 }
 
-APT_CONST bool pkgAcqFile::HashesRequired() const
+APT_PURE bool pkgAcqFile::HashesRequired() const
 {
    // supplied as parameter at creation time, so the caller decides
    return ExpectedHashes.usable();
@@ -410,20 +422,65 @@ bool pkgAcqTransactionItem::QueueURI(pkgAcquire::ItemDesc &Item)
       Status = StatDone;
       return false;
    }
+   // this ensures we rewrite only once and only the first step
+   auto const OldBaseURI = Target.Option(IndexTarget::BASE_URI);
+   if (OldBaseURI.empty() || APT::String::Startswith(Item.URI, OldBaseURI) == false)
+      return pkgAcquire::Item::QueueURI(Item);
+   // the given URI is our last resort
+   PushAlternativeURI(std::string(Item.URI), {}, false);
    // If we got the InRelease file via a mirror, pick all indexes directly from this mirror, too
-   if (TransactionManager->BaseURI.empty() == false && UsedMirror.empty() &&
-	 URI::SiteOnly(Item.URI) != URI::SiteOnly(TransactionManager->BaseURI))
+   std::string SameMirrorURI;
+   if (TransactionManager->BaseURI.empty() == false && TransactionManager->UsedMirror.empty() == false &&
+       URI::SiteOnly(Item.URI) != URI::SiteOnly(TransactionManager->BaseURI))
    {
-      // this ensures we rewrite only once and only the first step
-      auto const OldBaseURI = Target.Option(IndexTarget::BASE_URI);
-      if (OldBaseURI.empty() == false && APT::String::Startswith(Item.URI, OldBaseURI))
+      auto ExtraPath = Item.URI.substr(OldBaseURI.length());
+      auto newURI = flCombine(TransactionManager->BaseURI, std::move(ExtraPath));
+      if (IsGoodAlternativeURI(newURI))
       {
-	 auto const ExtraPath = Item.URI.substr(OldBaseURI.length());
-	 Item.URI = flCombine(TransactionManager->BaseURI, ExtraPath);
-	 UsedMirror = TransactionManager->UsedMirror;
-	 if (Item.Description.find(" ") != string::npos)
-	    Item.Description.replace(0, Item.Description.find(" "), UsedMirror);
+	 SameMirrorURI = std::move(newURI);
+	 PushAlternativeURI(std::string(SameMirrorURI), {}, false);
       }
+   }
+   // add URI and by-hash based on it
+   if (AcquireByHash())
+   {
+      // if we use the mirror transport, ask it for by-hash uris
+      // we need to stick to the same mirror only for non-unique filenames
+      auto const sameMirrorException = [&]() {
+	 if (Item.URI.find("mirror") == std::string::npos)
+	    return false;
+	 ::URI uri(Item.URI);
+	 return uri.Access == "mirror" || APT::String::Startswith(uri.Access, "mirror+") ||
+	    APT::String::Endswith(uri.Access, "+mirror") || uri.Access.find("+mirror+") != std::string::npos;
+      }();
+      if (sameMirrorException)
+	 SameMirrorURI.clear();
+      // now add the actual by-hash uris
+      auto const Expected = GetExpectedHashes();
+      auto const TargetHash = Expected.find(nullptr);
+      auto const PushByHashURI = [&](std::string U) {
+	 if (unlikely(TargetHash == nullptr))
+	    return false;
+	 auto const trailing_slash = U.find_last_of("/");
+	 if (unlikely(trailing_slash == std::string::npos))
+	    return false;
+	 auto byhashSuffix = "/by-hash/" + TargetHash->HashType() + "/" + TargetHash->HashValue();
+	 U.replace(trailing_slash, U.length() - trailing_slash, std::move(byhashSuffix));
+	 PushAlternativeURI(std::move(U), {}, false);
+	 return true;
+      };
+      PushByHashURI(Item.URI);
+      if (SameMirrorURI.empty() == false && PushByHashURI(SameMirrorURI) == false)
+	 SameMirrorURI.clear();
+   }
+   // the last URI added is the first one tried
+   if (unlikely(PopAlternativeURI(Item.URI) == false))
+      return false;
+   if (SameMirrorURI.empty() == false)
+   {
+      UsedMirror = TransactionManager->UsedMirror;
+      if (Item.Description.find(" ") != string::npos)
+	 Item.Description.replace(0, Item.Description.find(" "), UsedMirror);
    }
    return pkgAcquire::Item::QueueURI(Item);
 }
@@ -631,6 +688,26 @@ bool pkgAcqDiffIndex::TransactionState(TransactionStates const state)
    return true;
 }
 									/*}}}*/
+// pkgAcqTransactionItem::AcquireByHash and specialisations for child classes	/*{{{*/
+bool pkgAcqTransactionItem::AcquireByHash() const
+{
+   if (TransactionManager->MetaIndexParser == nullptr)
+      return false;
+   auto const useByHashConf = Target.Option(IndexTarget::BY_HASH);
+   if (useByHashConf == "force")
+      return true;
+   return StringToBool(useByHashConf) == true && TransactionManager->MetaIndexParser->GetSupportsAcquireByHash();
+}
+// pdiff patches have a unique name already, no need for by-hash
+bool pkgAcqIndexMergeDiffs::AcquireByHash() const
+{
+   return false;
+}
+bool pkgAcqIndexDiffs::AcquireByHash() const
+{
+   return false;
+}
+									/*}}}*/
 
 class APT_HIDDEN NoActionItem : public pkgAcquire::Item			/*{{{*/
 /* The sole purpose of this class is having an item which does nothing to
@@ -693,11 +770,6 @@ class APT_HIDDEN CleanupItem : public pkgAcqTransactionItem		/*{{{*/
 									/*}}}*/
 
 // Acquire::Item::Item - Constructor					/*{{{*/
-class pkgAcquire::Item::Private
-{
-public:
-   std::vector<std::string> PastRedirections;
-};
 APT_IGNORE_DEPRECATED_PUSH
 pkgAcquire::Item::Item(pkgAcquire * const owner) :
    FileSize(0), PartialSize(0), Mode(0), ID(0), Complete(false), Local(false),
@@ -717,7 +789,66 @@ pkgAcquire::Item::~Item()
 									/*}}}*/
 std::string pkgAcquire::Item::Custom600Headers() const			/*{{{*/
 {
-   return std::string();
+   std::ostringstream header;
+   for (auto const &f : d->CustomFields)
+      if (f.second.empty() == false)
+	 header << '\n'
+		<< f.first << ": " << f.second;
+   return header.str();
+}
+									/*}}}*/
+std::unordered_map<std::string, std::string> &pkgAcquire::Item::ModifyCustomFields() /*{{{*/
+{
+   return d->CustomFields;
+}
+									/*}}}*/
+bool pkgAcquire::Item::PopAlternativeURI(std::string &NewURI) /*{{{*/
+{
+   if (d->AlternativeURIs.empty())
+      return false;
+   auto const AltUri = d->AlternativeURIs.front();
+   d->AlternativeURIs.pop_front();
+   NewURI = AltUri.URI;
+   auto &CustomFields = ModifyCustomFields();
+   for (auto const &f : AltUri.changefields)
+   {
+      if (f.second.empty())
+	 CustomFields.erase(f.first);
+      else
+	 CustomFields[f.first] = f.second;
+   }
+   return true;
+}
+									/*}}}*/
+bool pkgAcquire::Item::IsGoodAlternativeURI(std::string const &AltUri) const/*{{{*/
+{
+   return std::find(d->PastRedirections.cbegin(), d->PastRedirections.cend(), AltUri) == d->PastRedirections.cend() &&
+	 std::find(d->BadAlternativeSites.cbegin(), d->BadAlternativeSites.cend(), URI::SiteOnly(AltUri)) == d->BadAlternativeSites.cend();
+}
+									/*}}}*/
+void pkgAcquire::Item::PushAlternativeURI(std::string &&NewURI, std::unordered_map<std::string, std::string> &&fields, bool const at_the_back) /*{{{*/
+{
+   if (IsGoodAlternativeURI(NewURI) == false)
+      return;
+   if (at_the_back)
+      d->AlternativeURIs.emplace_back(std::move(NewURI), std::move(fields));
+   else
+      d->AlternativeURIs.emplace_front(std::move(NewURI), std::move(fields));
+}
+									/*}}}*/
+void pkgAcquire::Item::RemoveAlternativeSite(std::string &&OldSite) /*{{{*/
+{
+   d->AlternativeURIs.erase(std::remove_if(d->AlternativeURIs.begin(), d->AlternativeURIs.end(),
+					   [&](decltype(*d->AlternativeURIs.cbegin()) AltUri) {
+					      return URI::SiteOnly(AltUri.URI) == OldSite;
+					   }),
+			    d->AlternativeURIs.end());
+   d->BadAlternativeSites.push_back(std::move(OldSite));
+}
+									/*}}}*/
+unsigned int &pkgAcquire::Item::ModifyRetries() /*{{{*/
+{
+   return d->Retries;
 }
 									/*}}}*/
 std::string pkgAcquire::Item::ShortDesc() const				/*{{{*/
@@ -725,7 +856,7 @@ std::string pkgAcquire::Item::ShortDesc() const				/*{{{*/
    return DescURI();
 }
 									/*}}}*/
-APT_CONST void pkgAcquire::Item::Finished()				/*{{{*/
+void pkgAcquire::Item::Finished()					/*{{{*/
 {
 }
 									/*}}}*/
@@ -734,12 +865,12 @@ APT_PURE pkgAcquire * pkgAcquire::Item::GetOwner() const		/*{{{*/
    return Owner;
 }
 									/*}}}*/
-APT_CONST pkgAcquire::ItemDesc &pkgAcquire::Item::GetItemDesc()		/*{{{*/
+APT_PURE pkgAcquire::ItemDesc &pkgAcquire::Item::GetItemDesc()		/*{{{*/
 {
    return Desc;
 }
 									/*}}}*/
-APT_CONST bool pkgAcquire::Item::IsTrusted() const			/*{{{*/
+APT_PURE bool pkgAcquire::Item::IsTrusted() const			/*{{{*/
 {
    return false;
 }
@@ -791,6 +922,13 @@ void pkgAcquire::Item::Failed(string const &Message,pkgAcquire::MethodConfig con
       Dequeue();
    }
 
+   FailMessage(Message);
+
+   if (QueueCounter > 1)
+      Status = StatIdle;
+}
+void pkgAcquire::Item::FailMessage(string const &Message)
+{
    string const FailReason = LookupTag(Message, "FailReason");
    enum { MAXIMUM_SIZE_EXCEEDED, HASHSUM_MISMATCH, WEAK_HASHSUMS, REDIRECTION_LOOP, OTHER } failreason = OTHER;
    if ( FailReason == "MaximumSizeExceeded")
@@ -864,9 +1002,6 @@ void pkgAcquire::Item::Failed(string const &Message,pkgAcquire::MethodConfig con
       ReportMirrorFailureToCentral(*this, FailReason, ErrorText);
    else
       ReportMirrorFailureToCentral(*this, ErrorText, ErrorText);
-
-   if (QueueCounter > 1)
-      Status = StatIdle;
 }
 									/*}}}*/
 // Acquire::Item::Start - Item has begun to download			/*{{{*/
@@ -912,8 +1047,8 @@ void pkgAcquire::Item::Done(string const &/*Message*/, HashStringList const &Has
       }
    }
    Status = StatDone;
-   ErrorText = string();
-   Owner->Dequeue(this);
+   ErrorText.clear();
+   Dequeue();
 }
 									/*}}}*/
 // Acquire::Item::Rename - Rename a file				/*{{{*/
@@ -938,6 +1073,7 @@ bool pkgAcquire::Item::Rename(string const &From,string const &To)
 									/*}}}*/
 void pkgAcquire::Item::Dequeue()					/*{{{*/
 {
+   d->AlternativeURIs.clear();
    Owner->Dequeue(this);
 }
 									/*}}}*/
@@ -984,7 +1120,9 @@ bool pkgAcquire::Item::RenameOnError(pkgAcquire::Item::RenameOnErrorState const 
 void pkgAcquire::Item::SetActiveSubprocess(const std::string &subprocess)/*{{{*/
 {
       ActiveSubprocess = subprocess;
-      APT_IGNORE_DEPRECATED(Mode = ActiveSubprocess.c_str();)
+      APT_IGNORE_DEPRECATED_PUSH
+      Mode = ActiveSubprocess.c_str();
+      APT_IGNORE_DEPRECATED_POP
 }
 									/*}}}*/
 // Acquire::Item::ReportMirrorFailure					/*{{{*/
@@ -1023,6 +1161,12 @@ bool pkgAcquire::Item::IsRedirectionLoop(std::string const &NewURI)	/*{{{*/
 									/*}}}*/
 int pkgAcquire::Item::Priority()					/*{{{*/
 {
+   // Stage 0: Files requested by methods
+   // - they will usually not end up here, but if they do we make sure
+   //   to get them as soon as possible as they are probably blocking
+   //   the processing of files by the requesting method
+   if (dynamic_cast<pkgAcqAuxFile *>(this) != nullptr)
+      return 5000;
    // Stage 1: Meta indices and diff indices
    // - those need to be fetched first to have progress reporting working
    //   for the rest
@@ -1048,6 +1192,16 @@ pkgAcqTransactionItem::pkgAcqTransactionItem(pkgAcquire * const Owner,	/*{{{*/
 {
    if (TransactionManager != this)
       TransactionManager->Add(this);
+   ModifyCustomFields() = {
+      {"Target-Site", Target.Option(IndexTarget::SITE)},
+      {"Target-Repo-URI", Target.Option(IndexTarget::REPO_URI)},
+      {"Target-Base-URI", Target.Option(IndexTarget::BASE_URI)},
+      {"Target-Component", Target.Option(IndexTarget::COMPONENT)},
+      {"Target-Release", Target.Option(IndexTarget::RELEASE)},
+      {"Target-Architecture", Target.Option(IndexTarget::ARCHITECTURE)},
+      {"Target-Language", Target.Option(IndexTarget::LANGUAGE)},
+      {"Target-Type", "index"},
+   };
 }
 									/*}}}*/
 pkgAcqTransactionItem::~pkgAcqTransactionItem()				/*{{{*/
@@ -1114,13 +1268,15 @@ void pkgAcqMetaBase::AbortTransaction()
       case TransactionCommit: _error->Fatal("Transaction %s was already aborted and is now committed", TransactionManager->Target.URI.c_str()); return;
    }
    TransactionManager->State = TransactionAbort;
+   TransactionManager->ExpectedAdditionalItems = 0;
 
    // ensure the toplevel is in error state too
    for (std::vector<pkgAcqTransactionItem*>::iterator I = Transaction.begin();
         I != Transaction.end(); ++I)
    {
+      (*I)->ExpectedAdditionalItems = 0;
       if ((*I)->Status != pkgAcquire::Item::StatFetching)
-	 Owner->Dequeue(*I);
+	 (*I)->Dequeue();
       (*I)->TransactionState(TransactionAbort);
    }
    Transaction.clear();
@@ -1223,7 +1379,8 @@ bool pkgAcqMetaBase::CheckStopAuthentication(pkgAcquire::Item * const I, const s
 // ---------------------------------------------------------------------
 string pkgAcqMetaBase::Custom600Headers() const
 {
-   std::string Header = "\nIndex-File: true";
+   std::string Header = pkgAcqTransactionItem::Custom600Headers();
+   Header.append("\nIndex-File: true");
    std::string MaximumSize;
    strprintf(MaximumSize, "\nMaximum-Size: %i",
              _config->FindI("Acquire::MaxReleaseFileSize", 10*1000*1000));
@@ -1256,9 +1413,13 @@ bool pkgAcqMetaBase::CheckDownloadDone(pkgAcqTransactionItem * const I, const st
    // Save the final base URI we got this Release file from
    if (I->UsedMirror.empty() == false && _config->FindB("Acquire::SameMirrorForAllIndexes", true))
    {
-      if (APT::String::Endswith(I->Desc.URI, "InRelease"))
+      auto InReleasePath = Target.Option(IndexTarget::INRELEASE_PATH);
+      if (InReleasePath.empty())
+	 InReleasePath = "InRelease";
+
+      if (APT::String::Endswith(I->Desc.URI, InReleasePath))
       {
-	 TransactionManager->BaseURI = I->Desc.URI.substr(0, I->Desc.URI.length() - strlen("InRelease"));
+	 TransactionManager->BaseURI = I->Desc.URI.substr(0, I->Desc.URI.length() - InReleasePath.length());
 	 TransactionManager->UsedMirror = I->UsedMirror;
       }
       else if (APT::String::Endswith(I->Desc.URI, "Release"))
@@ -1304,8 +1465,20 @@ bool pkgAcqMetaBase::CheckDownloadDone(pkgAcqTransactionItem * const I, const st
    return true;
 }
 									/*}}}*/
-bool pkgAcqMetaBase::CheckAuthDone(string const &Message)		/*{{{*/
+bool pkgAcqMetaBase::CheckAuthDone(string const &Message, pkgAcquire::MethodConfig const *const Cnf) /*{{{*/
 {
+   /* If we work with a recent version of our gpgv method, we expect that it tells us
+      which key(s) have signed the file so stuff like CVE-2018-0501 is harder in the future */
+   if (Cnf->Version != "1.0" && LookupTag(Message, "Signed-By").empty())
+   {
+      std::string errmsg;
+      strprintf(errmsg, "Internal Error: Signature on %s seems good, but expected details are missing! (%s)", Target.URI.c_str(), "Signed-By");
+      if (ErrorText.empty())
+	 ErrorText = errmsg;
+      Status = StatAuthError;
+      return _error->Error("%s", errmsg.c_str());
+   }
+
    // At this point, the gpgv method has succeeded, so there is a
    // valid signature from a key in the trusted keyring.  We
    // perform additional verification of its contents, and use them
@@ -1356,9 +1529,8 @@ void pkgAcqMetaClearSig::QueueIndexes(bool const verify)			/*{{{*/
    // at this point the real Items are loaded in the fetcher
    ExpectedAdditionalItems = 0;
 
-   std::set<std::string> targetsSeen;
+   std::unordered_set<std::string> targetsSeen, componentsSeen;
    bool const hasReleaseFile = TransactionManager->MetaIndexParser != NULL;
-   bool const metaBaseSupportsByHash = hasReleaseFile && TransactionManager->MetaIndexParser->GetSupportsAcquireByHash();
    bool hasHashes = true;
    auto IndexTargets = TransactionManager->MetaIndexParser->GetIndexTargets();
    if (hasReleaseFile && verify == false)
@@ -1371,8 +1543,8 @@ void pkgAcqMetaClearSig::QueueIndexes(bool const verify)			/*{{{*/
 	 can be as we shouldn't be telling the mirrors (and everyone else watching)
 	 which is native/foreign arch, specific order of preference of translations, … */
       auto range_start = IndexTargets.begin();
-      std::random_device rd;
-      std::default_random_engine g(rd());
+      auto seed = (std::chrono::high_resolution_clock::now().time_since_epoch() /  std::chrono::nanoseconds(1)) ^ getpid();
+      std::default_random_engine g(seed);
       do {
 	 auto const type = range_start->Option(IndexTarget::CREATED_BY);
 	 auto const range_end = std::find_if_not(range_start, IndexTargets.end(),
@@ -1381,6 +1553,18 @@ void pkgAcqMetaClearSig::QueueIndexes(bool const verify)			/*{{{*/
 	 range_start = range_end;
       } while (range_start != IndexTargets.end());
    }
+   /* Collect all components for which files exist to prevent apt from warning users
+      about "hidden" components for which not all files exist like main/debian-installer
+      and Translation files */
+   if (hasReleaseFile == true)
+      for (auto const &Target : IndexTargets)
+	 if (TransactionManager->MetaIndexParser->Exists(Target.MetaKey))
+	 {
+	    auto component = Target.Option(IndexTarget::COMPONENT);
+	    if (component.empty() == false)
+	       componentsSeen.emplace(std::move(component));
+	 }
+
    for (auto&& Target: IndexTargets)
    {
       // if we have seen a target which is created-by a target this one here is declared a
@@ -1411,6 +1595,18 @@ void pkgAcqMetaClearSig::QueueIndexes(bool const verify)			/*{{{*/
       {
 	 if (TransactionManager->MetaIndexParser->Exists(Target.MetaKey) == false)
 	 {
+	    auto const component = Target.Option(IndexTarget::COMPONENT);
+	    if (component.empty() == false &&
+		componentsSeen.find(component) == std::end(componentsSeen) &&
+		TransactionManager->MetaIndexParser->HasSupportForComponent(component) == false)
+	    {
+	       new CleanupItem(Owner, TransactionManager, Target);
+	       _error->Warning(_("Skipping acquire of configured file '%s' as repository '%s' doesn't have the component '%s' (component misspelt in sources.list?)"),
+		     Target.MetaKey.c_str(), TransactionManager->Target.Description.c_str(), component.c_str());
+	       continue;
+
+	    }
+
 	    // optional targets that we do not have in the Release file are skipped
 	    if (hasHashes == true && Target.IsOptional)
 	    {
@@ -1440,9 +1636,10 @@ void pkgAcqMetaClearSig::QueueIndexes(bool const verify)			/*{{{*/
 
 	    if (hasHashes == true)
 	    {
-	       Status = StatAuthError;
-	       strprintf(ErrorText, _("Unable to find expected entry '%s' in Release file (Wrong sources.list entry or malformed file)"), Target.MetaKey.c_str());
-	       return;
+	       new CleanupItem(Owner, TransactionManager, Target);
+	       _error->Warning(_("Skipping acquire of configured file '%s' as repository '%s' does not seem to provide it (sources.list entry misspelt?)"),
+		     Target.MetaKey.c_str(), TransactionManager->Target.Description.c_str());
+	       continue;
 	    }
 	    else
 	    {
@@ -1483,15 +1680,6 @@ void pkgAcqMetaClearSig::QueueIndexes(bool const verify)			/*{{{*/
 	 if (types.empty() == false)
 	 {
 	    std::ostringstream os;
-	    // add the special compressiontype byhash first if supported
-	    std::string const useByHashConf = Target.Option(IndexTarget::BY_HASH);
-	    bool useByHash = false;
-	    if(useByHashConf == "force")
-	       useByHash = true;
-	    else
-	       useByHash = StringToBool(useByHashConf) == true && metaBaseSupportsByHash;
-	    if (useByHash == true)
-	       os << "by-hash ";
 	    std::copy(types.begin(), types.end()-1, std::ostream_iterator<std::string>(os, " "));
 	    os << *types.rbegin();
 	    Target.Options["COMPRESSIONTYPES"] = os.str();
@@ -1578,6 +1766,25 @@ bool pkgAcqMetaBase::VerifyVendor(string const &)			/*{{{*/
       }
    }
 
+   if (TransactionManager->MetaIndexParser->GetNotBefore() > 0)
+   {
+      time_t const invalid_for = TransactionManager->MetaIndexParser->GetNotBefore() - time(nullptr);
+      if (invalid_for > 0)
+      {
+	 std::string errmsg;
+	 strprintf(errmsg,
+		   // TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+		   // the time until the file will be valid - formatted in the same way as in
+		   // the download progress display (e.g. 7d 3h 42min 1s)
+		   _("Release file for %s is not valid yet (invalid for another %s). "
+		     "Updates for this repository will not be applied."),
+		   Target.URI.c_str(), TimeToStr(invalid_for).c_str());
+	 if (ErrorText.empty())
+	    ErrorText = errmsg;
+	 return _error->Error("%s", errmsg.c_str());
+      }
+   }
+
    /* Did we get a file older than what we have? This is a last minute IMS hit and doubles
       as a prevention of downgrading us to older (still valid) files */
    if (TransactionManager->IMSHit == false && TransactionManager->LastMetaIndexParser != NULL &&
@@ -1606,13 +1813,79 @@ bool pkgAcqMetaBase::VerifyVendor(string const &)			/*{{{*/
    if (TransactionManager->MetaIndexParser->CheckDist(ExpectedDist) == false)
       _error->Warning(_("Conflicting distribution: %s (expected %s but got %s)"),
 	    Desc.Description.c_str(), ExpectedDist.c_str(), NowCodename.c_str());
-   // might be okay, might be not
+
+   // changed info potentially breaks user config like pinning
    if (TransactionManager->LastMetaIndexParser != nullptr)
    {
-      auto const LastCodename = TransactionManager->LastMetaIndexParser->GetCodename();
-      if (LastCodename.empty() == false && NowCodename.empty() == false && LastCodename != NowCodename)
-	 _error->Warning(_("Conflicting distribution: %s (expected %s but got %s)"),
-	       Desc.Description.c_str(), LastCodename.c_str(), NowCodename.c_str());
+      std::vector<pkgAcquireStatus::ReleaseInfoChange> Changes;
+      auto const AllowInfoChange = _config->FindB("Acquire::AllowReleaseInfoChange", false);
+      auto const quietInfoChange = _config->FindB("quiet::ReleaseInfoChange", false);
+      struct {
+	 char const * const Type;
+	 bool const Allowed;
+	 decltype(&metaIndex::GetOrigin) const Getter;
+      } checkers[] = {
+	 { "Origin", AllowInfoChange, &metaIndex::GetOrigin },
+	 { "Label", AllowInfoChange, &metaIndex::GetLabel },
+	 { "Version", true, &metaIndex::GetVersion }, // numbers change all the time, that is okay
+	 { "Suite", AllowInfoChange, &metaIndex::GetSuite },
+	 { "Codename", AllowInfoChange, &metaIndex::GetCodename },
+	 { nullptr, false, nullptr }
+      };
+      auto const CheckReleaseInfo = [&](char const * const Type, bool const AllowChange, decltype(checkers[0].Getter) const Getter) {
+	 std::string const Last = (TransactionManager->LastMetaIndexParser->*Getter)();
+	 std::string const Now = (TransactionManager->MetaIndexParser->*Getter)();
+	 if (Last == Now)
+	    return;
+	 auto const Allow = _config->FindB(std::string("Acquire::AllowReleaseInfoChange::").append(Type), AllowChange);
+	 if (Allow == true && _config->FindB(std::string("quiet::ReleaseInfoChange::").append(Type), quietInfoChange) == true)
+	    return;
+	 std::string msg;
+	 strprintf(msg, _("Repository '%s' changed its '%s' value from '%s' to '%s'"),
+	       Desc.Description.c_str(), Type, Last.c_str(), Now.c_str());
+	 Changes.push_back({Type, std::move(Last), std::move(Now), std::move(msg), Allow});
+      };
+      for (short i = 0; checkers[i].Type != nullptr; ++i)
+	 CheckReleaseInfo(checkers[i].Type, checkers[i].Allowed, checkers[i].Getter);
+
+      {
+	 auto const Last = TransactionManager->LastMetaIndexParser->GetDefaultPin();
+	 auto const Now = TransactionManager->MetaIndexParser->GetDefaultPin();
+	 if (Last != Now)
+	 {
+	    auto const Allow = _config->FindB("Acquire::AllowReleaseInfoChange::DefaultPin", AllowInfoChange);
+	    if (Allow == false || _config->FindB("quiet::ReleaseInfoChange::DefaultPin", quietInfoChange) == false)
+	    {
+	       std::string msg;
+	       strprintf(msg, _("Repository '%s' changed its default priority for %s from %hi to %hi."),
+		     Desc.Description.c_str(), "apt_preferences(5)", Last, Now);
+	       Changes.push_back({"DefaultPin", std::to_string(Last), std::to_string(Now), std::move(msg), Allow});
+	    }
+	 }
+      }
+      if (Changes.empty() == false)
+      {
+	 auto const notes = TransactionManager->MetaIndexParser->GetReleaseNotes();
+	 if (notes.empty() == false)
+	 {
+	    std::string msg;
+	    // TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+	    strprintf(msg, _("More information about this can be found online in the Release notes at: %s"), notes.c_str());
+	    Changes.push_back({"Release-Notes", "", std::move(notes), std::move(msg), true});
+	 }
+	 if (std::any_of(Changes.begin(),Changes.end(),[](pkgAcquireStatus::ReleaseInfoChange const &c) { return c.DefaultAction == false; }))
+	 {
+	    std::string msg;
+	    // TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+	    strprintf(msg, _("This must be accepted explicitly before updates for "
+		     "this repository can be applied. See %s manpage for details."), "apt-secure(8)");
+	    Changes.push_back({"Confirmation", "", "", std::move(msg), true});
+	 }
+
+      }
+      if (Owner->Log == nullptr)
+	 return pkgAcquireStatus::ReleaseInfoChangesAsGlobalErrors(std::move(Changes));
+      return Owner->Log->ReleaseInfoChanges(TransactionManager->LastMetaIndexParser, TransactionManager->MetaIndexParser, std::move(Changes));
    }
    return true;
 }
@@ -1664,7 +1937,8 @@ void pkgAcqMetaClearSig::Finished()					/*{{{*/
 bool pkgAcqMetaClearSig::VerifyDone(std::string const &Message,		/*{{{*/
 	 pkgAcquire::MethodConfig const * const Cnf)
 {
-   Item::VerifyDone(Message, Cnf);
+   if (Item::VerifyDone(Message, Cnf) == false)
+      return false;
 
    if (FileExists(DestFile) && !StartsWithGPGClearTextSignature(DestFile))
       return RenameOnError(NotClearsigned);
@@ -1685,7 +1959,7 @@ void pkgAcqMetaClearSig::Done(std::string const &Message,
          QueueForSignatureVerify(this, DestFile, DestFile);
       return;
    }
-   else if(CheckAuthDone(Message) == true)
+   else if (CheckAuthDone(Message, Cnf) == true)
    {
       if (TransactionManager->IMSHit == false)
 	 TransactionManager->TransactionStageCopy(this, DestFile, GetFinalFilename());
@@ -1717,14 +1991,28 @@ void pkgAcqMetaClearSig::Failed(string const &Message,pkgAcquire::MethodConfig c
 
    if (AuthPass == false)
    {
-      if (Status == StatAuthError || Status == StatTransientNetworkError)
+      if (Status == StatTransientNetworkError)
+      {
+	 TransactionManager->AbortTransaction();
+	 return;
+      }
+      auto const failreason = LookupTag(Message, "FailReason");
+      auto const httperror = "HttpError";
+      if (Status == StatAuthError ||
+	  Target.Option(IndexTarget::INRELEASE_PATH).empty() == false || /* do not fallback if InRelease was requested */
+	  (strncmp(failreason.c_str(), httperror, strlen(httperror)) == 0 &&
+	   failreason != "HttpError404"))
       {
 	 // if we expected a ClearTextSignature (InRelease) but got a network
 	 // error or got a file, but it wasn't valid, we end up here (see VerifyDone).
 	 // As these is usually called by web-portals we do not try Release/Release.gpg
-	 // as this is gonna fail anyway and instead abort our try (LP#346386)
-	 TransactionManager->AbortTransaction();
-	 return;
+	 // as this is going to fail anyway and instead abort our try (LP#346386)
+	 _error->PushToStack();
+	 _error->Error(_("Failed to fetch %s  %s"), Target.URI.c_str(), ErrorText.c_str());
+	 if (Target.Option(IndexTarget::INRELEASE_PATH).empty() == true && AllowInsecureRepositories(InsecureType::UNSIGNED, Target.Description, TransactionManager->MetaIndexParser, TransactionManager, this) == true)
+	    _error->RevertToStack();
+	 else
+	    return;
       }
 
       // Queue the 'old' InRelease file for removal if we try Release.gpg
@@ -1782,7 +2070,19 @@ pkgAcqMetaIndex::pkgAcqMetaIndex(pkgAcquire * const Owner,		/*{{{*/
    Desc.Description = DataTarget.Description;
    Desc.Owner = this;
    Desc.ShortDesc = DataTarget.ShortDesc;
-   Desc.URI = DataTarget.URI;
+
+   // Rewrite the description URI if INRELEASE_PATH was specified so
+   // we download the specified file instead.
+   auto InReleasePath = DataTarget.Option(IndexTarget::INRELEASE_PATH);
+   if (InReleasePath.empty() == false && APT::String::Endswith(DataTarget.URI, "/InRelease"))
+   {
+      Desc.URI = DataTarget.URI.substr(0, DataTarget.URI.size() - strlen("InRelease")) + InReleasePath;
+   }
+   else
+   {
+      Desc.URI = DataTarget.URI;
+   }
+
    QueueURI(Desc);
 }
 									/*}}}*/
@@ -1903,7 +2203,7 @@ void pkgAcqMetaSig::Done(string const &Message, HashStringList const &Hashes,
       }
       return;
    }
-   else if(MetaIndex->CheckAuthDone(Message) == true)
+   else if (MetaIndex->CheckAuthDone(Message, Cfg) == true)
    {
       auto const Releasegpg = GetFinalFilename();
       auto const Release = MetaIndex->GetFinalFilename();
@@ -2025,8 +2325,6 @@ pkgAcqDiffIndex::pkgAcqDiffIndex(pkgAcquire * const Owner,
 	 CompressionExtensions = os.str();
       }
    }
-   if (Target.Option(IndexTarget::COMPRESSIONTYPES).find("by-hash") != std::string::npos)
-      CompressionExtensions = "by-hash " + CompressionExtensions;
    Init(GetDiffIndexURI(Target), GetDiffIndexFileName(Target.Description), Target.ShortDesc);
 
    if(Debug)
@@ -2037,16 +2335,14 @@ void pkgAcqDiffIndex::QueueOnIMSHit() const				/*{{{*/
 {
    // list cleanup needs to know that this file as well as the already
    // present index is ours, so we create an empty diff to save it for us
-   new pkgAcqIndexDiffs(Owner, TransactionManager, Target, UsedMirror, Target.URI);
+   new pkgAcqIndexDiffs(Owner, TransactionManager, Target);
 }
 									/*}}}*/
-static bool RemoveFileForBootstrapLinking(bool const Debug, std::string const &For, std::string const &Boot)/*{{{*/
+static bool RemoveFileForBootstrapLinking(std::string &ErrorText, std::string const &For, std::string const &Boot)/*{{{*/
 {
    if (FileExists(Boot) && RemoveFile("Bootstrap-linking", Boot) == false)
    {
-      if (Debug)
-	 std::clog << "Bootstrap-linking for patching " << For
-	    << " by removing stale " << Boot << " failed!" << std::endl;
+      strprintf(ErrorText, "Bootstrap for patching %s by removing stale %s failed!", For.c_str(), Boot.c_str());
       return false;
    }
    return true;
@@ -2054,6 +2350,7 @@ static bool RemoveFileForBootstrapLinking(bool const Debug, std::string const &F
 									/*}}}*/
 bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
 {
+   available_patches.clear();
    ExpectedAdditionalItems = 0;
    // failing here is fine: our caller will take care of trying to
    // get the complete file if patching fails
@@ -2097,8 +2394,7 @@ bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
 
    if (ServerHashes.usable() == false)
    {
-      if (Debug == true)
-	 std::clog << "pkgAcqDiffIndex: " << IndexDiffFile << ": Did not find a good hashsum in the index" << std::endl;
+      ErrorText = "Did not find a good hashsum in the index";
       return false;
    }
 
@@ -2106,11 +2402,7 @@ bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
    HashStringList const TargetFileHashes = GetExpectedHashesFor(Target.MetaKey);
    if (TargetFileHashes.usable() == false || ServerHashes != TargetFileHashes)
    {
-      if (Debug == true)
-      {
-	 std::clog << "pkgAcqDiffIndex: " << IndexDiffFile << ": Index has different hashes than parser, probably older, so fail pdiffing" << std::endl;
-         printHashSumComparison(CurrentPackagesFile, ServerHashes, TargetFileHashes);
-      }
+      ErrorText = "Index has different hashes than parser (probably older)";
       return false;
    }
 
@@ -2128,10 +2420,7 @@ bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
 
    if (ServerHashes == LocalHashes)
    {
-      // we have the same sha1 as the server so we are done here
-      if(Debug)
-	 std::clog << "pkgAcqDiffIndex: Package file " << CurrentPackagesFile << " is up-to-date" << std::endl;
-      QueueOnIMSHit();
+      available_patches.clear();
       return true;
    }
 
@@ -2148,7 +2437,6 @@ bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
       types.push_back(*type);
 
    // parse all of (provided) history
-   vector<DiffInfo> available_patches;
    bool firstAcceptedHashes = true;
    for (auto type = types.crbegin(); type != types.crend(); ++type)
    {
@@ -2203,9 +2491,7 @@ bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
 
    if (unlikely(available_patches.empty() == true))
    {
-      if (Debug)
-	 std::clog << "pkgAcqDiffIndex: " << IndexDiffFile << ": "
-	    << "Couldn't find any patches for the patch series." << std::endl;
+      ErrorText = "Couldn't find any patches for the patch series";
       return false;
    }
 
@@ -2307,9 +2593,7 @@ bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
 
    if (foundStart == false || unlikely(available_patches.empty() == true))
    {
-      if (Debug)
-	 std::clog << "pkgAcqDiffIndex: " << IndexDiffFile << ": "
-	    << "Couldn't find the start of the patch series." << std::endl;
+      ErrorText = "Couldn't find the start of the patch series";
       return false;
    }
 
@@ -2318,9 +2602,7 @@ bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
 	    patch.patch_hashes.usable() == false ||
 	    patch.download_hashes.usable() == false)
       {
-	 if (Debug)
-	    std::clog << "pkgAcqDiffIndex: " << IndexDiffFile << ": provides no usable hashes for " << patch.file
-	       << " so fallback to complete download" << std::endl;
+	 strprintf(ErrorText, "Provides no usable hashes for %s", patch.file.c_str());
 	 return false;
       }
 
@@ -2328,9 +2610,7 @@ bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
    unsigned long const fileLimit = _config->FindI("Acquire::PDiffs::FileLimit", 0);
    if (fileLimit != 0 && fileLimit < available_patches.size())
    {
-      if (Debug)
-	 std::clog << "Need " << available_patches.size() << " diffs (Limit is " << fileLimit
-	    << ") so fallback to complete download" << std::endl;
+      strprintf(ErrorText, "Need %lu diffs, but limit is %lu", available_patches.size(), fileLimit);
       return false;
    }
 
@@ -2360,25 +2640,18 @@ bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
 	 unsigned long long const sizeLimit = downloadSizeIdx * sizeLimitPercent;
 	 if ((sizeLimit/100) < downloadSize)
 	 {
-	    if (Debug)
-	       std::clog << "Need " << downloadSize << " compressed bytes (Limit is " << (sizeLimit/100) << ", "
-		  << "original is " << downloadSizeIdx << ") so fallback to complete download" << std::endl;
+	    strprintf(ErrorText, "Need %llu compressed bytes, but limit is %llu and original is %llu", downloadSize, (sizeLimit/100), downloadSizeIdx);
 	    return false;
 	 }
       }
    }
-
-   // we have something, queue the diffs
-   string::size_type const last_space = Description.rfind(" ");
-   if(last_space != string::npos)
-      Description.erase(last_space, Description.size()-last_space);
 
    /* decide if we should download patches one by one or in one go:
       The first is good if the server merges patches, but many don't so client
       based merging can be attempt in which case the second is better.
       "bad things" will happen if patches are merged on the server,
       but client side merging is attempt as well */
-   bool pdiff_merge = _config->FindB("Acquire::PDiffs::Merge", true);
+   pdiff_merge = _config->FindB("Acquire::PDiffs::Merge", true);
    if (pdiff_merge == true)
    {
       // reprepro adds this flag if it has merged patches on the server
@@ -2393,61 +2666,33 @@ bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
 	 return false;
       std::string const PartialFile = GetPartialFileNameFromURI(Target.URI);
       std::string const PatchedFile = GetKeepCompressedFileName(PartialFile + "-patched", Target);
-      if (RemoveFileForBootstrapLinking(Debug, CurrentPackagesFile, PartialFile) == false ||
-	    RemoveFileForBootstrapLinking(Debug, CurrentPackagesFile, PatchedFile) == false)
+      if (RemoveFileForBootstrapLinking(ErrorText, CurrentPackagesFile, PartialFile) == false ||
+	    RemoveFileForBootstrapLinking(ErrorText, CurrentPackagesFile, PatchedFile) == false)
 	 return false;
       for (auto const &ext : APT::Configuration::getCompressorExtensions())
       {
-	 if (RemoveFileForBootstrapLinking(Debug, CurrentPackagesFile, PartialFile + ext) == false ||
-	       RemoveFileForBootstrapLinking(Debug, CurrentPackagesFile, PatchedFile + ext) == false)
+	 if (RemoveFileForBootstrapLinking(ErrorText, CurrentPackagesFile, PartialFile + ext) == false ||
+	       RemoveFileForBootstrapLinking(ErrorText, CurrentPackagesFile, PatchedFile + ext) == false)
 	    return false;
       }
       std::string const Ext = Final.substr(CurrentPackagesFile.length());
       std::string const Partial = PartialFile + Ext;
       if (symlink(Final.c_str(), Partial.c_str()) != 0)
       {
-	 if (Debug)
-	    std::clog << "Bootstrap-linking for patching " << CurrentPackagesFile
-	       << " by linking " << Final << " to " << Partial << " failed!" << std::endl;
+	 strprintf(ErrorText, "Bootstrap for patching by linking %s to %s failed!", Final.c_str(), Partial.c_str());
 	 return false;
       }
    }
 
-   std::string indexURI = Desc.URI;
-   auto const byhashidx = indexURI.find("/by-hash/");
-   if (byhashidx != std::string::npos)
-      indexURI = indexURI.substr(0, byhashidx - strlen(".diff"));
-   else
-   {
-      auto end = indexURI.length() - strlen(".diff/Index");
-      if (CurrentCompressionExtension != "uncompressed")
-	 end -= (1 + CurrentCompressionExtension.length());
-      indexURI = indexURI.substr(0, end);
-   }
-
-   if (pdiff_merge == false)
-      new pkgAcqIndexDiffs(Owner, TransactionManager, Target, UsedMirror, indexURI, available_patches);
-   else
-   {
-      diffs = new std::vector<pkgAcqIndexMergeDiffs*>(available_patches.size());
-      for(size_t i = 0; i < available_patches.size(); ++i)
-	 (*diffs)[i] = new pkgAcqIndexMergeDiffs(Owner, TransactionManager,
-               Target, UsedMirror, indexURI,
-	       available_patches[i],
-	       diffs);
-   }
-
-   Complete = false;
-   Status = StatDone;
-   Dequeue();
    return true;
 }
 									/*}}}*/
 void pkgAcqDiffIndex::Failed(string const &Message,pkgAcquire::MethodConfig const * const Cnf)/*{{{*/
 {
-   if (CommonFailed(GetDiffIndexURI(Target), GetDiffIndexFileName(Target.Description), Message, Cnf))
+   if (CommonFailed(GetDiffIndexURI(Target), Message, Cnf))
       return;
 
+   RenameOnError(PDiffError);
    Status = StatDone;
    ExpectedAdditionalItems = 0;
 
@@ -2458,6 +2703,21 @@ void pkgAcqDiffIndex::Failed(string const &Message,pkgAcquire::MethodConfig cons
    new pkgAcqIndex(Owner, TransactionManager, Target);
 }
 									/*}}}*/
+bool pkgAcqDiffIndex::VerifyDone(std::string const &Message, pkgAcquire::MethodConfig const * const)/*{{{*/
+{
+   string const FinalFile = GetFinalFilename();
+   if(StringToBool(LookupTag(Message,"IMS-Hit"),false))
+      DestFile = FinalFile;
+
+   if (ParseDiffIndex(DestFile))
+      return true;
+
+   Status = StatError;
+   if (ErrorText.empty())
+      ErrorText = "Couldn't parse pdiff index";
+   return false;
+}
+									/*}}}*/
 void pkgAcqDiffIndex::Done(string const &Message,HashStringList const &Hashes,	/*{{{*/
 			   pkgAcquire::MethodConfig const * const Cnf)
 {
@@ -2466,20 +2726,29 @@ void pkgAcqDiffIndex::Done(string const &Message,HashStringList const &Hashes,	/
 
    Item::Done(Message, Hashes, Cnf);
 
-   string const FinalFile = GetFinalFilename();
-   if(StringToBool(LookupTag(Message,"IMS-Hit"),false))
-      DestFile = FinalFile;
-
-   if(ParseDiffIndex(DestFile) == false)
+   if (available_patches.empty())
    {
-      Failed("Message: Couldn't parse pdiff index", Cnf);
-      // queue for final move - this should happen even if we fail
-      // while parsing (e.g. on sizelimit) and download the complete file.
-      TransactionManager->TransactionStageCopy(this, DestFile, FinalFile);
-      return;
+      // we have the same sha1 as the server so we are done here
+      if(Debug)
+	 std::clog << "pkgAcqDiffIndex: Package file is up-to-date" << std::endl;
+      QueueOnIMSHit();
+   }
+   else
+   {
+      if (pdiff_merge == false)
+	 new pkgAcqIndexDiffs(Owner, TransactionManager, Target, available_patches);
+      else
+      {
+	 diffs = new std::vector<pkgAcqIndexMergeDiffs*>(available_patches.size());
+	 for(size_t i = 0; i < available_patches.size(); ++i)
+	    (*diffs)[i] = new pkgAcqIndexMergeDiffs(Owner, TransactionManager,
+						    Target,
+						    available_patches[i],
+						    diffs);
+      }
    }
 
-   TransactionManager->TransactionStageCopy(this, DestFile, FinalFile);
+   TransactionManager->TransactionStageCopy(this, DestFile, GetFinalFilename());
 
    Complete = true;
    Status = StatDone;
@@ -2499,27 +2768,19 @@ pkgAcqDiffIndex::~pkgAcqDiffIndex()
 /* The package diff is added to the queue. one object is constructed
  * for each diff and the index
  */
-pkgAcqIndexDiffs::pkgAcqIndexDiffs(pkgAcquire * const Owner,
-                                   pkgAcqMetaClearSig * const TransactionManager,
-                                   IndexTarget const &Target,
-				   std::string const &indexUsedMirror, std::string const &indexURI,
+pkgAcqIndexDiffs::pkgAcqIndexDiffs(pkgAcquire *const Owner,
+				   pkgAcqMetaClearSig *const TransactionManager,
+				   IndexTarget const &Target,
 				   vector<DiffInfo> const &diffs)
-   : pkgAcqBaseIndex(Owner, TransactionManager, Target), indexURI(indexURI),
-     available_patches(diffs)
+    : pkgAcqBaseIndex(Owner, TransactionManager, Target),
+      available_patches(diffs)
 {
    DestFile = GetKeepCompressedFileName(GetPartialFileNameFromURI(Target.URI), Target);
 
    Debug = _config->FindB("Debug::pkgAcquire::Diffs",false);
 
    Desc.Owner = this;
-   Description = Target.Description;
    Desc.ShortDesc = Target.ShortDesc;
-
-   UsedMirror = indexUsedMirror;
-   if (UsedMirror == "DIRECT")
-      UsedMirror.clear();
-   else if (UsedMirror.empty() == false && Description.find(" ") != string::npos)
-      Description.replace(0, Description.find(" "), UsedMirror);
 
    if(available_patches.empty() == true)
    {
@@ -2635,8 +2896,8 @@ bool pkgAcqIndexDiffs::QueueNextDiff()					/*{{{*/
    }
 
    // queue the right diff
-   Desc.URI = indexURI + ".diff/" + available_patches[0].file + ".gz";
-   Desc.Description = Description + " " + available_patches[0].file + string(".pdiff");
+   Desc.URI = Target.URI + ".diff/" + available_patches[0].file + ".gz";
+   Desc.Description = Target.Description + " " + available_patches[0].file + string(".pdiff");
    DestFile = GetKeepCompressedFileName(GetPartialFileNameFromURI(Target.URI + ".diff/" + available_patches[0].file), Target);
 
    if(Debug)
@@ -2688,7 +2949,7 @@ void pkgAcqIndexDiffs::Done(string const &Message, HashStringList const &Hashes,
 	 // see if there is more to download
 	 if(available_patches.empty() == false)
 	 {
-	    new pkgAcqIndexDiffs(Owner, TransactionManager, Target, UsedMirror, indexURI, available_patches);
+	    new pkgAcqIndexDiffs(Owner, TransactionManager, Target, available_patches);
 	    Finish();
 	 } else {
 	    DestFile = PatchedFile;
@@ -2714,28 +2975,20 @@ std::string pkgAcqIndexDiffs::Custom600Headers() const			/*{{{*/
 pkgAcqIndexDiffs::~pkgAcqIndexDiffs() {}
 
 // AcqIndexMergeDiffs::AcqIndexMergeDiffs - Constructor			/*{{{*/
-pkgAcqIndexMergeDiffs::pkgAcqIndexMergeDiffs(pkgAcquire * const Owner,
-                                             pkgAcqMetaClearSig * const TransactionManager,
-                                             IndexTarget const &Target,
-					     std::string const &indexUsedMirror, std::string const &indexURI,
-                                             DiffInfo const &patch,
-                                             std::vector<pkgAcqIndexMergeDiffs*> const * const allPatches)
-  : pkgAcqBaseIndex(Owner, TransactionManager, Target), indexURI(indexURI),
-    patch(patch), allPatches(allPatches), State(StateFetchDiff)
+pkgAcqIndexMergeDiffs::pkgAcqIndexMergeDiffs(pkgAcquire *const Owner,
+					     pkgAcqMetaClearSig *const TransactionManager,
+					     IndexTarget const &Target,
+					     DiffInfo const &patch,
+					     std::vector<pkgAcqIndexMergeDiffs *> const *const allPatches)
+    : pkgAcqBaseIndex(Owner, TransactionManager, Target),
+      patch(patch), allPatches(allPatches), State(StateFetchDiff)
 {
    Debug = _config->FindB("Debug::pkgAcquire::Diffs",false);
 
-   Description = Target.Description;
-   UsedMirror = indexUsedMirror;
-   if (UsedMirror == "DIRECT")
-      UsedMirror.clear();
-   else if (UsedMirror.empty() == false && Description.find(" ") != string::npos)
-      Description.replace(0, Description.find(" "), UsedMirror);
-
    Desc.Owner = this;
    Desc.ShortDesc = Target.ShortDesc;
-   Desc.URI = indexURI + ".diff/" + patch.file + ".gz";
-   Desc.Description = Description + " " + patch.file + ".pdiff";
+   Desc.URI = Target.URI + ".diff/" + patch.file + ".gz";
+   Desc.Description = Target.Description + " " + patch.file + ".pdiff";
    DestFile = GetPartialFileNameFromURI(Target.URI + ".diff/" + patch.file + ".gz");
 
    if(Debug)
@@ -2767,8 +3020,6 @@ void pkgAcqIndexMergeDiffs::Failed(string const &Message,pkgAcquire::MethodConfi
    if (Debug)
       std::clog << "Falling back to normal index file acquire" << std::endl;
    RenameOnError(PDiffError);
-   if (RealFileExists(DestFile))
-      Rename(DestFile, DestFile + ".FAILED");
    std::string const UnpatchedFile = GetExistingFilename(GetPartialFileNameFromURI(Target.URI));
    if (UnpatchedFile.empty() == false && FileExists(UnpatchedFile))
       Rename(UnpatchedFile, UnpatchedFile + ".FAILED");
@@ -2893,59 +3144,27 @@ pkgAcqIndex::pkgAcqIndex(pkgAcquire * const Owner,
 }
 									/*}}}*/
 // AcqIndex::Init - deferred Constructor				/*{{{*/
-static void NextCompressionExtension(std::string &CurrentCompressionExtension, std::string &CompressionExtensions, bool const preview)
-{
-   size_t const nextExt = CompressionExtensions.find(' ');
-   if (nextExt == std::string::npos)
-   {
-      CurrentCompressionExtension = CompressionExtensions;
-      if (preview == false)
-	 CompressionExtensions.clear();
-   }
-   else
-   {
-      CurrentCompressionExtension = CompressionExtensions.substr(0, nextExt);
-      if (preview == false)
-	 CompressionExtensions = CompressionExtensions.substr(nextExt+1);
-   }
-}
 void pkgAcqIndex::Init(string const &URI, string const &URIDesc,
                        string const &ShortDesc)
 {
    Stage = STAGE_DOWNLOAD;
 
    DestFile = GetPartialFileNameFromURI(URI);
-   NextCompressionExtension(CurrentCompressionExtension, CompressionExtensions, false);
+   size_t const nextExt = CompressionExtensions.find(' ');
+   if (nextExt == std::string::npos)
+   {
+      CurrentCompressionExtension = CompressionExtensions;
+      CompressionExtensions.clear();
+   }
+   else
+   {
+      CurrentCompressionExtension = CompressionExtensions.substr(0, nextExt);
+      CompressionExtensions = CompressionExtensions.substr(nextExt+1);
+   }
 
    if (CurrentCompressionExtension == "uncompressed")
    {
       Desc.URI = URI;
-   }
-   else if (CurrentCompressionExtension == "by-hash")
-   {
-      NextCompressionExtension(CurrentCompressionExtension, CompressionExtensions, true);
-      if(unlikely(CurrentCompressionExtension.empty()))
-	 return;
-      if (CurrentCompressionExtension != "uncompressed")
-      {
-	 Desc.URI = URI + '.' + CurrentCompressionExtension;
-	 DestFile = DestFile + '.' + CurrentCompressionExtension;
-      }
-      else
-	 Desc.URI = URI;
-
-      HashStringList const Hashes = GetExpectedHashes();
-      HashString const * const TargetHash = Hashes.find(NULL);
-      if (unlikely(TargetHash == nullptr))
-	 return;
-      std::string const ByHash = "/by-hash/" + TargetHash->HashType() + "/" + TargetHash->HashValue();
-      size_t const trailing_slash = Desc.URI.find_last_of("/");
-      if (unlikely(trailing_slash == std::string::npos))
-	 return;
-      Desc.URI = Desc.URI.replace(
-	    trailing_slash,
-	    Desc.URI.substr(trailing_slash+1).size()+1,
-	    ByHash);
    }
    else if (unlikely(CurrentCompressionExtension.empty()))
       return;
@@ -2990,24 +3209,10 @@ string pkgAcqIndex::Custom600Headers() const
 }
 									/*}}}*/
 // AcqIndex::Failed - getting the indexfile failed			/*{{{*/
-bool pkgAcqIndex::CommonFailed(std::string const &TargetURI, std::string const TargetDesc,
-      std::string const &Message, pkgAcquire::MethodConfig const * const Cnf)
+bool pkgAcqIndex::CommonFailed(std::string const &TargetURI,
+			       std::string const &Message, pkgAcquire::MethodConfig const *const Cnf)
 {
    pkgAcqBaseIndex::Failed(Message,Cnf);
-
-   if (UsedMirror.empty() == false && UsedMirror != "DIRECT" &&
-	 LookupTag(Message, "FailReason") == "HttpError404")
-   {
-      UsedMirror = "DIRECT";
-      if (Desc.URI.find("/by-hash/") != std::string::npos)
-	 CompressionExtensions = "by-hash " + CompressionExtensions;
-      else
-	 CompressionExtensions = CurrentCompressionExtension + ' ' + CompressionExtensions;
-      Init(TargetURI, TargetDesc, Desc.ShortDesc);
-      Status = StatIdle;
-      return true;
-   }
-
    // authorisation matches will not be fixed by other compression types
    if (Status != StatAuthError)
    {
@@ -3022,7 +3227,7 @@ bool pkgAcqIndex::CommonFailed(std::string const &TargetURI, std::string const T
 }
 void pkgAcqIndex::Failed(string const &Message,pkgAcquire::MethodConfig const * const Cnf)
 {
-   if (CommonFailed(Target.URI, Target.Description, Message, Cnf))
+   if (CommonFailed(Target.URI, Message, Cnf))
       return;
 
    if(Target.IsOptional && GetExpectedHashes().empty() && Stage == STAGE_DOWNLOAD)
@@ -3137,20 +3342,17 @@ void pkgAcqIndex::StageDecompressDone()
 									/*}}}*/
 pkgAcqIndex::~pkgAcqIndex() {}
 
-
 // AcqArchive::AcqArchive - Constructor					/*{{{*/
 // ---------------------------------------------------------------------
 /* This just sets up the initial fetch environment and queues the first
    possibilitiy */
-pkgAcqArchive::pkgAcqArchive(pkgAcquire * const Owner,pkgSourceList * const Sources,
-			     pkgRecords * const Recs,pkgCache::VerIterator const &Version,
-			     string &StoreFilename) :
-               Item(Owner), d(NULL), LocalSource(false), Version(Version), Sources(Sources), Recs(Recs),
-               StoreFilename(StoreFilename), Vf(Version.FileList()),
-	       Trusted(false)
+APT_IGNORE_DEPRECATED_PUSH
+pkgAcqArchive::pkgAcqArchive(pkgAcquire *const Owner, pkgSourceList *const Sources,
+			     pkgRecords *const Recs, pkgCache::VerIterator const &Version,
+			     string &StoreFilename) : Item(Owner), d(NULL), LocalSource(false), Version(Version), Sources(Sources), Recs(Recs),
+						      StoreFilename(StoreFilename), Vf(),
+						      Trusted(false)
 {
-   Retries = _config->FindI("Acquire::Retries",0);
-
    if (Version.Arch() == 0)
    {
       _error->Error(_("I wasn't able to locate a file for the %s package. "
@@ -3158,32 +3360,6 @@ pkgAcqArchive::pkgAcqArchive(pkgAcquire * const Owner,pkgSourceList * const Sour
 		      "(due to missing arch)"),
 		    Version.ParentPkg().FullName().c_str());
       return;
-   }
-   
-   /* We need to find a filename to determine the extension. We make the
-      assumption here that all the available sources for this version share
-      the same extension.. */
-   // Skip not source sources, they do not have file fields.
-   for (; Vf.end() == false; ++Vf)
-   {
-      if (Vf.File().Flagged(pkgCache::Flag::NotSource))
-	 continue;
-      break;
-   }
-   
-   // Does not really matter here.. we are going to fail out below
-   if (Vf.end() != true)
-   {     
-      // If this fails to get a file name we will bomb out below.
-      pkgRecords::Parser &Parse = Recs->Lookup(Vf);
-      if (_error->PendingError() == true)
-	 return;
-            
-      // Generate the final file name as: package_version_arch.foo
-      StoreFilename = QuoteString(Version.ParentPkg().Name(),"_:") + '_' +
-	              QuoteString(Version.VerStr(),"_:") + '_' +
-     	              QuoteString(Version.Arch(),"_:.") + 
-	              "." + flExtension(Parse.FileName());
    }
 
    // check if we have one trusted source for the package. if so, switch
@@ -3217,126 +3393,158 @@ pkgAcqArchive::pkgAcqArchive(pkgAcquire * const Owner,pkgSourceList * const Sour
    if (allowUnauth == true && seenUntrusted == true)
       Trusted = false;
 
-   // Select a source
-   if (QueueNext() == false && _error->PendingError() == false)
-      _error->Error(_("Can't find a source to download version '%s' of '%s'"),
-		    Version.VerStr(), Version.ParentPkg().FullName(false).c_str());
-}
-									/*}}}*/
-// AcqArchive::QueueNext - Queue the next file source			/*{{{*/
-// ---------------------------------------------------------------------
-/* This queues the next available file version for download. It checks if
-   the archive is already available in the cache and stashs the MD5 for
-   checking later. */
-bool pkgAcqArchive::QueueNext()
-{
-   for (; Vf.end() == false; ++Vf)
+   StoreFilename.clear();
+   std::set<string> targetComponents, targetCodenames, targetSuites;
+   std::vector<std::unique_ptr<FileFd>> authconfs;
+   for (auto Vf = Version.FileList(); Vf.end() == false; ++Vf)
    {
-      pkgCache::PkgFileIterator const PkgF = Vf.File();
-      // Ignore not source sources
+      auto const PkgF = Vf.File();
+      if (unlikely(PkgF.end()))
+	 continue;
       if (PkgF.Flagged(pkgCache::Flag::NotSource))
 	 continue;
-
-      // Try to cross match against the source list
+      if (PkgF.Flagged(pkgCache::Flag::PackagesRequireAuthorization) && !IsAuthorized(PkgF, authconfs))
+	 continue;
       pkgIndexFile *Index;
       if (Sources->FindIndex(PkgF, Index) == false)
-	    continue;
-      LocalSource = PkgF.Flagged(pkgCache::Flag::LocalSource);
-
-      // only try to get a trusted package from another source if that source
-      // is also trusted
-      if(Trusted && !Index->IsTrusted()) 
+	 continue;
+      if (Trusted && Index->IsTrusted() == false)
 	 continue;
 
-      // Grab the text package record
       pkgRecords::Parser &Parse = Recs->Lookup(Vf);
-      if (_error->PendingError() == true)
-	 return false;
-
-      string PkgFile = Parse.FileName();
-      ExpectedHashes = Parse.Hashes();
-
-      if (PkgFile.empty() == true)
-	 return _error->Error(_("The package index files are corrupted. No Filename: "
-			      "field for package %s."),
-			      Version.ParentPkg().Name());
-
-      Desc.URI = Index->ArchiveURI(PkgFile);
-      Desc.Description = Index->ArchiveInfo(Version);
-      Desc.Owner = this;
-      Desc.ShortDesc = Version.ParentPkg().FullName(true);
-
-      // See if we already have the file. (Legacy filenames)
-      FileSize = Version->Size;
-      string FinalFile = _config->FindDir("Dir::Cache::Archives") + flNotDir(PkgFile);
-      struct stat Buf;
-      if (stat(FinalFile.c_str(),&Buf) == 0)
+      // collect the hashes from the indexes
+      auto hsl = Parse.Hashes();
+      if (ExpectedHashes.empty())
+	 ExpectedHashes = hsl;
+      else
       {
-	 // Make sure the size matches
-	 if ((unsigned long long)Buf.st_size == Version->Size)
+	 // bad things will likely happen, but the user might be "lucky" still
+	 // if the sources provide the same hashtypes (so that they aren't mixed)
+	 for (auto const &hs : hsl)
+	    if (ExpectedHashes.push_back(hs) == false)
+	    {
+	       _error->Warning("Sources disagree on hashes for supposely identical version '%s' of '%s'.",
+			       Version.VerStr(), Version.ParentPkg().FullName(false).c_str());
+	       break;
+	    }
+      }
+      // only allow local volatile sources to have no hashes
+      if (PkgF.Flagged(pkgCache::Flag::LocalSource))
+	 LocalSource = true;
+      else if (hsl.empty())
+	 continue;
+
+      std::string poolfilename = Parse.FileName();
+      if (poolfilename.empty())
+	 continue;
+
+      std::remove_reference<decltype(ModifyCustomFields())>::type fields;
+      {
+	 auto const debIndex = dynamic_cast<pkgDebianIndexTargetFile const *const>(Index);
+	 if (debIndex != nullptr)
 	 {
-	    Complete = true;
-	    Local = true;
-	    Status = StatDone;
-	    StoreFilename = DestFile = FinalFile;
-	    return true;
+	    auto const IT = debIndex->GetIndexTarget();
+	    fields.emplace("Target-Repo-URI", IT.Option(IndexTarget::REPO_URI));
+	    fields.emplace("Target-Release", IT.Option(IndexTarget::RELEASE));
+	    fields.emplace("Target-Site", IT.Option(IndexTarget::SITE));
 	 }
-	 
-	 /* Hmm, we have a file and its size does not match, this means it is
-	    an old style mismatched arch */
-	 RemoveFile("pkgAcqArchive::QueueNext", FinalFile);
       }
-
-      // Check it again using the new style output filenames
-      FinalFile = _config->FindDir("Dir::Cache::Archives") + flNotDir(StoreFilename);
-      if (stat(FinalFile.c_str(),&Buf) == 0)
+      fields.emplace("Target-Base-URI", Index->ArchiveURI(""));
+      if (PkgF->Component != 0)
+	 fields.emplace("Target-Component", PkgF.Component());
+      auto const RelF = PkgF.ReleaseFile();
+      if (RelF.end() == false)
       {
-	 // Make sure the size matches
-	 if ((unsigned long long)Buf.st_size == Version->Size)
-	 {
-	    Complete = true;
-	    Local = true;
-	    Status = StatDone;
-	    StoreFilename = DestFile = FinalFile;
-	    return true;
-	 }
-	 
-	 /* Hmm, we have a file and its size does not match, this shouldn't
-	    happen.. */
-	 RemoveFile("pkgAcqArchive::QueueNext", FinalFile);
+	 if (RelF->Codename != 0)
+	    fields.emplace("Target-Codename", RelF.Codename());
+	 if (RelF->Archive != 0)
+	    fields.emplace("Target-Suite", RelF.Archive());
       }
+      fields.emplace("Target-Architecture", Version.Arch());
+      fields.emplace("Target-Type", flExtension(poolfilename));
 
-      DestFile = _config->FindDir("Dir::Cache::Archives") + "partial/" + flNotDir(StoreFilename);
-      
-      // Check the destination file
-      if (stat(DestFile.c_str(),&Buf) == 0)
+      if (StoreFilename.empty())
       {
-	 // Hmm, the partial file is too big, erase it
-	 if ((unsigned long long)Buf.st_size > Version->Size)
-	    RemoveFile("pkgAcqArchive::QueueNext", DestFile);
-	 else
-	    PartialSize = Buf.st_size;
-      }
+	 /* We pick a filename based on the information we have for the version,
+	    but we don't know what extension such a file should have, so we look
+	    at the filenames used online and assume that they are the same for
+	    all repositories containing this file */
+	 StoreFilename = QuoteString(Version.ParentPkg().Name(), "_:") + '_' +
+			 QuoteString(Version.VerStr(), "_:") + '_' +
+			 QuoteString(Version.Arch(), "_:.") +
+			 "." + flExtension(poolfilename);
 
-      // Disables download of archives - useful if no real installation follows,
-      // e.g. if we are just interested in proposed installation order
-      if (_config->FindB("Debug::pkgAcqArchive::NoQueue", false) == true)
+	 Desc.URI = Index->ArchiveURI(poolfilename);
+	 Desc.Description = Index->ArchiveInfo(Version);
+	 Desc.Owner = this;
+	 Desc.ShortDesc = Version.ParentPkg().FullName(true);
+	 auto &customfields = ModifyCustomFields();
+	 for (auto const &f : fields)
+	    customfields[f.first] = f.second;
+	 FileSize = Version->Size;
+      }
+      else
+	 PushAlternativeURI(Index->ArchiveURI(poolfilename), std::move(fields), true);
+   }
+   if (StoreFilename.empty())
+   {
+      _error->Error(_("Can't find a source to download version '%s' of '%s'"),
+		    Version.VerStr(), Version.ParentPkg().FullName(false).c_str());
+      return;
+   }
+
+   // Check if we already downloaded the file
+   struct stat Buf;
+   auto FinalFile = _config->FindDir("Dir::Cache::Archives") + flNotDir(StoreFilename);
+   if (stat(FinalFile.c_str(), &Buf) == 0)
+   {
+      // Make sure the size matches
+      if ((unsigned long long)Buf.st_size == Version->Size)
       {
 	 Complete = true;
 	 Local = true;
 	 Status = StatDone;
 	 StoreFilename = DestFile = FinalFile;
-	 return true;
+	 return;
       }
 
-      // Create the item
-      Local = false;
-      ++Vf;
-      QueueURI(Desc);
-      return true;
+      /* Hmm, we have a file and its size does not match, this shouldn't
+	 happen.. */
+      RemoveFile("pkgAcqArchive::QueueNext", FinalFile);
    }
+
+   // Check the destination file
+   DestFile = _config->FindDir("Dir::Cache::Archives") + "partial/" + flNotDir(StoreFilename);
+   if (stat(DestFile.c_str(), &Buf) == 0)
+   {
+      // Hmm, the partial file is too big, erase it
+      if ((unsigned long long)Buf.st_size > Version->Size)
+	 RemoveFile("pkgAcqArchive::QueueNext", DestFile);
+      else
+	 PartialSize = Buf.st_size;
+   }
+
+   // Disables download of archives - useful if no real installation follows,
+   // e.g. if we are just interested in proposed installation order
+   if (_config->FindB("Debug::pkgAcqArchive::NoQueue", false) == true)
+   {
+      Complete = true;
+      Local = true;
+      Status = StatDone;
+      StoreFilename = DestFile = FinalFile;
+      return;
+   }
+
+   // Create the item
+   Local = false;
+   QueueURI(Desc);
+}
+APT_IGNORE_DEPRECATED_POP
+									/*}}}*/
+bool pkgAcqArchive::QueueNext() /*{{{*/
+{
    return false;
-}   
+}
 									/*}}}*/
 // AcqArchive::Done - Finished fetching					/*{{{*/
 // ---------------------------------------------------------------------
@@ -3369,36 +3577,6 @@ void pkgAcqArchive::Done(string const &Message, HashStringList const &Hashes,
 void pkgAcqArchive::Failed(string const &Message,pkgAcquire::MethodConfig const * const Cnf)
 {
    Item::Failed(Message,Cnf);
-
-   /* We don't really want to retry on failed media swaps, this prevents
-      that. An interesting observation is that permanent failures are not
-      recorded. */
-   if (Cnf->Removable == true &&
-       StringToBool(LookupTag(Message,"Transient-Failure"),false) == true)
-   {
-      // Vf = Version.FileList();
-      while (Vf.end() == false) ++Vf;
-      StoreFilename = string();
-      return;
-   }
-
-   Status = StatIdle;
-   if (QueueNext() == false)
-   {
-      // This is the retry counter
-      if (Retries != 0 &&
-	  Cnf->LocalOnly == false &&
-	  StringToBool(LookupTag(Message,"Transient-Failure"),false) == true)
-      {
-	 Retries--;
-	 Vf = Version.FileList();
-	 if (QueueNext() == true)
-	    return;
-      }
-
-      StoreFilename = string();
-      Status = StatError;
-   }
 }
 									/*}}}*/
 APT_PURE bool pkgAcqArchive::IsTrusted() const				/*{{{*/
@@ -3490,7 +3668,7 @@ void pkgAcqChangelog::Init(std::string const &DestDir, std::string const &DestFi
    }
    TemporaryDirectory = tmpname;
 
-   ChangeOwnerAndPermissionOfFile("Item::QueueURI", TemporaryDirectory.c_str(),
+   ChangeOwnerAndPermissionOfFile("pkgAcqChangelog::Init", TemporaryDirectory.c_str(),
 	 SandboxUser.c_str(), ROOT_GROUP, 0700);
 
    DestFile = flCombine(TemporaryDirectory, DestFileName);
@@ -3503,6 +3681,7 @@ void pkgAcqChangelog::Init(std::string const &DestDir, std::string const &DestFi
 	 if (file1.Open(DestFile, FileFd::WriteOnly | FileFd::Create | FileFd::Exclusive) &&
 	       file2.Open(d->FinalFile, FileFd::ReadOnly) && CopyFile(file2, file1))
 	 {
+	    ChangeOwnerAndPermissionOfFile("pkgAcqChangelog::Init", DestFile.c_str(), "root", ROOT_GROUP, 0644);
 	    struct timeval times[2];
 	    times[0].tv_sec = times[1].tv_sec = file2.ModificationTime();
 	    times[0].tv_usec = times[1].tv_usec = 0;
@@ -3545,11 +3724,11 @@ std::string pkgAcqChangelog::URI(pkgCache::VerIterator const &Ver)	/*{{{*/
 	 if (FileExists(debianname))
 	    return "copy://" + debianname;
 	 else if (FileExists(debianname + ".gz"))
-	    return "gzip://" + debianname + ".gz";
+	    return "store://" + debianname + ".gz";
 	 else if (FileExists(basename))
 	    return "copy://" + basename;
 	 else if (FileExists(basename + ".gz"))
-	    return "gzip://" + basename + ".gz";
+	    return "store://" + basename + ".gz";
       }
    }
 
@@ -3686,14 +3865,12 @@ pkgAcqChangelog::~pkgAcqChangelog()					/*{{{*/
 									/*}}}*/
 
 // AcqFile::pkgAcqFile - Constructor					/*{{{*/
-pkgAcqFile::pkgAcqFile(pkgAcquire * const Owner,string const &URI, HashStringList const &Hashes,
-		       unsigned long long const Size,string const &Dsc,string const &ShortDesc,
+APT_IGNORE_DEPRECATED_PUSH
+pkgAcqFile::pkgAcqFile(pkgAcquire *const Owner, string const &URI, HashStringList const &Hashes,
+		       unsigned long long const Size, string const &Dsc, string const &ShortDesc,
 		       const string &DestDir, const string &DestFilename,
-                       bool const IsIndexFile) :
-                       Item(Owner), d(NULL), IsIndexFile(IsIndexFile), ExpectedHashes(Hashes)
+		       bool const IsIndexFile) : Item(Owner), d(NULL), Retries(0), IsIndexFile(IsIndexFile), ExpectedHashes(Hashes)
 {
-   Retries = _config->FindI("Acquire::Retries",0);
-
    if(!DestFilename.empty())
       DestFile = DestFilename;
    else if(!DestDir.empty())
@@ -3723,6 +3900,7 @@ pkgAcqFile::pkgAcqFile(pkgAcquire * const Owner,string const &URI, HashStringLis
 
    QueueURI(Desc);
 }
+APT_IGNORE_DEPRECATED_POP
 									/*}}}*/
 // AcqFile::Done - Item downloaded OK					/*{{{*/
 void pkgAcqFile::Done(string const &Message,HashStringList const &CalcHashes,
@@ -3772,24 +3950,10 @@ void pkgAcqFile::Done(string const &Message,HashStringList const &CalcHashes,
    }
 }
 									/*}}}*/
-// AcqFile::Failed - Failure handler					/*{{{*/
-// ---------------------------------------------------------------------
-/* Here we try other sources */
-void pkgAcqFile::Failed(string const &Message, pkgAcquire::MethodConfig const * const Cnf)
+void pkgAcqFile::Failed(string const &Message, pkgAcquire::MethodConfig const *const Cnf) /*{{{*/
 {
-   Item::Failed(Message,Cnf);
-
-   // This is the retry counter
-   if (Retries != 0 &&
-       Cnf->LocalOnly == false &&
-       StringToBool(LookupTag(Message,"Transient-Failure"),false) == true)
-   {
-      --Retries;
-      QueueURI(Desc);
-      Status = StatIdle;
-      return;
-   }
-
+   // FIXME: Remove this pointless overload on next ABI break
+   Item::Failed(Message, Cnf);
 }
 									/*}}}*/
 string pkgAcqFile::Custom600Headers() const				/*{{{*/
@@ -3800,3 +3964,115 @@ string pkgAcqFile::Custom600Headers() const				/*{{{*/
 }
 									/*}}}*/
 pkgAcqFile::~pkgAcqFile() {}
+
+void pkgAcqAuxFile::Failed(std::string const &Message, pkgAcquire::MethodConfig const *const Cnf) /*{{{*/
+{
+   pkgAcqFile::Failed(Message, Cnf);
+   if (Status == StatIdle)
+      return;
+   if (RealFileExists(DestFile))
+      Rename(DestFile, DestFile + ".FAILED");
+   Worker->ReplyAux(Desc);
+}
+									/*}}}*/
+void pkgAcqAuxFile::Done(std::string const &Message, HashStringList const &CalcHashes, /*{{{*/
+			 pkgAcquire::MethodConfig const *const Cnf)
+{
+   pkgAcqFile::Done(Message, CalcHashes, Cnf);
+   if (Status == StatDone)
+      Worker->ReplyAux(Desc);
+   else if (Status == StatAuthError || Status == StatError)
+      Worker->ReplyAux(Desc);
+}
+									/*}}}*/
+std::string pkgAcqAuxFile::Custom600Headers() const /*{{{*/
+{
+   if (MaximumSize == 0)
+      return pkgAcqFile::Custom600Headers();
+   std::string maxsize;
+   strprintf(maxsize, "\nMaximum-Size: %llu", MaximumSize);
+   return pkgAcqFile::Custom600Headers().append(maxsize);
+}
+									/*}}}*/
+void pkgAcqAuxFile::Finished() /*{{{*/
+{
+   auto dirname = flCombine(_config->FindDir("Dir::State::lists"), "auxfiles/");
+   if (APT::String::Startswith(DestFile, dirname))
+   {
+      // the file is never returned by method requesting it, so fix up the permission now
+      if (FileExists(DestFile))
+      {
+	 ChangeOwnerAndPermissionOfFile("pkgAcqAuxFile", DestFile.c_str(), "root", ROOT_GROUP, 0644);
+	 if (Status == StatDone)
+	    return;
+      }
+   }
+   else
+   {
+      dirname = flNotFile(DestFile);
+      RemoveFile("pkgAcqAuxFile::Finished", DestFile);
+      RemoveFile("pkgAcqAuxFile::Finished", DestFile + ".FAILED");
+      rmdir(dirname.c_str());
+   }
+   DestFile.clear();
+}
+									/*}}}*/
+// GetAuxFileNameFromURI						/*{{{*/
+static std::string GetAuxFileNameFromURIInLists(std::string const &uri)
+{
+   // check if we have write permission for our usual location.
+   auto const dirname = flCombine(_config->FindDir("Dir::State::lists"), "auxfiles/");
+   char const * const filetag = ".apt-acquire-privs-test.XXXXXX";
+   std::string const tmpfile_tpl = flCombine(dirname, filetag);
+   std::unique_ptr<char, decltype(std::free) *> tmpfile { strdup(tmpfile_tpl.c_str()), std::free };
+   int const fd = mkstemp(tmpfile.get());
+   if (fd == -1)
+      return "";
+   RemoveFile("GetAuxFileNameFromURI", tmpfile.get());
+   close(fd);
+   return flCombine(dirname, URItoFileName(uri));
+}
+static std::string GetAuxFileNameFromURI(std::string const &uri)
+{
+   auto const lists = GetAuxFileNameFromURIInLists(uri);
+   if (lists.empty() == false)
+      return lists;
+
+   std::string tmpdir_tpl;
+   strprintf(tmpdir_tpl, "%s/apt-auxfiles-XXXXXX", GetTempDir().c_str());
+   std::unique_ptr<char, decltype(std::free) *> tmpdir { strndup(tmpdir_tpl.data(), tmpdir_tpl.length()), std::free };
+   if (mkdtemp(tmpdir.get()) == nullptr)
+   {
+      _error->Errno("GetAuxFileNameFromURI", "mkdtemp of %s failed", tmpdir.get());
+      return flCombine("/nonexistent/auxfiles/", URItoFileName(uri));
+   }
+   chmod(tmpdir.get(), 0755);
+   auto const filename = flCombine(tmpdir.get(), URItoFileName(uri));
+   _error->PushToStack();
+   FileFd in(flCombine(flCombine(_config->FindDir("Dir::State::lists"), "auxfiles/"), URItoFileName(uri)), FileFd::ReadOnly);
+   if (in.IsOpen())
+   {
+      FileFd out(filename, FileFd::WriteOnly | FileFd::Create | FileFd::Exclusive);
+      CopyFile(in, out);
+      ChangeOwnerAndPermissionOfFile("GetAuxFileNameFromURI", filename.c_str(), "root", ROOT_GROUP, 0644);
+   }
+   _error->RevertToStack();
+   return filename;
+}
+									/*}}}*/
+pkgAcqAuxFile::pkgAcqAuxFile(pkgAcquire::Item *const Owner, pkgAcquire::Worker *const Worker,
+			     std::string const &ShortDesc, std::string const &Desc, std::string const &URI,
+			     HashStringList const &Hashes, unsigned long long const MaximumSize) : pkgAcqFile(Owner->GetOwner(), URI, Hashes, Hashes.FileSize(), Desc, ShortDesc, "", GetAuxFileNameFromURI(URI), false),
+												   Owner(Owner), Worker(Worker), MaximumSize(MaximumSize)
+{
+   /* very bad failures can happen while constructing which causes
+      us to hang as the aux request is never answered (e.g. method not available)
+      Ideally we catch failures earlier, but a safe guard can't hurt. */
+   if (Status == pkgAcquire::Item::StatIdle || Status == pkgAcquire::Item::StatFetching)
+      return;
+   Failed(std::string("400 URI Failure\n") +
+	     "URI: " + URI + "\n" +
+	     "Filename: " + DestFile,
+	  nullptr);
+}
+pkgAcqAuxFile::~pkgAcqAuxFile() {}

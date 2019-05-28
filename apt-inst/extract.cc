@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: extract.cc,v 1.6.2.1 2004/01/16 18:58:50 mdz Exp $
 /* ######################################################################
 
    Archive Extraction Directory Stream
@@ -44,25 +43,24 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
-#include <apt-pkg/extract.h>
-#include <apt-pkg/error.h>
 #include <apt-pkg/debversion.h>
-#include <apt-pkg/fileutl.h>
 #include <apt-pkg/dirstream.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/extract.h>
 #include <apt-pkg/filelist.h>
+#include <apt-pkg/fileutl.h>
 #include <apt-pkg/mmap.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
 
-#include <string.h>
-#include <string>
-#include <sys/stat.h>
-#include <stdio.h>
-#include <errno.h>
-#include <dirent.h>
 #include <iostream>
+#include <string>
+#include <dirent.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -260,7 +258,7 @@ bool pkgExtract::DoItem(Item &Itm, int &/*Fd*/)
 // Extract::Finished - Sequence finished, erase the temp files		/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-APT_CONST bool pkgExtract::Finished()
+APT_PURE bool pkgExtract::Finished()
 {
    return true;
 }

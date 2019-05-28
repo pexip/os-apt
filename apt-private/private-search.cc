@@ -4,33 +4,36 @@
 #include <apt-pkg/cachefile.h>
 #include <apt-pkg/cacheset.h>
 #include <apt-pkg/cmndline.h>
-#include <apt-pkg/pkgrecords.h>
-#include <apt-pkg/policy.h>
-#include <apt-pkg/progress.h>
-#include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/depcache.h>
 #include <apt-pkg/macros.h>
 #include <apt-pkg/pkgcache.h>
+#include <apt-pkg/pkgrecords.h>
+#include <apt-pkg/policy.h>
+#include <apt-pkg/progress.h>
 
+#include <apt-private/private-cachefile.h>
 #include <apt-private/private-cacheset.h>
+#include <apt-private/private-json-hooks.h>
 #include <apt-private/private-output.h>
 #include <apt-private/private-search.h>
 #include <apt-private/private-show.h>
 
-#include <string.h>
 #include <iostream>
-#include <sstream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <utility>
+#include <string.h>
 
 #include <apti18n.h>
 									/*}}}*/
 
 static bool FullTextSearch(CommandLine &CmdL)				/*{{{*/
 {
-   pkgCacheFile CacheFile;
+
+   CacheFile CacheFile;
+   CacheFile.GetDepCache();
    pkgCache *Cache = CacheFile.GetPkgCache();
    pkgDepCache::Policy *Plcy = CacheFile.GetPolicy();
    if (unlikely(Cache == NULL || Plcy == NULL))
@@ -40,6 +43,8 @@ static bool FullTextSearch(CommandLine &CmdL)				/*{{{*/
    unsigned int const NumPatterns = CmdL.FileSize() -1;
    if (NumPatterns < 1)
       return _error->Error(_("You must give at least one search pattern"));
+
+   RunJsonHook("AptCli::Hooks::Search", "org.debian.apt.hooks.search.pre", CmdL.FileList, CacheFile);
 
 #define APT_FREE_PATTERNS() for (std::vector<regex_t>::iterator P = Patterns.begin(); \
       P != Patterns.end(); ++P) { regfree(&(*P)); }
@@ -128,14 +133,18 @@ static bool FullTextSearch(CommandLine &CmdL)				/*{{{*/
    for (K = output_map.begin(); K != output_map.end(); ++K)
       std::cout << (*K).second << std::endl;
 
+   if (output_map.empty())
+      RunJsonHook("AptCli::Hooks::Search", "org.debian.apt.hooks.search.fail", CmdL.FileList, CacheFile);
+   else
+      RunJsonHook("AptCli::Hooks::Search", "org.debian.apt.hooks.search.post", CmdL.FileList, CacheFile);
    return true;
 }
 									/*}}}*/
 // LocalitySort - Sort a version list by package file locality		/*{{{*/
 static int LocalityCompare(const void * const a, const void * const b)
 {
-   pkgCache::VerFile const * const A = *(pkgCache::VerFile const * const * const)a;
-   pkgCache::VerFile const * const B = *(pkgCache::VerFile const * const * const)b;
+   pkgCache::VerFile const * const A = *static_cast<pkgCache::VerFile const * const *>(a);
+   pkgCache::VerFile const * const B = *static_cast<pkgCache::VerFile const * const *>(b);
 
    if (A == 0 && B == 0)
       return 0;
@@ -165,6 +174,7 @@ struct ExDescFile
    pkgCache::DescFile *Df;
    pkgCache::VerIterator V;
    map_id_t ID;
+   ExDescFile() : Df(nullptr), ID(0) {}
 };
 static bool Search(CommandLine &CmdL)
 {
@@ -204,7 +214,6 @@ static bool Search(CommandLine &CmdL)
    
    size_t const descCount = Cache->HeaderP->GroupCount + 1;
    ExDescFile *DFList = new ExDescFile[descCount];
-   memset(DFList,0,sizeof(*DFList) * descCount);
 
    bool *PatternMatch = new bool[descCount * NumPatterns];
    memset(PatternMatch,false,sizeof(*PatternMatch) * descCount * NumPatterns);
@@ -307,7 +316,14 @@ static bool Search(CommandLine &CmdL)
       if (matchedAll == true)
       {
 	 if (ShowFull == true)
-	    DisplayRecordV1(CacheFile, J->V, std::cout);
+	 {
+	    pkgCache::VerFileIterator Vf;
+	    auto &Parser = LookupParser(Recs, J->V, Vf);
+	    char const *Start, *Stop;
+	    Parser.GetRec(Start, Stop);
+	    size_t const Length = Stop - Start;
+	    DisplayRecordV1(CacheFile, Recs, J->V, Vf, Start, Length, std::cout);
+	 }
 	 else
 	    printf("%s - %s\n",P.Name().c_str(),P.ShortDesc().c_str());
       }

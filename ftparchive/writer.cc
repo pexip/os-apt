@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: writer.cc,v 1.14 2004/03/24 01:40:43 mdz Exp $
 /* ######################################################################
 
    Writer 
@@ -14,19 +13,26 @@
 #include <config.h>
 
 #include <apt-pkg/configuration.h>
+#include <apt-pkg/debfile.h>
 #include <apt-pkg/deblistparser.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/gpgv.h>
 #include <apt-pkg/hashes.h>
 #include <apt-pkg/md5.h>
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/debfile.h>
 #include <apt-pkg/pkgcache.h>
 #include <apt-pkg/sha1.h>
 #include <apt-pkg/sha2.h>
+#include <apt-pkg/strutl.h>
 #include <apt-pkg/tagfile.h>
 
+#include <algorithm>
+#include <ctime>
+#include <iomanip>
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <utility>
 #include <ctype.h>
 #include <fnmatch.h>
 #include <ftw.h>
@@ -35,19 +41,12 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <ctime>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <memory>
-#include <utility>
-#include <algorithm>
 
 #include "apt-ftparchive.h"
-#include "writer.h"
+#include "byhash.h"
 #include "cachedb.h"
 #include "multicompress.h"
-#include "byhash.h"
+#include "writer.h"
 
 #include <apti18n.h>
 									/*}}}*/
@@ -118,32 +117,35 @@ int FTWScanner::ScannerFTW(const char *File,const struct stat * /*sb*/,int Flag)
    return ScannerFile(File, true);
 }
 									/*}}}*/
-// FTWScanner::ScannerFile - File Scanner				/*{{{*/
-// ---------------------------------------------------------------------
-/* */
-int FTWScanner::ScannerFile(const char *File, bool const &ReadLink)
+static bool FileMatchesPatterns(char const *const File, std::vector<std::string> const &Patterns) /*{{{*/
 {
    const char *LastComponent = strrchr(File, '/');
-   char *RealPath = NULL;
-
-   if (LastComponent == NULL)
+   if (LastComponent == nullptr)
       LastComponent = File;
    else
-      LastComponent++;
+      ++LastComponent;
 
-   vector<string>::const_iterator I;
-   for(I = Owner->Patterns.begin(); I != Owner->Patterns.end(); ++I)
-   {
-      if (fnmatch((*I).c_str(), LastComponent, 0) == 0)
-         break;
-   }
-   if (I == Owner->Patterns.end())
+   return std::any_of(Patterns.cbegin(), Patterns.cend(), [&](std::string const &pattern) {
+      return fnmatch(pattern.c_str(), LastComponent, 0) == 0;
+   });
+}
+									/*}}}*/
+int FTWScanner::ScannerFile(const char *const File, bool const ReadLink) /*{{{*/
+{
+   if (FileMatchesPatterns(File, Owner->Patterns) == false)
       return 0;
 
+   Owner->FilesToProcess.emplace_back(File, ReadLink);
+   return 0;
+}
+									/*}}}*/
+int FTWScanner::ProcessFile(const char *const File, bool const ReadLink) /*{{{*/
+{
    /* Process it. If the file is a link then resolve it into an absolute
       name.. This works best if the directory components the scanner are
       given are not links themselves. */
    char Jnk[2];
+   char *RealPath = NULL;
    Owner->OriginalPath = File;
    if (ReadLink &&
        readlink(File,Jnk,sizeof(Jnk)) != -1 &&
@@ -187,12 +189,12 @@ int FTWScanner::ScannerFile(const char *File, bool const &ReadLink)
 /* */
 bool FTWScanner::RecursiveScan(string const &Dir)
 {
-   char *RealPath = NULL;
    /* If noprefix is set then jam the scan root in, so we don't generate
       link followed paths out of control */
    if (InternalPrefix.empty() == true)
    {
-      if ((RealPath = realpath(Dir.c_str(),NULL)) == 0)
+      char *RealPath = nullptr;
+      if ((RealPath = realpath(Dir.c_str(), nullptr)) == 0)
 	 return _error->Errno("realpath",_("Failed to resolve %s"),Dir.c_str());
       InternalPrefix = RealPath;
       free(RealPath);
@@ -209,7 +211,15 @@ bool FTWScanner::RecursiveScan(string const &Dir)
 	 _error->Errno("ftw",_("Tree walking failed"));
       return false;
    }
-   
+
+   using PairType = decltype(*FilesToProcess.cbegin());
+   std::sort(FilesToProcess.begin(), FilesToProcess.end(), [](PairType a, PairType b) {
+      return a.first < b.first;
+   });
+   for (PairType it : FilesToProcess)
+      if (ProcessFile(it.first.c_str(), it.second) != 0)
+	 return false;
+   FilesToProcess.clear();
    return true;
 }
 									/*}}}*/
@@ -219,14 +229,14 @@ bool FTWScanner::RecursiveScan(string const &Dir)
    of files from another file. */
 bool FTWScanner::LoadFileList(string const &Dir, string const &File)
 {
-   char *RealPath = NULL;
    /* If noprefix is set then jam the scan root in, so we don't generate
       link followed paths out of control */
    if (InternalPrefix.empty() == true)
    {
-      if ((RealPath = realpath(Dir.c_str(),NULL)) == 0)
+      char *RealPath = nullptr;
+      if ((RealPath = realpath(Dir.c_str(), nullptr)) == 0)
 	 return _error->Errno("realpath",_("Failed to resolve %s"),Dir.c_str());
-      InternalPrefix = RealPath;      
+      InternalPrefix = RealPath;
       free(RealPath);
    }
    
@@ -263,8 +273,10 @@ bool FTWScanner::LoadFileList(string const &Dir, string const &File)
       if (stat(FileName,&St) != 0)
 	 Flag = FTW_NS;
 #endif
+      if (FileMatchesPatterns(FileName, Patterns) == false)
+	 continue;
 
-      if (ScannerFile(FileName, false) != 0)
+      if (ProcessFile(FileName, false) != 0)
 	 break;
    }
   
@@ -279,7 +291,7 @@ bool FTWScanner::Delink(string &FileName,const char *OriginalPath,
 			unsigned long long &DeLinkBytes,
 			unsigned long long const &FileSize)
 {
-   // See if this isn't an internaly prefix'd file name.
+   // See if this isn't an internally prefix'd file name.
    if (InternalPrefix.empty() == false &&
        InternalPrefix.length() < FileName.length() && 
        stringcmp(FileName.begin(),FileName.begin() + InternalPrefix.length(),
@@ -417,7 +429,7 @@ bool PackagesWriter::DoPackage(string FileName)
    string Architecture;
    // if we generate a Packages file for a given arch, we use it to
    // look for overrides. if we run in "simple" mode without the 
-   // "Architecures" variable in the config we use the architecure value
+   // "Architectures" variable in the config we use the architecture value
    // from the deb file
    if(Arch != "")
       Architecture = Arch;
@@ -464,10 +476,7 @@ bool PackagesWriter::DoPackage(string FileName)
 
    // This lists all the changes to the fields we are going to make.
    std::vector<pkgTagSection::Tag> Changes;
-
-   std::string Size;
-   strprintf(Size, "%llu", (unsigned long long) FileSize);
-   Changes.push_back(pkgTagSection::Tag::Rewrite("Size", Size));
+   Changes.push_back(pkgTagSection::Tag::Rewrite("Size", std::to_string(FileSize)));
 
    for (HashStringList::const_iterator hs = Db.HashesList.begin(); hs != Db.HashesList.end(); ++hs)
    {
@@ -836,12 +845,20 @@ bool SourcesWriter::DoPackage(string FileName)
    Changes.push_back(pkgTagSection::Tag::Rewrite("Package", Package));
    if (Files.empty() == false)
       Changes.push_back(pkgTagSection::Tag::Rewrite("Files", Files));
+   else
+      Changes.push_back(pkgTagSection::Tag::Remove("Files"));
    if (ChecksumsSha1.empty() == false)
       Changes.push_back(pkgTagSection::Tag::Rewrite("Checksums-Sha1", ChecksumsSha1));
+   else
+      Changes.push_back(pkgTagSection::Tag::Remove("Checksums-Sha1"));
    if (ChecksumsSha256.empty() == false)
       Changes.push_back(pkgTagSection::Tag::Rewrite("Checksums-Sha256", ChecksumsSha256));
+   else
+      Changes.push_back(pkgTagSection::Tag::Remove("Checksums-Sha256"));
    if (ChecksumsSha512.empty() == false)
       Changes.push_back(pkgTagSection::Tag::Rewrite("Checksums-Sha512", ChecksumsSha512));
+   else
+      Changes.push_back(pkgTagSection::Tag::Remove("Checksums-Sha512"));
    if (Directory != "./")
       Changes.push_back(pkgTagSection::Tag::Rewrite("Directory", Directory));
    Changes.push_back(pkgTagSection::Tag::Rewrite("Priority", BestPrio));

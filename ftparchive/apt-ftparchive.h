@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: apt-ftparchive.h,v 1.3 2001/05/29 03:51:37 jgg Exp $
 /* ######################################################################
 
    Writer 
@@ -12,7 +11,6 @@
 									/*}}}*/
 #ifndef APT_FTPARCHIVE_H
 #define APT_FTPARCHIVE_H
-
 
 #include <fstream>
 

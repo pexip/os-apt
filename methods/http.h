@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
-// Description								/*{{{*/// $Id: http.h,v 1.12 2002/04/18 05:09:38 jgg Exp $
-// $Id: http.h,v 1.12 2002/04/18 05:09:38 jgg Exp $
+// Description								/*{{{*/
 /* ######################################################################
 
    HTTP Acquire Method - This is the HTTP acquire method for APT.
@@ -13,11 +12,14 @@
 
 #include <apt-pkg/strutl.h>
 
+#include <chrono>
+#include <iostream>
+#include <memory>
 #include <string>
 #include <sys/time.h>
-#include <iostream>
 
 #include "basehttp.h"
+#include "connect.h"
 
 using std::cout;
 using std::endl;
@@ -35,11 +37,10 @@ class CircleBuf
    std::string OutQueue;
    unsigned long long StrPos;
    unsigned long long MaxGet;
-   struct timeval Start;
 
    static unsigned long long BwReadLimit;
    static unsigned long long BwTickReadData;
-   static struct timeval BwReadTick;
+   static std::chrono::steady_clock::duration BwReadTick;
    static const unsigned int BW_HZ;
 
    unsigned long long LeftRead() const
@@ -66,11 +67,12 @@ class CircleBuf
    unsigned long long TotalWriten;
 
    // Read data in
-   bool Read(int Fd);
+   bool Read(std::unique_ptr<MethodFd> const &Fd);
    bool Read(std::string const &Data);
 
    // Write data out
-   bool Write(int Fd);
+   bool Write(std::unique_ptr<MethodFd> const &Fd);
+   bool Write(std::string &Data);
    bool WriteTillEl(std::string &Data,bool Single = false);
 
    // Control the write limit
@@ -83,8 +85,6 @@ class CircleBuf
    bool WriteSpace() const {return InP - OutP > 0;};
 
    void Reset();
-   // Dump everything
-   void Stats();
 
    CircleBuf(HttpMethod const * const Owner, unsigned long long Size);
    ~CircleBuf();
@@ -95,27 +95,27 @@ struct HttpServerState: public ServerState
    // This is the connection itself. Output is data FROM the server
    CircleBuf In;
    CircleBuf Out;
-   int ServerFd;
+   std::unique_ptr<MethodFd> ServerFd;
 
    protected:
    virtual bool ReadHeaderLines(std::string &Data) APT_OVERRIDE;
-   virtual bool LoadNextResponse(bool const ToFile, RequestState &Req) APT_OVERRIDE;
+   virtual ResultState LoadNextResponse(bool const ToFile, RequestState &Req) APT_OVERRIDE;
    virtual bool WriteResponse(std::string const &Data) APT_OVERRIDE;
 
    public:
    virtual void Reset() APT_OVERRIDE;
 
-   virtual bool RunData(RequestState &Req) APT_OVERRIDE;
-   virtual bool RunDataToDevNull(RequestState &Req) APT_OVERRIDE;
+   virtual ResultState RunData(RequestState &Req) APT_OVERRIDE;
+   virtual ResultState RunDataToDevNull(RequestState &Req) APT_OVERRIDE;
 
-   virtual bool Open() APT_OVERRIDE;
+   virtual ResultState Open() APT_OVERRIDE;
    virtual bool IsOpen() APT_OVERRIDE;
    virtual bool Close() APT_OVERRIDE;
    virtual bool InitHashes(HashStringList const &ExpectedHashes) APT_OVERRIDE;
    virtual Hashes * GetHashes() APT_OVERRIDE;
-   virtual bool Die(RequestState &Req) APT_OVERRIDE;
+   virtual ResultState Die(RequestState &Req) APT_OVERRIDE;
    virtual bool Flush(FileFd * const File) APT_OVERRIDE;
-   virtual bool Go(bool ToFile, RequestState &Req) APT_OVERRIDE;
+   virtual ResultState Go(bool ToFile, RequestState &Req) APT_OVERRIDE;
 
    HttpServerState(URI Srv, HttpMethod *Owner);
    virtual ~HttpServerState() {Close();};

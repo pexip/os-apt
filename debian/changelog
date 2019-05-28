@@ -1,48 +1,814 @@
-apt (1.4.9) stretch-security; urgency=medium
+apt (1.8.2) unstable; urgency=medium
+
+  [ Alwin Henseler ]
+  * Flip /: in documented default value of DPkg::Path (Closes: #917986)
+
+  [ TilmanK ]
+  * Fix typo in German manpage translation
+
+  [ Américo Monteiro ]
+  * Portuguese manpages translation update (Closes: #926614)
+
+  [ Jean-Pierre Giraud ]
+  * French manpages translation update (Closes: #929290)
+
+  [ Michael Zhivich ]
+  * methods: https: handle requests for TLS re-handshake (LP: #1829861)
+
+  [ Julian Andres Klode ]
+  * Unlock dpkg locks in reverse locking order (LP: #1829860)
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 28 May 2019 16:40:29 +0200
+
+apt (1.8.1) unstable; urgency=medium
+
+  * Add test case for local-only packages pinned to never
+  * Prevent shutdown while running dpkg (LP: #1820886)
+  * Add linux-{buildinfo,image-unsigned,source} versioned kernel pkgs
+    (LP: #1821640)
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 06 May 2019 10:41:52 +0200
+
+apt (1.8.0) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * Add explicit message for unsupported binary signature (Closes: #921685)
+
+  [ Milo Casagrande ]
+  * [l10n] Update Italian translation
+
+  [ Julian Andres Klode ]
+  * Fix name of APT::Update::Post-Invoke-Stats (was ...Update-Post...)
+  * CMake: Install auth.conf.d directory (LP: #1818996)
+
+  [ Frans Spiesschaert ]
+  * Dutch program translation update (Closes: #923728)
+  * Dutch manpages translation update (Closes: #923834)
+
+ -- Julian Andres Klode <jak@debian.org>  Fri, 08 Mar 2019 09:41:20 +0100
+
+apt (1.8.0~rc4) unstable; urgency=medium
+
+  * update: Provide APT::Update-Post-Invoke-Stats script hook point
+    (LP: #1815760)
+  * Introduce APT::Install::Pre-Invoke / Post-Invoke-Success (LP: #1815761)
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 26 Feb 2019 08:32:01 +0100
+
+apt (1.8.0~rc3) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * aptmethod.h: Do not have gcc warning about ignoring write() result
+  * Fix issues in previous two debian/changelog entries
+  * json-hooks-protocol: The "pin" field is optional
+  * debian/gbp.conf: Set debian-branch to 1.8.y
+  * Install translated apt_auth and apt-transport-* manpages
+
+  [ Алексей Шилин ]
+  * Russian program translation update.
+    Thanks to Vladimir Zhbanov <vzhbanov@gmail.com> (Closes: #921830)
+
+  [ Jakub Wilk ]
+  * Fix various typos in the documentation
+
+  [ Frans Spiesschaert ]
+  * Dutch program translation update (Closes: #921934)
+  * Dutch manpages translation update (Closes: #921941)
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 11 Feb 2019 09:33:46 +0100
+
+apt (1.8.0~rc2) unstable; urgency=medium
+
+  * Correctly handle feature detection for sse4.2 and crc32
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 04 Feb 2019 18:15:07 +0100
+
+apt (1.8.0~rc1) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * Fail instead of warn for unsigned lines in InRelease
+  * Fail on non-signature lines in Release.gpg
+  * Merge and reuse tmp file handling across the board
+  * Explicitly remove the whitespaces defined by RFC
+  * Refuse files with lines unexpectedly starting with a dash
+  * Drop buffered writing from clearsigned message extraction
+  * Step over empty sections in TagFiles with comments
+    (Closes: #920317, #921037)
+
+  [ Josh Triplett ]
+  * Add a "reinstall" command as an alias for "install --reinstall".
+
+  [ Michael Vogt ]
+  * private-json-hooks.cc: deal with EPIPE (LP: #1814543)
+
+  [ Julian Andres Klode ]
+  * Verify data being sent by methods in SendMessage()
+  * Disable deprecated methods (ftp, rsh, ssh) by default
+  * Introduce experimental 'never' pinning for sources
+  * Add a Packages-Require-Authorization Release file field
+  * gpgv: Use buffered writes for splitting clearsigned files
+  * Detect function multiversioning and sse4.2/crc32, enables i386
+  * Use std::to_string() for HashStringList::FileSize() getter
+
+  [ Алексей Шилин ]
+  * Russian program translation update (Closes: #921011)
+
+  [ Baptiste Jammet ]
+  * French program translation update (Closes: #921008)
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 04 Feb 2019 15:32:27 +0100
+
+apt (1.8.0~beta1) unstable; urgency=medium
+
+  [ anatoly techtonik ]
+  * README.md: Document that apt is also included
+  * apt.cc: Add "apt info" alias for muscle memory
+
+  [ Jean-Pierre Giraud ]
+  * French manpages translation update (Closes: #915952)
+
+  [ Frans Spiesschaert ]
+  * Dutch manpages translation update (Closes: #916358)
+
+  [ Julian Andres Klode ]
+  * cache hash: Use sse4.2 CRC32c on x86-64 where available
+  * configuration: Compare size first during lookup
+  * debListParser: Avoid native arch lookup in ParseDepends
+  * hash32: Tighten to multiversion to x86-64 ELF and use uint32_t
+  * apt-mark: Introduce minimize-manual
+  * doc/apt-verbatim.ent: Point ubuntu-codename to disco (LP: #1812696)
+  * CI: Use debian:buster as test base image
+  * doc/apt-verbatim.ent: Debian buster is stable
+  * SECURITY UPDATE: content injection in http method (CVE-2019-3462)
+    (LP: #1812353)
+  * debian/control: Drop libcurl4-gnutls-dev build dependency
+
+  [ Mo Zhou ]
+  * zh_CN.po: Update Simplified Chinese programs translation.
+
+  [ Khem Raj ]
+  * Remove `register` keyword
+
+  [ Vasya Novikov ]
+  * bash completion: add keys
+
+  [ David Kalnischkies ]
+  * Communicate back which key(s) were used for signing
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 23 Jan 2019 16:49:34 +0100
+
+apt (1.8.0~alpha3.1) unstable; urgency=emergency
 
   * SECURITY UPDATE: content injection in http method (CVE-2019-3462)
     (LP: #1812353)
 
- -- Julian Andres Klode <jak@debian.org>  Fri, 18 Jan 2019 11:42:07 +0100
+ -- Julian Andres Klode <jak@debian.org>  Tue, 22 Jan 2019 19:52:38 +0100
 
-apt (1.4.8) stretch; urgency=medium
+apt (1.8.0~alpha3) unstable; urgency=medium
+
+  [ Manuel A. Fernandez Montecelo ]
+  * Remove "Ultimedia" config for Acquire::Changelogs
+  * Remove "Tanglu" config for Acquire::Changelogs and as vendor
+
+  [ Julian Andres Klode ]
+  * Adjust libapt-pkg Breaks aptitude to << 0.8.9
+  * Print useful error on "apt changelog" without arguments
+  * test-pdiff-usage: make transaction failure test case more robust
+  * Provide a "autopurge" shortcut.
+    Thanks to Michael Vogt for the initial work
+  * Override FileFd copy constructor to prevent copying
+  * Add support for /etc/apt/auth.conf.d/*.conf (netrcparts)
+  * Set PATH=/usr/sbin:/usr/bin:/sbin:/bin when running dpkg
+
+  [ David Kalnischkies ]
+  * Allow setting Referer header for http method
+  * Use quoted tagnames in config dumps
+
+  [ Алексей Шилин ]
+  * Russian program translation update (Closes: #914096)
+
+  [ Balint Reczey ]
+  * Set LC_ALL=C.UTF-8 for unattended-upgrades environment when parsing its --help
+    (LP: #1806076)
+
+  [ Milo Casagrande ]
+  * [l10n] Update Italian translation
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 18 Dec 2018 15:02:11 +0100
+
+apt (1.8.0~alpha2) unstable; urgency=medium
+
+  * Revert "http: Fix handling of server connection closure"
+    This reverts commit fb3f36593563d09a8d1727cc7c6deb0b49823ca2. It
+    caused downloads to hang on long-lived connections on certain
+    servers.
+  * Drop debian/source/options, not needed anymore
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 13 Nov 2018 10:31:49 +0100
+
+apt (1.8.0~alpha1) unstable; urgency=medium
+
+  [ Damyan Ivanov ]
+  * apt-get.8: mention --only-source in 'source' and 'build-dep' description
+
+  [ David Kalnischkies ]
+  * Support subkeys properly in Signed-By options
+  * Support multiple keyrings in sources.list Signed-By
+
+  [ Ben Hutchings ]
+  * Default to https: scheme for fetching Debian changelogs (Closes: #910941)
+
+  [ Julian Andres Klode ]
+  * NeverAutoRemove kernel meta packages (LP: #1787460)
+  * Break pre-gcc8 aptitude and apt (Closes: #911090)
+  * http: Fix handling of server connection closure (LP: #1801338)
+
+  [ Frans Spiesschaert ]
+  * Dutch program translation update (Closes: #912021)
+  * Dutch manpage translation update (Closes: #912022)
+
+  [ Chris Leick ]
+  * German manpage translation update
+  * Fix typos encountered while updating de translation
+
+  [ Petter Reinholdtsen ]
+  * Norwegian Bokmål program translation update (Closes: #912374)
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 12 Nov 2018 11:52:15 +0100
+
+apt (1.7.0) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Fix calculation of elapsed usec in downloads
+  * pkgCacheFile: Only unlock in destructor if locked before (LP: #1794053)
+  * Set DPKG_FRONTEND_LOCKED when running {pre,post}-invoke scripts.
+    Some post-invoke scripts install packages, which fails because
+    the environment variable is not set. This sets the variable for
+    all three kinds of scripts {pre,post-}invoke and pre-install-pkgs,
+    but we will only allow post-invoke at a later time.
+  * prepare-release: Fix last-modification detection for manpages
+
+  [ David Kalnischkies ]
+  * Show APT::Compressor example in apt.conf(5) (Closes: #909712)
+
+  [ Muhamed Huseinbašić ]
+  * apt-mark: showhold: typo-fix (package -> packages)
+
+ -- Julian Andres Klode <jak@debian.org>  Sun, 07 Oct 2018 07:56:02 +0200
+
+apt (1.7.0~rc2) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * Deal with descriptions embedded in displayed record correctly
+    (Closes: #909155)
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 20 Sep 2018 21:03:54 +0200
+
+apt (1.7.0~rc1) unstable; urgency=medium
+
+  [ Laurent Bigonville ]
+  * fr.po: Do not translate the apt-ftparchive commands (Closes: #907481)
+
+  [ David Kalnischkies ]
+  * Don't use invalid iterator in Fallback-Of handling.
+    Thanks to David Binderman for reporting
+  * Process status-fd completely before finishing dpkg call
+  * Don't expect duplicated dpkg status-fd messages
+  * Reorder progress report messages
+  * Show all architectures in 'apt list' output (Closes: #908218)
+
+  [ Julian Andres Klode ]
+  * http: Stop pipeline after close only if it was not filled before
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 18 Sep 2018 16:12:38 +0200
+
+apt (1.7.0~alpha3) experimental; urgency=medium
+
+  [ David Kalnischkies ]
+  * SECURITY UPDATE: Fallback in the mirror method allowed a later server to
+    supply any InRelease file without it having to be verified. (LP: #1787752)
+    - apt-pkg/acquire-item.cc:: clear alternative URIs for mirror:// between steps
+    - CVE-2018-0501
+    - https://mirror.fail/
+
+  [ Jean-Ralph Aviles ]
+  * Add trailing newline to output of edit-sources.
+
+  [ Julian Andres Klode ]
+  * Add support for dpkg frontend lock (Closes: #869546)
+  * Set DPKG_FRONTEND_LOCKED as needed when doing selection changes
+  * Update symbols files
+
+  [ Boyuan Yang ]
+  * Simplified Chinese program translation update (Closes: #903695)
+
+  [ David Kalnischkies ]
+  * Report (soon) worthless keys if gpg uses fpr for GOODSIG
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 20 Aug 2018 17:44:19 +0200
+
+apt (1.7.0~alpha2) experimental; urgency=medium
+
+  * Handle JSON hooks that just close the file/exit and fix some other errors
+    (LP: #1776218)
+  * Use cheaper entropy source for randomizing items to fetch
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 09 Jul 2018 16:02:45 +0200
+
+apt (1.7.0~alpha1) experimental; urgency=medium
+
+  [ Julian Andres Klode ]
+  * CMake: Fix builds without zstd
+  * apt.conf.autoremove: Catch some new Ubuntu module packages
+  * Fix build with new gtest (Closes: #897149)
+  * tests: Do not expect requested-by if sudo was invoked by root
+  * Run tests on GitLab CI
+  * Handle a missed case of timed out ip addresses (LP: #1766542)
+  * Lower default timeout from 120s to 30s
+  * apt-key: Pass all instead of gpg-agent to gpgconf --kill (LP: #1773992)
+  * Fix lock counting in debSystem
+  * CI: Export DEBIAN_FRONTEND=noninteractive in all CI environments
+  * Ensure that we are online in apt-daily-upgrade.service (LP: #1723761)
+  * gitlab-ci: chmod 755 /root
+
+  [ David Kalnischkies ]
+  * move special READMEs into doc/ and format as md
+  * Add boilerplate plural form to po/apt-all.pot
+  * don't try SRV requests based on IP addresses
+  * use 127.0.0.1 instead of localhost as default Tor proxy
+  * Extend apt build-dep pkg/release to switch dep as needed
+  * Support release selector for volatile files as well
+  * Start pkg records for deb files with dpkg output
+  * Deprecate buggy/incorrect Rls/PkgFile::IsOk methods
+  * Support --with-source in show & search commands
+  * Support local files as arguments in show command (Closes: 883206)
+  * Drop alternative URIs we got a hash-based fail from
+  * Handle by-hash URI construction more centrally
+  * Don't force the same mirror for by-hash URIs
+  * Reword error for timed out read/write on SOCKS proxy (Closes: #898886)
+  * Don't show acquire warning for "hidden" components (Closes: #879591)
+  * Use a steady clock source for progress reporting
+  * Use steady clock source for bandwidth limitation
+
+  [ Guillem Jover ]
+  * Remove obsolete RCS keywords
+  * Normalize authors through a mailmap file
+  * po: Fill Project-Id-Version with correct project id and version
+  * po: Fix translated string not matching format string arguments
+  * po: Fix Language field to match actual locale
+  * po: Remove spurious text in Plural-Forms field
+  * po: Add missing Plural-Forms fields
+
+  [ Filipe Brandenburger ]
+  * Update .gitignore
+  * Increase debug verbosity in `apt-get autoremove`
+  * Extend test-apt-get-autoremove to check debug output
+
+  [ annadane ]
+  * Add verb 'be' to NEWS entry for 1.5~beta1 (Closes: 892792)
+
+  [ Алексей Шилин ]
+  * Russian program translation update (Closes: 898797)
+
+  [ Frans Spiesschaert ]
+  * Dutch program translation update (Closes: #900589)
+  * Dutch manpage translation update (Closes: #900602)
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 25 Jun 2018 17:12:30 +0200
+
+apt (1.7.0~alpha0) experimental; urgency=medium
+
+  [ David Kalnischkies ]
+  * mention mirror method in sources.list (Closes: 679580)
+
+  [ Julian Andres Klode ]
+  * Build with cmake+ninja instead of cmake+make
+  * Make libzstd optional in CMakeLists.txt, to aid cross-building
+  * Run travis against debian:testing again, keep shippable at bionic
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 18 Apr 2018 17:22:19 +0200
+
+apt (1.6~rc1) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Experimental support for zstd (LP: #1763839)
+  * Fix debian/NEWS entry for 1.6~beta1
+  * Use https for Ubuntu changelogs
+  * Bump cache major version to allow different 1.5 and 1.6 updates
+  * CI: Switch testing to use ubuntu:bionic for 1.6.y
+  * Turn off seccomp sandboxing by default (LP: #1732030) (Closes: #890489)
+  * Allow restart_syscall() syscall in seccomp sandboxes (Closes: #891644)
+  * Delete /etc/dpkg/dpkg.cfg.d/excludes on Docker CI images
+  * test: export GCOV_ERROR_FILE=/dev/null to make it fail less/no tests
+  * apt-private: Collect not found packages in CacheSetHelperAPTGet
+  * Introduce experimental new hooks for command-line tools (LP: #1763839)
+
+  [ David Kalnischkies ]
+  * remove duplicate changelog lines from 1.6~beta1 entry
+  * fix communication typo in https manpage
+  * set our two libapt libraries to prio:optional
+  * document Acquire::AllowReleaseInfoChange without extra s
+
+  [ jean-pierre giraud ]
+  * French man pages translation (Closes: #895117)
+
+ -- Julian Andres Klode <jak@debian.org>  Sun, 15 Apr 2018 21:41:44 +0200
+
+apt (1.6~beta1) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * allow the apt/lists/auxfiles/ directory to be missing (Closes: 887624)
+  * add apt-helper drop-privs command…
+  * restore gcc visibility=hidden for apt-private
+  * ensure correct file permissions for auxfiles
+
+  [ Julian Andres Klode ]
+  * indexcopy: Copy uncompressed indices from cdrom again (LP: #1746807)
+  * Work around test-method-mirror failure by setting umask at start
+  * Check that Date of Release file is not in the future
+  * apt.conf.autoremove: Add linux-cloud-tools to list (LP: #1698159)
+
+  [ Chris Leick ]
+  * German manpage translation update
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 26 Feb 2018 13:14:13 +0100
+
+apt (1.6~alpha7) unstable; urgency=medium
+
+  [ Mert Dirik ]
+  * Turkish program translation update (Closes: 886250)
+
+  [ David Kalnischkies ]
+  * dpkg status parsing: check if name is valid before use
+
+  [ Julian Andres Klode ]
+  * apt-compat.cron.daily: Correctly handle undetermined power status
+    (LP: #1742378)
+  * Introduce inrelease-path option for sources.list (Closes: #886745)
+  * Drop obsolete Suggests on python-apt (Closes: #887607)
+  * Point people to salsa.d.o instead of anonscm.d.o for git
+
+  [ Justin B Rye ]
+  * review and fix the three new apt-transport- manpages
+
+  [ Holger Wansing ]
+  * German program translation update (Closes: 886429)
+
+  [ Julien Patriarca ]
+  * French program translation update (Closes: 887017)
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 18 Jan 2018 14:44:14 +0000
+
+apt (1.6~alpha6) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Add Breaks: aptitude (<< 0.8.10) for gzip method removal
+  * Also look at https_proxy for https URLs
+  * Run wrap-and-sort
+  * Translate shared documentation parts again
+  * tests: Improve handling profiling messages on CI
+  * connect: Store the IP used when picking a connection
+  * Add rapid "happy eyeballs" connection fallback (RFC 8305) (Closes: #668948)
+    (LP: #1308200)
+
+  [ David Kalnischkies ]
+  * allow multivalue fields in deb822 sources to be folded (Closes: 881875)
+  * support COLUMNS environment variable in apt tools
+  * allow apt_auth.conf(5) to be translated
+  * if insecure repo is allowed continue on all http errors
+  * don't auto-switch candidate if installed is good enough
+  * update libapt-pkg symbols file
+  * explicitly name token in auth.conf parsing error
+  * fix over-calculating dpkg commandline length
+  * avoid some useless casts reported by -Wuseless-cast
+  * deal with floats without old-style cast
+  * support multiline values in LookupTag
+  * mark some 500 HTTP codes as transient acquire errors
+  * report transient errors as transient errors
+  * implement Acquire::Retries support for all items
+  * give the methods more metadata about the files to acquire
+  * implement fallback to alternative URIs for all items
+  * do not remap current files if nullptrs in cache generation
+  * apt.daily: remove unused dbus signal for apt update (Closes: 849636)
+  * Support cleartext signed InRelease files with CRLF line endings.
+    Thanks to Lukas Wunner for detailed report & initial patch! (Closes: 884922)
+  * document http options in new apt-transport-http manpage
+  * document https options in new apt-transport-https manpage
+  * refactor message generation for methods
+  * allow a method to request auxiliary files
+  * reimplement and simplify mirror:// method
+  * require methods to request AuxRequest capability at startup
+  * add tag-based control over mirror choices from the list
+  * non-local mirrorlists shouldn't redirect to local
+  * add apt-transport-mirror manpage
+
+  [ Milo Casagrande ]
+  * Italian program translation update (Closes: 882850)
+
+  [ Christian Göttsche ]
+  * apt.daily: fix several "shellcheck" annotations
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 03 Jan 2018 22:33:37 +0000
+
+apt (1.6~alpha5) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Do not attempt seccomp under qemu-user and drop EFAULT workaround
+    (Closes: #881519)
+
+  [ Frans Spiesschaert ]
+  * Dutch manpage translation update (Closes: #881402)
+
+ -- Julian Andres Klode <jak@debian.org>  Sun, 12 Nov 2017 19:57:00 +0100
+
+apt (1.6~alpha4) unstable; urgency=medium
+
+  * debian: Set Rules-Requires-Root: no
+  * debian: Bump Standards-Version to 4.1.1
+  * Re-introduce a transitional apt-transport-https
+
+ -- Julian Andres Klode <jak@debian.org>  Sun, 05 Nov 2017 15:25:53 +0100
+
+apt (1.6~alpha3) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * debian/tests/control: Add dpkg so we get triggered by it
+  * seccomp: Allow ipc() for fakeroot, and allow sysinfo() for sort
+    (Closes: #879814, #879826)
+  * Drop unused gzip, lzma, bzip2, and xz symlinks of store
+  * seccomp: Allow clock_nanosleep() and nanosleep() syscalls
+  * Prevent overflow in Installed-Size (and Size) in apt show
+
+  [ David Kalnischkies ]
+  * use store: instead of gzip: to open local changelogs
+
+ -- Julian Andres Klode <jak@debian.org>  Sat, 28 Oct 2017 17:57:05 +0200
+
+apt (1.6~alpha2) unstable; urgency=medium
+
+  * seccomp: Conditionalize statx() whitelisting
+  * CMake: methods: Cleanup link libraries, use OBJECT libraries
+  * methods: Enable additional syscalls (SYSV IPC) in fakeroot (Closes: #879662)
+  * Don't segfault if receiving a method warning on empty queue
+  * Only warn about seccomp() EINVAL (normal) and EFAULT (qemu) errors
+  * Print syscall number and arch to stderr when trapped by seccomp
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 26 Oct 2017 00:32:20 +0200
+
+apt (1.6~alpha1) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Bump Standards-Version to 4.1.0
+  * Drop obsolete dh-systemd build-dep
+  * Drop obsolute Testsuite: autopkgtest header
+  * Drop curl method and apt-transport-https package
+  * Fix testsuite for and add new fields from dpkg 1.19
+  * Run Proxy-Auto-Detect script from main process
+  * methods/mirror: Enable sandboxing and other aptMethod features
+  * Sandbox methods with seccomp-BPF; except cdrom, gpgv, rsh
+
+  [ David Kalnischkies ]
+  * proper error reporting for v3 onion services
+  * allow empty build-dependency fields in the parser (Closes: #875363)
+  * send the hashes for alternative file correctly
+  * ignore unsupported key formats in apt-key (Closes: #876508)
+
+  [ Mo Zhou ]
+  * zh_CN.po: Update Simplified Chinese programs translation
+
+  [ Frans Spiesschaert ]
+  * Dutch program translation update (Closes: #879137)
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 23 Oct 2017 01:58:18 +0200
+
+apt (1.5) unstable; urgency=medium
+
+  * Fix translator comment location for legacy target warning
+
+ -- Julian Andres Klode <jak@debian.org>  Sun, 24 Sep 2017 17:54:41 +0200
+
+apt (1.5~rc4) unstable; urgency=medium
+
+  * apt-daily: Do not Wants=network-online, and add some more After=
+    We now wait for being online ourselves, so all we need to wait
+    on is for services we are using to be online first. This avoids
+    severe boot slowdowns by other services having specified an
+    After=network-online.target without a Wants=.
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 13 Sep 2017 16:02:30 +0200
+
+apt (1.5~rc3) unstable; urgency=medium
+
+  * CMake: Properly handle Udev missing
+  * CMake: Mark BZip2, LZMA, and LZ4 as required
+  * apt-helper: Add connman support to wait-online
+
+ -- Julian Andres Klode <jak@debian.org>  Sun, 10 Sep 2017 23:46:30 +0200
+
+apt (1.5~rc2) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Actually install apt_auth.conf manual page (Closes: #873934)
+  * test: Workaround gpgv warning
+  * apt-daily: Wait for network before daily updates.
+    Introduce a new helper, apt-helper wait-online that uses
+    NetworkManager and/or systemd-networkd to wait for them
+    reporting online, with a time out of 30 seconds; and run
+    that helper before running the daily update script. (LP: #1699850)
+  * apt-daily: Pull in network-online.target in service, not timer
+  * Do not warn about duplicate "legacy" targets (Closes: #839259)
+    (LP: #1697120)
+  * cdrom: Don't hardcode "Files" field for copying source files
+  * ftparchive: Do not pass through disabled hashes in Sources (Closes: #872963)
+  * Directly link against libudev on Linux systems - this does not affect
+    public API and ABI, but protected pkgUdevCdromDevices function pointers
+    were renamed and are now always NULL, even if Dlopen returns true.
+
+  [ Christos Trochalakis ]
+  * doc: correct '--allow-releaseinfo-change-*' typos (Closes: #873914)
+
+  [ Frans Spiesschaert ]
+  * Dutch program translation update (Closes: #874285)
+  * Dutch manpage translation update (Closes: #874293)
+
+  [ David Kalnischkies ]
+  * don't write & chmod /dev/null log files
+  * don't ask an uninit _system for supported archs (LP: #1613184)
+
+ -- Julian Andres Klode <jak@debian.org>  Sat, 09 Sep 2017 21:47:14 +0200
+
+apt (1.5~rc1) unstable; urgency=medium
+
+  * Redefine APT_CONST to mean APT_PURE (APT_CONST is deprecated)
+    APT_CONST was used on functions where it should not have, causing
+    the compiler to optimize code it should not have, like turning
+    the "::" content in StringSplit(name, "::") into garbage because it
+    figured out that the value is not going to be read anyway, causing
+    stuff to go horribly wrong (mostly on -O3, really).
+  * Replace APT_CONST with APT_PURE everywhere
+  * Make test-bug-818628-unreadable-source work on !amd64
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 24 Aug 2017 23:13:52 +0200
+
+apt (1.5~beta2) unstable; urgency=medium
+
+  [ M. Willis Monroe ]
+  * Minor grammar fix
+
+  [ Zhou Mo ]
+  * zh_CN.po: update Simplified Chinese programs translation
+
+  [ David Kalnischkies ]
+  * don't expect more downloads from failed transactions
+  * remove reference to a-t-debtorrent in description
+  * ignore SIGPIPE in dump solver if forwarding
+  * support compressed extended_states file for bug triage
+  * don't move failed pdiff indexes out of partial (Closes: 869425)
+  * don't try to parse all fields starting with HTTP as status-line
+  * send weak-only hashes to methods
+  * fail earlier if server answers with too much data
+  * fail early in http if server answer is too small as well
+  * use FileFd to parse all apt configuration files
+  * show warnings instead of errors if files are unreadable (LP: #1701852)
+  * reimplement and document auth.conf (Closes: #811181)
+  * lookup login info for proxies in auth.conf
+  * allow the auth.conf to be root:root owned
+  * update URI scheme descriptions in sources.list(5)
+  * show a warning for Debian shutting down FTP services
+  * suggest using auth.conf for sources with passwords
+  * ftparchive: sort discovered filenames before writing indexes.
+    Thanks to Chris Lamb for initial patch & Stefan Lippers-Hollmann for testing
+    (Closes: 869557)
+  * don't keep configuration files open needlessly
+  * don't hang if multiple sources use unavailable method (Closes: 870675)
+
+  [ Beatrice Torracca ]
+  * Italian manpage translation update (Closes: 858877)
+
+  [ Apollon Oikonomopoulos ]
+  * Handle supported components with slashes in sources.list (Closes: #868127)
+
+  [ Julian Andres Klode ]
+  * Drop cacheiterators.h include
+  * methods/aptmethod.h: Add missing fileutl.h include
+  * Reformat and sort all includes with clang-format
+  * cacheiterators: Warn about direct include and don't include pkgcache.h
+  * Update gitignore with new files
+  * Use C++11 threading support instead of pthread
+  * Always warn if --force-yes is validly specified, not just if used
+  * Work around float rounding change in gcc 7 on i386
+  * Handle GCC 7 std::string operator ABI break (Closes: #871275)
+  * debian: Update symbols for libapt-pkg5.0
+
+  [ Paul Wise ]
+  * Support zero delay for the various APT::Periodic activities
+  * Support seconds, minutes, hours and days for APT::Periodic intervals
+  * Switch from /org to /srv in example apt-ftparchive configuration
 
   [ Balint Reczey ]
   * Gracefully terminate process when stopping apt-daily-upgrade (LP: #1690980)
 
-  [ David Kalnischkies ]
-  * don't ask an uninit _system for supported archs, this
-    crashes the mirror method (LP: #1613184)
+  [ Dominik ]
+  * doc: Add '--allow-unauthenticated' to '--force-yes'
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 17 Aug 2017 19:28:00 +0200
+
+apt (1.5~beta1) unstable; urgency=medium
 
   [ Julian Andres Klode ]
-  * Do not warn about duplicate "legacy" targets (Closes: #839259)
-    (LP: #1697120)
-  * apt-daily: Pull in network-online.target in service, not timer
-    - this can cause a severe boot performance regression / hang
-    (LP: #1716973)
+  * Make Verify-Host and Verify-Peer independent again
+  * http: A response with Content-Length: 0 has no content
+  * Ignore download order in test-apt-update-failure-propagation
+  * tls: Add more details to error messages, and detect more errors
+  * Do not error out, only warn if ca certificates are not available
 
- -- Julian Andres Klode <jak@debian.org>  Wed, 13 Sep 2017 18:47:33 +0200
+  [ David Kalnischkies ]
+  * don't set ip addresses as server names for SNI
 
-apt (1.4.7) stretch; urgency=medium
+  [ Алексей Шилин ]
+  * Russian translation update (Closes: #866749)
 
-  * New release with important fixes up to 1.5~beta1; also see LP: #1702326
+ -- Julian Andres Klode <jak@debian.org>  Mon, 03 Jul 2017 16:57:59 +0200
+
+apt (1.5~alpha4) experimental; urgency=medium
+
+  * Reset failure reason when connection was successful
+  * Allow running the TLS stack on any lower connection
+  * http: Add support for CONNECT proxying to HTTPS locations
+  * http: Add support for https:// proxies
+  * Allow http(s) and socks5h for http and https in proxy auto detect
+  * Switch to 'http' as the default https method
+  * Improve closing the TLS connection
+  * TLS support: Error out on unsupported curl options
+
+ -- Julian Andres Klode <jak@debian.org>  Fri, 30 Jun 2017 18:18:09 +0200
+
+apt (1.5~alpha3) experimental; urgency=medium
+
+  * Don't read CaInfo if not specified (missing else)
+    This fixes a regression from ~alpha2. (Closes: #866559)
+
+ -- Julian Andres Klode <jak@debian.org>  Fri, 30 Jun 2017 09:50:13 +0200
+
+apt (1.5~alpha2) experimental; urgency=medium
+
+  [ David Kalnischkies ]
+  * support tor+https being handled by http
+  * use port from SRV record instead of initial port
 
   [ Robert Luberda ]
   * fix a "critical" typo in old changelog entry (Closes: 866358)
 
-  [ David Kalnischkies ]
-  * test suite/travis CI: ignore profiling warning in progress lines
-  * use port from SRV record instead of initial port
+  [ Julian Andres Klode ]
+  * Improve error message if system CA store is empty (Closes: #866377)
+  * Have apt Recommend ca-certificates
+  * Demote gnupg to Suggests
+  * http: Only use system CA store if CaInfo is not set
+  * Bump Standards-Version (and wrap-and-sort a bit)
+  * Build-Depend on debhelper (>= 10) to shut up lintian
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 29 Jun 2017 17:52:19 +0200
+
+apt (1.5~alpha1) experimental; urgency=medium
 
   [ Julian Andres Klode ]
-  * Reset failure reason when connection was successful, so later errors are
-    reported as such and not as "connection failure" warnings.
-  * debian/gbp.conf: Set debian-branch to 1.4.y
-  * http: A response with Content-Length: 0 has no content, so don't try to
-    read it - it will either timeout or the server closes the connection.
-  * travis CI: Migrate to Docker
+  * pkgcache: Bump major version to 12
+  * Squashed 'triehash/' changes from 565fde4e7..0ca66b761
+  * methods: Add HTTPS support to http method, using GnuTLS.
+    The http method will eventually replace the curl-based
+    https method, but for now, this is an opt-in experiment
+    that can be enabled by setting Dir::Bin::Methods::https
+    to "http".
+    Known issues:
+    - We do not support HTTPS proxies yet
+    - We do not support proxying HTTPS connections yet (CONNECT)
+    - IssuerCert and SslForceVersion are unsupported
+  * Allow building without curl
+  * Introduce Acquire::AllowTLS to turn off TLS support
+  * Skip test-apt-download-progress
+  * Strip 0: epochs from the version hash
 
- -- Julian Andres Klode <jak@debian.org>  Thu, 13 Jul 2017 23:45:39 +0200
+  [ David Kalnischkies ]
+  * schedule the correct side of the conflict for removal.
+    Thanks to Michael Biebl for helping find this with countless tests
+  * don't show incorrect 'How odd' error in no-download mode (Closes: 863635)
+  * Show permission error if ProxyAutoDetect cmd can't be executed
+    (Closes: 857885)
+  * Avoid chdir in acquire clean with unlinkat (Closes: 860738)
+  * ident a CD without changing directory
+  * clean archives without changing directory
+  * avoid changing directory in mirror method
+  * warn if an expected file can't be acquired
+  * show .diff/Index properly as ignored if we fallback
+  * fail InRelease on non-404 HTTP errorcodes
+  * deal with 3xx httpcodes as required by HTTP/1.1 spec
+  * fail instead of warn on insecure repositories in apt-get
+  * error in update on Release information changes
+  * show a Release-Notes URI if infos were changed
+  * allow frontends to override releaseinfo change behaviour
+  * ask for releaseinfo change interactively in apt
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 28 Jun 2017 19:52:24 +0200
 
 apt (1.4.6) unstable; urgency=medium
 
@@ -2176,7 +2942,7 @@ apt (1.0.9) unstable; urgency=high
 
   * SECURITY UPDATE:
     - incorrect invalidating of unauthenticated data (CVE-2014-0488)
-    - incorect verification of 304 reply (CVE-2014-0487)
+    - incorrect verification of 304 reply (CVE-2014-0487)
     - incorrect verification of Acquire::Gzip indexes (CVE-2014-0489)
 
  -- Michael Vogt <mvo@debian.org>  Mon, 15 Sep 2014 08:34:46 +0200
@@ -2232,7 +2998,7 @@ apt (1.0.8) unstable; urgency=medium
 apt (1.0.7) unstable; urgency=medium
 
   [ Michael Vogt ]
-  * add REAMDE.md
+  * add README.md
   * StringToBool: only act if the entire string is consumed by strtol()
   * Use @builddeps@ in the debian/tests/control file
   * apt-pkg/acquire-item.cc: make pkgAcqDiffIndex more uniform
@@ -2544,7 +3310,7 @@ apt (0.9.16) unstable; urgency=medium
   * add ".*-{kernel,modules}-$KERVER" matcher for hook
   * ensure that a dot is a dot in the hook
   * use liblzma-dev to provide xz/lzma support
-  * use the pretty fullname of a pkg as download desciption
+  * use the pretty fullname of a pkg as download description
 
   [ Johannes Schauer ]
   * implement BuildProfileSpec support as dpkg has in 1.17.2 (Closes: 661537)
@@ -2798,7 +3564,7 @@ apt (0.9.14) unstable; urgency=low
   * use a substvar to set the archive-keyring in debian/control
   * cherry-pick ubuntus (disabled) net-update fixes
   * generate apt-key script with vendor info about keys
-  * drop old /var/state to /var/lib transition artefacts
+  * drop old /var/state to /var/lib transition artifacts
 
   [ Steve Langasek ]
   * prepare-release: declare the packages needed as source build deps.
@@ -3083,7 +3849,7 @@ apt (0.9.9.4) unstable; urgency=low
 
   [ David Kalnischkies ]
   * pick up Translation-* even if only compressed available (Closes: 717665)
-  * request absolute URIs from proxies again (0.9.9.3 regession)
+  * request absolute URIs from proxies again (0.9.9.3 regression)
     (Closes: 717891)
   
   [ Michael vogt ]
@@ -4802,7 +5568,7 @@ apt (0.8.15.1) unstable; urgency=low
     - Defaults is a vector of Pin not of PkgPin
     - ensure that only the first specific stanza for a package is used
     - save all stanzas which had no effect in Unmatched
-    - allow package:architecure in Package:
+    - allow package:architecture in Package:
 
  -- Michael Vogt <mvo@debian.org>  Thu, 30 Jun 2011 10:05:36 +0200
 
@@ -5350,7 +6116,7 @@ apt (0.8.11) unstable; urgency=low
     - if --print-uris is used don't setup downloader as we don't need
       progress, lock nor the directories it would create otherwise
     - show dependencies of essential packages which are going to remove
-      only if they cause the remove of this essential (Closes: #601961)
+      only if they cause the removal of this essential (Closes: #601961)
     - keep not installed garbage packages uninstalled instead of showing
       in the autoremove section and installing those (Closes: #604222)
     - change pkg/release behavior to use the new SetCandidateRelease
@@ -5986,7 +6752,7 @@ apt (0.7.26~exp8) experimental; urgency=low
   * apt-pkg/packagemanager.cc:
     - packages that are not touched doesn't need to be unpacked
   * debian/control:
-    - remove intltool's dependency as it is an ubuntu artefact
+    - remove intltool's dependency as it is an ubuntu artifact
   * apt-pkg/depcache.cc:
     - SetCandidateVer for all pseudo packages
     - SetReInstall for the "all" package of a pseudo package
@@ -7498,7 +8264,7 @@ apt (0.7.12) unstable; urgency=low
       that can be used to sign the archive signing keys. This should
       make key-rollover easier.
   * apt-pkg/deb/dpkgpm.cc:
-    - merged patch from Kees Cook to fix anoying upper-case display
+    - merged patch from Kees Cook to fix annoying upper-case display
       on amd64 in sbuild
   * apt-pkg/algorithms.cc: 
     - add APT::Update::Post-Invoke-Success script slot
@@ -8598,7 +9364,7 @@ apt (0.6.33) hoary; urgency=low
     - patch-1: cosmetic changes (whitespace, "Apt::GPGV->APT::GPGV")
     - patch-2: (doc) documentation for gpgv
     - patch-3: (doc) new config variables added configure-index
-    - patch-4: pkgAcquire::Run() pulse intervall can be configured
+    - patch-4: pkgAcquire::Run() pulse interval can be configured
     - patch-5: fix for apt-get update removing Release.gpg files (#6865)
     - patch-6: change the path scoring in apt-cdrom, prefer paths without
       symlinks
@@ -9984,7 +10750,7 @@ apt (0.3.14) unstable; urgency=low
   * Tweaked Dselect 'update' script to re-gen the avail file even in the
     event of a failure Closes: #47112
   * Retries for source archives too Closes: #47529
-  * Unmounts CDROMs iff it mounted them Closes: #45299
+  * Unmounts CDROMs if it mounted them Closes: #45299
   * Checks for the partial directories before doing downloads Closes: #47392
   * no_proxy environment variable (http only!) Closes: #43476
   * apt-cache showsrc Closes: #45799
@@ -10208,7 +10974,7 @@ apt (0.1) unstable; urgency=low
 
   * Kludge to fix problem in libnet-perl with illegal anonymous
     FTP passwords.
-  * Moved to unstable; apt is in a useable state now.
+  * Moved to unstable; apt is in a usable state now.
   * Fixed version numbering. From now on, numbering will be:
     0.1 (no actual release) -> 0.1.0bo (release for libc5) ->
     0.1.1 (release for unstable). Thanks, Manoj.

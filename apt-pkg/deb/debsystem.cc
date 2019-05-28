@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: debsystem.cc,v 1.4 2004/01/26 17:01:53 mdz Exp $
 /* ######################################################################
 
    System - Abstraction for running on different systems.
@@ -12,30 +11,29 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
+#include <apt-pkg/configuration.h>
+#include <apt-pkg/debindexfile.h>
 #include <apt-pkg/debsystem.h>
 #include <apt-pkg/debversion.h>
-#include <apt-pkg/debindexfile.h>
 #include <apt-pkg/dpkgpm.h>
-#include <apt-pkg/configuration.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
 
 #include <algorithm>
 
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
 #include <string>
 #include <vector>
-#include <unistd.h>
+#include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
 #include <fcntl.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -46,10 +44,11 @@ debSystem debSys;
 
 class APT_HIDDEN debSystemPrivate {
 public:
-   debSystemPrivate() : LockFD(-1), LockCount(0), StatusFile(0)
+   debSystemPrivate() : FrontendLockFD(-1), LockFD(-1), LockCount(0), StatusFile(0)
    {
    }
    // For locking support
+   int FrontendLockFD;
    int LockFD;
    unsigned LockCount;
    
@@ -79,7 +78,7 @@ debSystem::~debSystem()
 bool debSystem::Lock()
 {
    // Disable file locking
-   if (_config->FindB("Debug::NoLocking",false) == true || d->LockCount > 1)
+   if (_config->FindB("Debug::NoLocking",false) == true || d->LockCount > 0)
    {
       d->LockCount++;
       return true;
@@ -87,21 +86,29 @@ bool debSystem::Lock()
 
    // Create the lockfile
    string AdminDir = flNotFile(_config->FindFile("Dir::State::status"));
-   d->LockFD = GetLock(AdminDir + "lock");
-   if (d->LockFD == -1)
+   string FrontendLockFile = AdminDir + "lock-frontend";
+   d->FrontendLockFD = GetLock(FrontendLockFile);
+   if (d->FrontendLockFD == -1)
    {
       if (errno == EACCES || errno == EAGAIN)
-	 return _error->Error(_("Unable to lock the administration directory (%s), "
-	                        "is another process using it?"),AdminDir.c_str());
+	 return _error->Error(_("Unable to acquire the dpkg frontend lock (%s), "
+	                        "is another process using it?"),FrontendLockFile.c_str());
       else
-	 return _error->Error(_("Unable to lock the administration directory (%s), "
-	                        "are you root?"),AdminDir.c_str());
+	 return _error->Error(_("Unable to acquire the dpkg frontend lock (%s), "
+	                        "are you root?"),FrontendLockFile.c_str());
+   }
+   if (LockInner() == false)
+   {
+      close(d->FrontendLockFD);
+      return false;
    }
    
    // See if we need to abort with a dirty journal
    if (CheckUpdates() == true)
    {
       close(d->LockFD);
+      close(d->FrontendLockFD);
+      d->FrontendLockFD = -1;
       d->LockFD = -1;
       const char *cmd;
       if (getenv("SUDO_USER") != NULL)
@@ -118,6 +125,21 @@ bool debSystem::Lock()
       
    return true;
 }
+
+bool debSystem::LockInner() {
+   string AdminDir = flNotFile(_config->FindFile("Dir::State::status"));
+   d->LockFD = GetLock(AdminDir + "lock");
+   if (d->LockFD == -1)
+   {
+      if (errno == EACCES || errno == EAGAIN)
+	 return _error->Error(_("Unable to lock the administration directory (%s), "
+	                        "is another process using it?"),AdminDir.c_str());
+      else
+	 return _error->Error(_("Unable to lock the administration directory (%s), "
+	                        "are you root?"),AdminDir.c_str());
+   }
+   return true;
+}
 									/*}}}*/
 // System::UnLock - Drop a lock						/*{{{*/
 // ---------------------------------------------------------------------
@@ -132,10 +154,25 @@ bool debSystem::UnLock(bool NoErrors)
    if (--d->LockCount == 0)
    {
       close(d->LockFD);
+      close(d->FrontendLockFD);
       d->LockCount = 0;
    }
    
    return true;
+}
+bool debSystem::UnLockInner(bool NoErrors) {
+   (void) NoErrors;
+   close(d->LockFD);
+   return true;
+}
+									/*}}}*/
+// System::IsLocked - Check if system is locked						/*{{{*/
+// ---------------------------------------------------------------------
+/* This checks if the frontend lock is hold. The inner lock might be
+ * released. */
+bool debSystem::IsLocked()
+{
+   return d->LockCount > 0;
 }
 									/*}}}*/
 // System::CheckUpdates - Check if the updates dir is dirty		/*{{{*/
@@ -356,6 +393,15 @@ pid_t debSystem::ExecDpkg(std::vector<std::string> const &sArgs, int * const inp
       if (DiscardOutput == true)
 	 dup2(nullfd, STDERR_FILENO);
       debSystem::DpkgChrootDirectory();
+
+      if (_system != nullptr && _system->IsLocked() == true)
+      {
+	 setenv("DPKG_FRONTEND_LOCKED", "true", 1);
+      }
+
+      if (_config->Find("DPkg::Path", "").empty() == false)
+	 setenv("PATH", _config->Find("DPkg::Path", "").c_str(), 1);
+
       execvp(Args[0], (char**) &Args[0]);
       _error->WarningE("dpkg", "Can't execute dpkg!");
       _exit(100);

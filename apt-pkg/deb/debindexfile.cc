@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: debindexfile.cc,v 1.5.2.3 2004/01/04 19:11:00 mdz Exp $
 /* ######################################################################
 
    Debian Specific sources.list types and the three sorts of Debian
@@ -11,23 +10,23 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
+#include <apt-pkg/configuration.h>
 #include <apt-pkg/debindexfile.h>
-#include <apt-pkg/debsrcrecords.h>
 #include <apt-pkg/deblistparser.h>
 #include <apt-pkg/debrecords.h>
-#include <apt-pkg/configuration.h>
+#include <apt-pkg/debsrcrecords.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/indexfile.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/pkgrecords.h>
 #include <apt-pkg/srcrecords.h>
 
-#include <stdio.h>
 #include <iostream>
-#include <string>
+#include <memory>
 #include <sstream>
+#include <string>
+#include <stdio.h>
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -66,7 +65,7 @@ bool debSourcesIndex::OpenListFile(FileFd &, std::string const &)
 }
 pkgCacheListParser * debSourcesIndex::CreateListParser(FileFd &)
 {
-   return NULL;
+   return nullptr;
 }
 uint8_t debSourcesIndex::GetIndexFlags() const
 {
@@ -128,16 +127,10 @@ pkgCacheListParser * debTranslationsIndex::CreateListParser(FileFd &Pkg)
    if (Pkg.IsOpen() == false)
       return nullptr;
    _error->PushToStack();
-   pkgCacheListParser * const Parser = new debTranslationsParser(&Pkg);
+   std::unique_ptr<pkgCacheListParser> Parser(new debTranslationsParser(&Pkg));
    bool const newError = _error->PendingError();
    _error->MergeWithStack();
-   if (newError)
-   {
-      delete Parser;
-      return nullptr;
-   }
-   else
-      return Parser;
+   return newError ? nullptr : Parser.release();
 }
 									/*}}}*/
 // dpkg/status Index							/*{{{*/
@@ -162,16 +155,10 @@ pkgCacheListParser * debStatusIndex::CreateListParser(FileFd &Pkg)
    if (Pkg.IsOpen() == false)
       return nullptr;
    _error->PushToStack();
-   pkgCacheListParser * const Parser = new debStatusListParser(&Pkg);
+   std::unique_ptr<pkgCacheListParser> Parser(new debStatusListParser(&Pkg));
    bool const newError = _error->PendingError();
    _error->MergeWithStack();
-   if (newError)
-   {
-      delete Parser;
-      return nullptr;
-   }
-   else
-      return Parser;
+   return newError ? nullptr : Parser.release();
 }
 									/*}}}*/
 // DebPkgFile Index - a single .deb file as an index			/*{{{*/
@@ -198,28 +185,22 @@ bool debDebPkgFileIndex::GetContent(std::ostream &content, std::string const &de
    if(Popen((const char**)&Args[0], PipeFd, Child, FileFd::ReadOnly) == false)
       return _error->Error("Popen failed");
 
-   content << "Filename: " << debfile << "\n";
-   content << "Size: " << std::to_string(Buf.st_size) << "\n";
+   std::string line;
    bool first_line_seen = false;
-   char buffer[1024];
-   do {
-      unsigned long long actual = 0;
-      if (PipeFd.Read(buffer, sizeof(buffer)-1, &actual) == false)
-	 return _error->Errno("read", "Failed to read dpkg pipe");
-      if (actual == 0)
-	 break;
-      buffer[actual] = '\0';
-      char const * b = buffer;
+   while (PipeFd.ReadLine(line))
+   {
       if (first_line_seen == false)
       {
-	 for (; *b != '\0' && (*b == '\n' || *b == '\r'); ++b)
-	    /* skip over leading newlines */;
-	 if (*b == '\0')
+	 if (line.empty())
 	    continue;
 	 first_line_seen = true;
       }
-      content << b;
-   } while(true);
+      else if (line.empty())
+	 break;
+      content << line << "\n";
+   }
+   content << "Filename: " << debfile << "\n";
+   content << "Size: " << std::to_string(Buf.st_size) << "\n";
    ExecWait(Child, "Popen");
 
    return true;
@@ -244,16 +225,10 @@ pkgCacheListParser * debDebPkgFileIndex::CreateListParser(FileFd &Pkg)
    if (Pkg.IsOpen() == false)
       return nullptr;
    _error->PushToStack();
-   pkgCacheListParser * const Parser = new debDebFileParser(&Pkg, DebFile);
+   std::unique_ptr<pkgCacheListParser> Parser(new debDebFileParser(&Pkg, DebFile));
    bool const newError = _error->PendingError();
    _error->MergeWithStack();
-   if (newError)
-   {
-      delete Parser;
-      return nullptr;
-   }
-   else
-      return Parser;
+   return newError ? nullptr : Parser.release();
 }
 uint8_t debDebPkgFileIndex::GetIndexFlags() const
 {
@@ -340,13 +315,10 @@ const pkgIndexFile::Type *debStringPackageIndex::GetType() const
 debStringPackageIndex::debStringPackageIndex(std::string const &content) :
    pkgDebianIndexRealFile("", false), d(NULL)
 {
-   char fn[1024];
-   std::string const tempdir = GetTempDir();
-   snprintf(fn, sizeof(fn), "%s/%s.XXXXXX", tempdir.c_str(), "apt-tmp-index");
-   int const fd = mkstemp(fn);
-   File = fn;
-   FileFd::Write(fd, content.data(), content.length());
-   close(fd);
+   FileFd fd;
+   GetTempFile("apt-tmp-index", false, &fd);
+   fd.Write(content.data(), content.length());
+   File = fd.Name();
 }
 debStringPackageIndex::~debStringPackageIndex()
 {

@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: dirstream.cc,v 1.3.2.1 2004/01/16 18:58:50 mdz Exp $
 /* ######################################################################
 
    Directory Stream 
@@ -11,15 +10,15 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
 #include <apt-pkg/dirstream.h>
 #include <apt-pkg/error.h>
 
+#include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <errno.h>
 #include <unistd.h>
 #include <apti18n.h>
 									/*}}}*/

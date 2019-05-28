@@ -15,6 +15,11 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/strutl.h>
 
+#include <iostream>
+#include <limits>
+#include <map>
+#include <string>
+#include <vector>
 #include <ctype.h>
 #include <signal.h>
 #include <stdio.h>
@@ -23,11 +28,6 @@
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
-#include <iostream>
-#include <limits>
-#include <map>
-#include <string>
-#include <vector>
 
 #include "basehttp.h"
 
@@ -38,6 +38,10 @@ using namespace std;
 string BaseHttpMethod::FailFile;
 int BaseHttpMethod::FailFd = -1;
 time_t BaseHttpMethod::FailTime = 0;
+
+// Number of successful requests in a pipeline needed to continue
+// pipelining after a connection reset.
+constexpr int PIPELINE_MIN_SUCCESSFUL_ANSWERS_TO_CONTINUE = 3;
 
 // ServerState::RunHeaders - Get the headers before the data		/*{{{*/
 // ---------------------------------------------------------------------
@@ -74,9 +78,8 @@ ServerState::RunHeadersResult ServerState::RunHeaders(RequestState &Req,
 	 Persistent = false;
       
       return RUN_HEADERS_OK;
-   }
-   while (LoadNextResponse(false, Req) == true);
-   
+   } while (LoadNextResponse(false, Req) == ResultState::SUCCESSFUL);
+
    return RUN_HEADERS_IO_ERROR;
 }
 									/*}}}*/
@@ -85,7 +88,7 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
    if (Line.empty() == true)
       return true;
 
-   if (Line.size() > 4 && stringcasecmp(Line.data(), Line.data()+4, "HTTP") == 0)
+   if (Result == 0 && Line.size() > 4 && stringcasecmp(Line.data(), Line.data() + 4, "HTTP") == 0)
    {
       // Evil servers return no version
       if (Line[4] == '/')
@@ -191,7 +194,7 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
 	 ; // we got the expected filesize which is all we wanted
       else if (sscanf(Val.c_str(),"bytes %llu-%*u/%llu",&StartPos,&TotalFileSize) != 2)
 	 return _error->Error(_("The HTTP server sent an invalid Content-Range header"));
-      if ((unsigned long long)StartPos > TotalFileSize)
+      if (StartPos > TotalFileSize)
 	 return _error->Error(_("This HTTP server has broken range support"));
 
       // figure out what we will download
@@ -216,8 +219,11 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
 	 /* Some servers send error pages (as they are dynamically generated)
 	    for simplicity via a connection close instead of e.g. chunked,
 	    so assuming an always closing server only if we get a file + close */
-	 if (Result >= 200 && Result < 300)
+	 if (Result >= 200 && Result < 300 && Server->PipelineAnswersReceived < PIPELINE_MIN_SUCCESSFUL_ANSWERS_TO_CONTINUE)
+	 {
 	    Server->PipelineAllowed = false;
+	    Server->PipelineAnswersReceived = 0;
+	 }
       }
       else if (stringcasecmp(Val,"keep-alive") == 0)
 	 Server->Persistent = true;
@@ -251,7 +257,7 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
 									/*}}}*/
 // ServerState::ServerState - Constructor				/*{{{*/
 ServerState::ServerState(URI Srv, BaseHttpMethod *Owner) :
-   ServerName(Srv), TimeOut(120), Owner(Owner)
+   ServerName(Srv), TimeOut(30), Owner(Owner)
 {
    Reset();
 }
@@ -268,6 +274,7 @@ void ServerState::Reset()						/*{{{*/
    Pipeline = false;
    PipelineAllowed = true;
    RangesAllowed = true;
+   PipelineAnswersReceived = 0;
 }
 									/*}}}*/
 
@@ -289,18 +296,18 @@ BaseHttpMethod::DealWithHeaders(FetchResult &Res, RequestState &Req)
       return IMS_HIT;
    }
 
-   /* Redirect
-    *
-    * Note that it is only OK for us to treat all redirection the same
-    * because we *always* use GET, not other HTTP methods.  There are
-    * three redirection codes for which it is not appropriate that we
-    * redirect.  Pass on those codes so the error handling kicks in.
-    */
-   if (AllowRedirect
-       && (Req.Result > 300 && Req.Result < 400)
-       && (Req.Result != 300       // Multiple Choices
-           && Req.Result != 304    // Not Modified
-           && Req.Result != 306))  // (Not part of HTTP/1.1, reserved)
+   /* Note that it is only OK for us to treat all redirection the same
+      because we *always* use GET, not other HTTP methods.
+      Codes not mentioned are handled as errors later as required by the
+      HTTP spec to handle unknown codes the same as the x00 code. */
+   constexpr unsigned int RedirectCodes[] = {
+      301, // Moved Permanently
+      302, // Found
+      303, // See Other
+      307, // Temporary Redirect
+      308, // Permanent Redirect
+   };
+   if (AllowRedirect && std::find(std::begin(RedirectCodes), std::end(RedirectCodes), Req.Result) != std::end(RedirectCodes))
    {
       if (Req.Location.empty() == true)
 	 ;
@@ -573,6 +580,11 @@ int BaseHttpMethod::Loop()
       // Connect to the server
       if (Server == 0 || Server->Comp(Queue->Uri) == false)
       {
+	 if (!Queue->Proxy().empty())
+	 {
+	    URI uri = Queue->Uri;
+	    _config->Set("Acquire::" + uri.Access + "::proxy::" + uri.Host, Queue->Proxy());
+	 }
 	 Server = CreateServerState(Queue->Uri);
 	 setPostfixForMethodNames(::URI(Queue->Uri).Host.c_str());
 	 AllowRedirect = ConfigFindB("AllowRedirect", true);
@@ -589,15 +601,24 @@ int BaseHttpMethod::Loop()
 	 Server->Close();
 
       // Reset the pipeline
-      if (Server->IsOpen() == false)
+      if (Server->IsOpen() == false) {
 	 QueueBack = Queue;
+	 Server->PipelineAnswersReceived = 0;
+      }
 
       // Connect to the host
-      if (Server->Open() == false)
+      switch (Server->Open())
       {
+      case ResultState::FATAL_ERROR:
+	 Fail(false);
+	 Server = nullptr;
+	 continue;
+      case ResultState::TRANSIENT_ERROR:
 	 Fail(true);
 	 Server = nullptr;
 	 continue;
+      case ResultState::SUCCESSFUL:
+	 break;
       }
 
       // Fill the pipeline.
@@ -652,16 +673,47 @@ int BaseHttpMethod::Loop()
 	    URIStart(Res);
 
 	    // Run the data
-	    bool Result = true;
+	    ResultState Result = ResultState::SUCCESSFUL;
 
-            // ensure we don't fetch too much
-            // we could do "Server->MaximumSize = Queue->MaximumSize" here
-            // but that would break the clever pipeline messup detection
-            // so instead we use the size of the biggest item in the queue
-            Req.MaximumSize = FindMaximumObjectSizeInQueue();
+	    // ensure we don't fetch too much
+	    // we could do "Server->MaximumSize = Queue->MaximumSize" here
+	    // but that would break the clever pipeline messup detection
+	    // so instead we use the size of the biggest item in the queue
+	    Req.MaximumSize = FindMaximumObjectSizeInQueue();
 
-            if (Req.HaveContent)
-	       Result = Server->RunData(Req);
+	    if (Req.HaveContent)
+	    {
+	       /* If the server provides Content-Length we can figure out with it if
+		  this satisfies any request we have made so far (in the pipeline).
+		  If not we can kill the connection as whatever file the server is trying
+		  to send to us would be rejected with a hashsum mismatch later or triggers
+		  a maximum size error. We don't run the data to /dev/null as this can be MBs
+		  of junk data we would waste bandwidth on and instead just close the connection
+		  to reopen a fresh one which should be more cost/time efficient */
+	       if (Req.DownloadSize > 0)
+	       {
+		  decltype(Queue->ExpectedHashes.FileSize()) const filesize = Req.StartPos + Req.DownloadSize;
+		  bool found = false;
+		  for (FetchItem const *I = Queue; I != 0 && I != QueueBack; I = I->Next)
+		  {
+		     auto const fs = I->ExpectedHashes.FileSize();
+		     if (fs == 0 || fs == filesize)
+		     {
+			found = true;
+			break;
+		     }
+		  }
+		  if (found == false)
+		  {
+		     SetFailReason("MaximumSizeExceeded");
+		     _error->Error(_("File has unexpected size (%llu != %llu). Mirror sync in progress?"),
+				   filesize, Queue->ExpectedHashes.FileSize());
+		     Result = ResultState::FATAL_ERROR;
+		  }
+	       }
+	       if (Result == ResultState::SUCCESSFUL)
+		  Result = Server->RunData(Req);
+	    }
 
 	    /* If the server is sending back sizeless responses then fill in
 	       the size now */
@@ -679,7 +731,7 @@ int BaseHttpMethod::Loop()
 	    utimes(Queue->DestFile.c_str(), times);
 
 	    // Send status to APT
-	    if (Result == true)
+	    if (Result == ResultState::SUCCESSFUL)
 	    {
 	       Hashes * const resultHashes = Server->GetHashes();
 	       HashStringList const hashList = resultHashes->GetHashStringList();
@@ -710,6 +762,10 @@ int BaseHttpMethod::Loop()
 		     BeforeI = I;
 		  }
 	       }
+	       if (Server->Pipeline == true)
+	       {
+		  Server->PipelineAnswersReceived++;
+	       }
 	       Res.TakeHashes(*resultHashes);
 	       URIDone(Res);
 	    }
@@ -732,8 +788,17 @@ int BaseHttpMethod::Loop()
 	       else
                {
                   Server->Close();
-		  Fail(true);
-               }
+		  switch (Result)
+		  {
+		  case ResultState::TRANSIENT_ERROR:
+		     Fail(true);
+		     break;
+		  case ResultState::FATAL_ERROR:
+		  case ResultState::SUCCESSFUL:
+		     Fail(false);
+		     break;
+		  }
+	       }
 	    }
 	    break;
 	 }
@@ -765,7 +830,19 @@ int BaseHttpMethod::Loop()
 	 case ERROR_WITH_CONTENT_PAGE:
 	 {
 	    Server->RunDataToDevNull(Req);
-	    Fail();
+	    constexpr unsigned int TransientCodes[] = {
+	       408, // Request Timeout
+	       429, // Too Many Requests
+	       500, // Internal Server Error
+	       502, // Bad Gateway
+	       503, // Service Unavailable
+	       504, // Gateway Timeout
+	       599, // Network Connect Timeout Error
+	    };
+	    if (std::find(std::begin(TransientCodes), std::end(TransientCodes), Req.Result) != std::end(TransientCodes))
+	       Fail(true);
+	    else
+	       Fail();
 	    break;
 	 }
 
@@ -798,24 +875,25 @@ unsigned long long BaseHttpMethod::FindMaximumObjectSizeInQueue() const	/*{{{*/
    return MaxSizeInQueue;
 }
 									/*}}}*/
-BaseHttpMethod::BaseHttpMethod(std::string &&Binary, char const * const Ver,unsigned long const Flags) :/*{{{*/
-   aptMethod(std::move(Binary), Ver, Flags), Server(nullptr), PipelineDepth(10),
-   AllowRedirect(false), Debug(false)
+BaseHttpMethod::BaseHttpMethod(std::string &&Binary, char const *const Ver, unsigned long const Flags) /*{{{*/
+    : aptAuthConfMethod(std::move(Binary), Ver, Flags), Server(nullptr),
+      AllowRedirect(false), Debug(false), PipelineDepth(10)
 {
 }
 									/*}}}*/
 bool BaseHttpMethod::Configuration(std::string Message)			/*{{{*/
 {
-   if (aptMethod::Configuration(Message) == false)
+   if (aptAuthConfMethod::Configuration(Message) == false)
       return false;
 
    _config->CndSet("Acquire::tor::Proxy",
-	 "socks5h://apt-transport-tor@localhost:9050");
+	 "socks5h://apt-transport-tor@127.0.0.1:9050");
    return true;
 }
 									/*}}}*/
-bool BaseHttpMethod::AddProxyAuth(URI &Proxy, URI const &Server) const	/*{{{*/
+bool BaseHttpMethod::AddProxyAuth(URI &Proxy, URI const &Server) /*{{{*/
 {
+   MaybeAddAuthTo(Proxy);
    if (std::find(methodNames.begin(), methodNames.end(), "tor") != methodNames.end() &&
 	 Proxy.User == "apt-transport-tor" && Proxy.Password.empty())
    {
@@ -826,7 +904,6 @@ bool BaseHttpMethod::AddProxyAuth(URI &Proxy, URI const &Server) const	/*{{{*/
       else
 	 Proxy.Password = std::move(pass);
    }
-   // FIXME: should we support auth.conf for proxies?
    return true;
 }
 									/*}}}*/

@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: pkgcachegen.cc,v 1.53.2.1 2003/12/24 23:09:17 mdz Exp $
 /* ######################################################################
    
    Package Cache Generator - Generator for the cache structure.
@@ -12,30 +11,29 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
-#include <apt-pkg/pkgcachegen.h>
-#include <apt-pkg/error.h>
-#include <apt-pkg/version.h>
-#include <apt-pkg/progress.h>
-#include <apt-pkg/sourcelist.h>
 #include <apt-pkg/configuration.h>
-#include <apt-pkg/pkgsystem.h>
-#include <apt-pkg/macros.h>
-#include <apt-pkg/metaindex.h>
+#include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/hashsum_template.h>
 #include <apt-pkg/indexfile.h>
+#include <apt-pkg/macros.h>
 #include <apt-pkg/md5.h>
+#include <apt-pkg/metaindex.h>
 #include <apt-pkg/mmap.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
+#include <apt-pkg/pkgcachegen.h>
+#include <apt-pkg/pkgsystem.h>
+#include <apt-pkg/progress.h>
+#include <apt-pkg/sourcelist.h>
+#include <apt-pkg/version.h>
 
-#include <stddef.h>
-#include <string.h>
+#include <algorithm>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
-#include <algorithm>
+#include <stddef.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -56,7 +54,7 @@ using APT::StringView;
 /* We set the dirty flag and make sure that is written to the disk */
 pkgCacheGenerator::pkgCacheGenerator(DynamicMMap *pMap,OpProgress *Prog) :
 		    Map(*pMap), Cache(pMap,false), Progress(Prog),
-		     CurrentRlsFile(NULL), CurrentFile(NULL), d(NULL)
+		     CurrentRlsFile(nullptr), CurrentFile(nullptr), d(nullptr)
 {
 }
 bool pkgCacheGenerator::Start()
@@ -156,12 +154,14 @@ void pkgCacheGenerator::ReMap(void const * const oldMap, void const * const newM
       return;
 
    if (_config->FindB("Debug::pkgCacheGen", false))
-      std::clog << "Remaping from " << oldMap << " to " << newMap << std::endl;
+      std::clog << "Remapping from " << oldMap << " to " << newMap << std::endl;
 
    Cache.ReMap(false);
 
-   CurrentFile += (pkgCache::PackageFile const * const) newMap - (pkgCache::PackageFile const * const) oldMap;
-   CurrentRlsFile += (pkgCache::ReleaseFile const * const) newMap - (pkgCache::ReleaseFile const * const) oldMap;
+   if (CurrentFile != nullptr)
+      CurrentFile += static_cast<pkgCache::PackageFile const *>(newMap) - static_cast<pkgCache::PackageFile const *>(oldMap);
+   if (CurrentRlsFile != nullptr)
+      CurrentRlsFile += static_cast<pkgCache::ReleaseFile const *>(newMap) - static_cast<pkgCache::ReleaseFile const *>(oldMap);
 
    for (std::vector<pkgCache::GrpIterator*>::const_iterator i = Dynamic<pkgCache::GrpIterator>::toReMap.begin();
 	i != Dynamic<pkgCache::GrpIterator>::toReMap.end(); ++i)
@@ -397,7 +397,7 @@ bool pkgCacheGenerator::MergeListVersion(ListParser &List, pkgCache::PkgIterator
 	    if (List.SameVersion(Hash, Ver) == true)
 	       break;
 	    // sort (volatile) sources above not-sources like the status file
-	    if ((CurrentFile->Flags & pkgCache::Flag::NotSource) == 0)
+	    if (CurrentFile == nullptr || (CurrentFile->Flags & pkgCache::Flag::NotSource) == 0)
 	    {
 	       auto VF = Ver.FileList();
 	       for (; VF.end() == false; ++VF)
@@ -440,7 +440,7 @@ bool pkgCacheGenerator::MergeListVersion(ListParser &List, pkgCache::PkgIterator
 			   Pkg.Name(), "NewVersion", 1);
 
    if (oldMap != Map.Data())
-	 LastVer += (map_pointer_t const * const) Map.Data() - (map_pointer_t const * const) oldMap;
+	 LastVer += static_cast<map_pointer_t const *>(Map.Data()) - static_cast<map_pointer_t const *>(oldMap);
    *LastVer = verindex;
 
    if (unlikely(List.NewVersion(Ver) == false))
@@ -600,7 +600,9 @@ bool pkgCacheGenerator::NewPackage(pkgCache::PkgIterator &Pkg, StringView Name,
    Pkg = pkgCache::PkgIterator(Cache,Cache.PkgP + Package);
 
    // Set the name, arch and the ID
-   APT_IGNORE_DEPRECATED(Pkg->Name = Grp->Name;)
+   APT_IGNORE_DEPRECATED_PUSH
+   Pkg->Name = Grp->Name;
+   APT_IGNORE_DEPRECATED_POP
    Pkg->Group = Grp.Index();
    // all is mapped to the native architecture
    map_stringitem_t const idxArch = (Arch == "all") ? Cache.HeaderP->Architecture : StoreString(MIXED, Arch);
@@ -817,7 +819,7 @@ bool pkgCacheGenerator::AddImplicitDepends(pkgCache::VerIterator &V,
 bool pkgCacheGenerator::NewFileVer(pkgCache::VerIterator &Ver,
 				   ListParser &List)
 {
-   if (CurrentFile == 0)
+   if (CurrentFile == nullptr)
       return true;
    
    // Get a structure
@@ -902,7 +904,7 @@ map_pointer_t pkgCacheGenerator::NewVersion(pkgCache::VerIterator &Ver,
 bool pkgCacheGenerator::NewFileDesc(pkgCache::DescIterator &Desc,
 				   ListParser &List)
 {
-   if (CurrentFile == 0)
+   if (CurrentFile == nullptr)
       return true;
    
    // Get a structure
@@ -1055,7 +1057,7 @@ bool pkgCacheGenerator::NewDepends(pkgCache::PkgIterator &Pkg,
       for (pkgCache::DepIterator D = Ver.DependsList(); D.end() == false; ++D)
 	 OldDepLast = &D->NextDepends;
    } else if (oldMap != Map.Data())
-      OldDepLast += (map_pointer_t const * const) Map.Data() - (map_pointer_t const * const) oldMap;
+      OldDepLast += static_cast<map_pointer_t const *>(Map.Data()) - static_cast<map_pointer_t const *>(oldMap);
 
    Dep->NextDepends = *OldDepLast;
    *OldDepLast = Dependency;
@@ -1245,11 +1247,9 @@ bool pkgCacheListParser::SameVersion(unsigned short const Hash,		/*{{{*/
 bool pkgCacheGenerator::SelectReleaseFile(const string &File,const string &Site,
 				   unsigned long Flags)
 {
+   CurrentRlsFile = nullptr;
    if (File.empty() && Site.empty())
-   {
-      CurrentRlsFile = NULL;
       return true;
-   }
 
    // Get some space for the structure
    map_pointer_t const idxFile = AllocateInMap(sizeof(*CurrentRlsFile));
@@ -1284,6 +1284,7 @@ bool pkgCacheGenerator::SelectFile(std::string const &File,
 				   std::string const &Component,
 				   unsigned long const Flags)
 {
+   CurrentFile = nullptr;
    // Get some space for the structure
    map_pointer_t const idxFile = AllocateInMap(sizeof(*CurrentFile));
    if (unlikely(idxFile == 0))
@@ -1315,7 +1316,7 @@ bool pkgCacheGenerator::SelectFile(std::string const &File,
       return false;
    CurrentFile->Component = component;
    CurrentFile->Flags = Flags;
-   if (CurrentRlsFile != NULL)
+   if (CurrentRlsFile != nullptr)
       CurrentFile->Release = CurrentRlsFile - Cache.RlsFileP;
    else
       CurrentFile->Release = 0;
@@ -1586,7 +1587,7 @@ static bool BuildCache(pkgCacheGenerator &Gen,
 /* This makes sure that the status cache (the cache that has all 
    index files from the sources list and all local ones) is ready
    to be mmaped. If OutMap is not zero then a MMap object representing
-   the cache will be stored there. This is pretty much mandetory if you
+   the cache will be stored there. This is pretty much mandatory if you
    are using AllowMem. AllowMem lets the function be run as non-root
    where it builds the cache 'fast' into a memory buffer. */
 static DynamicMMap* CreateDynamicMMap(FileFd * const CacheF, unsigned long Flags)

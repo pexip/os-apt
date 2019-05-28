@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: srcrecords.cc,v 1.7.2.2 2003/12/26 16:27:34 mdz Exp $
 /* ######################################################################
    
    Source Package Records - Allows access to source package records
@@ -11,19 +10,19 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
-#include <apt-pkg/srcrecords.h>
 #include <apt-pkg/debsrcrecords.h>
 #include <apt-pkg/error.h>
-#include <apt-pkg/sourcelist.h>
-#include <apt-pkg/metaindex.h>
 #include <apt-pkg/indexfile.h>
 #include <apt-pkg/macros.h>
+#include <apt-pkg/metaindex.h>
+#include <apt-pkg/sourcelist.h>
+#include <apt-pkg/srcrecords.h>
 
-#include <string.h>
 #include <string>
 #include <vector>
+#include <string.h>
 
 #include <apti18n.h>
 									/*}}}*/
