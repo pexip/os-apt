@@ -15,12 +15,14 @@ add_executable(ftp ftp.cc $<TARGET_OBJECTS:connectlib>)
 add_executable(rred rred.cc)
 add_executable(rsh rsh.cc)
 
-target_compile_definitions(connectlib PRIVATE ${GNUTLS_DEFINITIONS})
-target_include_directories(connectlib PRIVATE ${GNUTLS_INCLUDE_DIR})
+if (GNUTLS_FOUND)
+  target_compile_definitions(connectlib PRIVATE ${GNUTLS_DEFINITIONS})
+  target_include_directories(connectlib PRIVATE ${GNUTLS_INCLUDE_DIR})
 
-# Additional libraries to link against for networked stuff
-target_link_libraries(http ${GNUTLS_LIBRARIES})
-target_link_libraries(ftp ${GNUTLS_LIBRARIES})
+  # Additional libraries to link against for networked stuff
+  target_link_libraries(http ${GNUTLS_LIBRARIES})
+  target_link_libraries(ftp ${GNUTLS_LIBRARIES})
+endif()
 
 # Install the library
 install(TARGETS file copy store gpgv cdrom http ftp rred rsh mirror

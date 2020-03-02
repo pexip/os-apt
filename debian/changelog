@@ -1,6 +1,7 @@
 apt (1.8.2pexip1) pexip; urgency=medium
 
   * Migrate to Buster
+  * Remove gnutls dependancy which removes https support
 
  -- Vincent Sanders <vince@pexip.com>  Mon, 02 Mar 2020 08:48:48 +0000
 

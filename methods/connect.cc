@@ -19,8 +19,10 @@
 #include <apt-pkg/srvrec.h>
 #include <apt-pkg/strutl.h>
 
+#ifdef HAVE_GNUTLS
 #include <gnutls/gnutls.h>
 #include <gnutls/x509.h>
+#endif
 
 #include <list>
 #include <set>
@@ -801,6 +803,9 @@ ResultState UnwrapSocks(std::string Host, int Port, URI Proxy, std::unique_ptr<M
 									/*}}}*/
 // UnwrapTLS - Handle TLS connections 					/*{{{*/
 // ---------------------------------------------------------------------
+
+#ifdef HAVE_GNUTLS
+
 /* Performs a TLS handshake on the socket */
 struct TlsFd : public MethodFd
 {
@@ -1049,4 +1054,12 @@ ResultState UnwrapTLS(std::string Host, std::unique_ptr<MethodFd> &Fd,
 
    return ResultState::SUCCESSFUL;
 }
+#else
+ResultState UnwrapTLS(std::string Host, std::unique_ptr<MethodFd> &Fd,
+		      unsigned long Timeout, aptMethod *Owner)
+{
+   _error->Error("TLS support has been disabled.");
+   return ResultState::FATAL_ERROR;
+}
+#endif
 									/*}}}*/
