@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: depcache.cc,v 1.25 2001/05/27 05:36:04 jgg Exp $
 /* ######################################################################
 
    Dependency Cache - Caches Dependency information.
@@ -8,34 +7,33 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
+#include <apt-pkg/aptconfiguration.h>
+#include <apt-pkg/cachefile.h>
+#include <apt-pkg/cacheset.h>
+#include <apt-pkg/configuration.h>
 #include <apt-pkg/depcache.h>
-#include <apt-pkg/versionmatch.h>
-#include <apt-pkg/version.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/configuration.h>
-#include <apt-pkg/aptconfiguration.h>
-#include <apt-pkg/tagfile.h>
-#include <apt-pkg/progress.h>
-#include <apt-pkg/cacheset.h>
-#include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
-#include <apt-pkg/prettyprinters.h>
-#include <apt-pkg/cachefile.h>
 #include <apt-pkg/macros.h>
+#include <apt-pkg/pkgcache.h>
+#include <apt-pkg/prettyprinters.h>
+#include <apt-pkg/progress.h>
+#include <apt-pkg/strutl.h>
+#include <apt-pkg/tagfile.h>
+#include <apt-pkg/version.h>
+#include <apt-pkg/versionmatch.h>
 
-#include <stdio.h>
-#include <string.h>
+#include <algorithm>
+#include <iostream>
 #include <list>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
-#include <algorithm>
-#include <iostream>
-#include <set>
+#include <stdio.h>
+#include <string.h>
 
 #include <sys/stat.h>
 
@@ -183,7 +181,7 @@ bool pkgDepCache::readStateFile(OpProgress * const Prog)		/*{{{*/
    FileFd state_file;
    string const state = _config->FindFile("Dir::State::extended_states");
    if(RealFileExists(state)) {
-      state_file.Open(state, FileFd::ReadOnly);
+      state_file.Open(state, FileFd::ReadOnly, FileFd::Extension);
       off_t const file_size = state_file.Size();
       if(Prog != NULL)
 	 Prog->OverallProgress(0, file_size, 1,
@@ -245,16 +243,16 @@ bool pkgDepCache::writeStateFile(OpProgress * const /*prog*/, bool const Install
    // if it does not exist, create a empty one
    if(!RealFileExists(state))
    {
-      StateFile.Open(state, FileFd::WriteAtomic);
+      StateFile.Open(state, FileFd::WriteAtomic, FileFd::Extension);
       StateFile.Close();
    }
 
    // open it
-   if(!StateFile.Open(state, FileFd::ReadOnly))
+   if (!StateFile.Open(state, FileFd::ReadOnly, FileFd::Extension))
       return _error->Error(_("Failed to open StateFile %s"),
 			   state.c_str());
 
-   FileFd OutFile(state, FileFd::ReadWrite | FileFd::Atomic);
+   FileFd OutFile(state, FileFd::ReadWrite | FileFd::Atomic, FileFd::Extension);
    if (OutFile.IsOpen() == false || OutFile.Failed() == true)
       return _error->Error(_("Failed to write temporary StateFile %s"), state.c_str());
 
@@ -415,7 +413,7 @@ bool pkgDepCache::CheckDep(DepIterator const &Dep,int const Type,PkgIterator &Re
 									/*}}}*/
 // DepCache::AddSizes - Add the packages sizes to the counters		/*{{{*/
 // ---------------------------------------------------------------------
-/* Call with Inverse = true to preform the inverse opration */
+/* Call with Inverse = true to perform the inverse operation */
 void pkgDepCache::AddSizes(const PkgIterator &Pkg, bool const Inverse)
 {
    StateCache &P = PkgState[Pkg->ID];
@@ -481,10 +479,10 @@ void pkgDepCache::AddSizes(const PkgIterator &Pkg, bool const Inverse)
 									/*}}}*/
 // DepCache::AddStates - Add the package to the state counter		/*{{{*/
 // ---------------------------------------------------------------------
-/* This routine is tricky to use, you must make sure that it is never 
+/* This routine is tricky to use, you must make sure that it is never
    called twice for the same package. This means the Remove/Add section
-   should be as short as possible and not encompass any code that will 
-   calld Remove/Add itself. Remember, dependencies can be circular so
+   should be as short as possible and not encompass any code that will
+   call Remove/Add itself. Remember, dependencies can be circular so
    while processing a dep for Pkg it is possible that Add/Remove
    will be called on Pkg */
 void pkgDepCache::AddStates(const PkgIterator &Pkg, bool const Invert)
@@ -601,7 +599,7 @@ unsigned char pkgDepCache::VersionState(DepIterator D, unsigned char const Check
 // DepCache::DependencyState - Compute the 3 results for a dep		/*{{{*/
 // ---------------------------------------------------------------------
 /* This is the main dependency computation bit. It computes the 3 main
-   results for a dependencys, Now, Install and Candidate. Callers must
+   results for a dependency: Now, Install and Candidate. Callers must
    invert the result if dealing with conflicts. */
 unsigned char pkgDepCache::DependencyState(DepIterator const &D)
 {
@@ -1560,6 +1558,13 @@ bool pkgDepCache::SetCandidateRelease(pkgCache::VerIterator TargetVer,
 	 // virtual packages can't be a solution
 	 if (P.end() == true || (P->ProvidesList == 0 && P->VersionList == 0))
 	    continue;
+	 // if its already installed, check if this one is good enough
+	 pkgCache::VerIterator const Now = P.CurrentVer();
+	 if (Now.end() == false && Start.IsSatisfied(Now))
+	 {
+	    itsFine = true;
+	    break;
+	 }
 	 pkgCache::VerIterator const Cand = PkgState[P->ID].CandidateVerIter(*this);
 	 // no versioned dependency - but is it installable?
 	 if (Start.TargetVer() == 0 || Start.TargetVer()[0] == '\0')
@@ -1783,7 +1788,7 @@ bool pkgDepCache::Policy::IsImportantDep(DepIterator const &Dep) const
 	 return true;
       // we support a special mode to only install-recommends for certain
       // sections
-      // FIXME: this is a meant as a temporarly solution until the
+      // FIXME: this is a meant as a temporary solution until the
       //        recommends are cleaned up
       const char *sec = Dep.ParentVer().Section();
       if (sec && ConfigValueInSubTree("APT::Install-Recommends-Sections", sec))
@@ -1796,11 +1801,11 @@ bool pkgDepCache::Policy::IsImportantDep(DepIterator const &Dep) const
 }
 									/*}}}*/
 // Policy::GetPriority - Get the priority of the package pin		/*{{{*/
-APT_CONST signed short pkgDepCache::Policy::GetPriority(pkgCache::PkgIterator const &/*Pkg*/)
+APT_PURE signed short pkgDepCache::Policy::GetPriority(pkgCache::PkgIterator const &/*Pkg*/)
 { return 0; }
-APT_CONST signed short pkgDepCache::Policy::GetPriority(pkgCache::VerIterator const &/*Ver*/, bool /*ConsiderFiles*/)
+APT_PURE signed short pkgDepCache::Policy::GetPriority(pkgCache::VerIterator const &/*Ver*/, bool /*ConsiderFiles*/)
 { return 0; }
-APT_CONST signed short pkgDepCache::Policy::GetPriority(pkgCache::PkgFileIterator const &/*File*/)
+APT_PURE signed short pkgDepCache::Policy::GetPriority(pkgCache::PkgFileIterator const &/*File*/)
 { return 0; }
 									/*}}}*/
 pkgDepCache::InRootSetFunc *pkgDepCache::GetRootSetFunc()		/*{{{*/
@@ -1868,28 +1873,29 @@ bool pkgDepCache::MarkRequired(InRootSetFunc &userFunc)
       if (PkgState[P->ID].Marked || IsPkgInBoringState(P, PkgState))
 	 continue;
 
+      const char *reason = nullptr;
+
       if ((PkgState[P->ID].Flags & Flag::Auto) == 0)
-	 ;
-      else if ((P->Flags & Flag::Essential) || (P->Flags & Flag::Important))
-	 ;
-      // be nice even then a required package violates the policy (#583517)
-      // and do the full mark process also for required packages
+	 reason = "Manual-Installed";
+      else if (P->Flags & Flag::Essential)
+	 reason = "Essential";
+      else if (P->Flags & Flag::Important)
+	 reason = "Important";
       else if (P->CurrentVer != 0 && P.CurrentVer()->Priority == pkgCache::State::Required)
-	 ;
+	 reason = "Required";
       else if (userFunc.InRootSet(P))
-	 ;
-      // packages which can't be changed (like holds) can't be garbage
+	 reason = "Blacklisted [APT::NeverAutoRemove]";
       else if (IsModeChangeOk(ModeGarbage, P, 0, false) == false)
-	 ;
+	 reason = "Hold";
       else
 	 continue;
 
       if (PkgState[P->ID].Install())
 	 MarkPackage(P, PkgState[P->ID].InstVerIter(*this),
-	       follow_recommends, follow_suggests);
+	       follow_recommends, follow_suggests, reason);
       else
 	 MarkPackage(P, P.CurrentVer(),
-	       follow_recommends, follow_suggests);
+	       follow_recommends, follow_suggests, reason);
    }
 
    return true;
@@ -1899,7 +1905,8 @@ bool pkgDepCache::MarkRequired(InRootSetFunc &userFunc)
 void pkgDepCache::MarkPackage(const pkgCache::PkgIterator &Pkg,
 			      const pkgCache::VerIterator &Ver,
 			      bool const &follow_recommends,
-			      bool const &follow_suggests)
+			      bool const &follow_suggests,
+			      const char *reason)
 {
    {
       pkgDepCache::StateCache &state = PkgState[Pkg->ID];
@@ -1914,7 +1921,8 @@ void pkgDepCache::MarkPackage(const pkgCache::PkgIterator &Pkg,
 
    bool const debug_autoremove = _config->FindB("Debug::pkgAutoRemove", false);
    if(debug_autoremove)
-      std::clog << "Marking: " << Pkg.FullName() << " " << Ver.VerStr() << std::endl;
+      std::clog << "Marking: " << Pkg.FullName() << " " << Ver.VerStr()
+		<< " (" << reason << ")" << std::endl;
 
    for (auto D = Ver.DependsList(); D.end() == false; ++D)
    {
@@ -1971,7 +1979,7 @@ void pkgDepCache::MarkPackage(const pkgCache::PkgIterator &Pkg,
 	       std::clog << "Following dep: " << APT::PrettyDep(this, D)
 		  << ", provided by " << PP.FullName() << " " << PV.VerStr()
 		  << " (" << providers.size() << "/" << prvsize << ")"<< std::endl;
-	    MarkPackage(PP, PV, follow_recommends, follow_suggests);
+	    MarkPackage(PP, PV, follow_recommends, follow_suggests, "Provider");
 	 }
       }
 
@@ -1986,7 +1994,7 @@ void pkgDepCache::MarkPackage(const pkgCache::PkgIterator &Pkg,
 
       if (debug_autoremove)
 	 std::clog << "Following dep: " << APT::PrettyDep(this, D) << std::endl;
-      MarkPackage(T, TV, follow_recommends, follow_suggests);
+      MarkPackage(T, TV, follow_recommends, follow_suggests, "Dependency");
    }
 }
 									/*}}}*/

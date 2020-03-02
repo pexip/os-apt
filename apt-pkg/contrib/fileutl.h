@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: fileutl.h,v 1.26 2001/05/07 05:06:52 jgg Exp $
 /* ######################################################################
    
    File Utilities
@@ -21,12 +20,12 @@
 #ifndef PKGLIB_FILEUTL_H
 #define PKGLIB_FILEUTL_H
 
-#include <apt-pkg/macros.h>
 #include <apt-pkg/aptconfiguration.h>
+#include <apt-pkg/macros.h>
 
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 #include <time.h>
 
 #include <zlib.h>
@@ -46,6 +45,7 @@ class FileFd
    friend class Bz2FileFdPrivate;
    friend class LzmaFileFdPrivate;
    friend class Lz4FileFdPrivate;
+   friend class ZstdFileFdPrivate;
    friend class DirectFileFdPrivate;
    friend class PipedFileFdPrivate;
    protected:
@@ -76,8 +76,19 @@ class FileFd
 	ReadOnlyGzip,
 	WriteAtomic = ReadWrite | Create | Atomic
    };
-   enum CompressMode { Auto = 'A', None = 'N', Extension = 'E', Gzip = 'G', Bzip2 = 'B', Lzma = 'L', Xz = 'X', Lz4='4' };
-   
+   enum CompressMode
+   {
+      Auto = 'A',
+      None = 'N',
+      Extension = 'E',
+      Gzip = 'G',
+      Bzip2 = 'B',
+      Lzma = 'L',
+      Xz = 'X',
+      Lz4 = '4',
+      Zstd = 'Z'
+   };
+
    inline bool Read(void *To,unsigned long long Size,bool AllowEof)
    {
       unsigned long long Jnk;
@@ -87,7 +98,28 @@ class FileFd
    }   
    bool Read(void *To,unsigned long long Size,unsigned long long *Actual = 0);
    bool static Read(int const Fd, void *To, unsigned long long Size, unsigned long long * const Actual = 0);
+   /** read a complete line or until buffer is full
+    *
+    * The buffer will always be \\0 terminated, so at most Size-1 characters are read.
+    * If the buffer holds a complete line the last character (before \\0) will be
+    * the newline character \\n otherwise the line was longer than the buffer.
+    *
+    * @param To buffer which will hold the line
+    * @param Size of the buffer to fill
+    * @param \b nullptr is returned in error cases, otherwise
+    * the parameter \b To now filled with the line.
+    */
    char* ReadLine(char *To, unsigned long long const Size);
+   /** read a complete line from the file
+    *
+    *  Similar to std::getline() the string does \b not include
+    *  the newline, but just the content of the line as the newline
+    *  is not needed to distinguish cases as for the other #ReadLine method.
+    *
+    *  @param To string which will hold the line
+    *  @return \b true if successful, otherwise \b false
+    */
+   bool ReadLine(std::string &To);
    bool Flush();
    bool Write(const void *From,unsigned long long Size);
    bool static Write(int Fd, const void *From, unsigned long long Size);
@@ -140,6 +172,7 @@ class FileFd
    inline bool Eof() {return (Flags & HitEof) == HitEof;};
    inline bool IsCompressed() {return (Flags & Compressed) == Compressed;};
    inline std::string &Name() {return FileName;};
+   inline void SetFileName(std::string const &name) { FileName = name; };
 
    FileFd(std::string FileName,unsigned int const Mode,unsigned long AccessMode = 0666);
    FileFd(std::string FileName,unsigned int const Mode, CompressMode Compress, unsigned long AccessMode = 0666);
@@ -150,6 +183,7 @@ class FileFd
 
    private:
    FileFdPrivate * d;
+   APT_HIDDEN FileFd(const FileFd &);
    APT_HIDDEN FileFd & operator=(const FileFd &);
    APT_HIDDEN bool OpenInternDescriptor(unsigned int const Mode, APT::Configuration::Compressor const &compressor);
 
@@ -161,6 +195,7 @@ class FileFd
 bool RunScripts(const char *Cnf);
 bool CopyFile(FileFd &From,FileFd &To);
 bool RemoveFile(char const * const Function, std::string const &FileName);
+bool RemoveFileAt(char const * const Function, int const dirfd, std::string const &FileName);
 int GetLock(std::string File,bool Errors = true);
 bool FileExists(std::string File);
 bool RealFileExists(std::string File);
@@ -174,6 +209,12 @@ std::string GetTempDir(std::string const &User);
 FileFd* GetTempFile(std::string const &Prefix = "",
                     bool ImmediateUnlink = true,
 		    FileFd * const TmpFd = NULL);
+
+// FIXME: GetTempFile should always return a buffered file
+FileFd* GetTempFile(std::string const &Prefix,
+                    bool ImmediateUnlink ,
+		    FileFd * const TmpFd,
+          bool Buffered) APT_HIDDEN;
 
 /** \brief Ensure the existence of the given Path
  *
@@ -244,16 +285,21 @@ std::vector<std::string> Glob(std::string const &pattern, int flags=0);
 /** \brief Popen() implementation that execv() instead of using a shell
  *
  * \param Args the execv style command to run
- * \param FileFd is a referenz to the FileFd to use for input or output
+ * \param FileFd is a reference to the FileFd to use for input or output
  * \param Child a reference to the integer that stores the child pid
  *        Note that you must call ExecWait() or similar to cleanup
  * \param Mode is either FileFd::ReadOnly or FileFd::WriteOnly
  * \param CaptureStderr True if we should capture stderr in addition to stdout.
  *                      (default: True).
+ * \param Sandbox True if this should run sandboxed
  * \return true on success, false on failure with _error set
  */
+bool Popen(const char *Args[], FileFd &Fd, pid_t &Child, FileFd::OpenMode Mode, bool CaptureStderr, bool Sandbox) APT_HIDDEN;
 bool Popen(const char* Args[], FileFd &Fd, pid_t &Child, FileFd::OpenMode Mode, bool CaptureStderr);
 bool Popen(const char* Args[], FileFd &Fd, pid_t &Child, FileFd::OpenMode Mode);
 
+APT_HIDDEN bool OpenConfigurationFileFd(std::string const &File, FileFd &Fd);
+
+APT_HIDDEN int Inhibit(const char *what, const char *who, const char *why, const char *mode);
 
 #endif

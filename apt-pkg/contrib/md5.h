@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: md5.h,v 1.6 2001/05/07 05:06:52 jgg Exp $
 /* ######################################################################
    
    MD5SumValue - Storage for a MD5Sum
@@ -28,9 +27,9 @@
 #include "hashsum_template.h"
 
 #ifndef APT_10_CLEANER_HEADERS
-#include <string>
-#include <cstring>
 #include <algorithm>
+#include <cstring>
+#include <string>
 #endif
 #ifndef APT_8_CLEANER_HEADERS
 using std::string;

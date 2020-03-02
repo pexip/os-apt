@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: pkgrecords.cc,v 1.8 2003/09/02 04:52:16 mdz Exp $
 /* ######################################################################
    
    Package Records - Allows access to complete package description records
@@ -9,16 +8,15 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
-#include <apt-pkg/pkgrecords.h>
-#include <apt-pkg/indexfile.h>
 #include <apt-pkg/error.h>
+#include <apt-pkg/indexfile.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
+#include <apt-pkg/pkgrecords.h>
 
-#include <stddef.h>
 #include <vector>
+#include <stddef.h>
 
 #include <apti18n.h>
 									/*}}}*/

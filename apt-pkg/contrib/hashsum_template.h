@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description                                                          /*{{{*/
-// $Id: hashsum_template.h,v 1.3 2001/05/07 05:05:47 jgg Exp $
 /* ######################################################################
 
    HashSumValueTemplate - Generic Storage for a hash value
@@ -10,9 +9,8 @@
 #ifndef APTPKG_HASHSUM_TEMPLATE_H
 #define APTPKG_HASHSUM_TEMPLATE_H
 
-
-#include <string>
 #include <cstring>
+#include <string>
 #ifdef APT_PKG_EXPOSE_STRING_VIEW
 #include <apt-pkg/string_view.h>
 #endif
@@ -124,17 +122,17 @@ class SummationImplementation
    public:
    virtual bool Add(const unsigned char *inbuf, unsigned long long inlen) APT_NONNULL(2) = 0;
    inline bool Add(const char *inbuf, unsigned long long const inlen) APT_NONNULL(2)
-   { return Add((const unsigned char *)inbuf, inlen); }
+   { return Add(reinterpret_cast<const unsigned char *>(inbuf), inlen); }
 
    inline bool Add(const unsigned char *Data) APT_NONNULL(2)
-   { return Add(Data, strlen((const char *)Data)); }
+   { return Add(Data, strlen(reinterpret_cast<const char *>(Data))); }
    inline bool Add(const char *Data) APT_NONNULL(2)
-   { return Add((const unsigned char *)Data, strlen(Data)); }
+   { return Add(reinterpret_cast<const unsigned char *>(Data), strlen(Data)); }
 
    inline bool Add(const unsigned char *Beg, const unsigned char *End) APT_NONNULL(2,3)
    { return Add(Beg, End - Beg); }
    inline bool Add(const char *Beg, const char *End) APT_NONNULL(2,3)
-   { return Add((const unsigned char *)Beg, End - Beg); }
+   { return Add(reinterpret_cast<const unsigned char *>(Beg), End - Beg); }
 
    bool AddFD(int Fd, unsigned long long Size = 0);
    bool AddFD(FileFd &Fd, unsigned long long Size = 0);

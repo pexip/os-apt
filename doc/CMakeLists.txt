@@ -12,8 +12,11 @@ set(LINGUAS
     pt
 )
 
-set(ENTITIES
+set(TRANSLATED_ENTITIES
     apt.ent
+)
+
+set(ENTITIES
     apt-verbatim.ent
     ../vendor/${CURRENT_VENDOR}/apt-vendor.ent
 )
@@ -25,6 +28,7 @@ add_docbook(apt-doc HTML TEXT ALL
         offline.dbk
     INSTALL ${CMAKE_INSTALL_DOCDIR}/../apt-doc
     LINGUAS ${LINGUAS}
+    TRANSLATED_ENTITIES ${TRANSLATED_ENTITIES}
     DEPENDS ${ENTITIES}
 )
 
@@ -36,6 +40,7 @@ add_docbook(libapt-pkg-doc HTML TEXT ALL
         method.dbk
     INSTALL ${CMAKE_INSTALL_DOCDIR}/../libapt-pkg-doc
     LINGUAS ${LINGUAS}
+    TRANSLATED_ENTITIES ${TRANSLATED_ENTITIES}
     DEPENDS ${ENTITIES}
 )
 
@@ -66,6 +71,7 @@ endif()
 add_docbook(apt-man MANPAGE ALL
     DOCUMENTS
         apt.8.xml
+        apt_auth.conf.5.xml
         apt-cache.8.xml
         apt-cdrom.8.xml
         apt.conf.5.xml
@@ -78,8 +84,12 @@ add_docbook(apt-man MANPAGE ALL
         apt_preferences.5.xml
         apt-secure.8.xml
         apt-sortpkgs.1.xml
+        apt-transport-http.1.xml
+        apt-transport-https.1.xml
+        apt-transport-mirror.1.xml
         sources.list.5.xml
     DEPENDS ${ENTITIES}
+    TRANSLATED_ENTITIES ${TRANSLATED_ENTITIES}
     LINGUAS ${LINGUAS}
 )
 

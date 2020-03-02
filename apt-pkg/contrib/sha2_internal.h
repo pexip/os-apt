@@ -29,7 +29,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: sha2.h,v 1.1 2001/11/08 00:02:01 adg Exp adg $
  */
 
 #ifndef __SHA2_H__
@@ -44,8 +43,8 @@
 
 #ifdef SHA2_USE_INTTYPES_H
 
-#include <stddef.h>
 #include <inttypes.h>
+#include <stddef.h>
 
 #endif /* SHA2_USE_INTTYPES_H */
 

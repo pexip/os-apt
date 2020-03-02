@@ -11,14 +11,14 @@
 #ifndef APT_SERVER_H
 #define APT_SERVER_H
 
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/fileutl.h>
 #include "aptmethod.h"
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/strutl.h>
 
-#include <time.h>
 #include <iostream>
-#include <string>
 #include <memory>
+#include <string>
+#include <time.h>
 
 using std::cout;
 using std::endl;
@@ -62,12 +62,12 @@ struct RequestState
    RequestState(BaseHttpMethod * const Owner, ServerState * const Server) :
       Owner(Owner), Server(Server) { time(&Date); }
 };
-
 struct ServerState
 {
    bool Persistent;
    bool PipelineAllowed;
    bool RangesAllowed;
+   unsigned long PipelineAnswersReceived;
 
    bool Pipeline;
    URI ServerName;
@@ -78,7 +78,7 @@ struct ServerState
    BaseHttpMethod *Owner;
 
    virtual bool ReadHeaderLines(std::string &Data) = 0;
-   virtual bool LoadNextResponse(bool const ToFile, RequestState &Req) = 0;
+   virtual ResultState LoadNextResponse(bool const ToFile, RequestState &Req) = 0;
 
    public:
 
@@ -99,23 +99,23 @@ struct ServerState
    virtual bool WriteResponse(std::string const &Data) = 0;
 
    /** \brief Transfer the data from the socket */
-   virtual bool RunData(RequestState &Req) = 0;
-   virtual bool RunDataToDevNull(RequestState &Req) = 0;
+   virtual ResultState RunData(RequestState &Req) = 0;
+   virtual ResultState RunDataToDevNull(RequestState &Req) = 0;
 
-   virtual bool Open() = 0;
+   virtual ResultState Open() = 0;
    virtual bool IsOpen() = 0;
    virtual bool Close() = 0;
    virtual bool InitHashes(HashStringList const &ExpectedHashes) = 0;
-   virtual bool Die(RequestState &Req) = 0;
+   virtual ResultState Die(RequestState &Req) = 0;
    virtual bool Flush(FileFd * const File) = 0;
-   virtual bool Go(bool ToFile, RequestState &Req) = 0;
+   virtual ResultState Go(bool ToFile, RequestState &Req) = 0;
    virtual Hashes * GetHashes() = 0;
 
    ServerState(URI Srv, BaseHttpMethod *Owner);
    virtual ~ServerState() {};
 };
 
-class BaseHttpMethod : public aptMethod
+class BaseHttpMethod : public aptAuthConfMethod
 {
    protected:
    virtual bool Fetch(FetchItem *) APT_OVERRIDE;
@@ -123,7 +123,6 @@ class BaseHttpMethod : public aptMethod
    std::unique_ptr<ServerState> Server;
    std::string NextURI;
 
-   unsigned long PipelineDepth;
    bool AllowRedirect;
 
    // Find the biggest item in the fetch queue for the checking of the maximum
@@ -132,6 +131,7 @@ class BaseHttpMethod : public aptMethod
 
    public:
    bool Debug;
+   unsigned long PipelineDepth;
 
    /** \brief Result of the header parsing */
    enum DealWithHeadersResult {
@@ -164,7 +164,7 @@ class BaseHttpMethod : public aptMethod
    virtual void RotateDNS() = 0;
    virtual bool Configuration(std::string Message) APT_OVERRIDE;
 
-   bool AddProxyAuth(URI &Proxy, URI const &Server) const;
+   bool AddProxyAuth(URI &Proxy, URI const &Server);
 
    BaseHttpMethod(std::string &&Binary, char const * const Ver,unsigned long const Flags);
    virtual ~BaseHttpMethod() {};

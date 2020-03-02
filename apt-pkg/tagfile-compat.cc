@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: tagfile.cc,v 1.37.2.2 2003/12/31 16:02:30 mdz Exp $
 /* ######################################################################
 
    Fast scanner for RFC-822 type header information
@@ -13,7 +12,7 @@
    ##################################################################### */
 									/*}}}*/
 
-#include<config.h>
+#include <config.h>
 #define APT_COMPILING_TAGFILE_COMPAT_CC
 #include <apt-pkg/tagfile.h>
 

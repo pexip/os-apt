@@ -7,30 +7,32 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
-#include <apt-pkg/configuration.h>
-#include <apt-pkg/cmndline.h>
-#include <apt-pkg/error.h>
-#include <apt-pkg/init.h>
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/pkgsystem.h>
-#include <apt-pkg/fileutl.h>
-#include <apt-pkg/acquire.h>
 #include <apt-pkg/acquire-item.h>
+#include <apt-pkg/acquire.h>
+#include <apt-pkg/cmndline.h>
+#include <apt-pkg/configuration.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/init.h>
+#include <apt-pkg/pkgsystem.h>
 #include <apt-pkg/proxy.h>
+#include <apt-pkg/strutl.h>
 
-#include <apt-private/acqprogress.h>
-#include <apt-private/private-output.h>
-#include <apt-private/private-download.h>
-#include <apt-private/private-cmndline.h>
-#include <apt-private/private-main.h>
 #include <apt-pkg/srvrec.h>
+#include <apt-private/acqprogress.h>
+#include <apt-private/private-cmndline.h>
+#include <apt-private/private-download.h>
+#include <apt-private/private-main.h>
+#include <apt-private/private-output.h>
 
 #include <iostream>
 #include <string>
 #include <vector>
 
-#include <unistd.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -176,6 +178,63 @@ static bool DoCatFile(CommandLine &CmdL)				/*{{{*/
    return true;
 }
 									/*}}}*/
+
+static pid_t ExecuteProcess(const char *Args[])				/*{{{*/
+{
+   pid_t pid = ExecFork();
+   if (pid == 0)
+   {
+      execvp(Args[0], (char **)Args);
+      _exit(100);
+   }
+   return pid;
+}
+
+static bool ServiceIsActive(const char *service)
+{
+   const char *argv[] = {"systemctl", "is-active", "-q", service, nullptr};
+   pid_t pid = ExecuteProcess(argv);
+   return ExecWait(pid, "systemctl is-active", true);
+}
+
+static bool DoWaitOnline(CommandLine &)
+{
+   // Also add services to After= in .service
+   static const char *WaitingTasks[][6] = {
+       {"systemd-networkd.service", "/lib/systemd/systemd-networkd-wait-online", "-q", "--timeout=30", nullptr},
+       {"NetworkManager.service", "nm-online", "-q", "--timeout", "30", nullptr},
+       {"connman.service", "connmand-wait-online", "--timeout=30", nullptr},
+   };
+
+   for (const char **task : WaitingTasks)
+   {
+      if (ServiceIsActive(task[0]))
+      {
+	 pid_t pid = ExecuteProcess(task + 1);
+
+	 ExecWait(pid, task[1]);
+      }
+   }
+
+   return _error->PendingError() == false;
+}
+									/*}}}*/
+static bool DropPrivsAndRun(CommandLine &CmdL)				/*{{{*/
+{
+   if (CmdL.FileSize() < 2)
+      return _error->Error("No command given to run without privileges");
+   if (DropPrivileges() == false)
+      return _error->Error("Dropping Privileges failed, not executing '%s'", CmdL.FileList[1]);
+
+   std::vector<char const *> Args;
+   Args.reserve(CmdL.FileSize() + 1);
+   for (auto a = CmdL.FileList + 1; *a != nullptr; ++a)
+      Args.push_back(*a);
+   Args.push_back(nullptr);
+   auto const pid = ExecuteProcess(Args.data());
+   return ExecWait(pid, CmdL.FileList[1]);
+}
+									/*}}}*/
 static bool ShowHelp(CommandLine &)					/*{{{*/
 {
    std::cout <<
@@ -191,12 +250,13 @@ static bool ShowHelp(CommandLine &)					/*{{{*/
 static std::vector<aptDispatchWithHelp> GetCommands()			/*{{{*/
 {
    return {
-      {"download-file", &DoDownloadFile, _("download the given uri to the target-path")},
-      {"srv-lookup", &DoSrvLookup, _("lookup a SRV record (e.g. _http._tcp.ftp.debian.org)")},
-      {"cat-file", &DoCatFile, _("concatenate files, with automatic decompression")},
-      {"auto-detect-proxy", &DoAutoDetectProxy, _("detect proxy using apt.conf")},
-      {nullptr, nullptr, nullptr}
-   };
+       {"download-file", &DoDownloadFile, _("download the given uri to the target-path")},
+       {"srv-lookup", &DoSrvLookup, _("lookup a SRV record (e.g. _http._tcp.ftp.debian.org)")},
+       {"cat-file", &DoCatFile, _("concatenate files, with automatic decompression")},
+       {"auto-detect-proxy", &DoAutoDetectProxy, _("detect proxy using apt.conf")},
+       {"wait-online", &DoWaitOnline, _("wait for system to be online")},
+       {"drop-privs", &DropPrivsAndRun, _("drop privileges before running given command")},
+       {nullptr, nullptr, nullptr}};
 }
 									/*}}}*/
 int main(int argc,const char *argv[])					/*{{{*/

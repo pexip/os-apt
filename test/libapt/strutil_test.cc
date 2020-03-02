@@ -1,6 +1,6 @@
 #include <config.h>
-#include <apt-pkg/strutl.h>
 #include <apt-pkg/fileutl.h>
+#include <apt-pkg/strutl.h>
 #include <string>
 #include <vector>
 
@@ -40,21 +40,21 @@ TEST(StrUtilTest,StringStrip)
 TEST(StrUtilTest,StringSplitBasic)
 {
    std::vector<std::string> result = StringSplit("", "");
-   EXPECT_EQ(result.size(), 0);
+   EXPECT_TRUE(result.empty());
 
    result = StringSplit("abc", "");
-   EXPECT_EQ(result.size(), 0);
+   EXPECT_TRUE(result.empty());
 
    result = StringSplit("", "abc");
-   EXPECT_EQ(result.size(), 1);
+   EXPECT_EQ(result.size(), 1u);
 
    result = StringSplit("abc", "b");
-   ASSERT_EQ(result.size(), 2);
+   ASSERT_EQ(result.size(), 2u);
    EXPECT_EQ(result[0], "a");
    EXPECT_EQ(result[1], "c");
 
    result = StringSplit("abc", "abc");
-   ASSERT_EQ(result.size(), 2);
+   ASSERT_EQ(result.size(), 2u);
    EXPECT_EQ(result[0], "");
    EXPECT_EQ(result[1], "");
 }
@@ -62,20 +62,20 @@ TEST(StrUtilTest,StringSplitDpkgStatus)
 {
    std::string const input = "status: libnet1:amd64: unpacked";
    std::vector<std::string> result = StringSplit(input, "xxx");
-   ASSERT_EQ(result.size(), 1);
+   ASSERT_EQ(result.size(), 1u);
    EXPECT_EQ(result[0], input);
 
    result = StringSplit(input, "");
-   EXPECT_EQ(result.size(), 0);
+   EXPECT_TRUE(result.empty());
 
    result = StringSplit(input, ": ");
-   ASSERT_EQ(result.size(), 3);
+   ASSERT_EQ(result.size(), 3u);
    EXPECT_EQ(result[0], "status");
    EXPECT_EQ(result[1], "libnet1:amd64");
    EXPECT_EQ(result[2], "unpacked");
 
    result = StringSplit("x:y:z", ":", 2);
-   ASSERT_EQ(result.size(), 2);
+   ASSERT_EQ(result.size(), 2u);
    EXPECT_EQ(result[0], "x");
    EXPECT_EQ(result[1], "y:z");
 }
@@ -190,7 +190,7 @@ static void ReadMessagesTestWithNewLine(char const * const nl, char const * cons
    createTemporaryFile("readmessage", fd, NULL, (pkgA + nl + pkgB + nl + pkgC + nl).c_str());
    std::vector<std::string> list;
    EXPECT_TRUE(ReadMessages(fd.Fd(), list));
-   EXPECT_EQ(3, list.size());
+   EXPECT_EQ(3u, list.size());
    EXPECT_EQ(pkgA, list[0]);
    EXPECT_EQ(pkgB, list[1]);
    EXPECT_EQ(pkgC, list[2]);
@@ -210,7 +210,7 @@ static void ReadMessagesTestWithNewLine(char const * const nl, char const * cons
       fd.Seek(0);
       list.clear();
       EXPECT_TRUE(ReadMessages(fd.Fd(), list));
-      EXPECT_EQ(1, list.size());
+      EXPECT_EQ(1u, list.size());
       EXPECT_EQ((msgsize + i) * strlen(ab), list[0].length());
       EXPECT_EQ(std::string::npos, list[0].find_first_not_of(ab));
    }
@@ -220,7 +220,7 @@ static void ReadMessagesTestWithNewLine(char const * const nl, char const * cons
    fd.Write(nl, strlen(nl));
    fd.Seek(0);
    EXPECT_TRUE(ReadMessages(fd.Fd(), list));
-   EXPECT_EQ(2, list.size());
+   EXPECT_EQ(2u, list.size());
    EXPECT_EQ((msgsize + 20) * strlen(ab), list[0].length());
    EXPECT_EQ(std::string::npos, list[0].find_first_not_of(ab));
    EXPECT_EQ(pkgA, list[1]);
@@ -318,4 +318,46 @@ TEST(StrUtilTest,RFC1123StrToTime)
    EXPECT_FALSE(RFC1123StrToTime("Sunday, 06-Nov-94 08:49:37 EDT", t));
    EXPECT_FALSE(RFC1123StrToTime("Sunday, 06-Nov-94 08:49:37 -0100", t));
    EXPECT_FALSE(RFC1123StrToTime("Sunday, 06-Nov-94 08:49:37 -0.1", t));
+}
+TEST(StrUtilTest, LookupTag)
+{
+   EXPECT_EQ("", LookupTag("", "Field", ""));
+   EXPECT_EQ("", LookupTag("", "Field", nullptr));
+   EXPECT_EQ("default", LookupTag("", "Field", "default"));
+   EXPECT_EQ("default", LookupTag("Field1: yes", "Field", "default"));
+   EXPECT_EQ("default", LookupTag("Fiel: yes", "Field", "default"));
+   EXPECT_EQ("default", LookupTag("Fiel d: yes", "Field", "default"));
+   EXPECT_EQ("foo", LookupTag("Field: foo", "Field", "default"));
+   EXPECT_EQ("foo", LookupTag("Field: foo\n", "Field", "default"));
+   EXPECT_EQ("foo", LookupTag("\nField: foo\n", "Field", "default"));
+   EXPECT_EQ("foo", LookupTag("Field:foo", "Field", "default"));
+   EXPECT_EQ("foo", LookupTag("Field:foo\n", "Field", "default"));
+   EXPECT_EQ("foo", LookupTag("\nField:foo\n", "Field", "default"));
+   EXPECT_EQ("foo", LookupTag("Field:\tfoo\n", "Field", "default"));
+   EXPECT_EQ("foo", LookupTag("Field:  foo  \t", "Field", "default"));
+   EXPECT_EQ("foo", LookupTag("Field:  foo  \t\n", "Field", "default"));
+   EXPECT_EQ("Field : yes", LookupTag("Field:  Field : yes  \t\n", "Field", "default"));
+   EXPECT_EQ("Field : yes", LookupTag("Field:\n Field : yes  \t\n", "Field", "default"));
+   EXPECT_EQ("Field : yes", LookupTag("Foo: bar\nField:  Field : yes  \t\n", "Field", "default"));
+   EXPECT_EQ("line1\nline2", LookupTag("Multi: line1\n line2", "Multi", "default"));
+   EXPECT_EQ("line1\nline2", LookupTag("Multi: line1\n line2\n", "Multi", "default"));
+   EXPECT_EQ("line1\nline2", LookupTag("Multi:\n line1\n line2\n", "Multi", "default"));
+   EXPECT_EQ("line1\n\nline2", LookupTag("Multi:\n line1\n .\n line2\n", "Multi", "default"));
+   EXPECT_EQ("line1\na\nline2", LookupTag("Multi:\n line1\n a\n line2\n", "Multi", "default"));
+   EXPECT_EQ("line1\nfoo\nline2", LookupTag("Multi:\n line1\n foo\n line2\n", "Multi", "default"));
+   EXPECT_EQ("line1\n  line2", LookupTag("Multi: line1\n   line2", "Multi", "default"));
+   EXPECT_EQ("  line1\n \t line2", LookupTag("Multi:\t \n   line1\n  \t line2\n", "Multi", "default"));
+   EXPECT_EQ("  line1\n\n\n \t line2", LookupTag("Multi:\t \n   line1\n .\n .   \n  \t line2\n", "Multi", "default"));
+
+   std::string const msg =
+      "Field1: Value1\nField2:Value2\nField3:\t   Value3\n"
+      "Multi-Field1: Line1\n Line2\nMulti-Field2:\n Line1\n Line2\n"
+      "Field4: Value4\nField5:Value5";
+   EXPECT_EQ("Value1", LookupTag(msg, "Field1", ""));
+   EXPECT_EQ("Value2", LookupTag(msg, "Field2", ""));
+   EXPECT_EQ("Value3", LookupTag(msg, "Field3", ""));
+   EXPECT_EQ("Line1\nLine2", LookupTag(msg, "Multi-Field1", ""));
+   EXPECT_EQ("Line1\nLine2", LookupTag(msg, "Multi-Field2", ""));
+   EXPECT_EQ("Value4", LookupTag(msg, "Field4", ""));
+   EXPECT_EQ("Value5", LookupTag(msg, "Field5", ""));
 }

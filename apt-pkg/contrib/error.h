@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: error.h,v 1.8 2001/05/07 05:06:52 jgg Exp $
 /* ######################################################################
    
    Global Error Class - Global error mechanism
@@ -46,8 +45,8 @@
 #include <list>
 #include <string>
 
-#include <stddef.h>
 #include <stdarg.h>
+#include <stddef.h>
 
 class GlobalError							/*{{{*/
 {

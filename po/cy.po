@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2017-09-13 17:18+0000\n"
+"POT-Creation-Date: 2019-02-04 15:34+0100\n"
 "PO-Revision-Date: 2005-06-06 13:46+0100\n"
 "Last-Translator: Dafydd Harries <daf@muse.19inch.net>\n"
 "Language-Team: Welsh <cy@pengwyn.linux.org.uk>\n"
@@ -14,6 +14,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n==2) ? 1 : 0;\n"
 
 #: apt-inst/contrib/arfile.cc
 msgid "Invalid archive signature"
@@ -148,7 +149,7 @@ msgstr "Mae'r ffeil %s/%s yn trosysgrifo'r un yn y pecyn %s"
 #. Only warn if there is no sources.list file.
 #: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
 #: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc methods/mirror.cc
+#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
 #, c-format
 msgid "Unable to read %s"
 msgstr "Ni ellir darllen %s"
@@ -216,7 +217,7 @@ msgstr "Mae'r cyfeiriadur %s wedi ei ddargyfeirio"
 
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
-msgid "The repository '%s' does no longer have a Release file."
+msgid "The repository '%s' no longer has a Release file."
 msgstr "Mae'r cyfeiriadur %s wedi ei ddargyfeirio"
 
 #: apt-pkg/acquire-item.cc
@@ -297,6 +298,13 @@ msgstr ""
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
+"Skipping acquire of configured file '%s' as repository '%s' doesn't have the "
+"component '%s' (component misspelt in sources.list?)"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
 "Skipping acquire of configured file '%s' as repository '%s' doesn't support "
 "architecture '%s'"
 msgstr ""
@@ -304,8 +312,8 @@ msgstr ""
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
-"Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
-"or malformed file)"
+"Skipping acquire of configured file '%s' as repository '%s' does not seem to "
+"provide it (sources.list entry misspelt?)"
 msgstr ""
 
 #: apt-pkg/acquire-item.cc
@@ -325,10 +333,50 @@ msgid ""
 "repository will not be applied."
 msgstr ""
 
+#. TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+#. the time until the file will be valid - formatted in the same way as in
+#. the download progress display (e.g. 7d 3h 42min 1s)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"Release file for %s is not valid yet (invalid for another %s). Updates for "
+"this repository will not be applied."
+msgstr ""
+
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
+msgstr ""
+
+#. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"More information about this can be found online in the Release notes at: %s"
+msgstr ""
+
+#. TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"This must be accepted explicitly before updates for this repository can be "
+"applied. See %s manpage for details."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc apt-pkg/update.cc apt-private/private-download.cc
+#, c-format
+msgid "Failed to fetch %s  %s"
+msgstr "Methwyd cyrchu %s  %s"
 
 # FIXME: case
 #: apt-pkg/acquire-item.cc
@@ -345,18 +393,18 @@ msgstr ""
 msgid "Can't find a source to download version '%s' of '%s'"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc
-#, c-format
-msgid ""
-"The package index files are corrupted. No Filename: field for package %s."
-msgstr ""
-"Mae'r ffeiliau mynegai pecyn yn llygr. Dim maes Filename: gan y pecyn %s."
-
 #. TRANSLATOR: %s=%s is sourcename=sourceversion, e.g. apt=1.1
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "Yn cysylltu i %s (%s)"
+
+#: apt-pkg/acquire-worker.cc
+#, c-format
+msgid ""
+"The method '%s' is unsupported and disabled by default. Consider switching "
+"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
+msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -394,13 +442,13 @@ msgstr ""
 
 #: apt-pkg/acquire.cc apt-pkg/cdrom.cc
 #, fuzzy, c-format
-msgid "List directory %spartial is missing."
-msgstr "Mae'r cyfeiriadur rhestrau %spartial ar goll."
+msgid "List directory %s is missing."
+msgstr "Mae'r cyfeiriadur rhestrau %s ar goll."
 
 #: apt-pkg/acquire.cc
 #, fuzzy, c-format
-msgid "Archives directory %spartial is missing."
-msgstr "Mae'r cyfeiriadur archif %spartial ar goll."
+msgid "Archives directory %s is missing."
+msgstr "Mae'r cyfeiriadur archif %s ar goll."
 
 #: apt-pkg/acquire.cc
 #, fuzzy, c-format
@@ -424,14 +472,6 @@ msgstr ""
 msgid "Clean of %s is not supported"
 msgstr "Ni chynhelir y math ffeil mynegai '%s'"
 
-#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
-#: methods/mirror.cc
-#, c-format
-msgid "Unable to change to %s"
-msgstr "Ni ellir newid i %s"
-
-#. only show the ETA if it makes sense
-#. two days
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -471,7 +511,7 @@ msgstr "Methwyd agor neu ramadegu'r ffeil rhestrau neu statws."
 msgid "You may want to run apt-get update to correct these problems"
 msgstr "Efallai hoffech rhedege apt-get update er mwyn cywiro'r problemau hyn."
 
-#: apt-pkg/cachefile.cc
+#: apt-pkg/cachefile.cc methods/mirror.cc
 msgid "The list of sources could not be read."
 msgstr "Methwyd darllen y rhestr ffynhonellau."
 
@@ -619,6 +659,11 @@ msgstr ""
 
 #: apt-pkg/clean.cc
 #, c-format
+msgid "Unable to change to %s"
+msgstr "Ni ellir newid i %s"
+
+#: apt-pkg/clean.cc
+#, c-format
 msgid "Unable to stat %s."
 msgstr "Ni ellir gwneud stat() o %s."
 
@@ -686,11 +731,6 @@ msgstr "Gweithred annilys %s"
 #, c-format
 msgid "Unrecognized type abbreviation: '%c'"
 msgstr "Talgryniad math anhysbys: '%c'"
-
-#: apt-pkg/contrib/configuration.cc
-#, c-format
-msgid "Opening configuration file %s"
-msgstr "Yn agor y ffeil cyfluniad %s"
 
 #: apt-pkg/contrib/configuration.cc
 #, c-format
@@ -874,12 +914,12 @@ msgstr "Gwall wrth gyfamseru'r ffeil"
 msgid "Problem syncing the file"
 msgstr "Gwall wrth gyfamseru'r ffeil"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, fuzzy, c-format
 msgid "Unable to mkstemp %s"
 msgstr "Ni ellir gwneud stat() o %s"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to write to %s"
 msgstr "Ni ellir ysgrifennu i %s"
@@ -1055,13 +1095,12 @@ msgstr "Ni ellir gramadegu ffeil becynnau %s (%d)"
 #: apt-pkg/deb/debsystem.cc
 #, c-format
 msgid ""
-"Unable to lock the administration directory (%s), is another process using "
-"it?"
+"Unable to acquire the dpkg frontend lock (%s), is another process using it?"
 msgstr ""
 
 #: apt-pkg/deb/debsystem.cc
 #, fuzzy, c-format
-msgid "Unable to lock the administration directory (%s), are you root?"
+msgid "Unable to acquire the dpkg frontend lock (%s), are you root?"
 msgstr "Ni ellir cloi'r cyfeiriadur rhestr"
 
 #. TRANSLATORS: the %s contains the recovery command, usually
@@ -1073,29 +1112,41 @@ msgid ""
 msgstr ""
 
 #: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid ""
+"Unable to lock the administration directory (%s), is another process using "
+"it?"
+msgstr ""
+
+#: apt-pkg/deb/debsystem.cc
+#, fuzzy, c-format
+msgid "Unable to lock the administration directory (%s), are you root?"
+msgstr "Ni ellir cloi'r cyfeiriadur rhestr"
+
+#: apt-pkg/deb/debsystem.cc
 msgid "Not locked"
 msgstr ""
 
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, fuzzy, c-format
-msgid "Installing %s"
-msgstr "  Wedi Sefydlu: "
-
-#: apt-pkg/deb/dpkgpm.cc
-#, fuzzy, c-format
-msgid "Configuring %s"
-msgstr "Yn cysylltu i %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, fuzzy, c-format
-msgid "Removing %s"
+msgid "Preparing %s"
 msgstr "Yn agor %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, fuzzy, c-format
-msgid "Completely removing %s"
-msgstr "Methwyd dileu %s"
+msgid "Preparing to configure %s"
+msgstr "Yn agor y ffeil cyfluniad %s"
+
+#: apt-pkg/deb/dpkgpm.cc
+#, c-format
+msgid "Preparing for removal of %s"
+msgstr ""
+
+#: apt-pkg/deb/dpkgpm.cc
+#, fuzzy, c-format
+msgid "Preparing to completely remove %s"
+msgstr "Yn agor y ffeil cyfluniad %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1112,11 +1163,16 @@ msgstr ""
 msgid "Installed %s"
 msgstr "  Wedi Sefydlu: "
 
+#: apt-pkg/deb/dpkgpm.cc
+#, fuzzy, c-format
+msgid "Configuring %s"
+msgstr "Yn cysylltu i %s"
+
 #. FIXME: use a better string after freeze
 #: apt-pkg/deb/dpkgpm.cc
 #, fuzzy, c-format
 msgid "Directory '%s' missing"
-msgstr "Mae'r cyfeiriadur rhestrau %spartial ar goll."
+msgstr "Mae'r cyfeiriadur rhestrau %s ar goll."
 
 #: apt-pkg/deb/dpkgpm.cc apt-pkg/edsp.cc
 #, fuzzy, c-format
@@ -1125,33 +1181,23 @@ msgstr "Methwyd agor ffeil %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, fuzzy, c-format
-msgid "Preparing %s"
-msgstr "Yn agor %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, fuzzy, c-format
 msgid "Unpacking %s"
 msgstr "Yn agor %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, fuzzy, c-format
-msgid "Preparing to configure %s"
-msgstr "Yn agor y ffeil cyfluniad %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing for removal of %s"
-msgstr ""
+msgid "Installing %s"
+msgstr "  Wedi Sefydlu: "
 
 #: apt-pkg/deb/dpkgpm.cc
 #, fuzzy, c-format
-msgid "Removed %s"
-msgstr "Argymell"
+msgid "Removing %s"
+msgstr "Yn agor %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, fuzzy, c-format
-msgid "Preparing to completely remove %s"
-msgstr "Yn agor y ffeil cyfluniad %s"
+msgid "Completely removing %s"
+msgstr "Methwyd dileu %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, fuzzy, c-format
@@ -1317,7 +1363,7 @@ msgstr "Ni ellir canfod math system addas"
 
 #: apt-pkg/install-progress.cc
 #, c-format
-msgid "Progress: [%3i%%]"
+msgid "Progress: [%3li%%]"
 msgstr ""
 
 #. send status information that we are about to fork dpkg
@@ -1498,6 +1544,12 @@ msgstr "Methwyd daeall y math pin %s"
 
 #: apt-pkg/policy.cc
 #, c-format
+msgid ""
+"%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"
+msgstr ""
+
+#: apt-pkg/policy.cc
+#, c-format
 msgid "%s: Value %s is outside the range of valid pin priorities (%d to %d)"
 msgstr ""
 
@@ -1510,11 +1562,6 @@ msgstr "Dim blaenoriath (neu sero) wedi ei benodi ar gyfer pin"
 #, fuzzy, c-format
 msgid "Malformed entry %u in %s file %s (%s)"
 msgstr "Gwrthwneud camffurfiol %s llinell %lu #1"
-
-#: apt-pkg/sourcelist.cc
-#, c-format
-msgid "Opening %s"
-msgstr "Yn agor %s"
 
 #: apt-pkg/sourcelist.cc
 #, c-format
@@ -1536,7 +1583,7 @@ msgstr "Llinell camffurfiol %u yn y rhestr ffynhonell %s (math)"
 msgid "Type '%s' is not known on stanza %u in source list %s"
 msgstr "Mae'r math '%s' yn anhysbys ar linell %u yn y rhestr ffynhonell %s"
 
-#: apt-pkg/sourcelist.cc
+#: apt-pkg/sourcelist.cc apt-private/private-install.cc
 #, c-format
 msgid "Unsupported file %s given on commandline"
 msgstr ""
@@ -1550,11 +1597,6 @@ msgstr "Rhaid i chi rhoi rhai URI 'source' yn eich ffeil sources.list"
 #, c-format
 msgid "Cannot convert %s to integer: out of range"
 msgstr ""
-
-#: apt-pkg/update.cc apt-private/private-download.cc
-#, c-format
-msgid "Failed to fetch %s  %s"
-msgstr "Methwyd cyrchu %s  %s"
 
 #: apt-pkg/update.cc
 #, fuzzy
@@ -1616,6 +1658,12 @@ msgstr ""
 "Newid Cyfrwng: Os gwelwch yn dda, rhowch y disg a'r label\n"
 " '%s'\n"
 "yn y gyrriant '%s' a gwasgwch Enter\n"
+
+#: apt-private/acqprogress.cc
+msgid ""
+"Do you want to accept these changes and continue updating from this "
+"repository?"
+msgstr ""
 
 #: apt-private/private-cachefile.cc
 msgid "Correcting dependencies..."
@@ -1757,8 +1805,14 @@ msgstr "Mae gan yr APT hwn bŵerau buwch hudol."
 msgid "This APT helper has Super Meep Powers."
 msgstr ""
 
-#: apt-private/private-depends.cc apt-private/private-show.cc
-#: cmdline/apt-mark.cc
+#: apt-private/private-cmndline.cc
+msgid ""
+"--force-yes is deprecated, use one of the options starting with --allow "
+"instead."
+msgstr ""
+
+#: apt-private/private-depends.cc apt-private/private-download.cc
+#: apt-private/private-show.cc cmdline/apt-mark.cc
 msgid "No packages found"
 msgstr "Canfuwyd dim pecyn"
 
@@ -1778,12 +1832,6 @@ msgstr "RHYBUDD: Ni ellir dilysu'r pecynnau canlynol yn ddiogel!"
 
 #: apt-private/private-download.cc
 msgid "Install these packages without verification?"
-msgstr ""
-
-#: apt-private/private-download.cc apt-private/private-install.cc
-msgid ""
-"--force-yes is deprecated, use one of the options starting with --allow "
-"instead."
 msgstr ""
 
 #: apt-private/private-download.cc
@@ -1935,7 +1983,7 @@ msgstr ""
 msgid "Abort."
 msgstr "Erthylu."
 
-#: apt-private/private-install.cc
+#: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Ydych chi eisiau mynd ymlaen?"
 
@@ -2258,11 +2306,6 @@ msgstr "Rhaid i chi ddarparu un patrwm yn union"
 msgid "Full Text Search"
 msgstr ""
 
-#: apt-private/private-show.cc cmdline/apt-cache.cc
-#, c-format
-msgid "Package file %s is out of sync."
-msgstr "Nid yw'r ffeil pecyn %s yn gydamseredig."
-
 #: apt-private/private-show.cc
 #, c-format
 msgid "There is %i additional record. Please use the '-a' switch to see it"
@@ -2421,16 +2464,16 @@ msgid "%s has no build depends.\n"
 msgstr "Nid oes dibyniaethau adeiladu gan %s.\n"
 
 #: apt-private/private-source.cc
-msgid "Must specify at least one package to check builddeps for"
-msgstr ""
-"Rhaid penodi o leiaf un pecyn i wirio dibyniaethau adeiladu ar eu cyfer"
-
-#: apt-private/private-source.cc
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
+
+#: apt-private/private-source.cc
+msgid "Must specify at least one package to check builddeps for"
+msgstr ""
+"Rhaid penodi o leiaf un pecyn i wirio dibyniaethau adeiladu ar eu cyfer"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2453,7 +2496,7 @@ msgstr "Methwyd ailenwi %s at %s"
 
 #: apt-private/private-sources.cc
 #, c-format
-msgid "Your '%s' file changed, please run 'apt-get update'."
+msgid "Your '%s' file changed, please run 'apt-get update'.\n"
 msgstr ""
 
 #: apt-private/private-unmet.cc
@@ -2464,6 +2507,14 @@ msgstr "Mae gan y pecyn %s fersiwn %s ddibyniaeth heb ei gwrdd:\n"
 #: apt-private/private-update.cc
 msgid "The update command takes no arguments"
 msgstr "Nid yw'r gorchymyn diweddaru yn derbyn ymresymiadau"
+
+#. TRANSLATOR: the first two are manpage references, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid ""
+"Usage of %s should be preferred over embedding login information directly in "
+"the %s entry for '%s'"
+msgstr ""
 
 #: apt-private/private-update.cc
 #, c-format
@@ -2477,9 +2528,9 @@ msgstr[1] ""
 msgid "All packages are up to date."
 msgstr ""
 
-#: cmdline/apt-cache.cc
-#, fuzzy
-msgid "apt-cache stats does not take any arguments"
+#: cmdline/apt-cache.cc cmdline/apt-mark.cc
+#, fuzzy, c-format
+msgid "%s does not take any arguments"
 msgstr "Nid yw'r gorchymyn diweddaru yn derbyn ymresymiadau"
 
 #: cmdline/apt-cache.cc
@@ -2761,6 +2812,12 @@ msgid "Install new packages (pkg is libc6 not libc6.deb)"
 msgstr "Sefydlu pecynnau newydd (defnyddiwch libc6 nid libc6.deb)"
 
 #: cmdline/apt-get.cc
+#, fuzzy
+#| msgid "Install new packages (pkg is libc6 not libc6.deb)"
+msgid "Reinstall packages (pkg is libc6 not libc6.deb)"
+msgstr "Sefydlu pecynnau newydd (defnyddiwch libc6 nid libc6.deb)"
+
+#: cmdline/apt-get.cc
 msgid "Remove packages"
 msgstr "Tynnu pecynnau"
 
@@ -2853,6 +2910,14 @@ msgstr ""
 msgid "detect proxy using apt.conf"
 msgstr ""
 
+#: cmdline/apt-helper.cc
+msgid "wait for system to be online"
+msgstr ""
+
+#: cmdline/apt-helper.cc
+msgid "drop privileges before running given command"
+msgstr ""
+
 # FIXME: "debian"
 #: cmdline/apt-internal-planner.cc
 #, fuzzy
@@ -2909,6 +2974,16 @@ msgstr "ond mae %s yn mynd i gael ei sefydlu"
 #, fuzzy, c-format
 msgid "%s was already set to automatically installed.\n"
 msgstr "ond mae %s yn mynd i gael ei sefydlu"
+
+#: cmdline/apt-mark.cc
+msgid "No changes necessary"
+msgstr ""
+
+#: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "The following NEW packages will be installed:"
+msgid "The following packages will be marked as automatically installed:"
+msgstr "Caiff y pecynnau NEWYDD canlynol eu sefydlu:"
 
 #: cmdline/apt-mark.cc
 #, fuzzy, c-format
@@ -2970,6 +3045,11 @@ msgid "Mark the given packages as manually installed"
 msgstr "Caiff y pecynnau NEWYDD canlynol eu sefydlu:"
 
 #: cmdline/apt-mark.cc
+#, fuzzy
+msgid "Mark all dependencies of meta packages as automatically installed."
+msgstr "ond mae %s yn mynd i gael ei sefydlu"
+
+#: cmdline/apt-mark.cc
 msgid "Mark a package as held back"
 msgstr ""
 
@@ -2988,7 +3068,7 @@ msgid "Print the list of manually installed packages"
 msgstr "ond mae %s yn mynd i gael ei sefydlu"
 
 #: cmdline/apt-mark.cc
-msgid "Print the list of package on hold"
+msgid "Print the list of packages on hold"
 msgstr ""
 
 #: cmdline/apt-sortpkgs.cc
@@ -3033,6 +3113,11 @@ msgstr ""
 #: cmdline/apt.cc
 #, fuzzy
 msgid "install packages"
+msgstr "Pecynnau wedi eu Pinio:"
+
+#: cmdline/apt.cc
+#, fuzzy
+msgid "reinstall packages"
 msgstr "Pecynnau wedi eu Pinio:"
 
 #: cmdline/apt.cc
@@ -3436,6 +3521,11 @@ msgstr "Data pennawd gwael"
 msgid "Connection failed"
 msgstr "Methodd y cysylltiad"
 
+#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#, c-format
+msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
+msgstr ""
+
 #: methods/basehttp.cc
 #, c-format
 msgid ""
@@ -3487,15 +3577,21 @@ msgstr "Ffeil heb ei ganfod"
 msgid "Direct connection to %s domains is blocked by default."
 msgstr ""
 
-#: methods/connect.cc methods/http.cc
-#, c-format
-msgid "Connecting to %s (%s)"
-msgstr "Yn cysylltu i %s (%s)"
-
 #: methods/connect.cc
 #, c-format
 msgid "[IP: %s %s]"
 msgstr "[IP: %s %s]"
+
+#: methods/connect.cc
+#, fuzzy, c-format
+#| msgid "Connecting to %s (%s)"
+msgid "Connected to %s (%s)"
+msgstr "Yn cysylltu i %s (%s)"
+
+#: methods/connect.cc methods/http.cc
+#, c-format
+msgid "Connecting to %s (%s)"
+msgstr "Yn cysylltu i %s (%s)"
 
 #: methods/connect.cc
 #, c-format
@@ -3507,11 +3603,6 @@ msgstr "Methwyd creu soced ar gyfer %s (f=%u t=%u p=%u)"
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "Ni ellir cychwyn y cysylltiad i %s:%s (%s)."
 
-#: methods/connect.cc
-#, c-format
-msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr "Methwyd cysylltu i %s:%s (%s), goramserodd y cysylltiad"
-
 #: methods/connect.cc methods/ftp.cc methods/rsh.cc
 msgid "Failed"
 msgstr "Methwyd"
@@ -3520,6 +3611,11 @@ msgstr "Methwyd"
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
 msgstr "Methwyd cysylltu i %s:%s (%s)."
+
+#: methods/connect.cc
+#, c-format
+msgid "Could not connect to %s:%s (%s), connection timed out"
+msgstr "Methwyd cysylltu i %s:%s (%s), goramserodd y cysylltiad"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -3774,30 +3870,6 @@ msgstr "Goramserodd y cysylltiad"
 msgid "Error writing to output file"
 msgstr "Gwall wrth ysgrifennu i ffeil allbwn"
 
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "No mirror file '%s' found "
-msgstr ""
-
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, fuzzy, c-format
-msgid "Can not read mirror file '%s'"
-msgstr "Methwyd agor ffeil %s"
-
-#: methods/mirror.cc
-#, fuzzy, c-format
-msgid "No entry found in mirror file '%s'"
-msgstr "Methwyd agor ffeil %s"
-
-#: methods/mirror.cc
-#, c-format
-msgid "[Mirror: %s]"
-msgstr ""
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "Methwyd gosod amser newid"
@@ -3809,6 +3881,32 @@ msgstr "Caewyd y cysylltiad yn gynnar"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#, fuzzy
+#~ msgid "Removed %s"
+#~ msgstr "Argymell"
+
+#~ msgid "Package file %s is out of sync."
+#~ msgstr "Nid yw'r ffeil pecyn %s yn gydamseredig."
+
+#~ msgid ""
+#~ "The package index files are corrupted. No Filename: field for package %s."
+#~ msgstr ""
+#~ "Mae'r ffeiliau mynegai pecyn yn llygr. Dim maes Filename: gan y pecyn %s."
+
+#, fuzzy
+#~ msgid "Can not read mirror file '%s'"
+#~ msgstr "Methwyd agor ffeil %s"
+
+#, fuzzy
+#~ msgid "No entry found in mirror file '%s'"
+#~ msgstr "Methwyd agor ffeil %s"
+
+#~ msgid "Opening configuration file %s"
+#~ msgstr "Yn agor y ffeil cyfluniad %s"
+
+#~ msgid "Opening %s"
+#~ msgstr "Yn agor %s"
 
 #~ msgid "Unmet dependencies. Try using --fix-broken."
 #~ msgstr "Dibyniaethau heb eu bodloni. Ceisiwch ddefnyddio --fix-broken."

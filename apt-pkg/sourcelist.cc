@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: sourcelist.cc,v 1.3 2002/08/15 20:51:37 niemeyer Exp $
 /* ######################################################################
 
    List of Sources
@@ -8,31 +7,30 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
-#include <apt-pkg/sourcelist.h>
 #include <apt-pkg/cmndline.h>
-#include <apt-pkg/error.h>
-#include <apt-pkg/fileutl.h>
-#include <apt-pkg/strutl.h>
 #include <apt-pkg/configuration.h>
-#include <apt-pkg/metaindex.h>
-#include <apt-pkg/indexfile.h>
-#include <apt-pkg/tagfile.h>
-#include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/debindexfile.h>
 #include <apt-pkg/debsrcrecords.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/indexfile.h>
+#include <apt-pkg/metaindex.h>
+#include <apt-pkg/pkgcache.h>
+#include <apt-pkg/sourcelist.h>
+#include <apt-pkg/strutl.h>
+#include <apt-pkg/tagfile.h>
 
-#include <ctype.h>
-#include <stddef.h>
-#include <time.h>
+#include <algorithm>
 #include <cstring>
+#include <fstream>
 #include <map>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <algorithm>
+#include <ctype.h>
+#include <stddef.h>
+#include <time.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -43,6 +41,17 @@ using namespace std;
 static pkgSourceList::Type *ItmList[10];
 pkgSourceList::Type **pkgSourceList::Type::GlobalList = ItmList;
 unsigned long pkgSourceList::Type::GlobalListLen = 0;
+
+static std::vector<std::string> FindMultiValue(pkgTagSection &Tags, char const *const Field) /*{{{*/
+{
+   auto values = Tags.FindS(Field);
+   // we ignore duplicate spaces by removing empty values
+   std::replace_if(values.begin(), values.end(), isspace_ascii, ' ');
+   auto vect = VectorizeString(values, ' ');
+   vect.erase(std::remove_if(vect.begin(), vect.end(), [](std::string const &s) { return s.empty(); }), vect.end());
+   return vect;
+}
+									/*}}}*/
 
 // Type::Type - Constructor						/*{{{*/
 // ---------------------------------------------------------------------
@@ -109,6 +118,8 @@ bool pkgSourceList::Type::ParseStanza(vector<metaIndex *> &List,	/*{{{*/
    mapping.insert(std::make_pair("Check-Valid-Until", std::make_pair("check-valid-until", false)));
    mapping.insert(std::make_pair("Valid-Until-Min", std::make_pair("valid-until-min", false)));
    mapping.insert(std::make_pair("Valid-Until-Max", std::make_pair("valid-until-max", false)));
+   mapping.insert(std::make_pair("Check-Date", std::make_pair("check-date", false)));
+   mapping.insert(std::make_pair("Date-Max-Future", std::make_pair("date-max-future", false)));
    mapping.insert(std::make_pair("Signed-By", std::make_pair("signed-by", false)));
    mapping.insert(std::make_pair("PDiffs", std::make_pair("pdiffs", false)));
    mapping.insert(std::make_pair("By-Hash", std::make_pair("by-hash", false)));
@@ -116,11 +127,13 @@ bool pkgSourceList::Type::ParseStanza(vector<metaIndex *> &List,	/*{{{*/
    for (std::map<char const * const, std::pair<char const * const, bool> >::const_iterator m = mapping.begin(); m != mapping.end(); ++m)
       if (Tags.Exists(m->first))
       {
-	 std::string option = Tags.FindS(m->first);
-	 // for deb822 the " " is the delimiter, but the backend expects ","
-	 if (m->second.second == true)
-	    std::replace(option.begin(), option.end(), ' ', ',');
-	 Options[m->second.first] = option;
+	 if (m->second.second)
+	 {
+	    auto const values = FindMultiValue(Tags, m->first);
+	    Options[m->second.first] = APT::String::Join(values, ",");
+	 }
+	 else
+	    Options[m->second.first] = Tags.FindS(m->first);
       }
 
    {
@@ -130,37 +143,34 @@ bool pkgSourceList::Type::ParseStanza(vector<metaIndex *> &List,	/*{{{*/
    }
 
    // now create one item per suite/section
-   string Suite = Tags.FindS("Suites");
-   Suite = SubstVar(Suite,"$(ARCH)",_config->Find("APT::Architecture"));
-   string const Component = Tags.FindS("Components");
-   string const URIS = Tags.FindS("URIs");
-
-   std::vector<std::string> const list_uris = VectorizeString(URIS, ' ');
-   std::vector<std::string> const list_suite = VectorizeString(Suite, ' ');
-   std::vector<std::string> const list_comp = VectorizeString(Component, ' ');
+   auto const list_uris = FindMultiValue(Tags, "URIs");
+   auto const list_comp = FindMultiValue(Tags, "Components");
+   auto list_suite = FindMultiValue(Tags, "Suites");
+   {
+      auto const nativeArch = _config->Find("APT::Architecture");
+      std::transform(list_suite.begin(), list_suite.end(), list_suite.begin(),
+		     [&](std::string const &suite) { return SubstVar(suite, "$(ARCH)", nativeArch); });
+   }
 
    if (list_uris.empty())
       // TRANSLATOR: %u is a line number, the first %s is a filename of a file with the extension "second %s" and the third %s is a unique identifier for bugreports
       return _error->Error(_("Malformed entry %u in %s file %s (%s)"), i, "sources", Fd.Name().c_str(), "URI");
 
-   for (std::vector<std::string>::const_iterator U = list_uris.begin();
-        U != list_uris.end(); ++U)
+   if (list_suite.empty())
+      return _error->Error(_("Malformed entry %u in %s file %s (%s)"), i, "sources", Fd.Name().c_str(), "Suite");
+
+   for (auto URI : list_uris)
    {
-      std::string URI = *U;
-      if (U->empty() || FixupURI(URI) == false)
+      if (FixupURI(URI) == false)
 	 return _error->Error(_("Malformed entry %u in %s file %s (%s)"), i, "sources", Fd.Name().c_str(), "URI parse");
 
-      if (list_suite.empty())
-	 return _error->Error(_("Malformed entry %u in %s file %s (%s)"), i, "sources", Fd.Name().c_str(), "Suite");
-
-      for (std::vector<std::string>::const_iterator S = list_suite.begin();
-           S != list_suite.end(); ++S)
+      for (auto const &S : list_suite)
       {
-	 if (S->empty() == false && (*S)[S->size() - 1] == '/')
+	 if (likely(S.empty() == false) && S[S.size() - 1] == '/')
 	 {
 	    if (list_comp.empty() == false)
 	       return _error->Error(_("Malformed entry %u in %s file %s (%s)"), i, "sources", Fd.Name().c_str(), "absolute Suite Component");
-	    if (CreateItem(List, URI, *S, "", Options) == false)
+	    if (CreateItem(List, URI, S, "", Options) == false)
 	       return false;
 	 }
 	 else
@@ -168,14 +178,9 @@ bool pkgSourceList::Type::ParseStanza(vector<metaIndex *> &List,	/*{{{*/
 	    if (list_comp.empty())
 	       return _error->Error(_("Malformed entry %u in %s file %s (%s)"), i, "sources", Fd.Name().c_str(), "Component");
 
-	    for (std::vector<std::string>::const_iterator C = list_comp.begin();
-		  C != list_comp.end(); ++C)
-	    {
-	       if (CreateItem(List, URI, *S, *C, Options) == false)
-	       {
+	    for (auto const &C : list_comp)
+	       if (CreateItem(List, URI, S, C, Options) == false)
 		  return false;
-	       }
-	    }
 	 }
       }
    }
@@ -301,37 +306,32 @@ pkgSourceList::~pkgSourceList()
 /* */
 bool pkgSourceList::ReadMainList()
 {
-   // CNC:2003-03-03 - Multiple sources list support.
-   bool Res = true;
-#if 0
-   Res = ReadVendors();
-   if (Res == false)
-      return false;
-#endif
-
    Reset();
    // CNC:2003-11-28 - Entries in sources.list have priority over
    //                  entries in sources.list.d.
    string Main = _config->FindFile("Dir::Etc::sourcelist", "/dev/null");
    string Parts = _config->FindDir("Dir::Etc::sourceparts", "/dev/null");
-   
+
+   _error->PushToStack();
    if (RealFileExists(Main) == true)
-      Res &= ReadAppend(Main);
+      ReadAppend(Main);
    else if (DirectoryExists(Parts) == false && APT::String::Endswith(Parts, "/dev/null") == false)
       // Only warn if there are no sources.list.d.
       _error->WarningE("DirectoryExists", _("Unable to read %s"), Parts.c_str());
 
    if (DirectoryExists(Parts) == true)
-      Res &= ReadSourceDir(Parts);
+      ReadSourceDir(Parts);
    else if (Main.empty() == false && RealFileExists(Main) == false &&
 	 APT::String::Endswith(Parts, "/dev/null") == false)
       // Only warn if there is no sources.list file.
       _error->WarningE("RealFileExists", _("Unable to read %s"), Main.c_str());
 
    for (auto && file: _config->FindVector("APT::Sources::With"))
-      Res &= AddVolatileFile(file, nullptr);
+      AddVolatileFile(file, nullptr);
 
-   return Res;
+   auto good = _error->PendingError() == false;
+   _error->MergeWithStack();
+   return good;
 }
 									/*}}}*/
 // SourceList::Reset - Clear the sourcelist contents			/*{{{*/
@@ -369,13 +369,12 @@ bool pkgSourceList::ReadAppend(string const &File)
 /* */
 bool pkgSourceList::ParseFileOldStyle(std::string const &File)
 {
-   // Open the stream for reading
-   ifstream F(File.c_str(),ios::in /*| ios::nocreate*/);
-   if (F.fail() == true)
-      return _error->Errno("ifstream::ifstream",_("Opening %s"),File.c_str());
+   FileFd Fd;
+   if (OpenConfigurationFileFd(File, Fd) == false)
+      return false;
 
    std::string Buffer;
-   for (unsigned int CurLine = 1; std::getline(F, Buffer); ++CurLine)
+   for (unsigned int CurLine = 1; Fd.ReadLine(Buffer); ++CurLine)
    {
       // remove comments
       size_t curpos = 0;
@@ -424,7 +423,9 @@ bool pkgSourceList::ParseFileOldStyle(std::string const &File)
 bool pkgSourceList::ParseFileDeb822(string const &File)
 {
    // see if we can read the file
-   FileFd Fd(File, FileFd::ReadOnly);
+   FileFd Fd;
+   if (OpenConfigurationFileFd(File, Fd) == false)
+      return false;
    pkgTagFile Sources(&Fd, pkgTagFile::SUPPORT_COMMENTS);
    if (Fd.IsOpen() == false || Fd.Failed())
       return _error->Error(_("Malformed stanza %u in source list %s (type)"),0,File.c_str());
@@ -438,20 +439,17 @@ bool pkgSourceList::ParseFileDeb822(string const &File)
       if(Tags.Exists("Types") == false)
 	 return _error->Error(_("Malformed stanza %u in source list %s (type)"),i,File.c_str());
 
-      string const types = Tags.FindS("Types");
-      std::vector<std::string> const list_types = VectorizeString(types, ' ');
-      for (std::vector<std::string>::const_iterator I = list_types.begin();
-        I != list_types.end(); ++I)
+      for (auto const &type : FindMultiValue(Tags, "Types"))
       {
-         Type *Parse = Type::GetType((*I).c_str());
-         if (Parse == 0)
-         {
-            _error->Error(_("Type '%s' is not known on stanza %u in source list %s"), (*I).c_str(),i,Fd.Name().c_str());
-            return false;
-         }
+	 Type *Parse = Type::GetType(type.c_str());
+	 if (Parse == 0)
+	 {
+	    _error->Error(_("Type '%s' is not known on stanza %u in source list %s"), type.c_str(), i, Fd.Name().c_str());
+	    return false;
+	 }
 
-         if (!Parse->ParseStanza(SrcList, Tags, i, Fd))
-            return false;
+	 if (!Parse->ParseStanza(SrcList, Tags, i, Fd))
+	    return false;
       }
    }
    return true;
@@ -498,17 +496,12 @@ bool pkgSourceList::GetIndexes(pkgAcquire *Owner, bool GetAll) const
 /* */
 bool pkgSourceList::ReadSourceDir(string const &Dir)
 {
-   std::vector<std::string> ext;
-   ext.push_back("list");
-   ext.push_back("sources");
-   std::vector<std::string> const List = GetListOfFilesInDir(Dir, ext, true);
-
+   std::vector<std::string> const ext = {"list", "sources"};
    // Read the files
-   for (vector<string>::const_iterator I = List.begin(); I != List.end(); ++I)
-      if (ReadAppend(*I) == false)
-	 return false;
-   return true;
-
+   bool good = true;
+   for (auto const &I : GetListOfFilesInDir(Dir, ext, true))
+      good = ReadAppend(I) && good;
+   return good;
 }
 									/*}}}*/
 // GetLastModified()						/*{{{*/

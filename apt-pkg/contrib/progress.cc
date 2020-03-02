@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: progress.cc,v 1.12 2003/01/11 07:17:04 jgg Exp $
 /* ######################################################################
    
    OpProgress - Operation Progress
@@ -10,15 +9,17 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
-#include <apt-pkg/progress.h>
-#include <apt-pkg/error.h>
 #include <apt-pkg/configuration.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/progress.h>
 
-#include <sys/time.h>
-#include <string>
-#include <iostream>
-#include <stdio.h>
+#include <cmath>
+#include <chrono>
 #include <cstring>
+#include <iostream>
+#include <string>
+#include <stdio.h>
+#include <sys/time.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -44,7 +45,7 @@ void OpProgress::Progress(unsigned long long Cur)
    if (Total == 0 || Size == 0 || SubTotal == 0)
       Percent = 0;
    else
-      Percent = (Current + Cur/((float)SubTotal)*Size)*100.0/Total;
+      Percent = (Current + Cur/((double)SubTotal)*Size)*100.0/Total;
    Update();
 }
 									/*}}}*/
@@ -106,7 +107,7 @@ bool OpProgress::CheckChange(float Interval)
       return true;
    }
    
-   if ((int)LastPercent == (int)Percent)
+   if (std::lround(LastPercent) == std::lround(Percent))
       return false;
 
    LastPercent = Percent;
@@ -115,12 +116,18 @@ bool OpProgress::CheckChange(float Interval)
       return false;
    
    // Check time delta
-   struct timeval Now;
-   gettimeofday(&Now,0);
-   double Diff = Now.tv_sec - LastTime.tv_sec + (Now.tv_usec - LastTime.tv_usec)/1000000.0;
-   if (Diff < Interval)
+   auto const Now = std::chrono::steady_clock::now().time_since_epoch();
+   auto const Now_sec = std::chrono::duration_cast<std::chrono::seconds>(Now);
+   auto const Now_usec = std::chrono::duration_cast<std::chrono::microseconds>(Now - Now_sec);
+   struct timeval NowTime = { Now_sec.count(), Now_usec.count() };
+
+   std::chrono::duration<decltype(Interval)> Delta =
+      std::chrono::seconds(NowTime.tv_sec - LastTime.tv_sec) +
+      std::chrono::microseconds(NowTime.tv_sec - LastTime.tv_usec);
+
+   if (Delta.count() < Interval)
       return false;
-   LastTime = Now;   
+   LastTime = NowTime;
    return true;
 }
 									/*}}}*/

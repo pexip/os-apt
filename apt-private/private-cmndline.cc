@@ -3,46 +3,39 @@
 
 #include <apt-pkg/cmndline.h>
 #include <apt-pkg/configuration.h>
-#include <apt-pkg/fileutl.h>
-#include <apt-pkg/pkgsystem.h>
-#include <apt-pkg/init.h>
 #include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/init.h>
+#include <apt-pkg/pkgsystem.h>
 #include <apt-pkg/strutl.h>
 
 #include <apt-private/private-cmndline.h>
 #include <apt-private/private-main.h>
 
 #include <stdarg.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include <vector>
 #include <iomanip>
+#include <vector>
 
 #include <apti18n.h>
 									/*}}}*/
 
-APT_SENTINEL static bool strcmp_match_in_list(char const * const Cmd, ...)		/*{{{*/
+APT_NONNULL(1, 2)
+static bool CmdMatches_fn(char const *const Cmd, char const *const Match)
 {
-   if (Cmd == nullptr)
-      return false;
-   va_list args;
-   bool found = false;
-   va_start(args, Cmd);
-   char const * Match = NULL;
-   while ((Match = va_arg(args, char const *)) != NULL)
-   {
-      if (strcmp(Cmd, Match) != 0)
-	 continue;
-      found = true;
-      break;
-   }
-   va_end(args);
-   return found;
+   return strcmp(Cmd, Match) == 0;
 }
-									/*}}}*/
-#define addArg(w,x,y,z) Args.push_back(CommandLine::MakeArgs(w,x,y,z))
-#define CmdMatches(...) strcmp_match_in_list(Cmd, __VA_ARGS__, NULL)
+template <typename... Tail>
+APT_NONNULL(1, 2)
+static bool CmdMatches_fn(char const *const Cmd, char const *const Match, Tail... MoreMatches)
+{
+   return CmdMatches_fn(Cmd, Match) || CmdMatches_fn(Cmd, MoreMatches...);
+}
+#define addArg(w, x, y, z) Args.emplace_back(CommandLine::MakeArgs(w, x, y, z))
+#define CmdMatches(...) (Cmd != nullptr && CmdMatches_fn(Cmd, __VA_ARGS__))
+
 static bool addArgumentsAPTCache(std::vector<CommandLine::Args> &Args, char const * const Cmd)/*{{{*/
 {
    if (CmdMatches("depends", "rdepends", "xvcg", "dotty"))
@@ -182,8 +175,8 @@ static bool addArgumentsAPTHelper(std::vector<CommandLine::Args> &Args, char con
 									/*}}}*/
 static bool addArgumentsAPTGet(std::vector<CommandLine::Args> &Args, char const * const Cmd)/*{{{*/
 {
-   if (CmdMatches("install", "remove", "purge", "upgrade", "dist-upgrade",
-	    "dselect-upgrade", "autoremove", "full-upgrade"))
+   if (CmdMatches("install", "reinstall", "remove", "purge", "upgrade", "dist-upgrade",
+	    "dselect-upgrade", "autoremove", "autopurge", "full-upgrade"))
    {
       addArg(0, "show-progress", "DpkgPM::Progress", 0);
       addArg('f', "fix-broken", "APT::Get::Fix-Broken", 0);
@@ -203,6 +196,15 @@ static bool addArgumentsAPTGet(std::vector<CommandLine::Args> &Args, char const 
    else if (CmdMatches("update"))
    {
       addArg(0, "list-cleanup", "APT::Get::List-Cleanup", 0);
+      addArg(0, "allow-insecure-repositories", "Acquire::AllowInsecureRepositories", 0);
+      addArg(0, "allow-weak-repositories", "Acquire::AllowWeakRepositories", 0);
+      addArg(0, "allow-releaseinfo-change", "Acquire::AllowReleaseInfoChange", 0);
+      addArg(0, "allow-releaseinfo-change-origin", "Acquire::AllowReleaseInfoChange::Origin", 0);
+      addArg(0, "allow-releaseinfo-change-label", "Acquire::AllowReleaseInfoChange::Label", 0);
+      addArg(0, "allow-releaseinfo-change-version", "Acquire::AllowReleaseInfoChange::Version", 0);
+      addArg(0, "allow-releaseinfo-change-codename", "Acquire::AllowReleaseInfoChange::Codename", 0);
+      addArg(0, "allow-releaseinfo-change-suite", "Acquire::AllowReleaseInfoChange::Suite", 0);
+      addArg(0, "allow-releaseinfo-change-defaultpin", "Acquire::AllowReleaseInfoChange::DefaultPin", 0);
    }
    else if (CmdMatches("source"))
    {
@@ -237,8 +239,8 @@ static bool addArgumentsAPTGet(std::vector<CommandLine::Args> &Args, char const 
    else if (CmdMatches("moo"))
       addArg(0, "color", "APT::Moo::Color", 0);
 
-   if (CmdMatches("install", "remove", "purge", "upgrade", "dist-upgrade",
-	    "dselect-upgrade", "autoremove", "auto-remove", "clean", "autoclean", "auto-clean", "check",
+   if (CmdMatches("install", "reinstall", "remove", "purge", "upgrade", "dist-upgrade",
+	    "dselect-upgrade", "autoremove", "auto-remove", "autopurge", "clean", "autoclean", "auto-clean", "check",
 	    "build-dep", "full-upgrade", "source"))
    {
       addArg('s', "simulate", "APT::Get::Simulate", 0);
@@ -273,8 +275,6 @@ static bool addArgumentsAPTGet(std::vector<CommandLine::Args> &Args, char const 
    addArg(0,"remove","APT::Get::Remove",0);
    addArg(0,"only-source","APT::Get::Only-Source",0);
    addArg(0,"allow-unauthenticated","APT::Get::AllowUnauthenticated",0);
-   addArg(0,"allow-insecure-repositories","Acquire::AllowInsecureRepositories",0);
-   addArg(0,"allow-weak-repositories","Acquire::AllowWeakRepositories",0);
    addArg(0,"install-recommends","APT::Install-Recommends",CommandLine::Boolean);
    addArg(0,"install-suggests","APT::Install-Suggests",CommandLine::Boolean);
    addArg(0,"fix-policy","APT::Get::Fix-Policy-Broken",0);
@@ -287,11 +287,11 @@ static bool addArgumentsAPTMark(std::vector<CommandLine::Args> &Args, char const
 {
    if (CmdMatches("auto", "manual", "hold", "unhold", "showauto",
 	    "showmanual", "showhold", "showholds",
-	    "markauto", "unmarkauto"))
+	    "markauto", "unmarkauto", "minimize-manual"))
    {
       addArg('f',"file","Dir::State::extended_states",CommandLine::HasArg);
    }
-   else if (CmdMatches("install", "remove", "deinstall", "purge",
+   else if (CmdMatches("install", "reinstall", "remove", "deinstall", "purge",
 	    "showinstall", "showinstalls", "showremove", "showremoves",
 	    "showdeinstall", "showdeinstalls", "showpurge", "showpurges"))
       ;
@@ -303,7 +303,14 @@ static bool addArgumentsAPTMark(std::vector<CommandLine::Args> &Args, char const
       addArg('v',"verbose","APT::MarkAuto::Verbose",0);
    }
 
-   if (strncmp(Cmd, "show", strlen("show")) != 0)
+   if (CmdMatches("minimize-manual"))
+   {
+      addArg('y',"yes","APT::Get::Assume-Yes",0);
+      addArg('y',"assume-yes","APT::Get::Assume-Yes",0);
+      addArg(0,"assume-no","APT::Get::Assume-No",0);
+   }
+
+   if (CmdMatches("minimize-manual") || (Cmd != nullptr && strncmp(Cmd, "show", strlen("show")) != 0))
    {
       addArg('s',"simulate","APT::Mark::Simulate",0);
       addArg('s',"just-print","APT::Mark::Simulate",0);
@@ -462,9 +469,8 @@ static void BinarySpecificConfiguration(char const * const Binary)	/*{{{*/
       _config->CndSet("Binary::apt::APT::Cmd::Show-Update-Stats", true);
       _config->CndSet("Binary::apt::DPkg::Progress-Fancy", true);
       _config->CndSet("Binary::apt::APT::Keep-Downloaded-Packages", false);
+      _config->CndSet("Binary::apt::APT::Get::Update::InteractiveReleaseInfoChanges", true);
    }
-   if (binary == "apt-config")
-      _config->CndSet("Binary::apt-get::Acquire::AllowInsecureRepositories", true);
 
    _config->Set("Binary", binary);
 }
@@ -472,8 +478,6 @@ static void BinarySpecificConfiguration(char const * const Binary)	/*{{{*/
 static void BinaryCommandSpecificConfiguration(char const * const Binary, char const * const Cmd)/*{{{*/
 {
    std::string const binary = flNotDir(Binary);
-   if (binary == "apt-get" && CmdMatches("update"))
-      _config->CndSet("Binary::apt-get::Acquire::AllowInsecureRepositories", true);
    if ((binary == "apt" || binary == "apt-get") && CmdMatches("upgrade", "dist-upgrade", "full-upgrade"))
    {
       //FIXME: the option is documented to apply only for install/remove, so
@@ -533,6 +537,11 @@ std::vector<CommandLine::Dispatch> ParseCommandLine(CommandLine &CmdL, APT_CMD c
 
       _error->DumpErrors();
       exit(100);
+   }
+
+   if (_config->FindB("APT::Get::Force-Yes", false) == true)
+   {
+      _error->Warning(_("--force-yes is deprecated, use one of the options starting with --allow instead."));
    }
 
    // See if the help should be shown

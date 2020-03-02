@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description                                                          /*{{{*/
-// $Id: sha512.h,v 1.3 2001/05/07 05:05:47 jgg Exp $
 /* ######################################################################
 
    SHA{512,256}SumValue - Storage for a SHA-{512,256} hash.
@@ -16,12 +15,12 @@
 
 #include <cstring>
 
-#include "sha2_internal.h"
 #include "hashsum_template.h"
+#include "sha2_internal.h"
 
 #ifndef APT_10_CLEANER_HEADERS
-#include <string>
 #include <algorithm>
+#include <string>
 #include <stdint.h>
 #endif
 

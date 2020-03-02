@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: override.h,v 1.4 2001/06/26 02:50:27 jgg Exp $
 /* ######################################################################
 
    Override
@@ -11,8 +10,6 @@
 									/*}}}*/
 #ifndef OVERRIDE_H
 #define OVERRIDE_H
-
-
 
 #include <map>
 #include <string>

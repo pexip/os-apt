@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: packagemanager.cc,v 1.30 2003/04/27 03:04:15 doogie Exp $
 /* ######################################################################
 
    Package Manager - Abstacts the package manager
@@ -15,26 +14,25 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
-#include <apt-pkg/packagemanager.h>
-#include <apt-pkg/orderlist.h>
-#include <apt-pkg/depcache.h>
-#include <apt-pkg/error.h>
-#include <apt-pkg/edsp.h>
-#include <apt-pkg/version.h>
 #include <apt-pkg/acquire-item.h>
 #include <apt-pkg/algorithms.h>
 #include <apt-pkg/configuration.h>
-#include <apt-pkg/macros.h>
-#include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
-#include <apt-pkg/strutl.h>
+#include <apt-pkg/depcache.h>
+#include <apt-pkg/edsp.h>
+#include <apt-pkg/error.h>
 #include <apt-pkg/install-progress.h>
+#include <apt-pkg/macros.h>
+#include <apt-pkg/orderlist.h>
+#include <apt-pkg/packagemanager.h>
+#include <apt-pkg/pkgcache.h>
 #include <apt-pkg/prettyprinters.h>
+#include <apt-pkg/strutl.h>
+#include <apt-pkg/version.h>
 
-#include <stddef.h>
+#include <iostream>
 #include <list>
 #include <string>
-#include <iostream>
+#include <stddef.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -937,7 +935,7 @@ bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int c
 		  if (Debug)
 		     clog << OutputInDepth(Depth) << "Removing " << ConflictPkg.FullName() << " now to avoid " << APT::PrettyDep(&Cache, End) << endl;
 		  // no earlyremove() here as user has already agreed to the permanent removal
-		  if (SmartRemove(Pkg) == false)
+		  if (SmartRemove(ConflictPkg) == false)
 		     return _error->Error("Internal Error, Could not early remove %s (%d)",ConflictPkg.FullName().c_str(), 1);
 	       }
 	    }

@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.4~rc2\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2017-09-13 17:18+0000\n"
+"POT-Creation-Date: 2019-02-04 15:34+0100\n"
 "PO-Revision-Date: 2017-03-02 23:51+0200\n"
 "Last-Translator: Joe Hansen <joedalton2@yahoo.dk>\n"
 "Language-Team: Danish <debian-l10n-danish@lists.debian.org>\n"
@@ -151,7 +151,7 @@ msgstr "File %s/%s overskriver filen i pakken %s"
 #. Only warn if there is no sources.list file.
 #: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
 #: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc methods/mirror.cc
+#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
 #, c-format
 msgid "Unable to read %s"
 msgstr "Kunne ikke læse %s"
@@ -223,7 +223,7 @@ msgstr "Arkivet »%s« er ikke længere underskrevet."
 
 #: apt-pkg/acquire-item.cc
 #, c-format
-msgid "The repository '%s' does no longer have a Release file."
+msgid "The repository '%s' no longer has a Release file."
 msgstr "Arkivet »%s« har ikke længere en udgivelsesfil."
 
 #: apt-pkg/acquire-item.cc
@@ -307,6 +307,18 @@ msgid "GPG error: %s: %s"
 msgstr "GPG-fejl: %s: %s"
 
 #: apt-pkg/acquire-item.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Skipping acquire of configured file '%s' as repository '%s' doesn't "
+#| "support architecture '%s'"
+msgid ""
+"Skipping acquire of configured file '%s' as repository '%s' doesn't have the "
+"component '%s' (component misspelt in sources.list?)"
+msgstr ""
+"Udelader erhvervelse af konfigureret fil »%s«, da arkivet »%s« ikke "
+"understøtter arkitekturen »%s«"
+
+#: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
 "Skipping acquire of configured file '%s' as repository '%s' doesn't support "
@@ -316,13 +328,16 @@ msgstr ""
 "understøtter arkitekturen »%s«"
 
 #: apt-pkg/acquire-item.cc
-#, c-format
+#, fuzzy, c-format
+#| msgid ""
+#| "Skipping acquire of configured file '%s' as repository '%s' doesn't "
+#| "support architecture '%s'"
 msgid ""
-"Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
-"or malformed file)"
+"Skipping acquire of configured file '%s' as repository '%s' does not seem to "
+"provide it (sources.list entry misspelt?)"
 msgstr ""
-"Kunne ikke finde uventet punkt »%s« i udgivelsesfil (forkert sources.list-"
-"punkt eller forkert udformet fil)"
+"Udelader erhvervelse af konfigureret fil »%s«, da arkivet »%s« ikke "
+"understøtter arkitekturen »%s«"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -345,10 +360,55 @@ msgstr ""
 "Udgivelsesfil for %s er udløbet (ugyldig siden %s). Opdateringer for dette "
 "arkiv vil ikke blive anvendt."
 
+#. TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+#. the time until the file will be valid - formatted in the same way as in
+#. the download progress display (e.g. 7d 3h 42min 1s)
+#: apt-pkg/acquire-item.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Release file for %s is expired (invalid since %s). Updates for this "
+#| "repository will not be applied."
+msgid ""
+"Release file for %s is not valid yet (invalid for another %s). Updates for "
+"this repository will not be applied."
+msgstr ""
+"Udgivelsesfil for %s er udløbet (ugyldig siden %s). Opdateringer for dette "
+"arkiv vil ikke blive anvendt."
+
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Konfliktdistribution: %s (forventede %s men fik %s)"
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
+msgstr ""
+
+#. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"More information about this can be found online in the Release notes at: %s"
+msgstr ""
+
+#. TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"This must be accepted explicitly before updates for this repository can be "
+"applied. See %s manpage for details."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc apt-pkg/update.cc apt-private/private-download.cc
+#, c-format
+msgid "Failed to fetch %s  %s"
+msgstr "Kunne ikke hente %s %s"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -364,17 +424,18 @@ msgstr ""
 msgid "Can't find a source to download version '%s' of '%s'"
 msgstr "Kan ikke finde en kilde til at hente version »%s« for »%s«"
 
-#: apt-pkg/acquire-item.cc
-#, c-format
-msgid ""
-"The package index files are corrupted. No Filename: field for package %s."
-msgstr "Pakkeindeksfilerne er i stykker. Intet »Filename:«-felt for pakken %s."
-
 #. TRANSLATOR: %s=%s is sourcename=sourceversion, e.g. apt=1.1
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "Ændringslog utilgængelig for %s=%s"
+
+#: apt-pkg/acquire-worker.cc
+#, c-format
+msgid ""
+"The method '%s' is unsupported and disabled by default. Consider switching "
+"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
+msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -409,13 +470,13 @@ msgstr "Indsæt venligst disken med navnet: »%s« i drevet »%s« og tryk [Retu
 
 #: apt-pkg/acquire.cc apt-pkg/cdrom.cc
 #, c-format
-msgid "List directory %spartial is missing."
-msgstr "Listemappen %spartial mangler."
+msgid "List directory %s is missing."
+msgstr "Listemappen %s mangler."
 
 #: apt-pkg/acquire.cc
 #, c-format
-msgid "Archives directory %spartial is missing."
-msgstr "Arkivmappen %spartial mangler."
+msgid "Archives directory %s is missing."
+msgstr "Arkivmappen %s mangler."
 
 #: apt-pkg/acquire.cc
 #, c-format
@@ -441,14 +502,6 @@ msgstr ""
 msgid "Clean of %s is not supported"
 msgstr "Rensning af %s er ikke understøttet"
 
-#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
-#: methods/mirror.cc
-#, c-format
-msgid "Unable to change to %s"
-msgstr "Kunne ikke skifte til %s"
-
-#. only show the ETA if it makes sense
-#. two days
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -487,7 +540,7 @@ msgstr "Pakkelisterne eller statusfilen kunne ikke tolkes eller åbnes."
 msgid "You may want to run apt-get update to correct these problems"
 msgstr "Du kan muligvis rette problemet ved at køre »apt-get update«"
 
-#: apt-pkg/cachefile.cc
+#: apt-pkg/cachefile.cc methods/mirror.cc
 msgid "The list of sources could not be read."
 msgstr "Listen med kilder kunne ikke læses."
 
@@ -641,6 +694,11 @@ msgstr "Denne disk har følgende kildeliste-indgange:\n"
 
 #: apt-pkg/clean.cc
 #, c-format
+msgid "Unable to change to %s"
+msgstr "Kunne ikke skifte til %s"
+
+#: apt-pkg/clean.cc
+#, c-format
 msgid "Unable to stat %s."
 msgstr "Kunne ikke finde %s."
 
@@ -709,11 +767,6 @@ msgstr "Ugyldig handling %s"
 #, c-format
 msgid "Unrecognized type abbreviation: '%c'"
 msgstr "Ukendt type-forkortelse: »%c«"
-
-#: apt-pkg/contrib/configuration.cc
-#, c-format
-msgid "Opening configuration file %s"
-msgstr "Åbner konfigurationsfilen %s"
 
 #: apt-pkg/contrib/configuration.cc
 #, c-format
@@ -892,12 +945,12 @@ msgstr "Problem under omdøbning af filen %s til %s"
 msgid "Problem syncing the file"
 msgstr "Problem under synkronisering af fil"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to mkstemp %s"
 msgstr "Kunne ikke mkstemp %s"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to write to %s"
 msgstr "Kunne ikke skrive til %s"
@@ -1077,6 +1130,30 @@ msgid "Unable to parse package file %s (%d)"
 msgstr "Kunne ikke tolke pakkefilen %s (%d)"
 
 #: apt-pkg/deb/debsystem.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Unable to lock the administration directory (%s), is another process "
+#| "using it?"
+msgid ""
+"Unable to acquire the dpkg frontend lock (%s), is another process using it?"
+msgstr ""
+"Kunne ikke låse administrationsmappen (%s), bruger en anden proces den?"
+
+#: apt-pkg/deb/debsystem.cc
+#, fuzzy, c-format
+#| msgid "Unable to lock the administration directory (%s), are you root?"
+msgid "Unable to acquire the dpkg frontend lock (%s), are you root?"
+msgstr "Kunne ikke låse administrationsmappen (%s), er du rod (root)?"
+
+#. TRANSLATORS: the %s contains the recovery command, usually
+#. dpkg --configure -a
+#: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid ""
+"dpkg was interrupted, you must manually run '%s' to correct the problem. "
+msgstr "dpkg blev afbrudt, du skal manuelt køre »%s« for at rette problemet. "
+
+#: apt-pkg/deb/debsystem.cc
 #, c-format
 msgid ""
 "Unable to lock the administration directory (%s), is another process using "
@@ -1089,14 +1166,6 @@ msgstr ""
 msgid "Unable to lock the administration directory (%s), are you root?"
 msgstr "Kunne ikke låse administrationsmappen (%s), er du rod (root)?"
 
-#. TRANSLATORS: the %s contains the recovery command, usually
-#. dpkg --configure -a
-#: apt-pkg/deb/debsystem.cc
-#, c-format
-msgid ""
-"dpkg was interrupted, you must manually run '%s' to correct the problem. "
-msgstr "dpkg blev afbrudt, du skal manuelt køre »%s« for at rette problemet. "
-
 #: apt-pkg/deb/debsystem.cc
 msgid "Not locked"
 msgstr "Ikke låst"
@@ -1104,23 +1173,23 @@ msgstr "Ikke låst"
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Installing %s"
-msgstr "Installerer %s"
+msgid "Preparing %s"
+msgstr "Klargør %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Configuring %s"
-msgstr "Sætter %s op"
+msgid "Preparing to configure %s"
+msgstr "Gør klar til at sætte %s op"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removing %s"
-msgstr "Fjerner %s"
+msgid "Preparing for removal of %s"
+msgstr "Gør klar til afinstallation af %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Completely removing %s"
-msgstr "Fjerner %s helt"
+msgid "Preparing to completely remove %s"
+msgstr "Gør klar til at fjerne %s helt"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1137,6 +1206,11 @@ msgstr "Kører førinstallationsudløser %s"
 msgid "Installed %s"
 msgstr "Installerede %s"
 
+#: apt-pkg/deb/dpkgpm.cc
+#, c-format
+msgid "Configuring %s"
+msgstr "Sætter %s op"
+
 #. FIXME: use a better string after freeze
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1150,33 +1224,23 @@ msgstr "Kunne ikke åbne filen »%s«"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing %s"
-msgstr "Klargør %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
 msgid "Unpacking %s"
 msgstr "Pakker %s ud"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing to configure %s"
-msgstr "Gør klar til at sætte %s op"
+msgid "Installing %s"
+msgstr "Installerer %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing for removal of %s"
-msgstr "Gør klar til afinstallation af %s"
+msgid "Removing %s"
+msgstr "Fjerner %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removed %s"
-msgstr "Fjernede %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing to completely remove %s"
-msgstr "Gør klar til at fjerne %s helt"
+msgid "Completely removing %s"
+msgstr "Fjerner %s helt"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1345,8 +1409,8 @@ msgstr "Kunne ikke bestemme en passende pakkesystemtype"
 
 #: apt-pkg/install-progress.cc
 #, c-format
-msgid "Progress: [%3i%%]"
-msgstr "Status: [%3i%%]"
+msgid "Progress: [%3li%%]"
+msgstr "Status: [%3li%%]"
 
 #. send status information that we are about to fork dpkg
 #: apt-pkg/install-progress.cc
@@ -1524,6 +1588,12 @@ msgstr "Kunne ikke forstå pin-type %s"
 
 #: apt-pkg/policy.cc
 #, c-format
+msgid ""
+"%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"
+msgstr ""
+
+#: apt-pkg/policy.cc
+#, c-format
 msgid "%s: Value %s is outside the range of valid pin priorities (%d to %d)"
 msgstr ""
 "%s: Værdien %s er uden for intervallet med gyldige pin-prioriteringer (%d "
@@ -1538,11 +1608,6 @@ msgstr "Ingen prioritet (eller prioritet nul) angivet ved pin"
 #, c-format
 msgid "Malformed entry %u in %s file %s (%s)"
 msgstr "Forkert udformet punkt %u i %s-linjen %s (%s)"
-
-#: apt-pkg/sourcelist.cc
-#, c-format
-msgid "Opening %s"
-msgstr "Åbner %s"
 
 #: apt-pkg/sourcelist.cc
 #, c-format
@@ -1564,7 +1629,7 @@ msgstr "Forkert udformet stanza %u i kildelisten %s (type)"
 msgid "Type '%s' is not known on stanza %u in source list %s"
 msgstr "Typen »%s« er ukendt på stanza %u i kildelisten %s"
 
-#: apt-pkg/sourcelist.cc
+#: apt-pkg/sourcelist.cc apt-private/private-install.cc
 #, c-format
 msgid "Unsupported file %s given on commandline"
 msgstr "Filen %s er ikke understøttet når angivet på kommandolinjen"
@@ -1577,11 +1642,6 @@ msgstr "Du skal have nogle »source«-URI'er i din sources.list"
 #, c-format
 msgid "Cannot convert %s to integer: out of range"
 msgstr "Kan ikke konvertere %s til heltal: uden for interval"
-
-#: apt-pkg/update.cc apt-private/private-download.cc
-#, c-format
-msgid "Failed to fetch %s  %s"
-msgstr "Kunne ikke hente %s %s"
 
 #: apt-pkg/update.cc
 msgid ""
@@ -1641,6 +1701,12 @@ msgstr ""
 "Medieskift: Indsæt venligst disken med navnet\n"
 " »%s«\n"
 "i drevet »%s« og tryk [Retur]\n"
+
+#: apt-private/acqprogress.cc
+msgid ""
+"Do you want to accept these changes and continue updating from this "
+"repository?"
+msgstr ""
 
 #: apt-private/private-cachefile.cc
 msgid "Correcting dependencies..."
@@ -1781,8 +1847,16 @@ msgstr "Denne APT har »Super Cow Powers«."
 msgid "This APT helper has Super Meep Powers."
 msgstr "Dette APT-hjælpeprogram har Super Meep Powers."
 
-#: apt-private/private-depends.cc apt-private/private-show.cc
-#: cmdline/apt-mark.cc
+#: apt-private/private-cmndline.cc
+msgid ""
+"--force-yes is deprecated, use one of the options starting with --allow "
+"instead."
+msgstr ""
+"--force-yes er forældet, brug i stedet for et af tilvalgene startende med --"
+"allow"
+
+#: apt-private/private-depends.cc apt-private/private-download.cc
+#: apt-private/private-show.cc cmdline/apt-mark.cc
 msgid "No packages found"
 msgstr "Fandt ingen pakker"
 
@@ -1801,14 +1875,6 @@ msgstr "Nogle pakker kunne ikke autentificeres"
 #: apt-private/private-download.cc
 msgid "Install these packages without verification?"
 msgstr "Installér disse pakker uden verifikation?"
-
-#: apt-private/private-download.cc apt-private/private-install.cc
-msgid ""
-"--force-yes is deprecated, use one of the options starting with --allow "
-"instead."
-msgstr ""
-"--force-yes er forældet, brug i stedet for et af tilvalgene startende med --"
-"allow"
 
 #: apt-private/private-download.cc
 msgid ""
@@ -1959,7 +2025,7 @@ msgstr ""
 msgid "Abort."
 msgstr "Afbryder."
 
-#: apt-private/private-install.cc
+#: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Vil du fortsætte?"
 
@@ -2291,11 +2357,6 @@ msgstr "Du skal angive mindst ét søgemønster"
 msgid "Full Text Search"
 msgstr "Fuldtekst-søgning"
 
-#: apt-private/private-show.cc cmdline/apt-cache.cc
-#, c-format
-msgid "Package file %s is out of sync."
-msgstr "Pakkefilen %s er ude af trit."
-
 #: apt-private/private-show.cc
 #, c-format
 msgid "There is %i additional record. Please use the '-a' switch to see it"
@@ -2460,10 +2521,6 @@ msgid "%s has no build depends.\n"
 msgstr "%s har ingen opbygningsafhængigheder.\n"
 
 #: apt-private/private-source.cc
-msgid "Must specify at least one package to check builddeps for"
-msgstr "Skal angive mindst én pakke at tjekke opbygningsafhængigheder for"
-
-#: apt-private/private-source.cc
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
@@ -2471,6 +2528,10 @@ msgid ""
 msgstr ""
 "Ingen arkitekturinformation tilgængelig for %s. Se apt.conf(5) APT::"
 "Architectures for opsætning"
+
+#: apt-private/private-source.cc
+msgid "Must specify at least one package to check builddeps for"
+msgstr "Skal angive mindst én pakke at tjekke opbygningsafhængigheder for"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2493,8 +2554,8 @@ msgstr "Kunne ikke fortolke %s. Rediger igen? "
 
 #: apt-private/private-sources.cc
 #, c-format
-msgid "Your '%s' file changed, please run 'apt-get update'."
-msgstr "Din »%s« fil blev ændret, kør venligst »apt-get update«."
+msgid "Your '%s' file changed, please run 'apt-get update'.\n"
+msgstr "Din »%s« fil blev ændret, kør venligst »apt-get update«.\n"
 
 #: apt-private/private-unmet.cc
 #, c-format
@@ -2504,6 +2565,14 @@ msgstr "Pakken %s version %s har en uopfyldt afhængighed:\n"
 #: apt-private/private-update.cc
 msgid "The update command takes no arguments"
 msgstr "»update«-kommandoen benytter ingen parametre"
+
+#. TRANSLATOR: the first two are manpage references, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid ""
+"Usage of %s should be preferred over embedding login information directly in "
+"the %s entry for '%s'"
+msgstr ""
 
 #: apt-private/private-update.cc
 #, c-format
@@ -2519,9 +2588,10 @@ msgstr[1] ""
 msgid "All packages are up to date."
 msgstr "Alle pakker er opdateret."
 
-#: cmdline/apt-cache.cc
-msgid "apt-cache stats does not take any arguments"
-msgstr "»apt-cache stats« benytter ingen parametre"
+#: cmdline/apt-cache.cc cmdline/apt-mark.cc
+#, c-format
+msgid "%s does not take any arguments"
+msgstr "»%s« benytter ingen parametre"
 
 #: cmdline/apt-cache.cc
 msgid "Total package names: "
@@ -2801,6 +2871,12 @@ msgid "Install new packages (pkg is libc6 not libc6.deb)"
 msgstr "Installer nye pakker (pakke er libc6, ikke libc6.deb)"
 
 #: cmdline/apt-get.cc
+#, fuzzy
+#| msgid "Install new packages (pkg is libc6 not libc6.deb)"
+msgid "Reinstall packages (pkg is libc6 not libc6.deb)"
+msgstr "Installer nye pakker (pakke er libc6, ikke libc6.deb)"
+
+#: cmdline/apt-get.cc
 msgid "Remove packages"
 msgstr "Afinstaller pakker"
 
@@ -2898,6 +2974,14 @@ msgstr "sammenkæd filer, med automatisk dekomprimering"
 msgid "detect proxy using apt.conf"
 msgstr "detekter proxy via apt.conf"
 
+#: cmdline/apt-helper.cc
+msgid "wait for system to be online"
+msgstr ""
+
+#: cmdline/apt-helper.cc
+msgid "drop privileges before running given command"
+msgstr ""
+
 #: cmdline/apt-internal-planner.cc
 msgid ""
 "Usage: apt-internal-planner\n"
@@ -2940,6 +3024,16 @@ msgstr "%s var allerede sat til manuelt installeret.\n"
 #, c-format
 msgid "%s was already set to automatically installed.\n"
 msgstr "%s var allerede sat til automatisk installeret.\n"
+
+#: cmdline/apt-mark.cc
+msgid "No changes necessary"
+msgstr ""
+
+#: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "The following NEW packages will be installed:"
+msgid "The following packages will be marked as automatically installed:"
+msgstr "Følgende NYE pakker vil blive installeret:"
 
 #: cmdline/apt-mark.cc
 #, c-format
@@ -3005,6 +3099,12 @@ msgid "Mark the given packages as manually installed"
 msgstr "Marker de givne pakker som manuelt installeret"
 
 #: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "Mark the given packages as automatically installed"
+msgid "Mark all dependencies of meta packages as automatically installed."
+msgstr "Marker de givne pakker som automatisk installeret"
+
+#: cmdline/apt-mark.cc
 msgid "Mark a package as held back"
 msgstr "Marker en pakke som tilbageholdt"
 
@@ -3021,7 +3121,7 @@ msgid "Print the list of manually installed packages"
 msgstr "Vis listen over manuelt installerede pakker"
 
 #: cmdline/apt-mark.cc
-msgid "Print the list of package on hold"
+msgid "Print the list of packages on hold"
 msgstr "Vis listen over tilbageholdte pakker"
 
 #: cmdline/apt-sortpkgs.cc
@@ -3077,6 +3177,12 @@ msgstr "vis pakkedetaljer"
 #. package stuff
 #: cmdline/apt.cc
 msgid "install packages"
+msgstr "installer pakker"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "install packages"
+msgid "reinstall packages"
 msgstr "installer pakker"
 
 #: cmdline/apt.cc
@@ -3470,6 +3576,11 @@ msgstr "Ugyldige hoved-data"
 msgid "Connection failed"
 msgstr "Forbindelsen mislykkedes"
 
+#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#, c-format
+msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
+msgstr ""
+
 #: methods/basehttp.cc
 #, c-format
 msgid ""
@@ -3519,15 +3630,21 @@ msgstr "Fil blev ikke fundet"
 msgid "Direct connection to %s domains is blocked by default."
 msgstr "Direkte forbindelse til %s-domæner er som standard blokeret."
 
-#: methods/connect.cc methods/http.cc
-#, c-format
-msgid "Connecting to %s (%s)"
-msgstr "Forbinder til %s (%s)"
-
 #: methods/connect.cc
 #, c-format
 msgid "[IP: %s %s]"
 msgstr "[IP: %s %s]"
+
+#: methods/connect.cc
+#, fuzzy, c-format
+#| msgid "Connecting to %s (%s)"
+msgid "Connected to %s (%s)"
+msgstr "Forbinder til %s (%s)"
+
+#: methods/connect.cc methods/http.cc
+#, c-format
+msgid "Connecting to %s (%s)"
+msgstr "Forbinder til %s (%s)"
 
 #: methods/connect.cc
 #, c-format
@@ -3539,11 +3656,6 @@ msgstr "Kunne ikke oprette sokkel til %s (f=%u t=%u p=%u)"
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "Kan ikke oprette forbindelse til %s:%s (%s)."
 
-#: methods/connect.cc
-#, c-format
-msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr "Kunne ikke forbinde til %s:%s (%s) grundet tidsudløb"
-
 #: methods/connect.cc methods/ftp.cc methods/rsh.cc
 msgid "Failed"
 msgstr "Mislykkedes"
@@ -3552,6 +3664,11 @@ msgstr "Mislykkedes"
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
 msgstr "Kunne ikke forbinde til %s:%s (%s)."
+
+#: methods/connect.cc
+#, c-format
+msgid "Could not connect to %s:%s (%s), connection timed out"
+msgstr "Kunne ikke forbinde til %s:%s (%s) grundet tidsudløb"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -3806,30 +3923,6 @@ msgstr "Tidsudløb på forbindelsen"
 msgid "Error writing to output file"
 msgstr "Fejl ved skrivning af uddatafil"
 
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "No mirror file '%s' found "
-msgstr "Ingen spejlfil »%s« fundet "
-
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "Can not read mirror file '%s'"
-msgstr "Kan ikke læse spejlfil »%s«"
-
-#: methods/mirror.cc
-#, c-format
-msgid "No entry found in mirror file '%s'"
-msgstr "Ingen post fundet i spejlfil »%s«"
-
-#: methods/mirror.cc
-#, c-format
-msgid "[Mirror: %s]"
-msgstr "[Spejl: %s]"
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "Kunne ikke angive ændringstidspunkt"
@@ -3841,3 +3934,39 @@ msgstr "Forbindelsen lukkedes for hurtigt"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "Tomme filer kan ikke være gyldige arkiver"
+
+#~ msgid "Removed %s"
+#~ msgstr "Fjernede %s"
+
+#~ msgid "Package file %s is out of sync."
+#~ msgstr "Pakkefilen %s er ude af trit."
+
+#~ msgid ""
+#~ "The package index files are corrupted. No Filename: field for package %s."
+#~ msgstr ""
+#~ "Pakkeindeksfilerne er i stykker. Intet »Filename:«-felt for pakken %s."
+
+#~ msgid "No mirror file '%s' found "
+#~ msgstr "Ingen spejlfil »%s« fundet "
+
+#~ msgid "Can not read mirror file '%s'"
+#~ msgstr "Kan ikke læse spejlfil »%s«"
+
+#~ msgid "No entry found in mirror file '%s'"
+#~ msgstr "Ingen post fundet i spejlfil »%s«"
+
+#~ msgid "[Mirror: %s]"
+#~ msgstr "[Spejl: %s]"
+
+#~ msgid "Opening configuration file %s"
+#~ msgstr "Åbner konfigurationsfilen %s"
+
+#~ msgid "Opening %s"
+#~ msgstr "Åbner %s"
+
+#~ msgid ""
+#~ "Unable to find expected entry '%s' in Release file (Wrong sources.list "
+#~ "entry or malformed file)"
+#~ msgstr ""
+#~ "Kunne ikke finde uventet punkt »%s« i udgivelsesfil (forkert sources.list-"
+#~ "punkt eller forkert udformet fil)"

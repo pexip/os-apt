@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: debfile.cc,v 1.3.2.1 2004/01/16 18:58:50 mdz Exp $
 /* ######################################################################
 
    Debian Archive File (.deb)
@@ -16,20 +15,20 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
-#include <apt-pkg/debfile.h>
-#include <apt-pkg/extracttar.h>
-#include <apt-pkg/error.h>
 #include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/arfile.h>
+#include <apt-pkg/debfile.h>
 #include <apt-pkg/dirstream.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/extracttar.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/tagfile.h>
 
-#include <string.h>
 #include <string>
 #include <vector>
+#include <string.h>
 #include <sys/stat.h>
 
 #include <apti18n.h>
@@ -50,7 +49,9 @@ debDebFile::debDebFile(FileFd &File) : File(File), AR(File)
 
    if (!CheckMember("control.tar") &&
        !CheckMember("control.tar.gz") &&
-       !CheckMember("control.tar.xz")) {
+       !CheckMember("control.tar.xz") &&
+       !CheckMember("control.tar.zst"))
+   {
       _error->Error(_("This is not a valid DEB archive, missing '%s' member"), "control.tar");
       return;
    }
@@ -59,7 +60,9 @@ debDebFile::debDebFile(FileFd &File) : File(File), AR(File)
        !CheckMember("data.tar.gz") &&
        !CheckMember("data.tar.bz2") &&
        !CheckMember("data.tar.lzma") &&
-       !CheckMember("data.tar.xz")) {
+       !CheckMember("data.tar.xz") &&
+       !CheckMember("data.tar.zst"))
+   {
       _error->Error(_("This is not a valid DEB archive, missing '%s' member"), "data.tar");
       return;
    }

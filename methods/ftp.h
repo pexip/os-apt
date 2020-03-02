@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
-// Description								/*{{{*/// $Id: ftp.h,v 1.4 2001/03/06 07:15:29 jgg Exp $
-// $Id: ftp.h,v 1.4 2001/03/06 07:15:29 jgg Exp $
+// Description								/*{{{*/
 /* ######################################################################
 
    FTP Acquire Method - This is the FTP acquire method for APT.
@@ -10,19 +9,20 @@
 #ifndef APT_FTP_H
 #define APT_FTP_H
 
-#include <apt-pkg/strutl.h>
 #include "aptmethod.h"
+#include "connect.h"
+#include <apt-pkg/strutl.h>
 
+#include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <time.h>
-#include <string>
 
 class FTPConn
 {
    char Buffer[1024*10];
    unsigned long Len;
-   int ServerFd;
+   std::unique_ptr<MethodFd> ServerFd;
    int DataFd;
    int DataListenFd;
    URI ServerName;
@@ -42,7 +42,7 @@ class FTPConn
    
    // Private helper functions
    bool ReadLine(std::string &Text);
-   bool Login();
+   ResultState Login();
    bool CreateDataFd();
    bool Finalize();
    
@@ -55,7 +55,7 @@ class FTPConn
    bool WriteMsg(unsigned int &Ret,std::string &Text,const char *Fmt,...);
    
    // Connection control
-   bool Open(pkgAcqMethod *Owner);
+   ResultState Open(aptMethod *Owner);
    void Close();   
    bool GoPasv();
    bool ExtGoPasv();
@@ -71,7 +71,7 @@ class FTPConn
    ~FTPConn();
 };
 
-class FtpMethod : public aptMethod
+class FtpMethod : public aptAuthConfMethod
 {
    virtual bool Fetch(FetchItem *Itm) APT_OVERRIDE;
    virtual bool Configuration(std::string Message) APT_OVERRIDE;

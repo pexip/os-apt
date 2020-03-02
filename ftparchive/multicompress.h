@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: multicompress.h,v 1.2 2001/02/20 07:03:18 jgg Exp $
 /* ######################################################################
 
    MultiCompressor
@@ -16,8 +15,8 @@
 #ifndef MULTICOMPRESS_H
 #define MULTICOMPRESS_H
 
-#include <apt-pkg/fileutl.h>
 #include <apt-pkg/aptconfiguration.h>
+#include <apt-pkg/fileutl.h>
 
 #include <string>
 #include <stdio.h>

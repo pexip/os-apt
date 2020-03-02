@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: tagfile.cc,v 1.37.2.2 2003/12/31 16:02:30 mdz Exp $
 /* ######################################################################
 
    Fast scanner for RFC-822 type header information
@@ -11,20 +10,20 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
-#include <apt-pkg/tagfile.h>
-#include <apt-pkg/tagfile-keys.h>
 #include <apt-pkg/error.h>
-#include <apt-pkg/strutl.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/string_view.h>
+#include <apt-pkg/strutl.h>
+#include <apt-pkg/tagfile-keys.h>
+#include <apt-pkg/tagfile.h>
 
 #include <list>
 
 #include <string>
-#include <stdio.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -251,8 +250,12 @@ bool pkgTagFile::Step(pkgTagSection &Tag)
       d->chunks.erase(d->chunks.begin(), first);
    }
 
-   Tag.Trim();
-   return true;
+   if ((d->Flags & pkgTagFile::SUPPORT_COMMENTS) == 0 || Tag.Count() != 0)
+   {
+      Tag.Trim();
+      return true;
+   }
+   return Step(Tag);
 }
 									/*}}}*/
 // TagFile::Fill - Top up the buffer					/*{{{*/

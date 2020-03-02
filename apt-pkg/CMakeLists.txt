@@ -44,6 +44,9 @@ target_include_directories(apt-pkg
                                    ${BZIP2_INCLUDE_DIR}
                                    ${LZMA_INCLUDE_DIRS}
                                    ${LZ4_INCLUDE_DIRS}
+                                   $<$<BOOL:${ZSTD_FOUND}>:${ZSTD_INCLUDE_DIRS}>
+                                   $<$<BOOL:${UDEV_FOUND}>:${UDEV_INCLUDE_DIRS}>
+                                   $<$<BOOL:${SYSTEMD_FOUND}>:${SYSTEMD_INCLUDE_DIRS}>
                                    ${ICONV_INCLUDE_DIRS}
 )
 
@@ -54,6 +57,9 @@ target_link_libraries(apt-pkg
                              ${BZIP2_LIBRARIES}
                              ${LZMA_LIBRARIES}
                              ${LZ4_LIBRARIES}
+                             $<$<BOOL:${ZSTD_FOUND}>:${ZSTD_LIBRARIES}>
+                             $<$<BOOL:${UDEV_FOUND}>:${UDEV_LIBRARIES}>
+                             $<$<BOOL:${SYSTEMD_FOUND}>:${SYSTEMD_LIBRARIES}>
                              ${ICONV_LIBRARIES}
 )
 set_target_properties(apt-pkg PROPERTIES VERSION ${MAJOR}.${MINOR})

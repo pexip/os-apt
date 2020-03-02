@@ -22,7 +22,7 @@
      Now - Compared using the Currently install version
      Install - Compared using the install version (final state)
      CVer - (Candidate Version) Compared using the Candidate Version
-   The candidate and now results are used to decide wheather a package
+   The candidate and now results are used to decide whether a package
    should be automatically installed or if it should be left alone.
    
    Remember, the Candidate Version is selected based on the distribution
@@ -38,20 +38,19 @@
 #define PKGLIB_DEPCACHE_H
 
 #include <apt-pkg/configuration.h>
-#include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/macros.h>
+#include <apt-pkg/pkgcache.h>
 
 #include <stddef.h>
 
-#include <memory>
 #include <list>
+#include <memory>
 #include <string>
 #include <utility>
 
 #ifndef APT_8_CLEANER_HEADERS
-#include <apt-pkg/progress.h>
 #include <apt-pkg/error.h>
+#include <apt-pkg/progress.h>
 #endif
 #ifndef APT_10_CLEANER_HEADERS
 #include <set>
@@ -89,11 +88,15 @@ class pkgDepCache : protected pkgCache::Namespace
     *
     *  \param follow_suggests If \b true, suggestions of the package
     *  will be recursively marked.
+    *
+    *  \param reason The reason why the package is being marked.
+    *  (Used in logging when Debug::pkgAutoRemove is set.)
     */
    APT_HIDDEN void MarkPackage(const pkgCache::PkgIterator &pkg,
 		    const pkgCache::VerIterator &ver,
 		    bool const &follow_recommends,
-		    bool const &follow_suggests);
+		    bool const &follow_suggests,
+		    const char *reason);
 
    /** \brief Update the Marked field of all packages.
     *
@@ -183,7 +186,7 @@ class pkgDepCache : protected pkgCache::Namespace
 
        /** \brief Clean up the action group before it is destroyed.
         *
-        *  If it is destroyed later, no second cleanup wil be run.
+        *  If it is destroyed later, no second cleanup will be run.
 	*/
        void release();
 

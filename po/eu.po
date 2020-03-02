@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2017-09-13 17:18+0000\n"
+"POT-Creation-Date: 2019-02-04 15:34+0100\n"
 "PO-Revision-Date: 2009-05-17 00:41+0200\n"
 "Last-Translator: Piarres Beobide <pi@beobide.net>\n"
 "Language-Team: Euskara <debian-l10n-basque@lists.debian.org>\n"
@@ -147,7 +147,7 @@ msgstr "%s/%s fitxategiak %s paketekoa gainidazten du"
 #. Only warn if there is no sources.list file.
 #: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
 #: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc methods/mirror.cc
+#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
 #, c-format
 msgid "Unable to read %s"
 msgstr "Ezin da %s irakurri"
@@ -213,7 +213,7 @@ msgstr "%s direktorioa desbideratuta dago"
 
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
-msgid "The repository '%s' does no longer have a Release file."
+msgid "The repository '%s' no longer has a Release file."
 msgstr "%s direktorioa desbideratuta dago"
 
 #: apt-pkg/acquire-item.cc
@@ -293,6 +293,13 @@ msgstr ""
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
+"Skipping acquire of configured file '%s' as repository '%s' doesn't have the "
+"component '%s' (component misspelt in sources.list?)"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
 "Skipping acquire of configured file '%s' as repository '%s' doesn't support "
 "architecture '%s'"
 msgstr ""
@@ -300,8 +307,8 @@ msgstr ""
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
-"Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
-"or malformed file)"
+"Skipping acquire of configured file '%s' as repository '%s' does not seem to "
+"provide it (sources.list entry misspelt?)"
 msgstr ""
 
 #: apt-pkg/acquire-item.cc
@@ -321,10 +328,50 @@ msgid ""
 "repository will not be applied."
 msgstr ""
 
+#. TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+#. the time until the file will be valid - formatted in the same way as in
+#. the download progress display (e.g. 7d 3h 42min 1s)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"Release file for %s is not valid yet (invalid for another %s). Updates for "
+"this repository will not be applied."
+msgstr ""
+
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
+msgstr ""
+
+#. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"More information about this can be found online in the Release notes at: %s"
+msgstr ""
+
+#. TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"This must be accepted explicitly before updates for this repository can be "
+"applied. See %s manpage for details."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc apt-pkg/update.cc apt-private/private-download.cc
+#, c-format
+msgid "Failed to fetch %s  %s"
+msgstr "Ezin da lortu %s  %s"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -340,19 +387,18 @@ msgstr ""
 msgid "Can't find a source to download version '%s' of '%s'"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc
-#, c-format
-msgid ""
-"The package index files are corrupted. No Filename: field for package %s."
-msgstr ""
-"Paketearen indize fitxategiak hondatuta daude. 'Filename:' eremurik ez %s "
-"paketearentzat."
-
 #. TRANSLATOR: %s=%s is sourcename=sourceversion, e.g. apt=1.1
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "Konektatzen -> %s.(%s)"
+
+#: apt-pkg/acquire-worker.cc
+#, c-format
+msgid ""
+"The method '%s' is unsupported and disabled by default. Consider switching "
+"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
+msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -387,13 +433,13 @@ msgstr "Mesedez sa ''%s' izeneko diska '%s' gailuan eta enter sakatu"
 
 #: apt-pkg/acquire.cc apt-pkg/cdrom.cc
 #, fuzzy, c-format
-msgid "List directory %spartial is missing."
-msgstr "%spartial zerrenda-direktorioa falta da."
+msgid "List directory %s is missing."
+msgstr "%s zerrenda-direktorioa falta da."
 
 #: apt-pkg/acquire.cc
 #, fuzzy, c-format
-msgid "Archives directory %spartial is missing."
-msgstr "%spartial artxibo direktorioa falta da."
+msgid "Archives directory %s is missing."
+msgstr "%s artxibo direktorioa falta da."
 
 #: apt-pkg/acquire.cc
 #, fuzzy, c-format
@@ -417,14 +463,6 @@ msgstr ""
 msgid "Clean of %s is not supported"
 msgstr "'%s' motako indize fitxategirik ez da onartzen"
 
-#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
-#: methods/mirror.cc
-#, c-format
-msgid "Unable to change to %s"
-msgstr "Ezin da %s(e)ra aldatu"
-
-#. only show the ETA if it makes sense
-#. two days
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -462,7 +500,7 @@ msgstr "Pakete zerrenda edo egoera fitxategia ezin dira analizatu edo ireki."
 msgid "You may want to run apt-get update to correct these problems"
 msgstr "Beharbada 'apt-get update' exekutatu nahiko duzu arazoak konpontzeko"
 
-#: apt-pkg/cachefile.cc
+#: apt-pkg/cachefile.cc methods/mirror.cc
 msgid "The list of sources could not be read."
 msgstr "Ezin izan da Iturburu zerrenda irakurri."
 
@@ -610,6 +648,11 @@ msgstr "Diskoarentzako jatorri sarrerak:\n"
 
 #: apt-pkg/clean.cc
 #, c-format
+msgid "Unable to change to %s"
+msgstr "Ezin da %s(e)ra aldatu"
+
+#: apt-pkg/clean.cc
+#, c-format
 msgid "Unable to stat %s."
 msgstr "Ezin da %s atzitu."
 
@@ -676,11 +719,6 @@ msgstr "Eragiketa baliogabea: %s"
 #, c-format
 msgid "Unrecognized type abbreviation: '%c'"
 msgstr "Mota ezezaguneko laburtzapena: '%c'"
-
-#: apt-pkg/contrib/configuration.cc
-#, c-format
-msgid "Opening configuration file %s"
-msgstr "%s konfigurazio fitxategia irekitzen"
 
 #: apt-pkg/contrib/configuration.cc
 #, c-format
@@ -862,12 +900,12 @@ msgstr "Arazoa fitxategia sinkronizatzean"
 msgid "Problem syncing the file"
 msgstr "Arazoa fitxategia sinkronizatzean"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, fuzzy, c-format
 msgid "Unable to mkstemp %s"
 msgstr "Ezin da daturik lortu %s(e)tik"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to write to %s"
 msgstr "%s : ezin da idatzi"
@@ -1042,13 +1080,12 @@ msgstr "Ezin da %s pakete fitxategia analizatu (%d)"
 #: apt-pkg/deb/debsystem.cc
 #, c-format
 msgid ""
-"Unable to lock the administration directory (%s), is another process using "
-"it?"
+"Unable to acquire the dpkg frontend lock (%s), is another process using it?"
 msgstr ""
 
 #: apt-pkg/deb/debsystem.cc
 #, fuzzy, c-format
-msgid "Unable to lock the administration directory (%s), are you root?"
+msgid "Unable to acquire the dpkg frontend lock (%s), are you root?"
 msgstr "Ezin da zerrenda direktorioa blokeatu"
 
 #. TRANSLATORS: the %s contains the recovery command, usually
@@ -1060,29 +1097,41 @@ msgid ""
 msgstr ""
 
 #: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid ""
+"Unable to lock the administration directory (%s), is another process using "
+"it?"
+msgstr ""
+
+#: apt-pkg/deb/debsystem.cc
+#, fuzzy, c-format
+msgid "Unable to lock the administration directory (%s), are you root?"
+msgstr "Ezin da zerrenda direktorioa blokeatu"
+
+#: apt-pkg/deb/debsystem.cc
 msgid "Not locked"
 msgstr ""
 
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Installing %s"
-msgstr "%s Instalatzen"
+msgid "Preparing %s"
+msgstr "%s prestatzen"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Configuring %s"
-msgstr "%s konfiguratzen"
+msgid "Preparing to configure %s"
+msgstr "%s konfiguratzeko prestatzen"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removing %s"
-msgstr "%s kentzen"
+msgid "Preparing for removal of %s"
+msgstr "%s kentzeko prestatzen"
 
 #: apt-pkg/deb/dpkgpm.cc
-#, fuzzy, c-format
-msgid "Completely removing %s"
-msgstr "%s guztiz ezabatu da"
+#, c-format
+msgid "Preparing to completely remove %s"
+msgstr "%s guztiz ezabatzeko prestatzen"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1099,6 +1148,11 @@ msgstr "Inbstalazio-ondorengo %s abiarazlea exekutatzen"
 msgid "Installed %s"
 msgstr "%s Instalatuta"
 
+#: apt-pkg/deb/dpkgpm.cc
+#, c-format
+msgid "Configuring %s"
+msgstr "%s konfiguratzen"
+
 #. FIXME: use a better string after freeze
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1112,33 +1166,23 @@ msgstr "%s fitxategia ezin izan da ireki"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing %s"
-msgstr "%s prestatzen"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
 msgid "Unpacking %s"
 msgstr "%s irekitzen"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing to configure %s"
-msgstr "%s konfiguratzeko prestatzen"
+msgid "Installing %s"
+msgstr "%s Instalatzen"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing for removal of %s"
-msgstr "%s kentzeko prestatzen"
+msgid "Removing %s"
+msgstr "%s kentzen"
 
 #: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Removed %s"
-msgstr "%s kendurik"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing to completely remove %s"
-msgstr "%s guztiz ezabatzeko prestatzen"
+#, fuzzy, c-format
+msgid "Completely removing %s"
+msgstr "%s guztiz ezabatu da"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1300,7 +1344,7 @@ msgstr "Ezin da pakete sistemaren mota egokirik zehaztu"
 
 #: apt-pkg/install-progress.cc
 #, c-format
-msgid "Progress: [%3i%%]"
+msgid "Progress: [%3li%%]"
 msgstr ""
 
 #. send status information that we are about to fork dpkg
@@ -1474,6 +1518,12 @@ msgstr "Ez da ulertu %s orratz-mota (pin)"
 
 #: apt-pkg/policy.cc
 #, c-format
+msgid ""
+"%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"
+msgstr ""
+
+#: apt-pkg/policy.cc
+#, c-format
 msgid "%s: Value %s is outside the range of valid pin priorities (%d to %d)"
 msgstr ""
 
@@ -1486,11 +1536,6 @@ msgstr "Ez da lehentasunik zehaztu orratzarentzat (pin) (edo zero da)"
 #, fuzzy, c-format
 msgid "Malformed entry %u in %s file %s (%s)"
 msgstr "Gaizki osatutako override %s, lerroa: %lu #1"
-
-#: apt-pkg/sourcelist.cc
-#, c-format
-msgid "Opening %s"
-msgstr "%s irekitzen"
 
 #: apt-pkg/sourcelist.cc
 #, c-format
@@ -1512,7 +1557,7 @@ msgstr "Gaizki osatutako %u lerroa %s Iturburu zerrendan (type)"
 msgid "Type '%s' is not known on stanza %u in source list %s"
 msgstr "'%s' mota ez da ezagutzen %u lerroan %s Iturburu zerrendan"
 
-#: apt-pkg/sourcelist.cc
+#: apt-pkg/sourcelist.cc apt-private/private-install.cc
 #, c-format
 msgid "Unsupported file %s given on commandline"
 msgstr ""
@@ -1525,11 +1570,6 @@ msgstr "'Iturburu' URI batzuk jarri behar dituzu sources.list-en"
 #, c-format
 msgid "Cannot convert %s to integer: out of range"
 msgstr ""
-
-#: apt-pkg/update.cc apt-private/private-download.cc
-#, c-format
-msgid "Failed to fetch %s  %s"
-msgstr "Ezin da lortu %s  %s"
 
 #: apt-pkg/update.cc
 #, fuzzy
@@ -1590,6 +1630,12 @@ msgstr ""
 "Medio Aldaketa: Mesedez sar\n"
 " '%s'\n"
 "izeneko diska '%s' gailuan eta enter sakatu\n"
+
+#: apt-private/acqprogress.cc
+msgid ""
+"Do you want to accept these changes and continue updating from this "
+"repository?"
+msgstr ""
 
 #: apt-private/private-cachefile.cc
 msgid "Correcting dependencies..."
@@ -1727,8 +1773,14 @@ msgstr "APT honek Super Behiaren Ahalmenak ditu."
 msgid "This APT helper has Super Meep Powers."
 msgstr ""
 
-#: apt-private/private-depends.cc apt-private/private-show.cc
-#: cmdline/apt-mark.cc
+#: apt-private/private-cmndline.cc
+msgid ""
+"--force-yes is deprecated, use one of the options starting with --allow "
+"instead."
+msgstr ""
+
+#: apt-private/private-depends.cc apt-private/private-download.cc
+#: apt-private/private-show.cc cmdline/apt-mark.cc
 msgid "No packages found"
 msgstr "Ez da paketerik aurkitu"
 
@@ -1747,12 +1799,6 @@ msgstr "Zenbait pakete ezin dira egiaztatu"
 #: apt-private/private-download.cc
 msgid "Install these packages without verification?"
 msgstr "Paketeak egiaztapen gabe instalatu?"
-
-#: apt-private/private-download.cc apt-private/private-install.cc
-msgid ""
-"--force-yes is deprecated, use one of the options starting with --allow "
-"instead."
-msgstr ""
 
 #: apt-private/private-download.cc
 #, fuzzy
@@ -1902,7 +1948,7 @@ msgstr ""
 msgid "Abort."
 msgstr "Abortatu."
 
-#: apt-private/private-install.cc
+#: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Aurrera jarraitu nahi al duzu?"
 
@@ -2228,11 +2274,6 @@ msgstr "Zehazki eredu bat eman behar duzu."
 msgid "Full Text Search"
 msgstr ""
 
-#: apt-private/private-show.cc cmdline/apt-cache.cc
-#, c-format
-msgid "Package file %s is out of sync."
-msgstr "%s pakete fitxategia ez dago sinkronizatuta."
-
 #: apt-private/private-show.cc
 #, c-format
 msgid "There is %i additional record. Please use the '-a' switch to see it"
@@ -2391,16 +2432,16 @@ msgid "%s has no build depends.\n"
 msgstr "%s: ez du eraikitze mendekotasunik.\n"
 
 #: apt-private/private-source.cc
-msgid "Must specify at least one package to check builddeps for"
-msgstr ""
-"Gutxienez pakete bat zehaztu behar duzu eraikitze mendekotasunak egiaztatzeko"
-
-#: apt-private/private-source.cc
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
+
+#: apt-private/private-source.cc
+msgid "Must specify at least one package to check builddeps for"
+msgstr ""
+"Gutxienez pakete bat zehaztu behar duzu eraikitze mendekotasunak egiaztatzeko"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2423,7 +2464,7 @@ msgstr "Huts egin du %s izenaren ordez %s ipintzean"
 
 #: apt-private/private-sources.cc
 #, c-format
-msgid "Your '%s' file changed, please run 'apt-get update'."
+msgid "Your '%s' file changed, please run 'apt-get update'.\n"
 msgstr ""
 
 #: apt-private/private-unmet.cc
@@ -2434,6 +2475,14 @@ msgstr "%s paketeak (%s bertsioa) mendekotasun arazo bat du:\n"
 #: apt-private/private-update.cc
 msgid "The update command takes no arguments"
 msgstr "Eguneratzeko komandoak ez du argumenturik hartzen"
+
+#. TRANSLATOR: the first two are manpage references, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid ""
+"Usage of %s should be preferred over embedding login information directly in "
+"the %s entry for '%s'"
+msgstr ""
 
 #: apt-private/private-update.cc
 #, c-format
@@ -2447,9 +2496,9 @@ msgstr[1] ""
 msgid "All packages are up to date."
 msgstr ""
 
-#: cmdline/apt-cache.cc
-#, fuzzy
-msgid "apt-cache stats does not take any arguments"
+#: cmdline/apt-cache.cc cmdline/apt-mark.cc
+#, fuzzy, c-format
+msgid "%s does not take any arguments"
 msgstr "Eguneratzeko komandoak ez du argumenturik hartzen"
 
 #: cmdline/apt-cache.cc
@@ -2712,6 +2761,12 @@ msgid "Install new packages (pkg is libc6 not libc6.deb)"
 msgstr "Instalatu pakete berriak (paketea libc6 da, eta ez libc6.deb)"
 
 #: cmdline/apt-get.cc
+#, fuzzy
+#| msgid "Install new packages (pkg is libc6 not libc6.deb)"
+msgid "Reinstall packages (pkg is libc6 not libc6.deb)"
+msgstr "Instalatu pakete berriak (paketea libc6 da, eta ez libc6.deb)"
+
+#: cmdline/apt-get.cc
 msgid "Remove packages"
 msgstr "Kendu paketeak"
 
@@ -2803,6 +2858,14 @@ msgstr ""
 msgid "detect proxy using apt.conf"
 msgstr ""
 
+#: cmdline/apt-helper.cc
+msgid "wait for system to be online"
+msgstr ""
+
+#: cmdline/apt-helper.cc
+msgid "drop privileges before running given command"
+msgstr ""
+
 #: cmdline/apt-internal-planner.cc
 #, fuzzy
 msgid ""
@@ -2857,6 +2920,16 @@ msgstr "%s eskuz instalatua bezala ezarri.\n"
 #, fuzzy, c-format
 msgid "%s was already set to automatically installed.\n"
 msgstr "%s eskuz instalatua bezala ezarri.\n"
+
+#: cmdline/apt-mark.cc
+msgid "No changes necessary"
+msgstr ""
+
+#: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "The following NEW packages will be installed:"
+msgid "The following packages will be marked as automatically installed:"
+msgstr "Ondorengo pakete BERRIAK instalatuko dira:"
 
 #: cmdline/apt-mark.cc
 #, fuzzy, c-format
@@ -2918,6 +2991,11 @@ msgid "Mark the given packages as manually installed"
 msgstr "Egiaztatu 'dpkg-dev' paketea instalaturik dagoen.\n"
 
 #: cmdline/apt-mark.cc
+#, fuzzy
+msgid "Mark all dependencies of meta packages as automatically installed."
+msgstr "%s eskuz instalatua bezala ezarri.\n"
+
+#: cmdline/apt-mark.cc
 msgid "Mark a package as held back"
 msgstr ""
 
@@ -2936,7 +3014,7 @@ msgid "Print the list of manually installed packages"
 msgstr "%s eskuz instalatua bezala ezarri.\n"
 
 #: cmdline/apt-mark.cc
-msgid "Print the list of package on hold"
+msgid "Print the list of packages on hold"
 msgstr ""
 
 #: cmdline/apt-sortpkgs.cc
@@ -2981,6 +3059,11 @@ msgstr ""
 #: cmdline/apt.cc
 #, fuzzy
 msgid "install packages"
+msgstr "Pin duten Paketeak:"
+
+#: cmdline/apt.cc
+#, fuzzy
+msgid "reinstall packages"
 msgstr "Pin duten Paketeak:"
 
 #: cmdline/apt.cc
@@ -3375,6 +3458,11 @@ msgstr "Goiburu data gaizki dago"
 msgid "Connection failed"
 msgstr "Konexioak huts egin du"
 
+#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#, c-format
+msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
+msgstr ""
+
 #: methods/basehttp.cc
 #, c-format
 msgid ""
@@ -3423,15 +3511,21 @@ msgstr "Ez da fitxategia aurkitu"
 msgid "Direct connection to %s domains is blocked by default."
 msgstr ""
 
-#: methods/connect.cc methods/http.cc
-#, c-format
-msgid "Connecting to %s (%s)"
-msgstr "Konektatzen -> %s.(%s)"
-
 #: methods/connect.cc
 #, c-format
 msgid "[IP: %s %s]"
 msgstr "[IP: %s %s]"
+
+#: methods/connect.cc
+#, fuzzy, c-format
+#| msgid "Connecting to %s (%s)"
+msgid "Connected to %s (%s)"
+msgstr "Konektatzen -> %s.(%s)"
+
+#: methods/connect.cc methods/http.cc
+#, c-format
+msgid "Connecting to %s (%s)"
+msgstr "Konektatzen -> %s.(%s)"
 
 #: methods/connect.cc
 #, c-format
@@ -3443,12 +3537,6 @@ msgstr "Ezin izan da socket-ik sortu honentzat: %s (f=%u t=%u p=%u)"
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "Ezin izan da konexioa hasi -> %s:%s (%s)."
 
-#: methods/connect.cc
-#, c-format
-msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr ""
-"Ezin izan da konektatu -> %s:%s (%s). Konexioak denbora muga gainditu du"
-
 #: methods/connect.cc methods/ftp.cc methods/rsh.cc
 msgid "Failed"
 msgstr "Huts egin du"
@@ -3457,6 +3545,12 @@ msgstr "Huts egin du"
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
 msgstr "Ezin izan da konektatu -> %s:%s (%s)"
+
+#: methods/connect.cc
+#, c-format
+msgid "Could not connect to %s:%s (%s), connection timed out"
+msgstr ""
+"Ezin izan da konektatu -> %s:%s (%s). Konexioak denbora muga gainditu du"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -3712,30 +3806,6 @@ msgstr "Konexioaren denbora muga gainditu da"
 msgid "Error writing to output file"
 msgstr "Errorea irteerako fitxategian idaztean"
 
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "No mirror file '%s' found "
-msgstr ""
-
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, fuzzy, c-format
-msgid "Can not read mirror file '%s'"
-msgstr "%s fitxategia ezin izan da ireki"
-
-#: methods/mirror.cc
-#, fuzzy, c-format
-msgid "No entry found in mirror file '%s'"
-msgstr "%s fitxategia ezin izan da ireki"
-
-#: methods/mirror.cc
-#, c-format
-msgid "[Mirror: %s]"
-msgstr ""
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "Huts egin du aldaketa ordua ezartzean"
@@ -3747,6 +3817,32 @@ msgstr "Konexioa behar baino lehenago itxi da"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#~ msgid "Removed %s"
+#~ msgstr "%s kendurik"
+
+#~ msgid "Package file %s is out of sync."
+#~ msgstr "%s pakete fitxategia ez dago sinkronizatuta."
+
+#~ msgid ""
+#~ "The package index files are corrupted. No Filename: field for package %s."
+#~ msgstr ""
+#~ "Paketearen indize fitxategiak hondatuta daude. 'Filename:' eremurik ez %s "
+#~ "paketearentzat."
+
+#, fuzzy
+#~ msgid "Can not read mirror file '%s'"
+#~ msgstr "%s fitxategia ezin izan da ireki"
+
+#, fuzzy
+#~ msgid "No entry found in mirror file '%s'"
+#~ msgstr "%s fitxategia ezin izan da ireki"
+
+#~ msgid "Opening configuration file %s"
+#~ msgstr "%s konfigurazio fitxategia irekitzen"
+
+#~ msgid "Opening %s"
+#~ msgstr "%s irekitzen"
 
 #~ msgid "Unmet dependencies. Try using --fix-broken."
 #~ msgstr "Bete gabeko mendekotasunak. Probatu --fix-broken erabiliz."

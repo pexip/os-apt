@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: apt-config.cc,v 1.11 2003/01/11 07:18:44 jgg Exp $
 /* ######################################################################
    
    APT Config - Program to manipulate APT configuration files
@@ -16,20 +15,20 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
+#include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/cmndline.h>
+#include <apt-pkg/configuration.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/init.h>
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/configuration.h>
-#include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/pkgsystem.h>
+#include <apt-pkg/strutl.h>
 
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 #include <string.h>
 
 #include <apt-private/private-cmndline.h>
@@ -68,7 +67,7 @@ static bool DoShell(CommandLine &CmdL)
 static bool DoDump(CommandLine &CmdL)
 {
    bool const empty = _config->FindB("APT::Config::Dump::EmptyValue", true);
-   std::string const format = _config->Find("APT::Config::Dump::Format", "%f \"%v\";\n");
+   std::string const format = _config->Find("APT::Config::Dump::Format", "%F \"%v\";\n");
    if (CmdL.FileSize() == 1)
       _config->Dump(cout, NULL, format.c_str(), empty);
    else
@@ -128,7 +127,7 @@ int main(int argc,const char *argv[])					/*{{{*/
       _config->Set(comp + "Name", c->Name);
       _config->Set(comp + "Extension", c->Extension);
       _config->Set(comp + "Binary", c->Binary);
-      _config->Set(std::string(comp + "Cost").c_str(), c->Cost);
+      _config->Set((comp + "Cost").c_str(), c->Cost);
       for (std::vector<std::string>::const_iterator a = c->CompressArgs.begin(); a != c->CompressArgs.end(); ++a)
 	 _config->Set(comp + "CompressArg::", *a);
       for (std::vector<std::string>::const_iterator a = c->UncompressArgs.begin(); a != c->UncompressArgs.end(); ++a)

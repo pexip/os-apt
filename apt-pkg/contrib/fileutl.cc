@@ -19,52 +19,60 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
-#include <apt-pkg/fileutl.h>
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/error.h>
-#include <apt-pkg/sptr.h>
 #include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/configuration.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
 #include <apt-pkg/macros.h>
+#include <apt-pkg/pkgsystem.h>
+#include <apt-pkg/sptr.h>
+#include <apt-pkg/strutl.h>
 
-#include <ctype.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <sys/select.h>
-#include <time.h>
-#include <string>
-#include <vector>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cstdio>
 #include <iostream>
-#include <unistd.h>
+#include <string>
+#include <vector>
+#include <ctype.h>
+#include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <glob.h>
+#include <grp.h>
+#include <pwd.h>
+#include <signal.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/wait.h>
-#include <dirent.h>
-#include <signal.h>
-#include <errno.h>
-#include <glob.h>
-#include <pwd.h>
-#include <grp.h>
+#include <time.h>
+#include <unistd.h>
 
-#include <set>
 #include <algorithm>
 #include <memory>
+#include <set>
 
 #ifdef HAVE_ZLIB
-	#include <zlib.h>
+#include <zlib.h>
 #endif
 #ifdef HAVE_BZ2
-	#include <bzlib.h>
+#include <bzlib.h>
 #endif
 #ifdef HAVE_LZMA
-	#include <lzma.h>
+#include <lzma.h>
 #endif
 #ifdef HAVE_LZ4
-	#include <lz4frame.h>
+#include <lz4frame.h>
+#endif
+#ifdef HAVE_ZSTD
+#include <zstd.h>
+#endif
+#ifdef HAVE_SYSTEMD
+#include <systemd/sd-bus.h>
 #endif
 #include <endian.h>
 #include <stdint.h>
@@ -97,6 +105,8 @@ bool RunScripts(const char *Cnf)
    // This is the child
    if (Child == 0)
    {
+      if (_system != nullptr && _system->IsLocked() == true && (stringcasecmp(Cnf, "dpkg::post-invoke") == 0 || stringcasecmp(Cnf, "dpkg::pre-invoke") == 0))
+	 setenv("DPKG_FRONTEND_LOCKED", "true", 1);
       if (_config->FindDir("DPkg::Chroot-Directory","/") != "/") 
       {
          std::cerr << "Chrooting into " 
@@ -175,6 +185,21 @@ bool CopyFile(FileFd &From,FileFd &To)
 	 return false;
    } while (ToRead != 0);
 
+   return true;
+}
+									/*}}}*/
+bool RemoveFileAt(char const * const Function, int const dirfd, std::string const &FileName)/*{{{*/
+{
+   if (FileName == "/dev/null")
+      return true;
+   errno = 0;
+   if (unlinkat(dirfd, FileName.c_str(), 0) != 0)
+   {
+      if (errno == ENOENT)
+	 return true;
+
+      return _error->WarningE(Function,_("Problem unlinking the file %s"), FileName.c_str());
+   }
    return true;
 }
 									/*}}}*/
@@ -387,7 +412,10 @@ std::vector<string> GetListOfFilesInDir(string const &Dir, std::vector<string> c
    DIR *D = opendir(Dir.c_str());
    if (D == 0) 
    {
-      _error->Errno("opendir",_("Unable to read %s"),Dir.c_str());
+      if (errno == EACCES)
+	 _error->WarningE("opendir", _("Unable to read %s"), Dir.c_str());
+      else
+	 _error->Errno("opendir", _("Unable to read %s"), Dir.c_str());
       return List;
    }
 
@@ -910,17 +938,31 @@ bool ExecWait(pid_t Pid,const char *Name,bool Reap)
 // StartsWithGPGClearTextSignature - Check if a file is Pgp/GPG clearsigned	/*{{{*/
 bool StartsWithGPGClearTextSignature(string const &FileName)
 {
-   static const char* SIGMSG = "-----BEGIN PGP SIGNED MESSAGE-----\n";
-   char buffer[strlen(SIGMSG)+1];
    FILE* gpg = fopen(FileName.c_str(), "r");
-   if (gpg == NULL)
+   if (gpg == nullptr)
       return false;
 
-   char const * const test = fgets(buffer, sizeof(buffer), gpg);
+   char * lineptr = nullptr;
+   size_t n = 0;
+   errno = 0;
+   ssize_t const result = getline(&lineptr, &n, gpg);
+   if (errno != 0)
+   {
+      _error->Errno("getline", "Could not read from %s", FileName.c_str());
+      fclose(gpg);
+      free(lineptr);
+      return false;
+   }
    fclose(gpg);
-   if (test == NULL || strcmp(buffer, SIGMSG) != 0)
-      return false;
 
+   _strrstrip(lineptr);
+   static const char* SIGMSG = "-----BEGIN PGP SIGNED MESSAGE-----";
+   if (result == -1 || strcmp(lineptr, SIGMSG) != 0)
+   {
+      free(lineptr);
+      return false;
+   }
+   free(lineptr);
    return true;
 }
 									/*}}}*/
@@ -1089,7 +1131,7 @@ public:
 	 }
 
 	 unsigned long long const OutputSize = std::min(Size, buffer.size());
-	 char const * const newline = static_cast<char const * const>(memchr(buffer.get(), '\n', OutputSize));
+	 char const * const newline = static_cast<char const *>(memchr(buffer.get(), '\n', OutputSize));
 	 // Read until end of line or up to Size bytes from the buffer.
 	 unsigned long long actualread = buffer.read(To,
 						     (newline != nullptr)
@@ -1683,6 +1725,218 @@ public:
 #endif
 };
 									/*}}}*/
+
+class APT_HIDDEN ZstdFileFdPrivate : public FileFdPrivate
+{ /*{{{*/
+#ifdef HAVE_ZSTD
+   ZSTD_DStream *dctx;
+   ZSTD_CStream *cctx;
+   size_t res;
+   FileFd backend;
+   simple_buffer zstd_buffer;
+   // Count of bytes that the decompressor expects to read next, or buffer size.
+   size_t next_to_load = APT_BUFFER_SIZE;
+
+   public:
+   virtual bool InternalOpen(int const iFd, unsigned int const Mode) APT_OVERRIDE
+   {
+      if ((Mode & FileFd::ReadWrite) == FileFd::ReadWrite)
+	 return _error->Error("zstd only supports write or read mode");
+
+      if ((Mode & FileFd::WriteOnly) == FileFd::WriteOnly)
+      {
+	 cctx = ZSTD_createCStream();
+	 res = ZSTD_initCStream(cctx, findLevel(compressor.CompressArgs));
+	 zstd_buffer.reset(APT_BUFFER_SIZE);
+      }
+      else
+      {
+	 dctx = ZSTD_createDStream();
+	 res = ZSTD_initDStream(dctx);
+	 zstd_buffer.reset(APT_BUFFER_SIZE);
+      }
+
+      filefd->Flags |= FileFd::Compressed;
+
+      if (ZSTD_isError(res))
+	 return false;
+
+      unsigned int flags = (Mode & (FileFd::WriteOnly | FileFd::ReadOnly));
+      if (backend.OpenDescriptor(iFd, flags, FileFd::None, true) == false)
+	 return false;
+
+      return true;
+   }
+   virtual ssize_t InternalUnbufferedRead(void *const To, unsigned long long const Size) APT_OVERRIDE
+   {
+      /* Keep reading as long as the compressor still wants to read */
+      while (true)
+      {
+	 // Fill compressed buffer;
+	 if (zstd_buffer.empty())
+	 {
+	    unsigned long long read;
+	    /* Reset - if LZ4 decompressor wants to read more, allocate more */
+	    zstd_buffer.reset(next_to_load);
+	    if (backend.Read(zstd_buffer.getend(), zstd_buffer.free(), &read) == false)
+	       return -1;
+	    zstd_buffer.bufferend += read;
+
+	    if (read == 0)
+	    {
+	       /* Expected EOF */
+	       if (next_to_load == 0)
+		  return 0;
+
+	       res = -1;
+	       return filefd->FileFdError("ZSTD: %s %s",
+					  filefd->FileName.c_str(),
+					  _("Unexpected end of file")),
+		      -1;
+	    }
+	 }
+	 // Drain compressed buffer as far as possible.
+	 ZSTD_inBuffer in = {
+	    .src = zstd_buffer.get(),
+	    .size = zstd_buffer.size(),
+	    .pos = 0,
+	 };
+	 ZSTD_outBuffer out = {
+	    .dst = To,
+	    .size = Size,
+	    .pos = 0,
+	 };
+
+	 next_to_load = res = ZSTD_decompressStream(dctx, &out, &in);
+
+	 if (res == 0)
+	 {
+	    res = ZSTD_initDStream(dctx);
+	 }
+
+	 if (ZSTD_isError(res))
+	    return -1;
+
+	 zstd_buffer.bufferstart += in.pos;
+
+	 if (out.pos != 0)
+	    return out.pos;
+      }
+
+      return 0;
+   }
+   virtual bool InternalReadError() APT_OVERRIDE
+   {
+      char const *const errmsg = ZSTD_getErrorName(res);
+
+      return filefd->FileFdError("ZSTD: %s %s (%zu: %s)", filefd->FileName.c_str(), _("Read error"), res, errmsg);
+   }
+   virtual ssize_t InternalWrite(void const *const From, unsigned long long const Size) APT_OVERRIDE
+   {
+      // Drain compressed buffer as far as possible.
+      ZSTD_outBuffer out = {
+	 .dst = zstd_buffer.buffer,
+	 .size = zstd_buffer.buffersize_max,
+	 .pos = 0,
+      };
+      ZSTD_inBuffer in = {
+	 .src = From,
+	 .size = Size,
+	 .pos = 0,
+      };
+
+      res = ZSTD_compressStream(cctx, &out, &in);
+
+      if (ZSTD_isError(res) || backend.Write(zstd_buffer.buffer, out.pos) == false)
+	 return -1;
+
+      return in.pos;
+   }
+
+   virtual bool InternalWriteError() APT_OVERRIDE
+   {
+      char const *const errmsg = ZSTD_getErrorName(res);
+
+      return filefd->FileFdError("ZSTD: %s %s (%zu: %s)", filefd->FileName.c_str(), _("Write error"), res, errmsg);
+   }
+   virtual bool InternalStream() const APT_OVERRIDE { return true; }
+
+   virtual bool InternalFlush() APT_OVERRIDE
+   {
+      return backend.Flush();
+   }
+
+   virtual bool InternalClose(std::string const &) APT_OVERRIDE
+   {
+      /* Reset variables */
+      res = 0;
+      next_to_load = APT_BUFFER_SIZE;
+
+      if (cctx != nullptr)
+      {
+	 if (filefd->Failed() == false)
+	 {
+	    do
+	    {
+	       ZSTD_outBuffer out = {
+		  .dst = zstd_buffer.buffer,
+		  .size = zstd_buffer.buffersize_max,
+		  .pos = 0,
+	       };
+	       res = ZSTD_endStream(cctx, &out);
+	       if (ZSTD_isError(res) || backend.Write(zstd_buffer.buffer, out.pos) == false)
+		  return false;
+	    } while (res > 0);
+
+	    if (!backend.Flush())
+	       return false;
+	 }
+	 if (!backend.Close())
+	    return false;
+
+	 res = ZSTD_freeCStream(cctx);
+	 cctx = nullptr;
+      }
+
+      if (dctx != nullptr)
+      {
+	 res = ZSTD_freeDStream(dctx);
+	 dctx = nullptr;
+      }
+      if (backend.IsOpen())
+      {
+	 backend.Close();
+	 filefd->iFd = -1;
+      }
+
+      return ZSTD_isError(res) == false;
+   }
+
+   static uint32_t findLevel(std::vector<std::string> const &Args)
+   {
+      for (auto a = Args.rbegin(); a != Args.rend(); ++a)
+      {
+	 if (a->size() >= 2 && (*a)[0] == '-' && (*a)[1] != '-')
+	 {
+	    auto const level = a->substr(1);
+	    auto const notANumber = level.find_first_not_of("0123456789");
+	    if (notANumber != std::string::npos)
+	       continue;
+
+	    return (uint32_t)stoi(level);
+	 }
+      }
+      return 19;
+   }
+
+   explicit ZstdFileFdPrivate(FileFd *const filefd) : FileFdPrivate(filefd), dctx(nullptr), cctx(nullptr) {}
+   virtual ~ZstdFileFdPrivate()
+   {
+      InternalClose("");
+   }
+#endif
+};
+									/*}}}*/
 class APT_HIDDEN LzmaFileFdPrivate: public FileFdPrivate {				/*{{{*/
 #ifdef HAVE_LZMA
    struct LZMAFILE {
@@ -2179,6 +2433,7 @@ bool FileFd::Open(string FileName,unsigned int const Mode,CompressMode Compress,
       case Lzma: name = "lzma"; break;
       case Xz: name = "xz"; break;
       case Lz4: name = "lz4"; break;
+      case Zstd: name = "zstd"; break;
       case Auto:
       case Extension:
 	 // Unreachable
@@ -2296,6 +2551,7 @@ bool FileFd::OpenDescriptor(int Fd, unsigned int const Mode, CompressMode Compre
    case Lzma: name = "lzma"; break;
    case Xz: name = "xz"; break;
    case Lz4: name = "lz4"; break;
+   case Zstd: name = "zstd"; break;
    case Auto:
    case Extension:
       if (AutoClose == true && Fd != -1)
@@ -2359,6 +2615,9 @@ bool FileFd::OpenInternDescriptor(unsigned int const Mode, APT::Configuration::C
 #endif
 #ifdef HAVE_LZ4
       APT_COMPRESS_INIT("lz4", Lz4FileFdPrivate);
+#endif
+#ifdef HAVE_ZSTD
+      APT_COMPRESS_INIT("zstd", ZstdFileFdPrivate);
 #endif
 #undef APT_COMPRESS_INIT
       else if (compressor.Name == "." || compressor.Binary.empty() == true)
@@ -2478,15 +2737,35 @@ bool FileFd::Read(int const Fd, void *To, unsigned long long Size, unsigned long
 }
 									/*}}}*/
 // FileFd::ReadLine - Read a complete line from the file		/*{{{*/
-// ---------------------------------------------------------------------
-/* Beware: This method can be quite slow for big buffers on UNcompressed
-   files because of the naive implementation! */
 char* FileFd::ReadLine(char *To, unsigned long long const Size)
 {
    *To = '\0';
    if (d == nullptr || Failed())
       return nullptr;
    return d->InternalReadLine(To, Size);
+}
+bool FileFd::ReadLine(std::string &To)
+{
+   To.clear();
+   if (d == nullptr || Failed())
+      return false;
+   constexpr size_t buflen = 4096;
+   char buffer[buflen];
+   size_t len;
+   do
+   {
+      if (d->InternalReadLine(buffer, buflen) == nullptr)
+	 return false;
+      len = strlen(buffer);
+      To.append(buffer, len);
+   } while (len == buflen - 1 && buffer[len - 2] != '\n');
+   // remove the newline at the end
+   auto const i = To.find_last_not_of("\r\n");
+   if (i == std::string::npos)
+      To.clear();
+   else
+      To.erase(i + 1);
+   return true;
 }
 									/*}}}*/
 // FileFd::Flush - Flush the file  					/*{{{*/
@@ -2831,25 +3110,35 @@ std::string GetTempDir(std::string const &User)
 									/*}}}*/
 FileFd* GetTempFile(std::string const &Prefix, bool ImmediateUnlink, FileFd * const TmpFd)	/*{{{*/
 {
+   return GetTempFile(Prefix, ImmediateUnlink, TmpFd, false);
+}
+FileFd* GetTempFile(std::string const &Prefix, bool ImmediateUnlink, FileFd * const TmpFd, bool Buffered)
+{
    char fn[512];
-   FileFd * const Fd = TmpFd == NULL ? new FileFd() : TmpFd;
+   FileFd * const Fd = TmpFd == nullptr ? new FileFd() : TmpFd;
 
    std::string const tempdir = GetTempDir();
    snprintf(fn, sizeof(fn), "%s/%s.XXXXXX",
             tempdir.c_str(), Prefix.c_str());
    int const fd = mkstemp(fn);
-   if(ImmediateUnlink)
+   if (ImmediateUnlink)
       unlink(fn);
    if (fd < 0)
    {
       _error->Errno("GetTempFile",_("Unable to mkstemp %s"), fn);
-      return NULL;
+      if (TmpFd == nullptr)
+	 delete Fd;
+      return nullptr;
    }
-   if (!Fd->OpenDescriptor(fd, FileFd::ReadWrite, FileFd::None, true))
+   if (!Fd->OpenDescriptor(fd, FileFd::ReadWrite | (Buffered ? FileFd::BufferedWrite : 0), FileFd::None, true))
    {
       _error->Errno("GetTempFile",_("Unable to write to %s"),fn);
-      return NULL;
+      if (TmpFd == nullptr)
+	 delete Fd;
+      return nullptr;
    }
+   if (ImmediateUnlink == false)
+      Fd->SetFileName(fn);
    return Fd;
 }
 									/*}}}*/
@@ -2871,6 +3160,11 @@ bool Popen(const char* Args[], FileFd &Fd, pid_t &Child, FileFd::OpenMode Mode)/
 									/*}}}*/
 bool Popen(const char* Args[], FileFd &Fd, pid_t &Child, FileFd::OpenMode Mode, bool CaptureStderr)/*{{{*/
 {
+   return Popen(Args, Fd, Child, Mode, CaptureStderr, false);
+}
+									/*}}}*/
+bool Popen(const char *Args[], FileFd &Fd, pid_t &Child, FileFd::OpenMode Mode, bool CaptureStderr, bool Sandbox) /*{{{*/
+{
    int fd;
    if (Mode != FileFd::ReadOnly && Mode != FileFd::WriteOnly)
       return _error->Error("Popen supports ReadOnly (x)or WriteOnly mode only");
@@ -2887,6 +3181,11 @@ bool Popen(const char* Args[], FileFd &Fd, pid_t &Child, FileFd::OpenMode Mode, 
       return _error->Errno("fork", "Failed to fork");
    if(Child == 0)
    {
+      if (Sandbox && (getuid() == 0 || geteuid() == 0) && !DropPrivileges())
+      {
+	 _error->DumpErrors();
+	 _exit(1);
+      }
       if(Mode == FileFd::ReadOnly)
       {
          close(Pipe[0]);
@@ -3083,5 +3382,62 @@ bool DropPrivileges()							/*{{{*/
    }
 
    return true;
+}
+									/*}}}*/
+bool OpenConfigurationFileFd(std::string const &File, FileFd &Fd) /*{{{*/
+{
+   int const fd = open(File.c_str(), O_RDONLY | O_CLOEXEC | O_NOCTTY);
+   if (fd == -1)
+      return _error->WarningE("open", _("Unable to read %s"), File.c_str());
+   APT::Configuration::Compressor none(".", "", "", nullptr, nullptr, 0);
+   if (Fd.OpenDescriptor(fd, FileFd::ReadOnly, none, true) == false)
+      return false;
+   Fd.SetFileName(File);
+   return true;
+}
+									/*}}}*/
+int Inhibit(const char *what, const char *who, const char *why, const char *mode) /*{{{*/
+{
+#ifdef HAVE_SYSTEMD
+   sd_bus_error error = SD_BUS_ERROR_NULL;
+   sd_bus_message *m = NULL;
+   sd_bus *bus = NULL;
+   int fd;
+   int r;
+
+   r = sd_bus_open_system(&bus);
+   if (r < 0)
+      goto out;
+
+   r = sd_bus_call_method(bus,
+			  "org.freedesktop.login1",
+			  "/org/freedesktop/login1",
+			  "org.freedesktop.login1.Manager",
+			  "Inhibit",
+			  &error,
+			  &m,
+			  "ssss",
+			  what,
+			  who,
+			  why,
+			  mode);
+   if (r < 0)
+      goto out;
+
+   r = sd_bus_message_read(m, "h", &fd);
+   if (r < 0)
+      goto out;
+
+   // We received a file descriptor, return it - systemd will close the read fd
+   // on free, so let's duplicate it here.
+   r = dup(fd);
+out:
+   sd_bus_error_free(&error);
+   sd_bus_message_unref(m);
+   sd_bus_unref(bus);
+   return r;
+#else
+   return -ENOTSUP;
+#endif
 }
 									/*}}}*/

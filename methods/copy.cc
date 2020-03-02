@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: copy.cc,v 1.7.2.1 2004/01/16 18:58:50 mdz Exp $
 /* ######################################################################
 
    Copy URI - This method takes a uri like a file: uri and copies it
@@ -11,12 +10,12 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
-#include <apt-pkg/fileutl.h>
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/error.h>
-#include <apt-pkg/hashes.h>
-#include <apt-pkg/configuration.h>
 #include "aptmethod.h"
+#include <apt-pkg/configuration.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/hashes.h>
+#include <apt-pkg/strutl.h>
 
 #include <string>
 #include <sys/stat.h>
@@ -30,8 +29,10 @@ class CopyMethod : public aptMethod
    virtual bool Fetch(FetchItem *Itm) APT_OVERRIDE;
 
    public:
-
-   CopyMethod() : aptMethod("copy", "1.0",SingleInstance | SendConfig) {};
+   CopyMethod() : aptMethod("copy", "1.0", SingleInstance | SendConfig)
+   {
+      SeccompFlags = aptMethod::BASE;
+   }
 };
 
 // CopyMethod::Fetch - Fetch a file					/*{{{*/

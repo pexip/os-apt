@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: cachedb.cc,v 1.7 2004/05/08 19:41:01 mdz Exp $
 /* ######################################################################
 
    CacheDB
@@ -12,22 +11,22 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
+#include <apt-pkg/configuration.h>
+#include <apt-pkg/debfile.h>
 #include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/gpgv.h>
+#include <apt-pkg/hashes.h>
 #include <apt-pkg/md5.h>
 #include <apt-pkg/sha1.h>
 #include <apt-pkg/sha2.h>
 #include <apt-pkg/strutl.h>
-#include <apt-pkg/configuration.h>
-#include <apt-pkg/fileutl.h>
-#include <apt-pkg/debfile.h>
-#include <apt-pkg/gpgv.h>
-#include <apt-pkg/hashes.h>
 
-#include <netinet/in.h>       // htonl, etc
 #include <ctype.h>
+#include <netinet/in.h> // htonl, etc
 #include <stddef.h>
-#include <sys/stat.h>
 #include <strings.h>
+#include <sys/stat.h>
 
 #include "cachedb.h"
 
@@ -402,7 +401,7 @@ bool CacheDB::LoadContents(bool const &GenOnly)
    return true;
 }
 									/*}}}*/
-// CacheDB::GetHashes - Get the hashs					/*{{{*/
+// CacheDB::GetHashes - Get the hashes					/*{{{*/
 static std::string bytes2hex(uint8_t *bytes, size_t length) {
    char buf[3];
    std::string space;

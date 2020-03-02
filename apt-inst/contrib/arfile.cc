@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: arfile.cc,v 1.6.2.1 2004/01/16 18:58:50 mdz Exp $
 /* ######################################################################
 
    AR File - Handle an 'AR' archive
@@ -14,16 +13,16 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
 #include <apt-pkg/arfile.h>
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/fileutl.h>
 #include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/strutl.h>
 
+#include <string>
 #include <string.h>
 #include <sys/types.h>
-#include <string>
 
 #include <apti18n.h>
 									/*}}}*/

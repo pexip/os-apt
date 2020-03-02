@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.4~beta1\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2017-09-13 17:18+0000\n"
+"POT-Creation-Date: 2019-02-04 15:34+0100\n"
 "PO-Revision-Date: 2016-12-05 21:09+0100\n"
 "Last-Translator: Oriol Debian <oriol.debian@gmail.com>\n"
 "Language-Team: Catalan <debian-l10n-catalan@lists.debian.org>\n"
@@ -149,7 +149,7 @@ msgstr "El fitxer %s/%s sobreescriu al que està en el paquet %s"
 #. Only warn if there is no sources.list file.
 #: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
 #: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc methods/mirror.cc
+#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
 #, c-format
 msgid "Unable to read %s"
 msgstr "No es pot llegir %s"
@@ -221,7 +221,7 @@ msgstr "El directori «%s» ja no està signat."
 
 #: apt-pkg/acquire-item.cc
 #, c-format
-msgid "The repository '%s' does no longer have a Release file."
+msgid "The repository '%s' no longer has a Release file."
 msgstr "El directori «%s» ja no té fitxer de publicació «Release»."
 
 #: apt-pkg/acquire-item.cc
@@ -306,6 +306,18 @@ msgid "GPG error: %s: %s"
 msgstr "S'ha produït un error amb el GPG: %s: %s"
 
 #: apt-pkg/acquire-item.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Skipping acquire of configured file '%s' as repository '%s' doesn't "
+#| "support architecture '%s'"
+msgid ""
+"Skipping acquire of configured file '%s' as repository '%s' doesn't have the "
+"component '%s' (component misspelt in sources.list?)"
+msgstr ""
+"S'omet l'ús del fitxer configurat «%s» ja que el repositori «%s» no admet "
+"l'arquitectura «%s»"
+
+#: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
 "Skipping acquire of configured file '%s' as repository '%s' doesn't support "
@@ -315,13 +327,16 @@ msgstr ""
 "l'arquitectura «%s»"
 
 #: apt-pkg/acquire-item.cc
-#, c-format
+#, fuzzy, c-format
+#| msgid ""
+#| "Skipping acquire of configured file '%s' as repository '%s' doesn't "
+#| "support architecture '%s'"
 msgid ""
-"Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
-"or malformed file)"
+"Skipping acquire of configured file '%s' as repository '%s' does not seem to "
+"provide it (sources.list entry misspelt?)"
 msgstr ""
-"No s'ha trobat l'entrada «%s» esperada, al fitxer Release (entrada errònia "
-"al sources.list o fitxer malformat)"
+"S'omet l'ús del fitxer configurat «%s» ja que el repositori «%s» no admet "
+"l'arquitectura «%s»"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -344,10 +359,55 @@ msgstr ""
 "El fitxer Release per a %s ha caducat (invàlid des de %s). Les "
 "actualitzacions per a aquest dipòsit no s'aplicaran."
 
+#. TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+#. the time until the file will be valid - formatted in the same way as in
+#. the download progress display (e.g. 7d 3h 42min 1s)
+#: apt-pkg/acquire-item.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Release file for %s is expired (invalid since %s). Updates for this "
+#| "repository will not be applied."
+msgid ""
+"Release file for %s is not valid yet (invalid for another %s). Updates for "
+"this repository will not be applied."
+msgstr ""
+"El fitxer Release per a %s ha caducat (invàlid des de %s). Les "
+"actualitzacions per a aquest dipòsit no s'aplicaran."
+
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Distribució en conflicte: %s (s'esperava %s però s'ha obtingut %s)"
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
+msgstr ""
+
+#. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"More information about this can be found online in the Release notes at: %s"
+msgstr ""
+
+#. TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"This must be accepted explicitly before updates for this repository can be "
+"applied. See %s manpage for details."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc apt-pkg/update.cc apt-private/private-download.cc
+#, c-format
+msgid "Failed to fetch %s  %s"
+msgstr "No s'ha pogut obtenir %s  %s"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -364,19 +424,18 @@ msgstr ""
 msgid "Can't find a source to download version '%s' of '%s'"
 msgstr "No es troba una font per baixar la versió «%s» de «%s»"
 
-#: apt-pkg/acquire-item.cc
-#, c-format
-msgid ""
-"The package index files are corrupted. No Filename: field for package %s."
-msgstr ""
-"L'índex dels fitxers en el paquet està corromput. El fitxer no existeix: "
-"camp per al paquet %s."
-
 #. TRANSLATOR: %s=%s is sourcename=sourceversion, e.g. apt=1.1
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "El registre de canvis no està disponible per a %s=%s"
+
+#: apt-pkg/acquire-worker.cc
+#, c-format
+msgid ""
+"The method '%s' is unsupported and disabled by default. Consider switching "
+"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
+msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -412,13 +471,13 @@ msgstr ""
 
 #: apt-pkg/acquire.cc apt-pkg/cdrom.cc
 #, c-format
-msgid "List directory %spartial is missing."
-msgstr "Falta el directori de llistes %spartial."
+msgid "List directory %s is missing."
+msgstr "Falta el directori de llistes %s."
 
 #: apt-pkg/acquire.cc
 #, c-format
-msgid "Archives directory %spartial is missing."
-msgstr "Falta el directori d'arxius %spartial."
+msgid "Archives directory %s is missing."
+msgstr "Falta el directori d'arxius %s."
 
 #: apt-pkg/acquire.cc
 #, c-format
@@ -448,14 +507,6 @@ msgstr ""
 msgid "Clean of %s is not supported"
 msgstr "No està suportada la neteja de «%s» "
 
-#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
-#: methods/mirror.cc
-#, c-format
-msgid "Unable to change to %s"
-msgstr "No es pot canviar a %s"
-
-#. only show the ETA if it makes sense
-#. two days
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -497,7 +548,7 @@ msgid "You may want to run apt-get update to correct these problems"
 msgstr ""
 "Potser voldreu executar apt-get update per a corregir aquests problemes"
 
-#: apt-pkg/cachefile.cc
+#: apt-pkg/cachefile.cc methods/mirror.cc
 msgid "The list of sources could not be read."
 msgstr "No s'ha pogut llegir la llista de les fonts."
 
@@ -657,6 +708,11 @@ msgstr "Les entrades de la llista de fonts per a aquest disc són:\n"
 
 #: apt-pkg/clean.cc
 #, c-format
+msgid "Unable to change to %s"
+msgstr "No es pot canviar a %s"
+
+#: apt-pkg/clean.cc
+#, c-format
 msgid "Unable to stat %s."
 msgstr "No es pot veure l'estat de %s."
 
@@ -725,11 +781,6 @@ msgstr "Operació no vàlida %s"
 #, c-format
 msgid "Unrecognized type abbreviation: '%c'"
 msgstr "Abreujament de tipus no reconegut: «%c»"
-
-#: apt-pkg/contrib/configuration.cc
-#, c-format
-msgid "Opening configuration file %s"
-msgstr "S'està obrint el fitxer de configuració %s"
 
 #: apt-pkg/contrib/configuration.cc
 #, c-format
@@ -915,12 +966,12 @@ msgstr "Ha hagut un problema en reanomenar el fitxer %s a %s"
 msgid "Problem syncing the file"
 msgstr "Ha hagut un problema en sincronitzar el fitxer"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to mkstemp %s"
 msgstr "No es pot crear el fitxer temporal %s"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to write to %s"
 msgstr "No es pot escriure en %s"
@@ -1101,17 +1152,20 @@ msgid "Unable to parse package file %s (%d)"
 msgstr "No es pot analitzar el fitxer del paquet %s (%d)"
 
 #: apt-pkg/deb/debsystem.cc
-#, c-format
+#, fuzzy, c-format
+#| msgid ""
+#| "Unable to lock the administration directory (%s), is another process "
+#| "using it?"
 msgid ""
-"Unable to lock the administration directory (%s), is another process using "
-"it?"
+"Unable to acquire the dpkg frontend lock (%s), is another process using it?"
 msgstr ""
 "No s'ha pogut bloquejar el directori d'administració (%s), hi ha cap altre "
 "procés utilitzant-lo?"
 
 #: apt-pkg/deb/debsystem.cc
-#, c-format
-msgid "Unable to lock the administration directory (%s), are you root?"
+#, fuzzy, c-format
+#| msgid "Unable to lock the administration directory (%s), are you root?"
+msgid "Unable to acquire the dpkg frontend lock (%s), are you root?"
 msgstr "No es pot blocar el directori d'administració (%s), sou root?"
 
 #. TRANSLATORS: the %s contains the recovery command, usually
@@ -1125,29 +1179,43 @@ msgstr ""
 "el problema."
 
 #: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid ""
+"Unable to lock the administration directory (%s), is another process using "
+"it?"
+msgstr ""
+"No s'ha pogut bloquejar el directori d'administració (%s), hi ha cap altre "
+"procés utilitzant-lo?"
+
+#: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid "Unable to lock the administration directory (%s), are you root?"
+msgstr "No es pot blocar el directori d'administració (%s), sou root?"
+
+#: apt-pkg/deb/debsystem.cc
 msgid "Not locked"
 msgstr "No blocat"
 
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Installing %s"
-msgstr "S'està instal·lant %s"
+msgid "Preparing %s"
+msgstr "S'està preparant el paquet %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Configuring %s"
-msgstr "S'està configurant el paquet %s"
+msgid "Preparing to configure %s"
+msgstr "S'està preparant per a configurar el paquet %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removing %s"
-msgstr "S'està suprimint el paquet %s"
+msgid "Preparing for removal of %s"
+msgstr "S'està preparant per a la supressió del paquet %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Completely removing %s"
-msgstr "S'ha suprimit completament %s"
+msgid "Preparing to completely remove %s"
+msgstr "S'està preparant per a suprimir completament el paquet %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1164,6 +1232,11 @@ msgstr "S'està executant l'activador de postinstal·lació %s"
 msgid "Installed %s"
 msgstr "S'ha instal·lat el paquet %s"
 
+#: apt-pkg/deb/dpkgpm.cc
+#, c-format
+msgid "Configuring %s"
+msgstr "S'està configurant el paquet %s"
+
 #. FIXME: use a better string after freeze
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1177,33 +1250,23 @@ msgstr "No s'ha pogut obrir el fitxer «%s»"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing %s"
-msgstr "S'està preparant el paquet %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
 msgid "Unpacking %s"
 msgstr "S'està desempaquetant %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing to configure %s"
-msgstr "S'està preparant per a configurar el paquet %s"
+msgid "Installing %s"
+msgstr "S'està instal·lant %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing for removal of %s"
-msgstr "S'està preparant per a la supressió del paquet %s"
+msgid "Removing %s"
+msgstr "S'està suprimint el paquet %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removed %s"
-msgstr "S'ha suprimit el paquet %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing to completely remove %s"
-msgstr "S'està preparant per a suprimir completament el paquet %s"
+msgid "Completely removing %s"
+msgstr "S'ha suprimit completament %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1376,8 +1439,8 @@ msgstr "No es pot determinar un tipus de sistema d'empaquetament adequat."
 
 #: apt-pkg/install-progress.cc
 #, c-format
-msgid "Progress: [%3i%%]"
-msgstr "Progrés: [%3i%%]"
+msgid "Progress: [%3li%%]"
+msgstr "Progrés: [%3li%%]"
 
 #. send status information that we are about to fork dpkg
 #: apt-pkg/install-progress.cc
@@ -1563,6 +1626,12 @@ msgstr "No s'ha entès el pin de tipus %s"
 
 #: apt-pkg/policy.cc
 #, c-format
+msgid ""
+"%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"
+msgstr ""
+
+#: apt-pkg/policy.cc
+#, c-format
 msgid "%s: Value %s is outside the range of valid pin priorities (%d to %d)"
 msgstr ""
 "%s: El valor %s està fora del rang de les prioritats de pin vàlid (%d a %d)"
@@ -1576,11 +1645,6 @@ msgstr "No hi ha prioritat especificada per al pin (o és zero)"
 #, c-format
 msgid "Malformed entry %u in %s file %s (%s)"
 msgstr "L'entrada %u està mal formada en %s en el fitxer %s (%s)"
-
-#: apt-pkg/sourcelist.cc
-#, c-format
-msgid "Opening %s"
-msgstr "S'està obrint %s"
 
 #: apt-pkg/sourcelist.cc
 #, c-format
@@ -1602,7 +1666,7 @@ msgstr "La línia %u està mal formada en la llista de fonts %s (tipus)"
 msgid "Type '%s' is not known on stanza %u in source list %s"
 msgstr "Es desconeix el tipus «%s» en la línia %u de la llista de fonts %s"
 
-#: apt-pkg/sourcelist.cc
+#: apt-pkg/sourcelist.cc apt-private/private-install.cc
 #, c-format
 msgid "Unsupported file %s given on commandline"
 msgstr "S'ha subministrat el fitxer no admès %s en la línia d'ordres"
@@ -1615,11 +1679,6 @@ msgstr "Heu de posar algunes URI 'font' en el vostre sources.list"
 #, c-format
 msgid "Cannot convert %s to integer: out of range"
 msgstr "No s'ha pogut convertir %s a sencer: fora de rang"
-
-#: apt-pkg/update.cc apt-private/private-download.cc
-#, c-format
-msgid "Failed to fetch %s  %s"
-msgstr "No s'ha pogut obtenir %s  %s"
 
 #: apt-pkg/update.cc
 msgid ""
@@ -1679,6 +1738,12 @@ msgstr ""
 "Canvi de medi: inseriu el disc amb l'etiqueta\n"
 " «%s»\n"
 "en la unitat «%s» i premeu [Intro]\n"
+
+#: apt-private/acqprogress.cc
+msgid ""
+"Do you want to accept these changes and continue updating from this "
+"repository?"
+msgstr ""
 
 #: apt-private/private-cachefile.cc
 msgid "Correcting dependencies..."
@@ -1823,8 +1888,16 @@ msgstr "Aquest APT té superpoders bovins."
 msgid "This APT helper has Super Meep Powers."
 msgstr "Aquest Ajudant d'APT té poders de Super Plor."
 
-#: apt-private/private-depends.cc apt-private/private-show.cc
-#: cmdline/apt-mark.cc
+#: apt-private/private-cmndline.cc
+msgid ""
+"--force-yes is deprecated, use one of the options starting with --allow "
+"instead."
+msgstr ""
+"--force-yes està en desús, en el seu lloc utilitzi una de les opcions que "
+"comencen per --allow."
+
+#: apt-private/private-depends.cc apt-private/private-download.cc
+#: apt-private/private-show.cc cmdline/apt-mark.cc
 msgid "No packages found"
 msgstr "No s'han trobat paquets"
 
@@ -1843,14 +1916,6 @@ msgstr "No s'ha pogut autenticar alguns paquets"
 #: apt-private/private-download.cc
 msgid "Install these packages without verification?"
 msgstr "Voleu instal·lar aquests paquets sense verificar-los?"
-
-#: apt-private/private-download.cc apt-private/private-install.cc
-msgid ""
-"--force-yes is deprecated, use one of the options starting with --allow "
-"instead."
-msgstr ""
-"--force-yes està en desús, en el seu lloc utilitzi una de les opcions que "
-"comencen per --allow."
 
 #: apt-private/private-download.cc
 msgid ""
@@ -2008,7 +2073,7 @@ msgstr ""
 msgid "Abort."
 msgstr "Avortat."
 
-#: apt-private/private-install.cc
+#: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Voleu continuar?"
 
@@ -2336,11 +2401,6 @@ msgstr "Heu de donar com a mínim un patró de cerca"
 msgid "Full Text Search"
 msgstr "Buscar en tot el text"
 
-#: apt-private/private-show.cc cmdline/apt-cache.cc
-#, c-format
-msgid "Package file %s is out of sync."
-msgstr "El fitxer %s del paquet està desincronitzat."
-
 #: apt-private/private-show.cc
 #, c-format
 msgid "There is %i additional record. Please use the '-a' switch to see it"
@@ -2507,12 +2567,6 @@ msgid "%s has no build depends.\n"
 msgstr "%s no té dependències de construcció.\n"
 
 #: apt-private/private-source.cc
-msgid "Must specify at least one package to check builddeps for"
-msgstr ""
-"S'ha d'especificar un paquet per a verificar les dependències de construcció "
-"per a"
-
-#: apt-private/private-source.cc
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
@@ -2520,6 +2574,12 @@ msgid ""
 msgstr ""
 "No hi ha informació d'arquitectura disponible per a %s. Vegeu apt.conf(5) "
 "APT::Architectures per a configurar-ho"
+
+#: apt-private/private-source.cc
+msgid "Must specify at least one package to check builddeps for"
+msgstr ""
+"S'ha d'especificar un paquet per a verificar les dependències de construcció "
+"per a"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2546,8 +2606,8 @@ msgstr "No s'ha pogut analitzar %s. Vol tornar-lo a editar? "
 
 #: apt-private/private-sources.cc
 #, c-format
-msgid "Your '%s' file changed, please run 'apt-get update'."
-msgstr "El fitxer «%s» ha canviat, executi «apt-get update»."
+msgid "Your '%s' file changed, please run 'apt-get update'.\n"
+msgstr "El fitxer «%s» ha canviat, executi «apt-get update».\n"
 
 #: apt-private/private-unmet.cc
 #, c-format
@@ -2557,6 +2617,14 @@ msgstr "El paquet %s versió %s té una dependència sense satisfer:\n"
 #: apt-private/private-update.cc
 msgid "The update command takes no arguments"
 msgstr "L'ordre update no pren arguments"
+
+#. TRANSLATOR: the first two are manpage references, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid ""
+"Usage of %s should be preferred over embedding login information directly in "
+"the %s entry for '%s'"
+msgstr ""
 
 #: apt-private/private-update.cc
 #, c-format
@@ -2573,9 +2641,10 @@ msgstr[1] ""
 msgid "All packages are up to date."
 msgstr "Tots els paquets estan actualitzats."
 
-#: cmdline/apt-cache.cc
-msgid "apt-cache stats does not take any arguments"
-msgstr "apt-cache stats no pren cap argument"
+#: cmdline/apt-cache.cc cmdline/apt-mark.cc
+#, c-format
+msgid "%s does not take any arguments"
+msgstr "%s no pren cap argument"
 
 #: cmdline/apt-cache.cc
 msgid "Total package names: "
@@ -2862,6 +2931,12 @@ msgid "Install new packages (pkg is libc6 not libc6.deb)"
 msgstr "Instal·la nous paquets (el paquet és libc6, no libc6.deb)"
 
 #: cmdline/apt-get.cc
+#, fuzzy
+#| msgid "Install new packages (pkg is libc6 not libc6.deb)"
+msgid "Reinstall packages (pkg is libc6 not libc6.deb)"
+msgstr "Instal·la nous paquets (el paquet és libc6, no libc6.deb)"
+
+#: cmdline/apt-get.cc
 msgid "Remove packages"
 msgstr "Suprimeix paquets"
 
@@ -2959,6 +3034,14 @@ msgstr "concatenar fitxers, amb descompressió automàtica"
 msgid "detect proxy using apt.conf"
 msgstr "detecta el servidor intermediari usant apt.conf"
 
+#: cmdline/apt-helper.cc
+msgid "wait for system to be online"
+msgstr ""
+
+#: cmdline/apt-helper.cc
+msgid "drop privileges before running given command"
+msgstr ""
+
 #: cmdline/apt-internal-planner.cc
 msgid ""
 "Usage: apt-internal-planner\n"
@@ -3001,6 +3084,16 @@ msgstr "%s ja estava marcat com instal·lat manualment.\n"
 #, c-format
 msgid "%s was already set to automatically installed.\n"
 msgstr "%s ja estava marcat com instal·lat automàticament.\n"
+
+#: cmdline/apt-mark.cc
+msgid "No changes necessary"
+msgstr ""
+
+#: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "The following NEW packages will be installed:"
+msgid "The following packages will be marked as automatically installed:"
+msgstr "S'instal·laran els paquets NOUS següents:"
 
 #: cmdline/apt-mark.cc
 #, c-format
@@ -3067,6 +3160,12 @@ msgid "Mark the given packages as manually installed"
 msgstr "Marca els paquets proporcionats com instal·lables manualment"
 
 #: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "Mark the given packages as automatically installed"
+msgid "Mark all dependencies of meta packages as automatically installed."
+msgstr "Marca els paquets proporcionats com instal·lables automàticament"
+
+#: cmdline/apt-mark.cc
 msgid "Mark a package as held back"
 msgstr "Marca el paquet com retingut"
 
@@ -3083,7 +3182,7 @@ msgid "Print the list of manually installed packages"
 msgstr "Mostra la llista dels paquets instal·lats manualment"
 
 #: cmdline/apt-mark.cc
-msgid "Print the list of package on hold"
+msgid "Print the list of packages on hold"
 msgstr "Mostra la llista dels paquets retinguts"
 
 #: cmdline/apt-sortpkgs.cc
@@ -3139,6 +3238,12 @@ msgstr "mostra detalls del paquet"
 #. package stuff
 #: cmdline/apt.cc
 msgid "install packages"
+msgstr "instal·la paquets"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "install packages"
+msgid "reinstall packages"
 msgstr "instal·la paquets"
 
 #: cmdline/apt.cc
@@ -3531,6 +3636,11 @@ msgstr "Capçalera de dades no vàlida"
 msgid "Connection failed"
 msgstr "Ha fallat la connexió"
 
+#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#, c-format
+msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
+msgstr ""
+
 #: methods/basehttp.cc
 #, c-format
 msgid ""
@@ -3580,15 +3690,21 @@ msgstr "Fitxer no trobat"
 msgid "Direct connection to %s domains is blocked by default."
 msgstr "Les connexions directes als dominis %s estan bloquejades per defecte."
 
-#: methods/connect.cc methods/http.cc
-#, c-format
-msgid "Connecting to %s (%s)"
-msgstr "S'està connectant amb %s (%s)"
-
 #: methods/connect.cc
 #, c-format
 msgid "[IP: %s %s]"
 msgstr "[IP: %s %s]"
+
+#: methods/connect.cc
+#, fuzzy, c-format
+#| msgid "Connecting to %s (%s)"
+msgid "Connected to %s (%s)"
+msgstr "S'està connectant amb %s (%s)"
+
+#: methods/connect.cc methods/http.cc
+#, c-format
+msgid "Connecting to %s (%s)"
+msgstr "S'està connectant amb %s (%s)"
 
 #: methods/connect.cc
 #, c-format
@@ -3600,11 +3716,6 @@ msgstr "No s'ha pogut crear un sòcol per a %s (f=%u t=%u p=%u)"
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "No es pot iniciar la connexió amb %s:%s (%s)."
 
-#: methods/connect.cc
-#, c-format
-msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr "No s'ha pogut connectar amb %s:%s (%s), temps de connexió excedit"
-
 #: methods/connect.cc methods/ftp.cc methods/rsh.cc
 msgid "Failed"
 msgstr "Ha fallat"
@@ -3613,6 +3724,11 @@ msgstr "Ha fallat"
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
 msgstr "No s'ha pogut connectar amb %s:%s (%s)."
+
+#: methods/connect.cc
+#, c-format
+msgid "Could not connect to %s:%s (%s), connection timed out"
+msgstr "No s'ha pogut connectar amb %s:%s (%s), temps de connexió excedit"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -3871,30 +3987,6 @@ msgstr "Connexió finalitzada"
 msgid "Error writing to output file"
 msgstr "S'ha produït un error en escriure al fitxer de sortida"
 
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "No mirror file '%s' found "
-msgstr "No s'ha trobat el fitxer rèplica «%s»"
-
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "Can not read mirror file '%s'"
-msgstr "No es pot llegir el fitxer rèplica «%s»"
-
-#: methods/mirror.cc
-#, c-format
-msgid "No entry found in mirror file '%s'"
-msgstr "No s'ha trobat l'entrada en el fitxer de rèplica «%s»"
-
-#: methods/mirror.cc
-#, c-format
-msgid "[Mirror: %s]"
-msgstr "[Rèplica: %s]"
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "No s'ha pogut establir el temps de modificació"
@@ -3906,6 +3998,43 @@ msgstr "La connexió s'ha tancat prematurament"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "Els fitxers buits no poden ser arxius vàlids"
+
+#~ msgid "Removed %s"
+#~ msgstr "S'ha suprimit el paquet %s"
+
+#~ msgid "Package file %s is out of sync."
+#~ msgstr "El fitxer %s del paquet està desincronitzat."
+
+#~ msgid ""
+#~ "The package index files are corrupted. No Filename: field for package %s."
+#~ msgstr ""
+#~ "L'índex dels fitxers en el paquet està corromput. El fitxer no existeix: "
+#~ "camp per al paquet %s."
+
+#~ msgid "No mirror file '%s' found "
+#~ msgstr "No s'ha trobat el fitxer rèplica «%s»"
+
+#~ msgid "Can not read mirror file '%s'"
+#~ msgstr "No es pot llegir el fitxer rèplica «%s»"
+
+#~ msgid "No entry found in mirror file '%s'"
+#~ msgstr "No s'ha trobat l'entrada en el fitxer de rèplica «%s»"
+
+#~ msgid "[Mirror: %s]"
+#~ msgstr "[Rèplica: %s]"
+
+#~ msgid "Opening configuration file %s"
+#~ msgstr "S'està obrint el fitxer de configuració %s"
+
+#~ msgid "Opening %s"
+#~ msgstr "S'està obrint %s"
+
+#~ msgid ""
+#~ "Unable to find expected entry '%s' in Release file (Wrong sources.list "
+#~ "entry or malformed file)"
+#~ msgstr ""
+#~ "No s'ha trobat l'entrada «%s» esperada, al fitxer Release (entrada "
+#~ "errònia al sources.list o fitxer malformat)"
 
 #~ msgid "Unmet dependencies. Try using --fix-broken."
 #~ msgstr "Dependències sense satisfer. Proveu-ho emprant --fix-broken."

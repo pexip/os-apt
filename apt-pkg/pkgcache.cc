@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: pkgcache.cc,v 1.37 2003/02/10 01:40:58 doogie Exp $
 /* ######################################################################
    
    Package Cache - Accessor code for the cache
@@ -11,7 +10,7 @@
    This is the general utility functions for cache management. They provide
    a complete set of accessor functions for the cache. The cacheiterators
    header contains the STL-like iterators that can be used to easially
-   navigate the cache as well as seemlessly dereference the mmap'd 
+   navigate the cache as well as seamlessly dereference the mmap'd
    indexes. Use these always.
    
    The main class provides for ways to get package indexes and some
@@ -20,26 +19,26 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
+#include <apt-pkg/aptconfiguration.h>
+#include <apt-pkg/configuration.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/macros.h>
+#include <apt-pkg/mmap.h>
 #include <apt-pkg/pkgcache.h>
 #include <apt-pkg/policy.h>
-#include <apt-pkg/version.h>
-#include <apt-pkg/error.h>
 #include <apt-pkg/strutl.h>
-#include <apt-pkg/configuration.h>
-#include <apt-pkg/aptconfiguration.h>
-#include <apt-pkg/mmap.h>
-#include <apt-pkg/macros.h>
+#include <apt-pkg/version.h>
 
+#include <zlib.h>
+#include <algorithm>
+#include <sstream>
+#include <string>
+#include <vector>
 #include <stddef.h>
 #include <string.h>
-#include <sstream>
-#include <algorithm>
-#include <vector>
-#include <string>
 #include <sys/stat.h>
-#include <zlib.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -58,7 +57,7 @@ pkgCache::Header::Header()
 
    /* Whenever the structures change the major version should be bumped,
       whenever the generator changes the minor version should be bumped. */
-   APT_HEADER_SET(MajorVersion, 11);
+   APT_HEADER_SET(MajorVersion, 13);
    APT_HEADER_SET(MinorVersion, 0);
    APT_HEADER_SET(Dirty, false);
 
@@ -232,10 +231,58 @@ map_id_t pkgCache::sHash(const char *Str) const
    return Hash % HeaderP->GetHashTableSize();
 }
 
+#if defined(HAVE_FMV_SSE42_AND_CRC32)
+
+#ifdef HAVE_FMV_SSE42_AND_CRC32
+__attribute__((target("sse4.2"))) static uint32_t hash32(uint32_t crc32, const unsigned char *input, size_t size)
+{
+   if (input == nullptr)
+      return 0;
+
+   crc32 ^= 0xffffffffU;
+#ifdef HAVE_FMV_SSE42_AND_CRC32DI
+   while (size >= 8) {
+      crc32 = __builtin_ia32_crc32di(crc32, *(uint64_t *)input);
+      input += 8;
+      size -= 8;
+   }
+
+   if (size >= 4) {
+#else
+   while (size >= 4) {
+#endif
+      crc32 = __builtin_ia32_crc32si(crc32, *(uint32_t *)input);
+      input += 4;
+      size -= 4;
+   }
+
+   if (size >= 2) {
+      crc32 = __builtin_ia32_crc32hi(crc32, *(uint16_t *)input);
+      input += 2;
+      size -= 2;
+   }
+
+   if (size >= 1) {
+      crc32 = __builtin_ia32_crc32qi(crc32, *(uint8_t *)input);
+      input += 1;
+      size -= 1;
+   }
+   crc32 ^= 0xffffffffU;
+   return crc32;
+}
+#endif
+
+__attribute__((target("default")))
+#endif
+static uint32_t hash32(uint32_t crc32, const unsigned char *input, size_t size)
+{
+   return adler32(crc32, input, size);
+}
+
 uint32_t pkgCache::CacheHash()
 {
    pkgCache::Header header = {};
-   uLong adler = adler32(0L, Z_NULL, 0);
+   uLong adler = hash32(0L, Z_NULL, 0);
 
    if (Map.Size() < sizeof(header))
       return adler;
@@ -244,14 +291,14 @@ uint32_t pkgCache::CacheHash()
    header.Dirty = false;
    header.CacheFileSize = 0;
 
-   adler = adler32(adler,
-		   reinterpret_cast<const unsigned char *>(&header),
-		   sizeof(header));
+   adler = hash32(adler,
+		  reinterpret_cast<const unsigned char *>(&header),
+		  sizeof(header));
 
    if (Map.Size() > sizeof(header)) {
-      adler = adler32(adler,
-		      static_cast<const unsigned char *>(GetMap().Data()) + sizeof(header),
-		      GetMap().Size() - sizeof(header));
+      adler = hash32(adler,
+		     static_cast<const unsigned char *>(GetMap().Data()) + sizeof(header),
+		     GetMap().Size() - sizeof(header));
    }
 
    return adler;
@@ -969,13 +1016,6 @@ const char * pkgCache::VerIterator::MultiArchType() const
    included here. */
 bool pkgCache::RlsFileIterator::IsOk()
 {
-   struct stat Buf;
-   if (stat(FileName(),&Buf) != 0)
-      return false;
-
-   if (Buf.st_size != (signed)S->Size || Buf.st_mtime != S->mtime)
-      return false;
-
    return true;
 }
 									/*}}}*/
@@ -1003,13 +1043,6 @@ string pkgCache::RlsFileIterator::RelStr()
    included here. */
 bool pkgCache::PkgFileIterator::IsOk()
 {
-   struct stat Buf;
-   if (stat(FileName(),&Buf) != 0)
-      return false;
-
-   if (Buf.st_size != (signed)S->Size || Buf.st_mtime != S->mtime)
-      return false;
-
    return true;
 }
 									/*}}}*/

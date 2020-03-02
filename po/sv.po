@@ -8,9 +8,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: apt\n"
+"Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2017-09-13 17:18+0000\n"
+"POT-Creation-Date: 2019-02-04 15:34+0100\n"
 "PO-Revision-Date: 2015-08-19 21:33+0200\n"
 "Last-Translator: Anders Jonsson <anders.jonsson@norsjovallen.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@debian.org>\n"
@@ -150,7 +150,7 @@ msgstr "Filen %s/%s skriver över den i paketet %s"
 #. Only warn if there is no sources.list file.
 #: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
 #: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc methods/mirror.cc
+#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
 #, c-format
 msgid "Unable to read %s"
 msgstr "Kunde inte läsa %s"
@@ -216,7 +216,7 @@ msgstr "Förrådet ”%s” är inte längre signerat."
 
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
-msgid "The repository '%s' does no longer have a Release file."
+msgid "The repository '%s' no longer has a Release file."
 msgstr "Förrådet ”%s” är inte längre signerat."
 
 #: apt-pkg/acquire-item.cc
@@ -301,6 +301,13 @@ msgstr "GPG-fel: %s: %s"
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
+"Skipping acquire of configured file '%s' as repository '%s' doesn't have the "
+"component '%s' (component misspelt in sources.list?)"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
 "Skipping acquire of configured file '%s' as repository '%s' doesn't support "
 "architecture '%s'"
 msgstr ""
@@ -308,11 +315,9 @@ msgstr ""
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
-"Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
-"or malformed file)"
+"Skipping acquire of configured file '%s' as repository '%s' does not seem to "
+"provide it (sources.list entry misspelt?)"
 msgstr ""
-"Kunde inte hitta förväntad post ”%s” i Release-fil (Felaktig sources.list-"
-"post eller fel format på fil)"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -333,10 +338,55 @@ msgstr ""
 "Release-fil för %s har gått ut (ogiltig sedan %s). Uppdateringar för detta "
 "förråd kommer inte verkställas."
 
+#. TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+#. the time until the file will be valid - formatted in the same way as in
+#. the download progress display (e.g. 7d 3h 42min 1s)
+#: apt-pkg/acquire-item.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Release file for %s is expired (invalid since %s). Updates for this "
+#| "repository will not be applied."
+msgid ""
+"Release file for %s is not valid yet (invalid for another %s). Updates for "
+"this repository will not be applied."
+msgstr ""
+"Release-fil för %s har gått ut (ogiltig sedan %s). Uppdateringar för detta "
+"förråd kommer inte verkställas."
+
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Konflikt i distribution: %s (förväntade %s men fick %s)"
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
+msgstr ""
+
+#. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"More information about this can be found online in the Release notes at: %s"
+msgstr ""
+
+#. TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"This must be accepted explicitly before updates for this repository can be "
+"applied. See %s manpage for details."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc apt-pkg/update.cc apt-private/private-download.cc
+#, c-format
+msgid "Failed to fetch %s  %s"
+msgstr "Misslyckades med att hämta %s  %s"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -352,17 +402,18 @@ msgstr ""
 msgid "Can't find a source to download version '%s' of '%s'"
 msgstr "Kan inte hitta en källa för att hämta version ”%s” av ”%s”"
 
-#: apt-pkg/acquire-item.cc
-#, c-format
-msgid ""
-"The package index files are corrupted. No Filename: field for package %s."
-msgstr "Paketindexfilerna är skadade. Inget ”Filename:”-fält för paketet %s."
-
 #. TRANSLATOR: %s=%s is sourcename=sourceversion, e.g. apt=1.1
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "Ändringslogg för %s (%s)"
+
+#: apt-pkg/acquire-worker.cc
+#, c-format
+msgid ""
+"The method '%s' is unsupported and disabled by default. Consider switching "
+"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
+msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -397,13 +448,13 @@ msgstr "Mata in skivan med etiketten ”%s” i enheten ”%s” och tryck på [
 
 #: apt-pkg/acquire.cc apt-pkg/cdrom.cc
 #, c-format
-msgid "List directory %spartial is missing."
-msgstr "Listkatalogen %spartial saknas."
+msgid "List directory %s is missing."
+msgstr "Listkatalogen %s saknas."
 
 #: apt-pkg/acquire.cc
 #, c-format
-msgid "Archives directory %spartial is missing."
-msgstr "Arkivkatalogen %spartial saknas."
+msgid "Archives directory %s is missing."
+msgstr "Arkivkatalogen %s saknas."
 
 #: apt-pkg/acquire.cc
 #, c-format
@@ -432,15 +483,6 @@ msgstr ""
 msgid "Clean of %s is not supported"
 msgstr "Rensning av %s stöds inte"
 
-# Felmeddelande för misslyckad chdir
-#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
-#: methods/mirror.cc
-#, c-format
-msgid "Unable to change to %s"
-msgstr "Kunde inte byta till %s"
-
-#. only show the ETA if it makes sense
-#. two days
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -478,7 +520,7 @@ msgstr "Paketlistan eller statusfilen kunde inte tolkas eller öppnas."
 msgid "You may want to run apt-get update to correct these problems"
 msgstr "Du kan möjligen rätta till problemet genom att köra ”apt-get update”"
 
-#: apt-pkg/cachefile.cc
+#: apt-pkg/cachefile.cc methods/mirror.cc
 msgid "The list of sources could not be read."
 msgstr "Listan över källor kunde inte läsas."
 
@@ -635,6 +677,12 @@ msgstr "Skriver ny källista\n"
 msgid "Source list entries for this disc are:\n"
 msgstr "Poster i källistan för denna skiva:\n"
 
+# Felmeddelande för misslyckad chdir
+#: apt-pkg/clean.cc
+#, c-format
+msgid "Unable to change to %s"
+msgstr "Kunde inte byta till %s"
+
 #: apt-pkg/clean.cc
 #, c-format
 msgid "Unable to stat %s."
@@ -703,11 +751,6 @@ msgstr "Felaktig åtgärd %s"
 #, c-format
 msgid "Unrecognized type abbreviation: '%c'"
 msgstr "Okänd typförkortning: ”%c”"
-
-#: apt-pkg/contrib/configuration.cc
-#, c-format
-msgid "Opening configuration file %s"
-msgstr "Öppnar konfigurationsfilen %s"
 
 #: apt-pkg/contrib/configuration.cc
 #, c-format
@@ -888,12 +931,12 @@ msgstr "Problem med att byta namn på filen %s till %s"
 msgid "Problem syncing the file"
 msgstr "Problem med att synkronisera filen"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to mkstemp %s"
 msgstr "Kunde inte anropa mkstemp för %s"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to write to %s"
 msgstr "Kunde inte skriva till %s"
@@ -1068,16 +1111,19 @@ msgid "Unable to parse package file %s (%d)"
 msgstr "Kunde inte tolka paketfilen %s (%d)"
 
 #: apt-pkg/deb/debsystem.cc
-#, c-format
+#, fuzzy, c-format
+#| msgid ""
+#| "Unable to lock the administration directory (%s), is another process "
+#| "using it?"
 msgid ""
-"Unable to lock the administration directory (%s), is another process using "
-"it?"
+"Unable to acquire the dpkg frontend lock (%s), is another process using it?"
 msgstr ""
 "Kunde inte låsa administrationskatalogen (%s). Använder en annan process den?"
 
 #: apt-pkg/deb/debsystem.cc
-#, c-format
-msgid "Unable to lock the administration directory (%s), are you root?"
+#, fuzzy, c-format
+#| msgid "Unable to lock the administration directory (%s), are you root?"
+msgid "Unable to acquire the dpkg frontend lock (%s), are you root?"
 msgstr "Kunde inte låsa administrationskatalogen (%s). Är du root?"
 
 #. TRANSLATORS: the %s contains the recovery command, usually
@@ -1090,29 +1136,42 @@ msgstr ""
 "dpkg avbröts. Du måste köra ”%s” manuellt för att korrigera problemet. "
 
 #: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid ""
+"Unable to lock the administration directory (%s), is another process using "
+"it?"
+msgstr ""
+"Kunde inte låsa administrationskatalogen (%s). Använder en annan process den?"
+
+#: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid "Unable to lock the administration directory (%s), are you root?"
+msgstr "Kunde inte låsa administrationskatalogen (%s). Är du root?"
+
+#: apt-pkg/deb/debsystem.cc
 msgid "Not locked"
 msgstr "Inte låst"
 
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Installing %s"
-msgstr "Installerar %s"
+msgid "Preparing %s"
+msgstr "Förbereder %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Configuring %s"
-msgstr "Konfigurerar %s"
+msgid "Preparing to configure %s"
+msgstr "Förbereder konfigurering av %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removing %s"
-msgstr "Tar bort %s"
+msgid "Preparing for removal of %s"
+msgstr "Förbereder borttagning av %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Completely removing %s"
-msgstr "Tar bort hela %s"
+msgid "Preparing to completely remove %s"
+msgstr "Förbereder borttagning av hela %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1129,6 +1188,11 @@ msgstr "Kör efterinstallationsutlösare %s"
 msgid "Installed %s"
 msgstr "Installerade %s"
 
+#: apt-pkg/deb/dpkgpm.cc
+#, c-format
+msgid "Configuring %s"
+msgstr "Konfigurerar %s"
+
 #. FIXME: use a better string after freeze
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1142,33 +1206,23 @@ msgstr "Kunde inte öppna filen ”%s”"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing %s"
-msgstr "Förbereder %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
 msgid "Unpacking %s"
 msgstr "Packar upp %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing to configure %s"
-msgstr "Förbereder konfigurering av %s"
+msgid "Installing %s"
+msgstr "Installerar %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing for removal of %s"
-msgstr "Förbereder borttagning av %s"
+msgid "Removing %s"
+msgstr "Tar bort %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removed %s"
-msgstr "Tog bort %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing to completely remove %s"
-msgstr "Förbereder borttagning av hela %s"
+msgid "Completely removing %s"
+msgstr "Tar bort hela %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1344,8 +1398,8 @@ msgstr "Kunde inte fastställa en lämplig paketsystemstyp"
 
 #: apt-pkg/install-progress.cc
 #, c-format
-msgid "Progress: [%3i%%]"
-msgstr "Förlopp: [%3i%%]"
+msgid "Progress: [%3li%%]"
+msgstr "Förlopp: [%3li%%]"
 
 #. send status information that we are about to fork dpkg
 #: apt-pkg/install-progress.cc
@@ -1527,6 +1581,12 @@ msgstr "Förstod inte nåltypen %s"
 
 #: apt-pkg/policy.cc
 #, c-format
+msgid ""
+"%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"
+msgstr ""
+
+#: apt-pkg/policy.cc
+#, c-format
 msgid "%s: Value %s is outside the range of valid pin priorities (%d to %d)"
 msgstr ""
 
@@ -1540,11 +1600,6 @@ msgstr "Prioritet ej angiven (eller noll) för nål"
 #, fuzzy, c-format
 msgid "Malformed entry %u in %s file %s (%s)"
 msgstr "Felaktig åsidosättning %s rad %llu (%s)"
-
-#: apt-pkg/sourcelist.cc
-#, c-format
-msgid "Opening %s"
-msgstr "Öppnar %s"
 
 #: apt-pkg/sourcelist.cc
 #, c-format
@@ -1566,7 +1621,7 @@ msgstr "Rad %u i källistan %s har fel format (typ)"
 msgid "Type '%s' is not known on stanza %u in source list %s"
 msgstr "Typen ”%s” är inte känd i post %u i källistan %s"
 
-#: apt-pkg/sourcelist.cc
+#: apt-pkg/sourcelist.cc apt-private/private-install.cc
 #, c-format
 msgid "Unsupported file %s given on commandline"
 msgstr ""
@@ -1579,11 +1634,6 @@ msgstr "Du måste lägga till några ”source”-URI:er i din sources.list"
 #, c-format
 msgid "Cannot convert %s to integer: out of range"
 msgstr ""
-
-#: apt-pkg/update.cc apt-private/private-download.cc
-#, c-format
-msgid "Failed to fetch %s  %s"
-msgstr "Misslyckades med att hämta %s  %s"
 
 #: apt-pkg/update.cc
 msgid ""
@@ -1643,6 +1693,12 @@ msgstr ""
 "Mediabyte: Mata in skivan med etiketten\n"
 " ”%s”\n"
 "i enheten ”%s” och tryck på [Retur]\n"
+
+#: apt-private/acqprogress.cc
+msgid ""
+"Do you want to accept these changes and continue updating from this "
+"repository?"
+msgstr ""
 
 #: apt-private/private-cachefile.cc
 msgid "Correcting dependencies..."
@@ -1780,8 +1836,14 @@ msgstr "Denna APT har Speciella Ko-Krafter."
 msgid "This APT helper has Super Meep Powers."
 msgstr "Denna APT-hjälpare har speciella Meep-krafter."
 
-#: apt-private/private-depends.cc apt-private/private-show.cc
-#: cmdline/apt-mark.cc
+#: apt-private/private-cmndline.cc
+msgid ""
+"--force-yes is deprecated, use one of the options starting with --allow "
+"instead."
+msgstr ""
+
+#: apt-private/private-depends.cc apt-private/private-download.cc
+#: apt-private/private-show.cc cmdline/apt-mark.cc
 msgid "No packages found"
 msgstr "Inga paket hittades"
 
@@ -1800,12 +1862,6 @@ msgstr "Några av paketen kunde inte autentiseras"
 #: apt-private/private-download.cc
 msgid "Install these packages without verification?"
 msgstr "Installera dessa paket utan verifiering?"
-
-#: apt-private/private-download.cc apt-private/private-install.cc
-msgid ""
-"--force-yes is deprecated, use one of the options starting with --allow "
-"instead."
-msgstr ""
 
 #: apt-private/private-download.cc
 #, fuzzy
@@ -1958,7 +2014,7 @@ msgstr ""
 msgid "Abort."
 msgstr "Avbryter."
 
-#: apt-private/private-install.cc
+#: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Vill du fortsätta?"
 
@@ -2290,11 +2346,6 @@ msgstr "Du måste ange minst ett sökmönster"
 msgid "Full Text Search"
 msgstr "Fulltextsökning"
 
-#: apt-private/private-show.cc cmdline/apt-cache.cc
-#, c-format
-msgid "Package file %s is out of sync."
-msgstr "Paketfilen %s är inte synkroniserad."
-
 #: apt-private/private-show.cc
 #, c-format
 msgid "There is %i additional record. Please use the '-a' switch to see it"
@@ -2457,10 +2508,6 @@ msgid "%s has no build depends.\n"
 msgstr "%s har inga byggberoenden.\n"
 
 #: apt-private/private-source.cc
-msgid "Must specify at least one package to check builddeps for"
-msgstr "Du måste ange minst ett paket att kontrollera byggberoenden för"
-
-#: apt-private/private-source.cc
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
@@ -2468,6 +2515,10 @@ msgid ""
 msgstr ""
 "Ingen arkitekturinformation tillgänglig för %s. Se apt.conf(5) APT::"
 "Architectures för inställning"
+
+#: apt-private/private-source.cc
+msgid "Must specify at least one package to check builddeps for"
+msgstr "Du måste ange minst ett paket att kontrollera byggberoenden för"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2490,8 +2541,8 @@ msgstr "Misslyckades med att tolka %s. Redigera igen? "
 
 #: apt-private/private-sources.cc
 #, c-format
-msgid "Your '%s' file changed, please run 'apt-get update'."
-msgstr "Din ”%s”-fil ändrades, kör ”apt-get update”."
+msgid "Your '%s' file changed, please run 'apt-get update'.\n"
+msgstr "Din ”%s”-fil ändrades, kör ”apt-get update”.\n"
 
 #: apt-private/private-unmet.cc
 #, fuzzy, c-format
@@ -2502,6 +2553,14 @@ msgstr ""
 #: apt-private/private-update.cc
 msgid "The update command takes no arguments"
 msgstr "Uppdateringskommandot tar inga argument"
+
+#. TRANSLATOR: the first two are manpage references, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid ""
+"Usage of %s should be preferred over embedding login information directly in "
+"the %s entry for '%s'"
+msgstr ""
 
 #: apt-private/private-update.cc
 #, c-format
@@ -2517,9 +2576,9 @@ msgstr[1] ""
 msgid "All packages are up to date."
 msgstr "Alla paket är uppdaterade."
 
-#: cmdline/apt-cache.cc
-#, fuzzy
-msgid "apt-cache stats does not take any arguments"
+#: cmdline/apt-cache.cc cmdline/apt-mark.cc
+#, fuzzy, c-format
+msgid "%s does not take any arguments"
 msgstr "Uppdateringskommandot tar inga argument"
 
 #: cmdline/apt-cache.cc
@@ -2785,6 +2844,12 @@ msgid "Install new packages (pkg is libc6 not libc6.deb)"
 msgstr "Installera nya paket (paket är libc6, inte libc6.deb)"
 
 #: cmdline/apt-get.cc
+#, fuzzy
+#| msgid "Install new packages (pkg is libc6 not libc6.deb)"
+msgid "Reinstall packages (pkg is libc6 not libc6.deb)"
+msgstr "Installera nya paket (paket är libc6, inte libc6.deb)"
+
+#: cmdline/apt-get.cc
 msgid "Remove packages"
 msgstr "Ta bort paket"
 
@@ -2880,6 +2945,14 @@ msgstr ""
 msgid "detect proxy using apt.conf"
 msgstr "hitta proxy med hjälp av apt.conf"
 
+#: cmdline/apt-helper.cc
+msgid "wait for system to be online"
+msgstr ""
+
+#: cmdline/apt-helper.cc
+msgid "drop privileges before running given command"
+msgstr ""
+
 #: cmdline/apt-internal-planner.cc
 #, fuzzy
 msgid ""
@@ -2936,6 +3009,16 @@ msgstr "%s var redan satt till manuellt installerad.\n"
 #, c-format
 msgid "%s was already set to automatically installed.\n"
 msgstr "%s var redan satt till automatiskt installerad.\n"
+
+#: cmdline/apt-mark.cc
+msgid "No changes necessary"
+msgstr ""
+
+#: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "The following NEW packages will be installed:"
+msgid "The following packages will be marked as automatically installed:"
+msgstr "Följande NYA paket kommer att installeras:"
 
 #: cmdline/apt-mark.cc
 #, c-format
@@ -3001,6 +3084,12 @@ msgid "Mark the given packages as manually installed"
 msgstr "Markera de angivna paketen som manuellt installerade"
 
 #: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "Mark the given packages as automatically installed"
+msgid "Mark all dependencies of meta packages as automatically installed."
+msgstr "Markera de angivna paketen som automatiskt installerade"
+
+#: cmdline/apt-mark.cc
 msgid "Mark a package as held back"
 msgstr "Markera ett paket som tillbakahållet"
 
@@ -3017,7 +3106,7 @@ msgid "Print the list of manually installed packages"
 msgstr "Visa listan över manuellt installerade paket"
 
 #: cmdline/apt-mark.cc
-msgid "Print the list of package on hold"
+msgid "Print the list of packages on hold"
 msgstr "Visa listan över tillbakahållna paket"
 
 #: cmdline/apt-sortpkgs.cc
@@ -3060,6 +3149,12 @@ msgstr "visa detaljer för paket"
 #. package stuff
 #: cmdline/apt.cc
 msgid "install packages"
+msgstr "installera paket"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "install packages"
+msgid "reinstall packages"
 msgstr "installera paket"
 
 #: cmdline/apt.cc
@@ -3457,6 +3552,11 @@ msgstr "Felaktiga data i huvud"
 msgid "Connection failed"
 msgstr "Anslutningen misslyckades"
 
+#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#, c-format
+msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
+msgstr ""
+
 #: methods/basehttp.cc
 #, c-format
 msgid ""
@@ -3506,15 +3606,21 @@ msgstr "Filen hittades inte"
 msgid "Direct connection to %s domains is blocked by default."
 msgstr ""
 
-#: methods/connect.cc methods/http.cc
-#, c-format
-msgid "Connecting to %s (%s)"
-msgstr "Ansluter till %s (%s)"
-
 #: methods/connect.cc
 #, c-format
 msgid "[IP: %s %s]"
 msgstr "[IP: %s %s]"
+
+#: methods/connect.cc
+#, fuzzy, c-format
+#| msgid "Connecting to %s (%s)"
+msgid "Connected to %s (%s)"
+msgstr "Ansluter till %s (%s)"
+
+#: methods/connect.cc methods/http.cc
+#, c-format
+msgid "Connecting to %s (%s)"
+msgstr "Ansluter till %s (%s)"
 
 # [f]amilj, [t]yp, [p]rotokoll
 #: methods/connect.cc
@@ -3527,11 +3633,6 @@ msgstr "Kunde inte skapa ett uttag (socket) för %s (f=%u t=%u p=%u)"
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "Kunde inte initiera anslutningen till %s:%s (%s)."
 
-#: methods/connect.cc
-#, c-format
-msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr "Kunde inte ansluta till %s:%s (%s), anslutningen överskred tidsgräns"
-
 #: methods/connect.cc methods/ftp.cc methods/rsh.cc
 msgid "Failed"
 msgstr "Misslyckades"
@@ -3540,6 +3641,11 @@ msgstr "Misslyckades"
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
 msgstr "Kunde inte ansluta till %s:%s (%s)."
+
+#: methods/connect.cc
+#, c-format
+msgid "Could not connect to %s:%s (%s), connection timed out"
+msgstr "Kunde inte ansluta till %s:%s (%s), anslutningen överskred tidsgräns"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -3798,30 +3904,6 @@ msgstr "Anslutningen överskred tidsgränsen"
 msgid "Error writing to output file"
 msgstr "Fel vid skrivning till utdatafil"
 
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "No mirror file '%s' found "
-msgstr "Ingen spegelfil ”%s” hittades "
-
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "Can not read mirror file '%s'"
-msgstr "Kan inte läsa spegelfilen ”%s”"
-
-#: methods/mirror.cc
-#, c-format
-msgid "No entry found in mirror file '%s'"
-msgstr "Ingen post funnen i spegelfilen ”%s”"
-
-#: methods/mirror.cc
-#, c-format
-msgid "[Mirror: %s]"
-msgstr "[Spegel: %s]"
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "Misslyckades med att ställa in ändringstid"
@@ -3833,6 +3915,42 @@ msgstr "Anslutningen stängdes i förtid"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "Tomma filer kan inte vara giltiga arkiv"
+
+#~ msgid "Removed %s"
+#~ msgstr "Tog bort %s"
+
+#~ msgid "Package file %s is out of sync."
+#~ msgstr "Paketfilen %s är inte synkroniserad."
+
+#~ msgid ""
+#~ "The package index files are corrupted. No Filename: field for package %s."
+#~ msgstr ""
+#~ "Paketindexfilerna är skadade. Inget ”Filename:”-fält för paketet %s."
+
+#~ msgid "No mirror file '%s' found "
+#~ msgstr "Ingen spegelfil ”%s” hittades "
+
+#~ msgid "Can not read mirror file '%s'"
+#~ msgstr "Kan inte läsa spegelfilen ”%s”"
+
+#~ msgid "No entry found in mirror file '%s'"
+#~ msgstr "Ingen post funnen i spegelfilen ”%s”"
+
+#~ msgid "[Mirror: %s]"
+#~ msgstr "[Spegel: %s]"
+
+#~ msgid "Opening configuration file %s"
+#~ msgstr "Öppnar konfigurationsfilen %s"
+
+#~ msgid "Opening %s"
+#~ msgstr "Öppnar %s"
+
+#~ msgid ""
+#~ "Unable to find expected entry '%s' in Release file (Wrong sources.list "
+#~ "entry or malformed file)"
+#~ msgstr ""
+#~ "Kunde inte hitta förväntad post ”%s” i Release-fil (Felaktig sources.list-"
+#~ "post eller fel format på fil)"
 
 #~ msgid "Unmet dependencies. Try using --fix-broken."
 #~ msgstr "Otillfredsställda beroenden. Prova med --fix-broken."

@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: algorithms.cc,v 1.44 2002/11/28 18:49:16 jgg Exp $
 /* ######################################################################
 
    Algorithms - A set of misc algorithms
@@ -17,21 +16,20 @@
 #include <config.h>
 
 #include <apt-pkg/algorithms.h>
-#include <apt-pkg/error.h>
 #include <apt-pkg/configuration.h>
-#include <apt-pkg/edsp.h>
 #include <apt-pkg/depcache.h>
+#include <apt-pkg/dpkgpm.h>
+#include <apt-pkg/edsp.h>
+#include <apt-pkg/error.h>
 #include <apt-pkg/packagemanager.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/prettyprinters.h>
-#include <apt-pkg/dpkgpm.h>
 
-#include <string.h>
-#include <string>
 #include <cstdlib>
 #include <iostream>
+#include <string>
 #include <utility>
+#include <string.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -52,12 +50,13 @@ pkgSimulate::pkgSimulate(pkgDepCache *Cache) : pkgPackageManager(Cache),
 			    group(Sim)
 {
    Sim.Init(0);
-   Flags = new unsigned char[Cache->Head().PackageCount];
-   memset(Flags,0,sizeof(*Flags)*Cache->Head().PackageCount);
+   auto PackageCount = Cache->Head().PackageCount;
+   Flags = new unsigned char[PackageCount];
+   memset(Flags,0,sizeof(*Flags)*PackageCount);
 
    // Fake a filename so as not to activate the media swapping
    string Jnk = "SIMULATE";
-   for (unsigned int I = 0; I != Cache->Head().PackageCount; I++)
+   for (decltype(PackageCount) I = 0; I != PackageCount; ++I)
       FileNames[I] = Jnk;
 }
 									/*}}}*/
@@ -148,7 +147,7 @@ bool pkgSimulate::RealInstall(PkgIterator iPkg,string /*File*/)
 									/*}}}*/
 // Simulate::Configure - Simulate configuration of a Package		/*{{{*/
 // ---------------------------------------------------------------------
-/* This is not an acurate simulation of relatity, we should really not
+/* This is not an accurate simulation of relatity, we should really not
    install the package.. For some investigations it may be necessary 
    however. */
 bool pkgSimulate::Configure(PkgIterator iPkg)
@@ -399,7 +398,7 @@ bool pkgFixBroken(pkgDepCache &Cache)
 pkgProblemResolver::pkgProblemResolver(pkgDepCache *pCache) : d(NULL), Cache(*pCache)
 {
    // Allocate memory
-   unsigned long Size = Cache.Head().PackageCount;
+   auto const Size = Cache.Head().PackageCount;
    Scores = new int[Size];
    Flags = new unsigned char[Size];
    memset(Flags,0,sizeof(*Flags)*Size);
@@ -434,7 +433,7 @@ int pkgProblemResolver::ScoreSort(Package const *A,Package const *B)
 /* */
 void pkgProblemResolver::MakeScores()
 {
-   unsigned long Size = Cache.Head().PackageCount;
+   auto const Size = Cache.Head().PackageCount;
    memset(Scores,0,sizeof(*Scores)*Size);
 
    // maps to pkgCache::State::VerPriority: 
@@ -753,7 +752,7 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
    
    MakeScores();
 
-   unsigned long const Size = Cache.Head().PackageCount;
+   auto const Size = Cache.Head().PackageCount;
 
    /* We have to order the packages so that the broken fixing pass 
       operates from highest score to lowest. This prevents problems when
@@ -806,7 +805,7 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
 	 {
 	    if (Debug == true)
 	       clog << " Try to Re-Instate (" << Counter << ") " << I.FullName(false) << endl;
-	    unsigned long OldBreaks = Cache.BrokenCount();
+	    auto const OldBreaks = Cache.BrokenCount();
 	    pkgCache::Version *OldVer = Cache[I].InstallVer;
 	    Flags[I->ID] &= ReInstateTried;
 	    
@@ -1006,7 +1005,7 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
 			      dangerous as it could trigger new breaks/conflicts… */
 			   if (Debug == true)
 			      clog << "  Try Installing " << APT::PrettyPkg(&Cache, Start.TargetPkg()) << " before changing " << I.FullName(false) << std::endl;
-			   unsigned long const OldBroken = Cache.BrokenCount();
+			   auto const OldBroken = Cache.BrokenCount();
 			   Cache.MarkInstall(Start.TargetPkg(), true, 1, false);
 			   // FIXME: we should undo the complete MarkInstall process here
 			   if (Cache[Start.TargetPkg()].InstBroken() == true || Cache.BrokenCount() > OldBroken)
@@ -1211,14 +1210,13 @@ bool pkgProblemResolver::ResolveByKeepInternal()
 {
    pkgDepCache::ActionGroup group(Cache);
 
-   unsigned long Size = Cache.Head().PackageCount;
-
    MakeScores();
-   
+
    /* We have to order the packages so that the broken fixing pass 
       operates from highest score to lowest. This prevents problems when
       high score packages cause the removal of lower score packages that
       would cause the removal of even lower score packages. */
+   auto Size = Cache.Head().PackageCount;
    pkgCache::Package **PList = new pkgCache::Package *[Size];
    pkgCache::Package **PEnd = PList;
    for (pkgCache::PkgIterator I = Cache.PkgBegin(); I.end() == false; ++I)

@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: hashes.cc,v 1.1 2001/03/06 07:15:29 jgg Exp $
 /* ######################################################################
 
    Hashes - Simple wrapper around the hash functions
@@ -13,19 +12,19 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
-#include <apt-pkg/hashes.h>
-#include <apt-pkg/fileutl.h>
 #include <apt-pkg/configuration.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/hashes.h>
 #include <apt-pkg/md5.h>
 #include <apt-pkg/sha1.h>
 #include <apt-pkg/sha2.h>
 
-#include <stddef.h>
 #include <algorithm>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string>
 #include <iostream>
+#include <string>
+#include <stddef.h>
+#include <stdlib.h>
+#include <unistd.h>
 									/*}}}*/
 
 const char * HashString::_SupportedHashes[] =
@@ -208,9 +207,7 @@ unsigned long long HashStringList::FileSize() const			/*{{{*/
 									/*}}}*/
 bool HashStringList::FileSize(unsigned long long const Size)		/*{{{*/
 {
-   std::string size;
-   strprintf(size, "%llu", Size);
-   return push_back(HashString("Checksum-FileSize", size));
+   return push_back(HashString("Checksum-FileSize", std::to_string(Size)));
 }
 									/*}}}*/
 bool HashStringList::supported(char const * const type)			/*{{{*/
@@ -339,7 +336,7 @@ bool Hashes::AddFD(int const Fd,unsigned long long Size)
    bool const ToEOF = (Size == UntilEOF);
    while (Size != 0 || ToEOF)
    {
-      unsigned long long n = sizeof(Buf);
+      decltype(Size) n = sizeof(Buf);
       if (!ToEOF) n = std::min(Size, n);
       ssize_t const Res = read(Fd,Buf,n);
       if (Res < 0 || (!ToEOF && Res != (ssize_t) n)) // error, or short read
@@ -363,9 +360,9 @@ bool Hashes::AddFD(FileFd &Fd,unsigned long long Size)
    bool const ToEOF = (Size == 0);
    while (Size != 0 || ToEOF)
    {
-      unsigned long long n = sizeof(Buf);
+      decltype(Size) n = sizeof(Buf);
       if (!ToEOF) n = std::min(Size, n);
-      unsigned long long a = 0;
+      decltype(Size) a = 0;
       if (Fd.Read(Buf, n, &a) == false) // error
 	 return false;
       if (ToEOF == false)

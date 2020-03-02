@@ -29,14 +29,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: sha2.c,v 1.1 2001/11/08 00:01:51 adg Exp adg $
  */
 #include <config.h>
 
-#include <endian.h>
-#include <string.h>	/* memcpy()/memset() or bcopy()/bzero() */
-#include <assert.h>	/* assert() */
 #include "sha2_internal.h"
+#include <assert.h> /* assert() */
+#include <endian.h>
+#include <string.h> /* memcpy()/memset() or bcopy()/bzero() */
 
 /*
  * ASSERT NOTE:
@@ -93,7 +92,7 @@
 
 /*
  * Define the followingsha2_* types to types of the correct length on
- * the native archtecture.   Most BSD systems and Linux define u_intXX_t
+ * the native architecture.   Most BSD systems and Linux define u_intXX_t
  * types.  Machines with very recent ANSI C headers, can use the
  * uintXX_t definintions from inttypes.h by defining SHA2_USE_INTTYPES_H
  * during compile or in the sha.h header file.

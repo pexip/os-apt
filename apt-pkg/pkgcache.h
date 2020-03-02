@@ -73,13 +73,13 @@
 									/*}}}*/
 #ifndef PKGLIB_PKGCACHE_H
 #define PKGLIB_PKGCACHE_H
-
-#include <apt-pkg/mmap.h>
+#define __PKGLIB_IN_PKGCACHE_H
 #include <apt-pkg/macros.h>
+#include <apt-pkg/mmap.h>
 
 #include <string>
-#include <time.h>
 #include <stdint.h>
+#include <time.h>
 
 #ifdef APT_PKG_EXPOSE_STRING_VIEW
 #include <apt-pkg/string_view.h>
@@ -182,9 +182,11 @@ class pkgCache								/*{{{*/
 	 LocalSource=(1<<1), /*!< local sources can't and will not be verified by hashes */
 	 NoPackages=(1<<2), /*!< the file includes no package records itself, but additions like Translations */
       };
-      enum ReleaseFileFlags {
-	 NotAutomatic=(1<<0), /*!< archive has a default pin of 1 */
-	 ButAutomaticUpgrades=(1<<1), /*!< (together with the previous) archive has a default pin of 100 */
+      enum ReleaseFileFlags
+      {
+	 NotAutomatic = (1 << 0),		  /*!< archive has a default pin of 1 */
+	 ButAutomaticUpgrades = (1 << 1),	 /*!< (together with the previous) archive has a default pin of 100 */
+	 PackagesRequireAuthorization = (1 << 2), /*!< (together with the previous) archive has a default pin of 100 */
       };
       enum ProvidesFlags {
 	 MultiArchImplicit=pkgCache::Dep::MultiArchImplicit, /*!< generated internally, not spelled out in the index */
@@ -276,8 +278,8 @@ class pkgCache								/*{{{*/
    pkgVersioningSystem *VS;
    
    // Converters
-   static const char *CompTypeDeb(unsigned char Comp) APT_CONST;
-   static const char *CompType(unsigned char Comp) APT_CONST;
+   static const char *CompTypeDeb(unsigned char Comp) APT_PURE;
+   static const char *CompType(unsigned char Comp) APT_PURE;
    static const char *DepType(unsigned char Dep);
 
    pkgCache(MMap *Map,bool DoMap = true);
@@ -783,10 +785,13 @@ inline char const * pkgCache::NativeArch()
 
 #include <apt-pkg/cacheiterators.h>
 
-inline pkgCache::GrpIterator pkgCache::GrpBegin()
-       {return GrpIterator(*this);}
-inline pkgCache::GrpIterator pkgCache::GrpEnd()
-       {return GrpIterator(*this,GrpP);}
+	inline pkgCache::GrpIterator pkgCache::GrpBegin()
+	{
+	   return GrpIterator(*this);
+	}
+	inline pkgCache::GrpIterator pkgCache::GrpEnd()
+	{
+	   return GrpIterator(*this, GrpP);}
 inline pkgCache::PkgIterator pkgCache::PkgBegin()
        {return PkgIterator(*this);}
 inline pkgCache::PkgIterator pkgCache::PkgEnd()
@@ -822,4 +827,5 @@ class pkgCache::Namespace						/*{{{*/
    typedef pkgCache::Flag Flag;
 };
 									/*}}}*/
+#undef __PKGLIB_IN_PKGCACHE_H
 #endif

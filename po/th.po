@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2017-09-13 17:18+0000\n"
+"POT-Creation-Date: 2019-02-04 15:34+0100\n"
 "PO-Revision-Date: 2014-12-12 13:00+0700\n"
 "Last-Translator: Theppitak Karoonboonyanan <thep@debian.org>\n"
 "Language-Team: Thai <thai-l10n@googlegroups.com>\n"
@@ -147,7 +147,7 @@ msgstr "แฟ้ม %s/%s เขียนทับแฟ้มในแพก�
 #. Only warn if there is no sources.list file.
 #: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
 #: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc methods/mirror.cc
+#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
 #, c-format
 msgid "Unable to read %s"
 msgstr "ไม่สามารถอ่าน %s"
@@ -213,7 +213,7 @@ msgstr "ไดเรกทอรี %s ถูก divert"
 
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
-msgid "The repository '%s' does no longer have a Release file."
+msgid "The repository '%s' no longer has a Release file."
 msgstr "ไดเรกทอรี %s ถูก divert"
 
 #: apt-pkg/acquire-item.cc
@@ -296,6 +296,13 @@ msgstr "ข้อผิดพลาดจาก GPG: %s: %s"
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
+"Skipping acquire of configured file '%s' as repository '%s' doesn't have the "
+"component '%s' (component misspelt in sources.list?)"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
 "Skipping acquire of configured file '%s' as repository '%s' doesn't support "
 "architecture '%s'"
 msgstr ""
@@ -303,11 +310,9 @@ msgstr ""
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
-"Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
-"or malformed file)"
+"Skipping acquire of configured file '%s' as repository '%s' does not seem to "
+"provide it (sources.list entry misspelt?)"
 msgstr ""
-"ไม่พบรายการ '%s' ที่ต้องการในแฟ้ม Release (รายการ sources.list ไม่ถูกต้อง "
-"หรือแฟ้มผิดรูปแบบ)"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -328,10 +333,55 @@ msgstr ""
 "แฟ้ม Release สำหรับ %s หมดอายุแล้ว (ตั้งแต่ %s ที่แล้ว) จะไม่ใช้รายการปรับรุ่นต่างๆ "
 "ของคลังแพกเกจนี้"
 
+#. TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+#. the time until the file will be valid - formatted in the same way as in
+#. the download progress display (e.g. 7d 3h 42min 1s)
+#: apt-pkg/acquire-item.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Release file for %s is expired (invalid since %s). Updates for this "
+#| "repository will not be applied."
+msgid ""
+"Release file for %s is not valid yet (invalid for another %s). Updates for "
+"this repository will not be applied."
+msgstr ""
+"แฟ้ม Release สำหรับ %s หมดอายุแล้ว (ตั้งแต่ %s ที่แล้ว) จะไม่ใช้รายการปรับรุ่นต่างๆ "
+"ของคลังแพกเกจนี้"
+
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "ชุดจัดแจกขัดแย้งกัน: %s (ต้องการ %s แต่พบ %s)"
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
+msgstr ""
+
+#. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"More information about this can be found online in the Release notes at: %s"
+msgstr ""
+
+#. TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"This must be accepted explicitly before updates for this repository can be "
+"applied. See %s manpage for details."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc apt-pkg/update.cc apt-private/private-download.cc
+#, c-format
+msgid "Failed to fetch %s  %s"
+msgstr "ไม่สามารถดาวน์โหลด %s  %s"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -345,17 +395,18 @@ msgstr "ไม่พบแฟ้มสำหรับแพกเกจ %s ค�
 msgid "Can't find a source to download version '%s' of '%s'"
 msgstr "ไม่พบแหล่งที่จะดาวน์โหลดรุ่น '%s' ของ '%s' ได้"
 
-#: apt-pkg/acquire-item.cc
-#, c-format
-msgid ""
-"The package index files are corrupted. No Filename: field for package %s."
-msgstr "แฟ้มดัชนีแพกเกจเสียหาย ไม่มีข้อมูล Filename: (ชื่อแฟ้ม) สำหรับแพกเกจ %s"
-
 #. TRANSLATOR: %s=%s is sourcename=sourceversion, e.g. apt=1.1
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "ปูมการแก้ไขสำหรับ %s (%s)"
+
+#: apt-pkg/acquire-worker.cc
+#, c-format
+msgid ""
+"The method '%s' is unsupported and disabled by default. Consider switching "
+"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
+msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -390,13 +441,13 @@ msgstr "กรุณาใส่แผ่นชื่อ: '%s' ลงในไ�
 
 #: apt-pkg/acquire.cc apt-pkg/cdrom.cc
 #, c-format
-msgid "List directory %spartial is missing."
-msgstr "ไม่มีไดเรกทอรีรายชื่อแพกเกจ %spartial"
+msgid "List directory %s is missing."
+msgstr "ไม่มีไดเรกทอรีรายชื่อแพกเกจ %s"
 
 #: apt-pkg/acquire.cc
 #, c-format
-msgid "Archives directory %spartial is missing."
-msgstr "ไม่มีไดเรกทอรีแพกเกจ %spartial"
+msgid "Archives directory %s is missing."
+msgstr "ไม่มีไดเรกทอรีแพกเกจ %s"
 
 #: apt-pkg/acquire.cc
 #, c-format
@@ -420,14 +471,6 @@ msgstr ""
 msgid "Clean of %s is not supported"
 msgstr "ไม่รองรับการล้างข้อมูลที่ %s"
 
-#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
-#: methods/mirror.cc
-#, c-format
-msgid "Unable to change to %s"
-msgstr "ไม่สามารถเปลี่ยนไดเรกทอรีไปยัง %s"
-
-#. only show the ETA if it makes sense
-#. two days
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -464,7 +507,7 @@ msgstr "ไม่สามารถแจงหรือเปิดรายช
 msgid "You may want to run apt-get update to correct these problems"
 msgstr "คุณอาจเรียก `apt-get update' เพื่อแก้ปัญหาเหล่านี้ได้"
 
-#: apt-pkg/cachefile.cc
+#: apt-pkg/cachefile.cc methods/mirror.cc
 msgid "The list of sources could not be read."
 msgstr "ไม่สามารถอ่านรายชื่อแหล่งแพกเกจได้"
 
@@ -613,6 +656,11 @@ msgstr "บรรทัดรายชื่อแหล่งแพกเกจ
 
 #: apt-pkg/clean.cc
 #, c-format
+msgid "Unable to change to %s"
+msgstr "ไม่สามารถเปลี่ยนไดเรกทอรีไปยัง %s"
+
+#: apt-pkg/clean.cc
+#, c-format
 msgid "Unable to stat %s."
 msgstr "ไม่สามารถ stat %s"
 
@@ -678,11 +726,6 @@ msgstr "ไม่รู้จักคำสั่ง %s"
 #, c-format
 msgid "Unrecognized type abbreviation: '%c'"
 msgstr "พบตัวย่อของชนิดที่ข้อมูลไม่รู้จัก: '%c'"
-
-#: apt-pkg/contrib/configuration.cc
-#, c-format
-msgid "Opening configuration file %s"
-msgstr "ขณะเปิดแฟ้มค่าตั้ง %s"
 
 #: apt-pkg/contrib/configuration.cc
 #, c-format
@@ -861,12 +904,12 @@ msgstr "เกิดปัญหาขณะเปลี่ยนชื่อแ
 msgid "Problem syncing the file"
 msgstr "เกิดปัญหาขณะ sync แฟ้ม"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to mkstemp %s"
 msgstr "ไม่สามารถ mkstemp %s"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to write to %s"
 msgstr "ไม่สามารถเขียนลงแฟ้ม %s"
@@ -1037,15 +1080,18 @@ msgid "Unable to parse package file %s (%d)"
 msgstr "ไม่สามารถแจงแฟ้มแพกเกจ %s (%d)"
 
 #: apt-pkg/deb/debsystem.cc
-#, c-format
+#, fuzzy, c-format
+#| msgid ""
+#| "Unable to lock the administration directory (%s), is another process "
+#| "using it?"
 msgid ""
-"Unable to lock the administration directory (%s), is another process using "
-"it?"
+"Unable to acquire the dpkg frontend lock (%s), is another process using it?"
 msgstr "ไม่สามารถล็อคไดเรกทอรีดูแลระบบ (%s) มีโพรเซสอื่นใช้งานอยู่หรือเปล่า?"
 
 #: apt-pkg/deb/debsystem.cc
-#, c-format
-msgid "Unable to lock the administration directory (%s), are you root?"
+#, fuzzy, c-format
+#| msgid "Unable to lock the administration directory (%s), are you root?"
+msgid "Unable to acquire the dpkg frontend lock (%s), are you root?"
 msgstr "ไม่สามารถล็อคไดเรกทอรีดูแลระบบ (%s) คุณเป็น root หรือเปล่า?"
 
 #. TRANSLATORS: the %s contains the recovery command, usually
@@ -1057,29 +1103,41 @@ msgid ""
 msgstr "dpkg ถูกขัดจังหวะ คุณต้องเรียก '%s' เองเพื่อแก้ปัญหา"
 
 #: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid ""
+"Unable to lock the administration directory (%s), is another process using "
+"it?"
+msgstr "ไม่สามารถล็อคไดเรกทอรีดูแลระบบ (%s) มีโพรเซสอื่นใช้งานอยู่หรือเปล่า?"
+
+#: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid "Unable to lock the administration directory (%s), are you root?"
+msgstr "ไม่สามารถล็อคไดเรกทอรีดูแลระบบ (%s) คุณเป็น root หรือเปล่า?"
+
+#: apt-pkg/deb/debsystem.cc
 msgid "Not locked"
 msgstr "ไม่ได้ล็อคอยู่"
 
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Installing %s"
-msgstr "กำลังติดตั้ง %s"
+msgid "Preparing %s"
+msgstr "กำลังเตรียม %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Configuring %s"
-msgstr "กำลังตั้งค่า %s"
+msgid "Preparing to configure %s"
+msgstr "กำลังเตรียมตั้งค่า %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removing %s"
-msgstr "กำลังถอดถอน %s"
+msgid "Preparing for removal of %s"
+msgstr "กำลังเตรียมถอดถอน %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Completely removing %s"
-msgstr "กำลังถอดถอน %s อย่างสมบูรณ์"
+msgid "Preparing to completely remove %s"
+msgstr "กำลังเตรียมถอดถอน %s อย่างสมบูรณ์"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1096,6 +1154,11 @@ msgstr "กำลังเรียกการสะกิด %s หลัง�
 msgid "Installed %s"
 msgstr "ติดตั้ง %s แล้ว"
 
+#: apt-pkg/deb/dpkgpm.cc
+#, c-format
+msgid "Configuring %s"
+msgstr "กำลังตั้งค่า %s"
+
 #. FIXME: use a better string after freeze
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1109,33 +1172,23 @@ msgstr "ไม่สามารถเปิดแฟ้ม '%s'"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing %s"
-msgstr "กำลังเตรียม %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
 msgid "Unpacking %s"
 msgstr "กำลังแตกแพกเกจ %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing to configure %s"
-msgstr "กำลังเตรียมตั้งค่า %s"
+msgid "Installing %s"
+msgstr "กำลังติดตั้ง %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing for removal of %s"
-msgstr "กำลังเตรียมถอดถอน %s"
+msgid "Removing %s"
+msgstr "กำลังถอดถอน %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removed %s"
-msgstr "ถอดถอน %s แล้ว"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing to completely remove %s"
-msgstr "กำลังเตรียมถอดถอน %s อย่างสมบูรณ์"
+msgid "Completely removing %s"
+msgstr "กำลังถอดถอน %s อย่างสมบูรณ์"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1303,8 +1356,8 @@ msgstr "ไม่สามารถระบุชนิดของระบบ
 
 #: apt-pkg/install-progress.cc
 #, c-format
-msgid "Progress: [%3i%%]"
-msgstr "ความคืบหน้า: [%3i%%]"
+msgid "Progress: [%3li%%]"
+msgstr "ความคืบหน้า: [%3li%%]"
 
 #. send status information that we are about to fork dpkg
 #: apt-pkg/install-progress.cc
@@ -1479,6 +1532,12 @@ msgstr "ไม่เข้าใจชนิดการตรึง %s"
 
 #: apt-pkg/policy.cc
 #, c-format
+msgid ""
+"%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"
+msgstr ""
+
+#: apt-pkg/policy.cc
+#, c-format
 msgid "%s: Value %s is outside the range of valid pin priorities (%d to %d)"
 msgstr ""
 
@@ -1491,11 +1550,6 @@ msgstr "ไม่ได้ระบุลำดับความสำคัญ
 #, fuzzy, c-format
 msgid "Malformed entry %u in %s file %s (%s)"
 msgstr "แฟ้ม override %s ผิดรูปแบบที่บรรทัด %llu (%s)"
-
-#: apt-pkg/sourcelist.cc
-#, c-format
-msgid "Opening %s"
-msgstr "กำลังเปิด %s"
 
 #: apt-pkg/sourcelist.cc
 #, c-format
@@ -1517,7 +1571,7 @@ msgstr "บรรทัด %u ในแฟ้มรายชื่อแหล�
 msgid "Type '%s' is not known on stanza %u in source list %s"
 msgstr "ไม่รู้จักชนิด '%s' ที่วรรคที่ %u ในแฟ้มรายชื่อแหล่งแพกเกจ %s"
 
-#: apt-pkg/sourcelist.cc
+#: apt-pkg/sourcelist.cc apt-private/private-install.cc
 #, c-format
 msgid "Unsupported file %s given on commandline"
 msgstr ""
@@ -1530,11 +1584,6 @@ msgstr "คุณต้องเพิ่ม URI ชนิด 'source' ใน so
 #, c-format
 msgid "Cannot convert %s to integer: out of range"
 msgstr ""
-
-#: apt-pkg/update.cc apt-private/private-download.cc
-#, c-format
-msgid "Failed to fetch %s  %s"
-msgstr "ไม่สามารถดาวน์โหลด %s  %s"
 
 #: apt-pkg/update.cc
 msgid ""
@@ -1592,6 +1641,12 @@ msgstr ""
 "เปลี่ยนแผ่น: กรุณาใส่แผ่นชื่อ\n"
 " '%s'\n"
 "ลงในไดรว์ %s แล้วกด enter\n"
+
+#: apt-private/acqprogress.cc
+msgid ""
+"Do you want to accept these changes and continue updating from this "
+"repository?"
+msgstr ""
 
 #: apt-private/private-cachefile.cc
 msgid "Correcting dependencies..."
@@ -1727,8 +1782,14 @@ msgstr "APT นี้มีพลังของ Super Cow"
 msgid "This APT helper has Super Meep Powers."
 msgstr "โปรแกรมช่วยเหลือของ APT นี้มีพลัง Super Meep"
 
-#: apt-private/private-depends.cc apt-private/private-show.cc
-#: cmdline/apt-mark.cc
+#: apt-private/private-cmndline.cc
+msgid ""
+"--force-yes is deprecated, use one of the options starting with --allow "
+"instead."
+msgstr ""
+
+#: apt-private/private-depends.cc apt-private/private-download.cc
+#: apt-private/private-show.cc cmdline/apt-mark.cc
 msgid "No packages found"
 msgstr "ไม่พบแพกเกจ"
 
@@ -1747,12 +1808,6 @@ msgstr "มีบางแพกเกจไม่สามารถยืนย
 #: apt-private/private-download.cc
 msgid "Install these packages without verification?"
 msgstr "จะติดตั้งแพกเกจเหล่านี้โดยไม่ตรวจสอบหรือไม่?"
-
-#: apt-private/private-download.cc apt-private/private-install.cc
-msgid ""
-"--force-yes is deprecated, use one of the options starting with --allow "
-"instead."
-msgstr ""
 
 #: apt-private/private-download.cc
 #, fuzzy
@@ -1899,7 +1954,7 @@ msgstr ""
 msgid "Abort."
 msgstr "เลิกทำ"
 
-#: apt-private/private-install.cc
+#: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "คุณต้องการจะดำเนินการต่อไปหรือไม่?"
 
@@ -2213,11 +2268,6 @@ msgstr "คุณต้องระบุแพตเทิร์นสำหร
 msgid "Full Text Search"
 msgstr "ค้นทั่วทั้งเนื้อความ"
 
-#: apt-private/private-show.cc cmdline/apt-cache.cc
-#, c-format
-msgid "Package file %s is out of sync."
-msgstr "ข้อมูลแฟ้ม Package %s ไม่ตรงกับความเป็นจริง"
-
 #: apt-private/private-show.cc
 #, c-format
 msgid "There is %i additional record. Please use the '-a' switch to see it"
@@ -2377,16 +2427,16 @@ msgid "%s has no build depends.\n"
 msgstr "%s ไม่ต้องการสิ่งใดสำหรับ build\n"
 
 #: apt-private/private-source.cc
-msgid "Must specify at least one package to check builddeps for"
-msgstr "ต้องระบุแพกเกจอย่างน้อยหนึ่งแพกเกจที่จะตรวจสอบสิ่งที่ต้องการสำหรับการ build"
-
-#: apt-private/private-source.cc
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
 "ไม่มีข้อมูลสถาปัตยกรรมสำหรับ %s ดูวิธีตั้งค่าที่หัวข้อ APT::Architectures ของ apt.conf(5)"
+
+#: apt-private/private-source.cc
+msgid "Must specify at least one package to check builddeps for"
+msgstr "ต้องระบุแพกเกจอย่างน้อยหนึ่งแพกเกจที่จะตรวจสอบสิ่งที่ต้องการสำหรับการ build"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2409,8 +2459,8 @@ msgstr "แจง %s ไม่สำเร็จ จะแก้ไขอีก�
 
 #: apt-private/private-sources.cc
 #, c-format
-msgid "Your '%s' file changed, please run 'apt-get update'."
-msgstr "แฟ้ม '%s' ของคุณมีการเปลี่ยนแปลง กรุณาเรียก 'apt-get update'"
+msgid "Your '%s' file changed, please run 'apt-get update'.\n"
+msgstr "แฟ้ม '%s' ของคุณมีการเปลี่ยนแปลง กรุณาเรียก 'apt-get update'\n"
 
 #: apt-private/private-unmet.cc
 #, c-format
@@ -2420,6 +2470,14 @@ msgstr "แพกเกจ %s รุ่น %s ขาดแพกเกจที�
 #: apt-private/private-update.cc
 msgid "The update command takes no arguments"
 msgstr "คำสั่ง update ไม่รับอาร์กิวเมนต์เพิ่ม"
+
+#. TRANSLATOR: the first two are manpage references, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid ""
+"Usage of %s should be preferred over embedding login information directly in "
+"the %s entry for '%s'"
+msgstr ""
 
 #: apt-private/private-update.cc
 #, c-format
@@ -2433,9 +2491,9 @@ msgstr[0] ""
 msgid "All packages are up to date."
 msgstr "ปรับรุ่นทุกแพกเกจเป็นรุ่นล่าสุดแล้ว"
 
-#: cmdline/apt-cache.cc
-#, fuzzy
-msgid "apt-cache stats does not take any arguments"
+#: cmdline/apt-cache.cc cmdline/apt-mark.cc
+#, fuzzy, c-format
+msgid "%s does not take any arguments"
 msgstr "คำสั่ง update ไม่รับอาร์กิวเมนต์เพิ่ม"
 
 #: cmdline/apt-cache.cc
@@ -2697,6 +2755,12 @@ msgid "Install new packages (pkg is libc6 not libc6.deb)"
 msgstr "ติดตั้งแพกเกจใหม่ (pkg อยู่ในรูปเช่น libc6 ไม่ใช่ libc6.deb)"
 
 #: cmdline/apt-get.cc
+#, fuzzy
+#| msgid "Install new packages (pkg is libc6 not libc6.deb)"
+msgid "Reinstall packages (pkg is libc6 not libc6.deb)"
+msgstr "ติดตั้งแพกเกจใหม่ (pkg อยู่ในรูปเช่น libc6 ไม่ใช่ libc6.deb)"
+
+#: cmdline/apt-get.cc
 msgid "Remove packages"
 msgstr "ถอดถอนแพกเกจ"
 
@@ -2792,6 +2856,14 @@ msgstr ""
 msgid "detect proxy using apt.conf"
 msgstr "ตรวจหาพร็อกซีโดยใช้ apt.conf"
 
+#: cmdline/apt-helper.cc
+msgid "wait for system to be online"
+msgstr ""
+
+#: cmdline/apt-helper.cc
+msgid "drop privileges before running given command"
+msgstr ""
+
 #: cmdline/apt-internal-planner.cc
 #, fuzzy
 msgid ""
@@ -2848,6 +2920,16 @@ msgstr "%s ถูกกำหนดให้เป็นการติดตั
 #, c-format
 msgid "%s was already set to automatically installed.\n"
 msgstr "%s ถูกกำหนดให้เป็นการติดตั้งแบบอัตโนมัติอยู่ก่อนแล้ว\n"
+
+#: cmdline/apt-mark.cc
+msgid "No changes necessary"
+msgstr ""
+
+#: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "The following NEW packages will be installed:"
+msgid "The following packages will be marked as automatically installed:"
+msgstr "จะติดตั้งแพกเกจ *ใหม่* ต่อไปนี้:"
 
 #: cmdline/apt-mark.cc
 #, c-format
@@ -2912,6 +2994,12 @@ msgid "Mark the given packages as manually installed"
 msgstr "ทำเครื่องหมายแพกเกจที่กำหนดให้เป็นการติดตั้งแบบเลือกเอง"
 
 #: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "Mark the given packages as automatically installed"
+msgid "Mark all dependencies of meta packages as automatically installed."
+msgstr "ทำเครื่องหมายแพกเกจที่กำหนดให้เป็นการติดตั้งแบบอัตโนมัติ"
+
+#: cmdline/apt-mark.cc
 msgid "Mark a package as held back"
 msgstr "ทำเครื่องหมายแพกเกจที่กำหนดให้เป็นการคงรุ่น"
 
@@ -2928,7 +3016,7 @@ msgid "Print the list of manually installed packages"
 msgstr "แสดงรายชื่อของแพกเกจที่ติดตั้งแบบเลือกเอง"
 
 #: cmdline/apt-mark.cc
-msgid "Print the list of package on hold"
+msgid "Print the list of packages on hold"
 msgstr "แสดงรายชื่อของแพกเกจที่คงรุ่นอยู่"
 
 #: cmdline/apt-sortpkgs.cc
@@ -2971,6 +3059,12 @@ msgstr "แสดงรายละเอียดของแพกเกจ"
 #. package stuff
 #: cmdline/apt.cc
 msgid "install packages"
+msgstr "ติดตั้งแพกเกจ"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "install packages"
+msgid "reinstall packages"
 msgstr "ติดตั้งแพกเกจ"
 
 #: cmdline/apt.cc
@@ -3352,6 +3446,11 @@ msgstr "ข้อมูลส่วนหัวผิดพลาด"
 msgid "Connection failed"
 msgstr "เชื่อมต่อไม่สำเร็จ"
 
+#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#, c-format
+msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
+msgstr ""
+
 #: methods/basehttp.cc
 #, c-format
 msgid ""
@@ -3398,15 +3497,21 @@ msgstr "ไม่พบแฟ้ม"
 msgid "Direct connection to %s domains is blocked by default."
 msgstr ""
 
-#: methods/connect.cc methods/http.cc
-#, c-format
-msgid "Connecting to %s (%s)"
-msgstr "เชื่อมต่อไปยัง %s (%s)"
-
 #: methods/connect.cc
 #, c-format
 msgid "[IP: %s %s]"
 msgstr "[IP: %s %s]"
+
+#: methods/connect.cc
+#, fuzzy, c-format
+#| msgid "Connecting to %s (%s)"
+msgid "Connected to %s (%s)"
+msgstr "เชื่อมต่อไปยัง %s (%s)"
+
+#: methods/connect.cc methods/http.cc
+#, c-format
+msgid "Connecting to %s (%s)"
+msgstr "เชื่อมต่อไปยัง %s (%s)"
 
 #: methods/connect.cc
 #, c-format
@@ -3418,11 +3523,6 @@ msgstr "ไม่สามารถสร้างซ็อกเก็ตสำ
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "ไม่สามารถเริ่มการเชื่อมต่อไปยัง %s:%s (%s)"
 
-#: methods/connect.cc
-#, c-format
-msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr "ไม่สามารถเชื่อมต่อไปยัง %s:%s (%s) เนื่องจากหมดเวลาคอย"
-
 #: methods/connect.cc methods/ftp.cc methods/rsh.cc
 msgid "Failed"
 msgstr "ล้มเหลว"
@@ -3431,6 +3531,11 @@ msgstr "ล้มเหลว"
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
 msgstr "ไม่สามารถเชื่อมต่อไปยัง %s:%s (%s)"
+
+#: methods/connect.cc
+#, c-format
+msgid "Could not connect to %s:%s (%s), connection timed out"
+msgstr "ไม่สามารถเชื่อมต่อไปยัง %s:%s (%s) เนื่องจากหมดเวลาคอย"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -3679,30 +3784,6 @@ msgstr "หมดเวลารอเชื่อมต่อ"
 msgid "Error writing to output file"
 msgstr "เกิดข้อผิดพลาดขณะเขียนลงแฟ้มผลลัพธ์"
 
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "No mirror file '%s' found "
-msgstr "ไม่พบแฟ้มแหล่งสำเนา '%s'"
-
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "Can not read mirror file '%s'"
-msgstr "ไม่สามารถอ่านแฟ้มแหล่งสำเนา '%s'"
-
-#: methods/mirror.cc
-#, c-format
-msgid "No entry found in mirror file '%s'"
-msgstr "ไม่พบรายการในแฟ้มแหล่งสำเนา '%s'"
-
-#: methods/mirror.cc
-#, c-format
-msgid "[Mirror: %s]"
-msgstr "[แหล่งสำเนา: %s]"
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "กำหนดเวลาแก้ไขไม่สำเร็จ"
@@ -3714,6 +3795,41 @@ msgstr "การเชื่อมต่อถูกปิดก่อนเว
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "แฟ้มว่างเปล่าไม่สามารถเป็นแฟ้มจัดเก็บที่ใช้การได้"
+
+#~ msgid "Removed %s"
+#~ msgstr "ถอดถอน %s แล้ว"
+
+#~ msgid "Package file %s is out of sync."
+#~ msgstr "ข้อมูลแฟ้ม Package %s ไม่ตรงกับความเป็นจริง"
+
+#~ msgid ""
+#~ "The package index files are corrupted. No Filename: field for package %s."
+#~ msgstr "แฟ้มดัชนีแพกเกจเสียหาย ไม่มีข้อมูล Filename: (ชื่อแฟ้ม) สำหรับแพกเกจ %s"
+
+#~ msgid "No mirror file '%s' found "
+#~ msgstr "ไม่พบแฟ้มแหล่งสำเนา '%s'"
+
+#~ msgid "Can not read mirror file '%s'"
+#~ msgstr "ไม่สามารถอ่านแฟ้มแหล่งสำเนา '%s'"
+
+#~ msgid "No entry found in mirror file '%s'"
+#~ msgstr "ไม่พบรายการในแฟ้มแหล่งสำเนา '%s'"
+
+#~ msgid "[Mirror: %s]"
+#~ msgstr "[แหล่งสำเนา: %s]"
+
+#~ msgid "Opening configuration file %s"
+#~ msgstr "ขณะเปิดแฟ้มค่าตั้ง %s"
+
+#~ msgid "Opening %s"
+#~ msgstr "กำลังเปิด %s"
+
+#~ msgid ""
+#~ "Unable to find expected entry '%s' in Release file (Wrong sources.list "
+#~ "entry or malformed file)"
+#~ msgstr ""
+#~ "ไม่พบรายการ '%s' ที่ต้องการในแฟ้ม Release (รายการ sources.list ไม่ถูกต้อง "
+#~ "หรือแฟ้มผิดรูปแบบ)"
 
 #~ msgid "Unmet dependencies. Try using --fix-broken."
 #~ msgstr "รายการแพกเกจที่ต้องใช้ไม่ครบ กรุณาลองใช้ตัวเลือก --fix-broken"

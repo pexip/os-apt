@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: filelist.cc,v 1.4.2.1 2004/01/16 18:58:50 mdz Exp $
 /* ######################################################################
 
    File Listing - Manages a Cache of File -> Package names.
@@ -32,15 +31,15 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
+#include <apt-pkg/error.h>
 #include <apt-pkg/filelist.h>
 #include <apt-pkg/mmap.h>
-#include <apt-pkg/error.h>
 #include <apt-pkg/strutl.h>
 
-#include <string.h>
 #include <iostream>
+#include <string.h>
 #include <apti18n.h>
 									/*}}}*/
 

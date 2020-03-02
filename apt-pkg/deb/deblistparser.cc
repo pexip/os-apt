@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: deblistparser.cc,v 1.29.2.5 2004/01/06 01:43:44 mdz Exp $
 /* ######################################################################
    
    Package Cache Generator - Generator for the cache structure.
@@ -12,26 +11,25 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
+#include <apt-pkg/aptconfiguration.h>
+#include <apt-pkg/cachefilter.h>
+#include <apt-pkg/configuration.h>
+#include <apt-pkg/crc-16.h>
 #include <apt-pkg/deblistparser.h>
 #include <apt-pkg/error.h>
-#include <apt-pkg/configuration.h>
-#include <apt-pkg/cachefilter.h>
-#include <apt-pkg/aptconfiguration.h>
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/crc-16.h>
+#include <apt-pkg/macros.h>
 #include <apt-pkg/md5.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
-#include <apt-pkg/tagfile.h>
+#include <apt-pkg/strutl.h>
 #include <apt-pkg/tagfile-keys.h>
-#include <apt-pkg/macros.h>
+#include <apt-pkg/tagfile.h>
 
-#include <stddef.h>
-#include <string.h>
 #include <algorithm>
 #include <string>
 #include <vector>
 #include <ctype.h>
+#include <stddef.h>
+#include <string.h>
 									/*}}}*/
 
 using std::string;
@@ -63,6 +61,7 @@ debListParser::debListParser(FileFd *File) :
    else
       forceEssential.emplace_back("apt");
    forceImportant = _config->FindVector("pkgCacheGen::ForceImportant");
+   myArch = _config->Find("APT::Architecture");
 }
 									/*}}}*/
 // ListParser::Package - Return the package name			/*{{{*/
@@ -171,15 +170,15 @@ bool debListParser::NewVersion(pkgCache::VerIterator &Ver)
    Ver->SourceVerStr = Ver->VerStr;
    if (Section.Find(pkgTagSection::Key::Source,Start,Stop) == true)
    {
-      const char * const Space = (const char * const) memchr(Start, ' ', Stop - Start);
+      const char * const Space = static_cast<const char *>(memchr(Start, ' ', Stop - Start));
       pkgCache::VerIterator V;
 
       if (Space != NULL)
       {
-	 const char * const Open = (const char * const) memchr(Space, '(', Stop - Space);
+	 const char * const Open = static_cast<const char *>(memchr(Space, '(', Stop - Space));
 	 if (likely(Open != NULL))
 	 {
-	    const char * const Close = (const char * const) memchr(Open, ')', Stop - Open);
+	    const char * const Close = static_cast<const char *>(memchr(Open, ')', Stop - Open));
 	    if (likely(Close != NULL))
 	    {
 	       APT::StringView const version(Open + 1, (Close - Open) - 1);
@@ -372,6 +371,11 @@ unsigned short debListParser::VersionHash()
 	 string to make that not matter. */
       for (; Start != End; ++Start)
       {
+	 // Strip away 0: epochs from input
+	 if (*Start == '0' && Start[1] == ':') {
+	    Start++;	// Skip the :
+	    continue;	// Skip the 0
+	 }
 	 if (isspace_ascii(*Start) != 0 || *Start == '=')
 	    continue;
 	 Result = AddCRC16Byte(Result, tolower_ascii_unsafe(*Start));
@@ -618,12 +622,11 @@ const char *debListParser::ParseDepends(const char *Start,const char *Stop,
 
    // We don't want to confuse library users which can't handle MultiArch
    if (StripMultiArch == true) {
-      string const arch = _config->Find("APT::Architecture");
       size_t const found = Package.rfind(':');
       if (found != StringView::npos &&
 	  (Package.substr(found) == ":any" ||
 	   Package.substr(found) == ":native" ||
-	   Package.substr(found +1) == arch))
+	   Package.substr(found +1) == Arch))
 	 Package = Package.substr(0,found);
    }
 
@@ -845,7 +848,7 @@ bool debListParser::ParseDepends(pkgCache::VerIterator &Ver,
       StringView Version;
       unsigned int Op;
 
-      Start = ParseDepends(Start, Stop, Package, Version, Op, false, false, false);
+      Start = ParseDepends(Start, Stop, Package, Version, Op, false, false, false, myArch);
       if (Start == 0)
 	 return _error->Error("Problem parsing dependency %zu",static_cast<size_t>(Key)); // TODO
       size_t const found = Package.rfind(':');

@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: version.cc,v 1.10 2001/02/20 07:03:17 jgg Exp $
 /* ######################################################################
 
    Version - Versioning system..
@@ -8,12 +7,12 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
 #include <apt-pkg/version.h>
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 									/*}}}*/
     
 static pkgVersioningSystem *VSList[10];

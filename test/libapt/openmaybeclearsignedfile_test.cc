@@ -33,7 +33,7 @@ TEST(OpenMaybeClearSignedFileTest,SimpleSignedFile)
 "JQt/+gJCPxHUJphy8sccBKhW29CLELJIIafvU30E1nWn9szh2Xjq\n"
 "=TB1F\n"
 "-----END PGP SIGNATURE-----\n");
-
+   EXPECT_TRUE(StartsWithGPGClearTextSignature(tempfile));
    EXPECT_TRUE(OpenMaybeClearSignedFile(tempfile, fd));
    if (tempfile.empty() == false)
       unlink(tempfile.c_str());
@@ -64,7 +64,7 @@ TEST(OpenMaybeClearSignedFileTest,WhitespaceSignedFile)
 "JQt/+gJCPxHUJphy8sccBKhW29CLELJIIafvU30E1nWn9szh2Xjq			\n"
 "=TB1F	\n"
 "-----END PGP SIGNATURE-----");
-
+   EXPECT_TRUE(StartsWithGPGClearTextSignature(tempfile));
    EXPECT_TRUE(OpenMaybeClearSignedFile(tempfile, fd));
    if (tempfile.empty() == false)
       unlink(tempfile.c_str());
@@ -100,7 +100,7 @@ TEST(OpenMaybeClearSignedFileTest,SignedFileWithContentHeaders)
 "JQt/+gJCPxHUJphy8sccBKhW29CLELJIIafvU30E1nWn9szh2Xjq\n"
 "=TB1F\n"
 "-----END PGP SIGNATURE-----\n");
-
+   EXPECT_TRUE(StartsWithGPGClearTextSignature(tempfile));
    EXPECT_TRUE(OpenMaybeClearSignedFile(tempfile, fd));
    if (tempfile.empty() == false)
       unlink(tempfile.c_str());
@@ -111,7 +111,6 @@ TEST(OpenMaybeClearSignedFileTest,SignedFileWithContentHeaders)
    EXPECT_TRUE(fd.Eof());
 }
 
-// That isn't how multiple signatures are done
 TEST(OpenMaybeClearSignedFileTest,SignedFileWithTwoSignatures)
 {
    std::string tempfile;
@@ -142,7 +141,7 @@ TEST(OpenMaybeClearSignedFileTest,SignedFileWithTwoSignatures)
 "ASc9hsAZRG0xHuRU0F94V/XrkWw8QYAobJ/yxvs4L0EuA4optbSqawDB\n"
 "=CP8j\n"
 "-----END PGP SIGNATURE-----\n");
-
+   EXPECT_TRUE(StartsWithGPGClearTextSignature(tempfile));
    EXPECT_TRUE(OpenMaybeClearSignedFile(tempfile, fd));
    if (tempfile.empty() == false)
       unlink(tempfile.c_str());
@@ -188,21 +187,18 @@ TEST(OpenMaybeClearSignedFileTest,TwoSimpleSignedFile)
 "JQt/+gJCPxHUJphy8sccBKhW29CLELJIIafvU30E1nWn9szh2Xjq\n"
 "=TB1F\n"
 "-----END PGP SIGNATURE-----");
-
    EXPECT_TRUE(_error->empty());
-   EXPECT_TRUE(OpenMaybeClearSignedFile(tempfile, fd));
+   EXPECT_TRUE(StartsWithGPGClearTextSignature(tempfile));
+   EXPECT_FALSE(OpenMaybeClearSignedFile(tempfile, fd));
    if (tempfile.empty() == false)
       unlink(tempfile.c_str());
    EXPECT_FALSE(_error->empty());
-   EXPECT_TRUE(fd.IsOpen());
-   char buffer[100];
-   EXPECT_TRUE(fd.ReadLine(buffer, sizeof(buffer)));
-   EXPECT_STREQ(buffer, "Test");
-   EXPECT_TRUE(fd.Eof());
-   ASSERT_FALSE(_error->empty());
+   EXPECT_FALSE(fd.IsOpen());
 
+   // technically they are signed, but we just want one message
+   EXPECT_TRUE(_error->PendingError());
    std::string msg;
-   _error->PopMessage(msg);
+   EXPECT_TRUE(_error->PopMessage(msg));
    EXPECT_EQ("Clearsigned file '" + tempfile + "' contains unsigned lines.", msg);
 }
 
@@ -211,7 +207,7 @@ TEST(OpenMaybeClearSignedFileTest,UnsignedFile)
    std::string tempfile;
    FileFd fd;
    createTemporaryFile("unsignedfile", fd, &tempfile, "Test");
-
+   EXPECT_FALSE(StartsWithGPGClearTextSignature(tempfile));
    EXPECT_TRUE(OpenMaybeClearSignedFile(tempfile, fd));
    if (tempfile.empty() == false)
       unlink(tempfile.c_str());
@@ -242,22 +238,49 @@ TEST(OpenMaybeClearSignedFileTest,GarbageTop)
 "JQt/+gJCPxHUJphy8sccBKhW29CLELJIIafvU30E1nWn9szh2Xjq\n"
 "=TB1F\n"
 "-----END PGP SIGNATURE-----\n");
-
+   EXPECT_FALSE(StartsWithGPGClearTextSignature(tempfile));
    EXPECT_TRUE(_error->empty());
+   EXPECT_FALSE(OpenMaybeClearSignedFile(tempfile, fd));
+   if (tempfile.empty() == false)
+      unlink(tempfile.c_str());
+   EXPECT_FALSE(fd.IsOpen());
+   ASSERT_FALSE(_error->empty());
+   ASSERT_TRUE(_error->PendingError());
+
+   std::string msg;
+   EXPECT_TRUE(_error->PopMessage(msg));
+   EXPECT_EQ("Clearsigned file '" + tempfile + "' does not start with a signed message block.", msg);
+}
+
+TEST(OpenMaybeClearSignedFileTest,GarbageHeader)
+{
+   std::string tempfile;
+   FileFd fd;
+   createTemporaryFile("garbageheader", fd, &tempfile, "-----BEGIN PGP SIGNED MESSAGE----- Garbage\n"
+"Hash: SHA512\n"
+"\n"
+"Test\n"
+"-----BEGIN PGP SIGNATURE-----\n"
+"\n"
+"iQFEBAEBCgAuFiEENKjp0Y2zIPNn6OqgWpDRQdusja4FAlhT7+kQHGpvZUBleGFt\n"
+"cGxlLm9yZwAKCRBakNFB26yNrjvEB/9/e3jA1l0fvPafx9LEXcH8CLpUFQK7ra9l\n"
+"3M4YAH4JKQlTG1be7ixruBRlCTh3YiSs66fKMeJeUYoxA2HPhvbGFEjQFAxunEYg\n"
+"X/LBKv1mQWa+Q34P5GBjK8kQdLCN+yJAiUErmWNQG3GPninrxsC9tY5jcWvHeP1k\n"
+"V7N3MLnNqzXaCJM24mnKidC5IDadUdQ8qC8c3rjUexQ8vBz0eucH56jbqV5oOcvx\n"
+"pjlW965dCPIf3OI8q6J7bIOjyY+u/PTcVlqPq3TUz/ti6RkVbKpLH0D4ll3lUTns\n"
+"JQt/+gJCPxHUJphy8sccBKhW29CLELJIIafvU30E1nWn9szh2Xjq\n"
+"=TB1F\n"
+"-----END PGP SIGNATURE-----\n");
+   EXPECT_FALSE(StartsWithGPGClearTextSignature(tempfile));
+   // beware: the file will be successfully opened as unsigned file
    EXPECT_TRUE(OpenMaybeClearSignedFile(tempfile, fd));
    if (tempfile.empty() == false)
       unlink(tempfile.c_str());
    EXPECT_TRUE(fd.IsOpen());
    char buffer[100];
    EXPECT_TRUE(fd.ReadLine(buffer, sizeof(buffer)));
-   EXPECT_STREQ(buffer, "Test");
-   EXPECT_TRUE(fd.Eof());
-   ASSERT_FALSE(_error->empty());
-   ASSERT_FALSE(_error->PendingError());
-
-   std::string msg;
-   _error->PopMessage(msg);
-   EXPECT_EQ("Clearsigned file '" + tempfile + "' does not start with a signed message block.", msg);
+   EXPECT_STREQ(buffer, "-----BEGIN PGP SIGNED MESSAGE----- Garbage\n");
+   EXPECT_FALSE(fd.Eof());
 }
 
 TEST(OpenMaybeClearSignedFileTest,GarbageBottom)
@@ -280,21 +303,17 @@ TEST(OpenMaybeClearSignedFileTest,GarbageBottom)
 "=TB1F\n"
 "-----END PGP SIGNATURE-----\n"
 "Garbage");
-
+   EXPECT_TRUE(StartsWithGPGClearTextSignature(tempfile));
    EXPECT_TRUE(_error->empty());
-   EXPECT_TRUE(OpenMaybeClearSignedFile(tempfile, fd));
+   EXPECT_FALSE(OpenMaybeClearSignedFile(tempfile, fd));
    if (tempfile.empty() == false)
       unlink(tempfile.c_str());
-   EXPECT_TRUE(fd.IsOpen());
-   char buffer[100];
-   EXPECT_TRUE(fd.ReadLine(buffer, sizeof(buffer)));
-   EXPECT_STREQ(buffer, "Test");
-   EXPECT_TRUE(fd.Eof());
+   EXPECT_FALSE(fd.IsOpen());
    ASSERT_FALSE(_error->empty());
-   ASSERT_FALSE(_error->PendingError());
+   ASSERT_TRUE(_error->PendingError());
 
    std::string msg;
-   _error->PopMessage(msg);
+   EXPECT_TRUE(_error->PopMessage(msg));
    EXPECT_EQ("Clearsigned file '" + tempfile + "' contains unsigned lines.", msg);
 }
 
@@ -306,7 +325,7 @@ TEST(OpenMaybeClearSignedFileTest,BogusNoSig)
 "Hash: SHA512\n"
 "\n"
 "Test");
-
+   EXPECT_TRUE(StartsWithGPGClearTextSignature(tempfile));
    EXPECT_TRUE(_error->empty());
    EXPECT_FALSE(OpenMaybeClearSignedFile(tempfile, fd));
    if (tempfile.empty() == false)
@@ -316,7 +335,7 @@ TEST(OpenMaybeClearSignedFileTest,BogusNoSig)
 
    std::string msg;
    _error->PopMessage(msg);
-   EXPECT_EQ("Splitting of file " + tempfile + " failed as it doesn't contain all expected parts 0 1 0", msg);
+   EXPECT_EQ("Splitting of clearsigned file " + tempfile + " failed as it doesn't contain all expected parts", msg);
 }
 
 TEST(OpenMaybeClearSignedFileTest,BogusSigStart)
@@ -328,7 +347,7 @@ TEST(OpenMaybeClearSignedFileTest,BogusSigStart)
 "\n"
 "Test\n"
 "-----BEGIN PGP SIGNATURE-----");
-
+   EXPECT_TRUE(StartsWithGPGClearTextSignature(tempfile));
    EXPECT_TRUE(_error->empty());
    EXPECT_FALSE(OpenMaybeClearSignedFile(tempfile, fd));
    if (tempfile.empty() == false)
@@ -339,4 +358,128 @@ TEST(OpenMaybeClearSignedFileTest,BogusSigStart)
    std::string msg;
    _error->PopMessage(msg);
    EXPECT_EQ("Signature in file " + tempfile + " wasn't closed", msg);
+}
+
+TEST(OpenMaybeClearSignedFileTest,DashedSignedFile)
+{
+   std::string tempfile;
+   FileFd fd;
+   createTemporaryFile("dashedsignedfile", fd, &tempfile, "-----BEGIN PGP SIGNED MESSAGE-----\n"
+"Hash: SHA512\n"
+"\n"
+"- Test\n"
+"-----BEGIN PGP SIGNATURE-----\n"
+"\n"
+"iQFEBAEBCgAuFiEENKjp0Y2zIPNn6OqgWpDRQdusja4FAlhT7+kQHGpvZUBleGFt\n"
+"cGxlLm9yZwAKCRBakNFB26yNrjvEB/9/e3jA1l0fvPafx9LEXcH8CLpUFQK7ra9l\n"
+"3M4YAH4JKQlTG1be7ixruBRlCTh3YiSs66fKMeJeUYoxA2HPhvbGFEjQFAxunEYg\n"
+"X/LBKv1mQWa+Q34P5GBjK8kQdLCN+yJAiUErmWNQG3GPninrxsC9tY5jcWvHeP1k\n"
+"V7N3MLnNqzXaCJM24mnKidC5IDadUdQ8qC8c3rjUexQ8vBz0eucH56jbqV5oOcvx\n"
+"pjlW965dCPIf3OI8q6J7bIOjyY+u/PTcVlqPq3TUz/ti6RkVbKpLH0D4ll3lUTns\n"
+"JQt/+gJCPxHUJphy8sccBKhW29CLELJIIafvU30E1nWn9szh2Xjq\n"
+"=TB1F\n"
+"-----END PGP SIGNATURE-----\n");
+   EXPECT_TRUE(StartsWithGPGClearTextSignature(tempfile));
+   EXPECT_TRUE(OpenMaybeClearSignedFile(tempfile, fd));
+   if (tempfile.empty() == false)
+      unlink(tempfile.c_str());
+   EXPECT_TRUE(fd.IsOpen());
+   char buffer[100];
+   EXPECT_TRUE(fd.ReadLine(buffer, sizeof(buffer)));
+   EXPECT_STREQ(buffer, "Test");
+   EXPECT_TRUE(fd.Eof());
+}
+TEST(OpenMaybeClearSignedFileTest,StrangeDashArmorFile)
+{
+   std::string tempfile;
+   FileFd fd;
+   createTemporaryFile("strangedashfile", fd, &tempfile, "-----BEGIN PGP SIGNED MESSAGE-----\n"
+"Hash: SHA512\n"
+"-Hash: SHA512\n"
+"\n"
+"Test\n"
+"-----BEGIN PGP SIGNATURE-----\n"
+"\n"
+"iQFEBAEBCgAuFiEENKjp0Y2zIPNn6OqgWpDRQdusja4FAlhT7+kQHGpvZUBleGFt\n"
+"cGxlLm9yZwAKCRBakNFB26yNrjvEB/9/e3jA1l0fvPafx9LEXcH8CLpUFQK7ra9l\n"
+"3M4YAH4JKQlTG1be7ixruBRlCTh3YiSs66fKMeJeUYoxA2HPhvbGFEjQFAxunEYg\n"
+"X/LBKv1mQWa+Q34P5GBjK8kQdLCN+yJAiUErmWNQG3GPninrxsC9tY5jcWvHeP1k\n"
+"V7N3MLnNqzXaCJM24mnKidC5IDadUdQ8qC8c3rjUexQ8vBz0eucH56jbqV5oOcvx\n"
+"pjlW965dCPIf3OI8q6J7bIOjyY+u/PTcVlqPq3TUz/ti6RkVbKpLH0D4ll3lUTns\n"
+"JQt/+gJCPxHUJphy8sccBKhW29CLELJIIafvU30E1nWn9szh2Xjq\n"
+"=TB1F\n"
+"-----END PGP SIGNATURE-----\n");
+   EXPECT_TRUE(StartsWithGPGClearTextSignature(tempfile));
+   EXPECT_FALSE(OpenMaybeClearSignedFile(tempfile, fd));
+   if (tempfile.empty() == false)
+      unlink(tempfile.c_str());
+   EXPECT_FALSE(_error->empty());
+   EXPECT_FALSE(fd.IsOpen());
+
+   std::string msg;
+   EXPECT_TRUE(_error->PendingError());
+   EXPECT_TRUE(_error->PopMessage(msg));
+   EXPECT_EQ("Clearsigned file '" + tempfile + "' contains unexpected line starting with a dash (armor)", msg);
+}
+TEST(OpenMaybeClearSignedFileTest,StrangeDashMsgFile)
+{
+   std::string tempfile;
+   FileFd fd;
+   createTemporaryFile("strangedashfile", fd, &tempfile, "-----BEGIN PGP SIGNED MESSAGE-----\n"
+"Hash: SHA512\n"
+"\n"
+"-Test\n"
+"-----BEGIN PGP SIGNATURE-----\n"
+"\n"
+"iQFEBAEBCgAuFiEENKjp0Y2zIPNn6OqgWpDRQdusja4FAlhT7+kQHGpvZUBleGFt\n"
+"cGxlLm9yZwAKCRBakNFB26yNrjvEB/9/e3jA1l0fvPafx9LEXcH8CLpUFQK7ra9l\n"
+"3M4YAH4JKQlTG1be7ixruBRlCTh3YiSs66fKMeJeUYoxA2HPhvbGFEjQFAxunEYg\n"
+"X/LBKv1mQWa+Q34P5GBjK8kQdLCN+yJAiUErmWNQG3GPninrxsC9tY5jcWvHeP1k\n"
+"V7N3MLnNqzXaCJM24mnKidC5IDadUdQ8qC8c3rjUexQ8vBz0eucH56jbqV5oOcvx\n"
+"pjlW965dCPIf3OI8q6J7bIOjyY+u/PTcVlqPq3TUz/ti6RkVbKpLH0D4ll3lUTns\n"
+"JQt/+gJCPxHUJphy8sccBKhW29CLELJIIafvU30E1nWn9szh2Xjq\n"
+"=TB1F\n"
+"-----END PGP SIGNATURE-----\n");
+   EXPECT_TRUE(StartsWithGPGClearTextSignature(tempfile));
+   EXPECT_FALSE(OpenMaybeClearSignedFile(tempfile, fd));
+   if (tempfile.empty() == false)
+      unlink(tempfile.c_str());
+   EXPECT_FALSE(_error->empty());
+   EXPECT_FALSE(fd.IsOpen());
+
+   std::string msg;
+   EXPECT_TRUE(_error->PendingError());
+   EXPECT_TRUE(_error->PopMessage(msg));
+   EXPECT_EQ("Clearsigned file '" + tempfile + "' contains unexpected line starting with a dash (msg)", msg);
+}
+TEST(OpenMaybeClearSignedFileTest,StrangeDashSigFile)
+{
+   std::string tempfile;
+   FileFd fd;
+   createTemporaryFile("strangedashfile", fd, &tempfile, "-----BEGIN PGP SIGNED MESSAGE-----\n"
+"Hash: SHA512\n"
+"\n"
+"Test\n"
+"-----BEGIN PGP SIGNATURE-----\n"
+"\n"
+"iQFEBAEBCgAuFiEENKjp0Y2zIPNn6OqgWpDRQdusja4FAlhT7+kQHGpvZUBleGFt\n"
+"cGxlLm9yZwAKCRBakNFB26yNrjvEB/9/e3jA1l0fvPafx9LEXcH8CLpUFQK7ra9l\n"
+"3M4YAH4JKQlTG1be7ixruBRlCTh3YiSs66fKMeJeUYoxA2HPhvbGFEjQFAxunEYg\n"
+"-/LBKv1mQWa+Q34P5GBjK8kQdLCN+yJAiUErmWNQG3GPninrxsC9tY5jcWvHeP1k\n"
+"V7N3MLnNqzXaCJM24mnKidC5IDadUdQ8qC8c3rjUexQ8vBz0eucH56jbqV5oOcvx\n"
+"pjlW965dCPIf3OI8q6J7bIOjyY+u/PTcVlqPq3TUz/ti6RkVbKpLH0D4ll3lUTns\n"
+"JQt/+gJCPxHUJphy8sccBKhW29CLELJIIafvU30E1nWn9szh2Xjq\n"
+"=TB1F\n"
+"-----END PGP SIGNATURE-----\n");
+   EXPECT_TRUE(StartsWithGPGClearTextSignature(tempfile));
+   EXPECT_FALSE(OpenMaybeClearSignedFile(tempfile, fd));
+   if (tempfile.empty() == false)
+      unlink(tempfile.c_str());
+   EXPECT_FALSE(_error->empty());
+   EXPECT_FALSE(fd.IsOpen());
+
+   std::string msg;
+   EXPECT_TRUE(_error->PendingError());
+   EXPECT_TRUE(_error->PopMessage(msg));
+   EXPECT_EQ("Clearsigned file '" + tempfile + "' contains unexpected line starting with a dash (sig)", msg);
 }

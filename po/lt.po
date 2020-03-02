@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2017-09-13 17:18+0000\n"
+"POT-Creation-Date: 2019-02-04 15:34+0100\n"
 "PO-Revision-Date: 2008-08-02 01:47-0400\n"
 "Last-Translator: Gintautas Miliauskas <gintas@akl.lt>\n"
 "Language-Team: Lithuanian <komp_lt@konferencijos.lt>\n"
@@ -149,7 +149,7 @@ msgstr ""
 #. Only warn if there is no sources.list file.
 #: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
 #: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc methods/mirror.cc
+#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
 #, c-format
 msgid "Unable to read %s"
 msgstr "Nepavyko perskaityti %s"
@@ -215,7 +215,7 @@ msgstr "Kelias %s per ilgas"
 
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
-msgid "The repository '%s' does no longer have a Release file."
+msgid "The repository '%s' no longer has a Release file."
 msgstr "Kelias %s per ilgas"
 
 #: apt-pkg/acquire-item.cc
@@ -295,6 +295,13 @@ msgstr "GPG klaida: %s: %s"
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
+"Skipping acquire of configured file '%s' as repository '%s' doesn't have the "
+"component '%s' (component misspelt in sources.list?)"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
 "Skipping acquire of configured file '%s' as repository '%s' doesn't support "
 "architecture '%s'"
 msgstr ""
@@ -302,8 +309,8 @@ msgstr ""
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
-"Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
-"or malformed file)"
+"Skipping acquire of configured file '%s' as repository '%s' does not seem to "
+"provide it (sources.list entry misspelt?)"
 msgstr ""
 
 #: apt-pkg/acquire-item.cc
@@ -323,10 +330,50 @@ msgid ""
 "repository will not be applied."
 msgstr ""
 
+#. TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+#. the time until the file will be valid - formatted in the same way as in
+#. the download progress display (e.g. 7d 3h 42min 1s)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"Release file for %s is not valid yet (invalid for another %s). Updates for "
+"this repository will not be applied."
+msgstr ""
+
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
+msgstr ""
+
+#. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"More information about this can be found online in the Release notes at: %s"
+msgstr ""
+
+#. TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"This must be accepted explicitly before updates for this repository can be "
+"applied. See %s manpage for details."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc apt-pkg/update.cc apt-private/private-download.cc
+#, c-format
+msgid "Failed to fetch %s  %s"
+msgstr "Nepavyko parsiųsti %s  %s"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -340,17 +387,18 @@ msgstr ""
 msgid "Can't find a source to download version '%s' of '%s'"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc
-#, c-format
-msgid ""
-"The package index files are corrupted. No Filename: field for package %s."
-msgstr ""
-
 #. TRANSLATOR: %s=%s is sourcename=sourceversion, e.g. apt=1.1
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "Jungiamasi prie %s (%s)"
+
+#: apt-pkg/acquire-worker.cc
+#, c-format
+msgid ""
+"The method '%s' is unsupported and disabled by default. Consider switching "
+"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
+msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -385,12 +433,12 @@ msgstr "Įdėkite diską „%s“ į įrenginį „%s“ ir paspauskite Enter."
 
 #: apt-pkg/acquire.cc apt-pkg/cdrom.cc
 #, fuzzy, c-format
-msgid "List directory %spartial is missing."
+msgid "List directory %s is missing."
 msgstr "Trūksta aplanko „%s“"
 
 #: apt-pkg/acquire.cc
 #, fuzzy, c-format
-msgid "Archives directory %spartial is missing."
+msgid "Archives directory %s is missing."
 msgstr "Trūksta aplanko „%s“"
 
 #: apt-pkg/acquire.cc
@@ -415,14 +463,6 @@ msgstr ""
 msgid "Clean of %s is not supported"
 msgstr ""
 
-#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
-#: methods/mirror.cc
-#, c-format
-msgid "Unable to change to %s"
-msgstr "Nepavyko pakeisti į %s"
-
-#. only show the ETA if it makes sense
-#. two days
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -459,7 +499,7 @@ msgstr ""
 "Greičiausiai norėsite paleisti „apt-get update“, kad šios problemos būtų "
 "ištaisytos"
 
-#: apt-pkg/cachefile.cc
+#: apt-pkg/cachefile.cc methods/mirror.cc
 msgid "The list of sources could not be read."
 msgstr "Nepavyko perskaityti šaltinių sąrašo."
 
@@ -605,6 +645,11 @@ msgstr ""
 
 #: apt-pkg/clean.cc
 #, c-format
+msgid "Unable to change to %s"
+msgstr "Nepavyko pakeisti į %s"
+
+#: apt-pkg/clean.cc
+#, c-format
 msgid "Unable to stat %s."
 msgstr ""
 
@@ -669,11 +714,6 @@ msgstr "Klaidingas veiksmas %s"
 #: apt-pkg/contrib/configuration.cc
 #, c-format
 msgid "Unrecognized type abbreviation: '%c'"
-msgstr ""
-
-#: apt-pkg/contrib/configuration.cc
-#, c-format
-msgid "Opening configuration file %s"
 msgstr ""
 
 #: apt-pkg/contrib/configuration.cc
@@ -853,12 +893,12 @@ msgstr "Klaida sinchronizuojant failą"
 msgid "Problem syncing the file"
 msgstr "Klaida sinchronizuojant failą"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, fuzzy, c-format
 msgid "Unable to mkstemp %s"
 msgstr "Nepavyko sukurti %s"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to write to %s"
 msgstr "Nepavyko įrašyti į %s"
@@ -1032,13 +1072,12 @@ msgstr ""
 #: apt-pkg/deb/debsystem.cc
 #, c-format
 msgid ""
-"Unable to lock the administration directory (%s), is another process using "
-"it?"
+"Unable to acquire the dpkg frontend lock (%s), is another process using it?"
 msgstr ""
 
 #: apt-pkg/deb/debsystem.cc
 #, fuzzy, c-format
-msgid "Unable to lock the administration directory (%s), are you root?"
+msgid "Unable to acquire the dpkg frontend lock (%s), are you root?"
 msgstr "Nepavyko užrakinti sąrašo aplanko"
 
 #. TRANSLATORS: the %s contains the recovery command, usually
@@ -1050,29 +1089,41 @@ msgid ""
 msgstr ""
 
 #: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid ""
+"Unable to lock the administration directory (%s), is another process using "
+"it?"
+msgstr ""
+
+#: apt-pkg/deb/debsystem.cc
+#, fuzzy, c-format
+msgid "Unable to lock the administration directory (%s), are you root?"
+msgstr "Nepavyko užrakinti sąrašo aplanko"
+
+#: apt-pkg/deb/debsystem.cc
 msgid "Not locked"
 msgstr ""
 
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
-#, fuzzy, c-format
-msgid "Installing %s"
-msgstr "Įdiegta %s"
+#, c-format
+msgid "Preparing %s"
+msgstr "Ruošiamas %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Configuring %s"
-msgstr "Konfigūruojamas %s"
+msgid "Preparing to configure %s"
+msgstr "Ruošiamasi konfigūruoti %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removing %s"
-msgstr "Šalinamas %s"
+msgid "Preparing for removal of %s"
+msgstr "Ruošiamasi %s pašalinimui"
 
 #: apt-pkg/deb/dpkgpm.cc
-#, fuzzy, c-format
-msgid "Completely removing %s"
-msgstr "Visiškai pašalintas %s"
+#, c-format
+msgid "Preparing to completely remove %s"
+msgstr "Ruošiamasi visiškai pašalinti %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1089,6 +1140,11 @@ msgstr ""
 msgid "Installed %s"
 msgstr "Įdiegta %s"
 
+#: apt-pkg/deb/dpkgpm.cc
+#, c-format
+msgid "Configuring %s"
+msgstr "Konfigūruojamas %s"
+
 #. FIXME: use a better string after freeze
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1102,33 +1158,23 @@ msgstr "Nepavyko atverti failo %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing %s"
-msgstr "Ruošiamas %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
 msgid "Unpacking %s"
 msgstr "Išpakuojamas %s"
 
 #: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing to configure %s"
-msgstr "Ruošiamasi konfigūruoti %s"
+#, fuzzy, c-format
+msgid "Installing %s"
+msgstr "Įdiegta %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing for removal of %s"
-msgstr "Ruošiamasi %s pašalinimui"
+msgid "Removing %s"
+msgstr "Šalinamas %s"
 
 #: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Removed %s"
-msgstr "Pašalintas %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing to completely remove %s"
-msgstr "Ruošiamasi visiškai pašalinti %s"
+#, fuzzy, c-format
+msgid "Completely removing %s"
+msgstr "Visiškai pašalintas %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1289,7 +1335,7 @@ msgstr ""
 
 #: apt-pkg/install-progress.cc
 #, c-format
-msgid "Progress: [%3i%%]"
+msgid "Progress: [%3li%%]"
 msgstr ""
 
 #. send status information that we are about to fork dpkg
@@ -1458,6 +1504,12 @@ msgstr ""
 
 #: apt-pkg/policy.cc
 #, c-format
+msgid ""
+"%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"
+msgstr ""
+
+#: apt-pkg/policy.cc
+#, c-format
 msgid "%s: Value %s is outside the range of valid pin priorities (%d to %d)"
 msgstr ""
 
@@ -1470,11 +1522,6 @@ msgstr ""
 #, fuzzy, c-format
 msgid "Malformed entry %u in %s file %s (%s)"
 msgstr "Nekorektiškas perrašymas %s eilutėje %lu #1"
-
-#: apt-pkg/sourcelist.cc
-#, c-format
-msgid "Opening %s"
-msgstr "Atveriama %s"
 
 #: apt-pkg/sourcelist.cc
 #, c-format
@@ -1496,7 +1543,7 @@ msgstr ""
 msgid "Type '%s' is not known on stanza %u in source list %s"
 msgstr ""
 
-#: apt-pkg/sourcelist.cc
+#: apt-pkg/sourcelist.cc apt-private/private-install.cc
 #, c-format
 msgid "Unsupported file %s given on commandline"
 msgstr ""
@@ -1509,11 +1556,6 @@ msgstr ""
 #, c-format
 msgid "Cannot convert %s to integer: out of range"
 msgstr ""
-
-#: apt-pkg/update.cc apt-private/private-download.cc
-#, c-format
-msgid "Failed to fetch %s  %s"
-msgstr "Nepavyko parsiųsti %s  %s"
 
 #: apt-pkg/update.cc
 #, fuzzy
@@ -1574,6 +1616,12 @@ msgstr ""
 "Laikmenos keitimas: įdėkite diską, pažymėtą\n"
 " „%s“,\n"
 "į įrenginį „%s“ ir paspauskite enter\n"
+
+#: apt-private/acqprogress.cc
+msgid ""
+"Do you want to accept these changes and continue updating from this "
+"repository?"
+msgstr ""
 
 #: apt-private/private-cachefile.cc
 msgid "Correcting dependencies..."
@@ -1713,8 +1761,14 @@ msgstr ""
 msgid "This APT helper has Super Meep Powers."
 msgstr ""
 
-#: apt-private/private-depends.cc apt-private/private-show.cc
-#: cmdline/apt-mark.cc
+#: apt-private/private-cmndline.cc
+msgid ""
+"--force-yes is deprecated, use one of the options starting with --allow "
+"instead."
+msgstr ""
+
+#: apt-private/private-depends.cc apt-private/private-download.cc
+#: apt-private/private-show.cc cmdline/apt-mark.cc
 msgid "No packages found"
 msgstr "Paketų nerasta"
 
@@ -1733,12 +1787,6 @@ msgstr "Nepavyko autentikuoti kai kurių paketų"
 #: apt-private/private-download.cc
 msgid "Install these packages without verification?"
 msgstr "Įdiegti šiuos paketus be patvirtinimo?"
-
-#: apt-private/private-download.cc apt-private/private-install.cc
-msgid ""
-"--force-yes is deprecated, use one of the options starting with --allow "
-"instead."
-msgstr ""
 
 #: apt-private/private-download.cc
 #, fuzzy
@@ -1886,7 +1934,7 @@ msgstr ""
 msgid "Abort."
 msgstr "Nutraukti."
 
-#: apt-private/private-install.cc
+#: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Ar norite tęsti?"
 
@@ -2203,11 +2251,6 @@ msgstr ""
 msgid "Full Text Search"
 msgstr ""
 
-#: apt-private/private-show.cc cmdline/apt-cache.cc
-#, c-format
-msgid "Package file %s is out of sync."
-msgstr ""
-
 #: apt-private/private-show.cc
 #, c-format
 msgid "There is %i additional record. Please use the '-a' switch to see it"
@@ -2363,15 +2406,15 @@ msgid "%s has no build depends.\n"
 msgstr ""
 
 #: apt-private/private-source.cc
-msgid "Must specify at least one package to check builddeps for"
-msgstr "Būtina nurodyti bent vieną paketą, kuriam norite įvykdyti builddeps"
-
-#: apt-private/private-source.cc
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
 "Architectures for setup"
 msgstr ""
+
+#: apt-private/private-source.cc
+msgid "Must specify at least one package to check builddeps for"
+msgstr "Būtina nurodyti bent vieną paketą, kuriam norite įvykdyti builddeps"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2394,7 +2437,7 @@ msgstr "Nepavyko pervadinti %s į %s"
 
 #: apt-private/private-sources.cc
 #, c-format
-msgid "Your '%s' file changed, please run 'apt-get update'."
+msgid "Your '%s' file changed, please run 'apt-get update'.\n"
 msgstr ""
 
 #: apt-private/private-unmet.cc
@@ -2405,6 +2448,14 @@ msgstr "Paketas %s versijos numeriu %s turi netenkinamą priklausomybę:\n"
 #: apt-private/private-update.cc
 msgid "The update command takes no arguments"
 msgstr "Atnaujinimo komandai argumentų nereikia"
+
+#. TRANSLATOR: the first two are manpage references, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid ""
+"Usage of %s should be preferred over embedding login information directly in "
+"the %s entry for '%s'"
+msgstr ""
 
 #: apt-private/private-update.cc
 #, c-format
@@ -2418,9 +2469,9 @@ msgstr[1] ""
 msgid "All packages are up to date."
 msgstr ""
 
-#: cmdline/apt-cache.cc
-#, fuzzy
-msgid "apt-cache stats does not take any arguments"
+#: cmdline/apt-cache.cc cmdline/apt-mark.cc
+#, fuzzy, c-format
+msgid "%s does not take any arguments"
 msgstr "Atnaujinimo komandai argumentų nereikia"
 
 #: cmdline/apt-cache.cc
@@ -2679,6 +2730,10 @@ msgid "Install new packages (pkg is libc6 not libc6.deb)"
 msgstr ""
 
 #: cmdline/apt-get.cc
+msgid "Reinstall packages (pkg is libc6 not libc6.deb)"
+msgstr ""
+
+#: cmdline/apt-get.cc
 #, fuzzy
 msgid "Remove packages"
 msgstr "Sugadinti paketai"
@@ -2773,6 +2828,14 @@ msgstr ""
 msgid "detect proxy using apt.conf"
 msgstr ""
 
+#: cmdline/apt-helper.cc
+msgid "wait for system to be online"
+msgstr ""
+
+#: cmdline/apt-helper.cc
+msgid "drop privileges before running given command"
+msgstr ""
+
 #: cmdline/apt-internal-planner.cc
 #, fuzzy
 msgid ""
@@ -2829,6 +2892,16 @@ msgstr "%s nustatytas kaip įdiegtas rankiniu būdu\n"
 #, fuzzy, c-format
 msgid "%s was already set to automatically installed.\n"
 msgstr "%s nustatytas kaip įdiegtas rankiniu būdu\n"
+
+#: cmdline/apt-mark.cc
+msgid "No changes necessary"
+msgstr ""
+
+#: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "The following NEW packages will be installed:"
+msgid "The following packages will be marked as automatically installed:"
+msgstr "Bus įdiegti šie NAUJI paketai:"
 
 #: cmdline/apt-mark.cc
 #, fuzzy, c-format
@@ -2890,6 +2963,11 @@ msgid "Mark the given packages as manually installed"
 msgstr "Patikrinkite, ar įdiegtas „dpkg-dev“ paketas.\n"
 
 #: cmdline/apt-mark.cc
+#, fuzzy
+msgid "Mark all dependencies of meta packages as automatically installed."
+msgstr "%s nustatytas kaip įdiegtas rankiniu būdu\n"
+
+#: cmdline/apt-mark.cc
 msgid "Mark a package as held back"
 msgstr ""
 
@@ -2908,7 +2986,7 @@ msgid "Print the list of manually installed packages"
 msgstr "%s nustatytas kaip įdiegtas rankiniu būdu\n"
 
 #: cmdline/apt-mark.cc
-msgid "Print the list of package on hold"
+msgid "Print the list of packages on hold"
 msgstr ""
 
 #: cmdline/apt-sortpkgs.cc
@@ -2953,6 +3031,11 @@ msgstr ""
 #: cmdline/apt.cc
 #, fuzzy
 msgid "install packages"
+msgstr "Surišti paketai:"
+
+#: cmdline/apt.cc
+#, fuzzy
+msgid "reinstall packages"
 msgstr "Surišti paketai:"
 
 #: cmdline/apt.cc
@@ -3356,6 +3439,11 @@ msgstr ""
 msgid "Connection failed"
 msgstr "Prisijungti nepavyko"
 
+#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#, c-format
+msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
+msgstr ""
+
 #: methods/basehttp.cc
 #, c-format
 msgid ""
@@ -3401,15 +3489,21 @@ msgstr "Failas nerastas"
 msgid "Direct connection to %s domains is blocked by default."
 msgstr ""
 
-#: methods/connect.cc methods/http.cc
-#, c-format
-msgid "Connecting to %s (%s)"
-msgstr "Jungiamasi prie %s (%s)"
-
 #: methods/connect.cc
 #, c-format
 msgid "[IP: %s %s]"
 msgstr "[IP: %s %s]"
+
+#: methods/connect.cc
+#, fuzzy, c-format
+#| msgid "Connecting to %s (%s)"
+msgid "Connected to %s (%s)"
+msgstr "Jungiamasi prie %s (%s)"
+
+#: methods/connect.cc methods/http.cc
+#, c-format
+msgid "Connecting to %s (%s)"
+msgstr "Jungiamasi prie %s (%s)"
 
 #: methods/connect.cc
 #, c-format
@@ -3421,11 +3515,6 @@ msgstr ""
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr ""
 
-#: methods/connect.cc
-#, c-format
-msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr "Nepavyko prisijungti prie %s:%s (%s), prisijungimas per ilgai užtruko"
-
 #: methods/connect.cc methods/ftp.cc methods/rsh.cc
 msgid "Failed"
 msgstr "Nepavyko"
@@ -3434,6 +3523,11 @@ msgstr "Nepavyko"
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
 msgstr "Nepavyko prisijungti prie %s:%s (%s)."
+
+#: methods/connect.cc
+#, c-format
+msgid "Could not connect to %s:%s (%s), connection timed out"
+msgstr "Nepavyko prisijungti prie %s:%s (%s), prisijungimas per ilgai užtruko"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -3680,30 +3774,6 @@ msgstr "Prisijungimo laiko limitas baigėsi"
 msgid "Error writing to output file"
 msgstr ""
 
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "No mirror file '%s' found "
-msgstr ""
-
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, fuzzy, c-format
-msgid "Can not read mirror file '%s'"
-msgstr "Nepavyko atverti failo %s"
-
-#: methods/mirror.cc
-#, fuzzy, c-format
-msgid "No entry found in mirror file '%s'"
-msgstr "Nepavyko atverti failo %s"
-
-#: methods/mirror.cc
-#, c-format
-msgid "[Mirror: %s]"
-msgstr ""
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr ""
@@ -3715,6 +3785,20 @@ msgstr ""
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#~ msgid "Removed %s"
+#~ msgstr "Pašalintas %s"
+
+#, fuzzy
+#~ msgid "Can not read mirror file '%s'"
+#~ msgstr "Nepavyko atverti failo %s"
+
+#, fuzzy
+#~ msgid "No entry found in mirror file '%s'"
+#~ msgstr "Nepavyko atverti failo %s"
+
+#~ msgid "Opening %s"
+#~ msgstr "Atveriama %s"
 
 #~ msgid "Unmet dependencies. Try using --fix-broken."
 #~ msgstr "Nepatenkintos priklausomybės. Bandykit naudoti --fix-broken."

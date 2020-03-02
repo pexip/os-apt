@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: cdromutl.cc,v 1.12 2001/02/20 07:03:17 jgg Exp $
 /* ######################################################################
    
    CDROM Utilities - Some functions to manipulate CDROM mounts.
@@ -10,26 +9,26 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
 #include <apt-pkg/cdromutl.h>
-#include <apt-pkg/error.h>
-#include <apt-pkg/md5.h>
-#include <apt-pkg/fileutl.h>
 #include <apt-pkg/configuration.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/md5.h>
 #include <apt-pkg/strutl.h>
 
-#include <stdlib.h>
-#include <string.h>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <sys/statvfs.h>
 #include <dirent.h>
 #include <fcntl.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/statvfs.h>
+#include <unistd.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -105,13 +104,14 @@ bool UnmountCdrom(string Path)
 	 }
 	 else
 	 {
-	    const char *Args[10];
-	    Args[0] = "umount";
-	    Args[1] = Path.c_str();
-	    Args[2] = 0;
-	    execvp(Args[0],(char **)Args);      
+	    const char * const Args[] = {
+	       "umount",
+	       Path.c_str(),
+	       nullptr
+	    };
+	    execvp(Args[0], const_cast<char **>(Args));
 	    _exit(100);
-	 }      
+	 }
       }
 
       // if it can not be umounted, give it a bit more time
@@ -184,26 +184,32 @@ bool IdentCdrom(string CD,string &Res,unsigned int Version)
    MD5Summation Hash;
    bool writable_media = false;
 
+   int dirfd = open(CD.c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+   if (dirfd == -1)
+      return _error->Errno("open",_("Unable to read %s"),CD.c_str());
+
    // if we are on a writable medium (like a usb-stick) that is just
    // used like a cdrom don't use "." as it will constantly change,
    // use .disk instead
-   if (access(CD.c_str(), W_OK) == 0 && DirectoryExists(CD+string("/.disk"))) 
+   if (faccessat(dirfd, ".", W_OK, 0) == 0)
    {
-      writable_media = true;
-      CD = CD.append("/.disk");
-      if (_config->FindB("Debug::aptcdrom",false) == true)
-         std::clog << "Found writable cdrom, using alternative path: " << CD
-                   << std::endl;
+      int diskfd = openat(dirfd, "./.disk", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
+      if (diskfd != -1)
+      {
+	 close(dirfd);
+	 dirfd = diskfd;
+	 writable_media = true;
+	 CD = CD.append("/.disk");
+	 if (_config->FindB("Debug::aptcdrom",false) == true)
+	    std::clog << "Found writable cdrom, using alternative path: " << CD
+	       << std::endl;
+      }
    }
 
-   string StartDir = SafeGetCWD();
-   if (chdir(CD.c_str()) != 0)
-      return _error->Errno("chdir",_("Unable to change to %s"),CD.c_str());
-   
-   DIR *D = opendir(".");
-   if (D == 0)
+   DIR * const D = fdopendir(dirfd);
+   if (D == nullptr)
       return _error->Errno("opendir",_("Unable to read %s"),CD.c_str());
-      
+
    /* Run over the directory, we assume that the reader order will never
       change as the media is read-only. In theory if the kernel did
       some sort of wacked caching this might not be true.. */
@@ -216,51 +222,39 @@ bool IdentCdrom(string CD,string &Res,unsigned int Version)
 
       std::string S;
       if (Version <= 1)
-      {
-	 strprintf(S, "%lu", (unsigned long)Dir->d_ino);
-      }
+	 S = std::to_string(Dir->d_ino);
       else
       {
 	 struct stat Buf;
-	 if (stat(Dir->d_name,&Buf) != 0)
+	 if (fstatat(dirfd, Dir->d_name, &Buf, 0) != 0)
 	    continue;
-	 strprintf(S, "%lu", (unsigned long)Buf.st_mtime);
+	 S = std::to_string(Buf.st_mtime);
       }
 
       Hash.Add(S.c_str());
       Hash.Add(Dir->d_name);
-   };
-
-   if (chdir(StartDir.c_str()) != 0) {
-      _error->Errno("chdir",_("Unable to change to %s"),StartDir.c_str());
-      closedir(D);
-      return false;
    }
-   closedir(D);
 
    // Some stats from the fsys
    std::string S;
    if (_config->FindB("Debug::identcdrom",false) == false)
    {
       struct statvfs Buf;
-      if (statvfs(CD.c_str(),&Buf) != 0)
+      if (fstatvfs(dirfd, &Buf) != 0)
 	 return _error->Errno("statfs",_("Failed to stat the cdrom"));
 
-      // We use a kilobyte block size to advoid overflow
-      if (writable_media)
-      {
-         strprintf(S, "%lu", (unsigned long)(Buf.f_blocks*(Buf.f_bsize/1024)));
-      } else {
-         strprintf(S, "%lu %lu", (unsigned long)(Buf.f_blocks*(Buf.f_bsize/1024)),
-                 (unsigned long)(Buf.f_bfree*(Buf.f_bsize/1024)));
-      }
-      Hash.Add(S.c_str());
+      // We use a kilobyte block size to avoid overflow
+      S = std::to_string(Buf.f_blocks * (Buf.f_bsize / 1024));
+      if (writable_media == false)
+	 S.append(" ").append(std::to_string(Buf.f_bfree * (Buf.f_bsize / 1024)));
+      Hash.Add(S.c_str(), S.length());
       strprintf(S, "-%u", Version);
    }
    else
       strprintf(S, "-%u.debug", Version);
 
-   Res = Hash.Result().Value() + S;
+   closedir(D);
+   Res = Hash.Result().Value().append(std::move(S));
    return true;
 }
 									/*}}}*/

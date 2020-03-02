@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: pkgsystem.cc,v 1.3 2004/02/27 00:43:16 mdz Exp $
 /* ######################################################################
 
    System - Abstraction for running on different systems.
@@ -10,15 +9,16 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
 #include <apt-pkg/debsystem.h>
-#include <apt-pkg/pkgsystem.h>
+#include <apt-pkg/error.h>
 #include <apt-pkg/macros.h>
+#include <apt-pkg/pkgsystem.h>
 
-#include <map>
 #include <cassert>
 #include <cstring>
+#include <map>
 									/*}}}*/
 
 pkgSystem *_system = 0;
@@ -72,7 +72,7 @@ std::vector<std::string> pkgSystem::ArchitecturesSupported() const	/*{{{*/
    return {};
 }
 									/*}}}*/
-// pkgSystem::Set/GetVersionMapping - for internal/external communcation/*{{{*/
+// pkgSystem::Set/GetVersionMapping - for internal/external communication/*{{{*/
 void pkgSystem::SetVersionMapping(map_id_t const in, map_id_t const out)
 {
    if (in == out)
@@ -86,4 +86,28 @@ map_id_t pkgSystem::GetVersionMapping(map_id_t const in) const
 }
 									/*}}}*/
 
+bool pkgSystem::LockInner()				/*{{{*/
+{
+   debSystem * const deb = dynamic_cast<debSystem *>(this);
+   if (deb != NULL)
+      return deb->LockInner();
+   return _error->Error("LockInner is not implemented");
+}
+									/*}}}*/
+bool pkgSystem::UnLockInner(bool NoErrors)				/*{{{*/
+{
+   debSystem * const deb = dynamic_cast<debSystem *>(this);
+   if (deb != NULL)
+      return deb->UnLockInner(NoErrors);
+   return _error->Error("UnLockInner is not implemented");
+}
+									/*}}}*/
+bool pkgSystem::IsLocked() 						/*{{{*/
+{
+   debSystem * const deb = dynamic_cast<debSystem *>(this);
+   if (deb != NULL)
+      return deb->IsLocked();
+   return true;
+}
+									/*}}}*/
 pkgSystem::~pkgSystem() {}

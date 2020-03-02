@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: apt-cache.cc,v 1.72 2004/04/30 04:34:03 mdz Exp $
 /* ######################################################################
    
    apt-cache - Manages the cache files
@@ -13,17 +12,22 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
 #include <apt-pkg/algorithms.h>
 #include <apt-pkg/cachefile.h>
 #include <apt-pkg/cacheset.h>
 #include <apt-pkg/cmndline.h>
+#include <apt-pkg/configuration.h>
+#include <apt-pkg/depcache.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/indexfile.h>
 #include <apt-pkg/init.h>
+#include <apt-pkg/macros.h>
 #include <apt-pkg/metaindex.h>
+#include <apt-pkg/mmap.h>
+#include <apt-pkg/pkgcache.h>
 #include <apt-pkg/pkgrecords.h>
 #include <apt-pkg/pkgsystem.h>
 #include <apt-pkg/policy.h>
@@ -34,26 +38,15 @@
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/tagfile.h>
 #include <apt-pkg/version.h>
-#include <apt-pkg/cacheiterators.h>
-#include <apt-pkg/configuration.h>
-#include <apt-pkg/depcache.h>
-#include <apt-pkg/macros.h>
-#include <apt-pkg/mmap.h>
-#include <apt-pkg/pkgcache.h>
 
 #include <apt-private/private-cacheset.h>
 #include <apt-private/private-cmndline.h>
 #include <apt-private/private-depends.h>
-#include <apt-private/private-show.h>
-#include <apt-private/private-search.h>
-#include <apt-private/private-unmet.h>
 #include <apt-private/private-main.h>
+#include <apt-private/private-search.h>
+#include <apt-private/private-show.h>
+#include <apt-private/private-unmet.h>
 
-#include <regex.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <algorithm>
 #include <cstring>
 #include <iomanip>
@@ -63,6 +56,11 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <regex.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -184,7 +182,7 @@ static void ShowHashTableStats(std::string Type,
 static bool Stats(CommandLine &CmdL)
 {
    if (CmdL.FileSize() > 1) {
-      _error->Error(_("apt-cache stats does not take any arguments"));
+      _error->Error(_("%s does not take any arguments"), "apt-cache stats");
       return false;
    }
 
@@ -404,7 +402,7 @@ static bool DumpAvail(CommandLine &)
    if (unlikely(Cache == NULL || CacheFile.BuildPolicy() == false))
       return false;
 
-   unsigned long Count = Cache->HeaderP->PackageCount+1;
+   auto const Count = Cache->HeaderP->PackageCount+1;
    pkgCache::VerFile **VFList = new pkgCache::VerFile *[Count];
    memset(VFList,0,sizeof(*VFList)*Count);
    
@@ -472,12 +470,7 @@ static bool DumpAvail(CommandLine &)
    for (pkgCache::VerFile **J = VFList; *J != 0;)
    {
       pkgCache::PkgFileIterator File(*Cache,(*J)->File + Cache->PkgFileP);
-      if (File.IsOk() == false)
-      {
-	 _error->Error(_("Package file %s is out of sync."),File.FileName());
-	 break;
-      }
-
+      // FIXME: Add support for volatile/with-source files
       FileFd PkgF(File.FileName(),FileFd::ReadOnly, FileFd::Extension);
       if (_error->PendingError() == true)
 	 break;
@@ -565,18 +558,19 @@ static bool XVcg(CommandLine &CmdL)
       0 = None */
    enum States {None=0, ToShow, ToShowNR, DoneNR, Done};
    enum TheFlags {ForceNR=(1<<0)};
-   unsigned char *Show = new unsigned char[Cache->Head().PackageCount];
-   unsigned char *Flags = new unsigned char[Cache->Head().PackageCount];
-   unsigned char *ShapeMap = new unsigned char[Cache->Head().PackageCount];
+   auto PackageCount = Cache->Head().PackageCount;
+   unsigned char *Show = new unsigned char[PackageCount];
+   unsigned char *Flags = new unsigned char[PackageCount];
+   unsigned char *ShapeMap = new unsigned char[PackageCount];
    
    // Show everything if no arguments given
    if (CmdL.FileList[1] == 0)
-      for (unsigned long I = 0; I != Cache->Head().PackageCount; I++)
+      for (decltype(PackageCount) I = 0; I != PackageCount; ++I)
 	 Show[I] = ToShow;
    else
-      for (unsigned long I = 0; I != Cache->Head().PackageCount; I++)
+      for (decltype(PackageCount) I = 0; I != PackageCount; ++I)
 	 Show[I] = None;
-   memset(Flags,0,sizeof(*Flags)*Cache->Head().PackageCount);
+   memset(Flags,0,sizeof(*Flags)*PackageCount);
    
    // Map the shapes
    for (pkgCache::PkgIterator Pkg = Cache->PkgBegin(); Pkg.end() == false; ++Pkg)
@@ -777,18 +771,19 @@ static bool Dotty(CommandLine &CmdL)
       0 = None */
    enum States {None=0, ToShow, ToShowNR, DoneNR, Done};
    enum TheFlags {ForceNR=(1<<0)};
-   unsigned char *Show = new unsigned char[Cache->Head().PackageCount];
-   unsigned char *Flags = new unsigned char[Cache->Head().PackageCount];
-   unsigned char *ShapeMap = new unsigned char[Cache->Head().PackageCount];
+   auto PackageCount = Cache->Head().PackageCount;
+   unsigned char *Show = new unsigned char[PackageCount];
+   unsigned char *Flags = new unsigned char[PackageCount];
+   unsigned char *ShapeMap = new unsigned char[PackageCount];
    
    // Show everything if no arguments given
    if (CmdL.FileList[1] == 0)
-      for (unsigned long I = 0; I != Cache->Head().PackageCount; I++)
+      for (decltype(PackageCount) I = 0; I != PackageCount; ++I)
 	 Show[I] = ToShow;
    else
-      for (unsigned long I = 0; I != Cache->Head().PackageCount; I++)
+      for (decltype(PackageCount) I = 0; I != PackageCount; ++I)
 	 Show[I] = None;
-   memset(Flags,0,sizeof(*Flags)*Cache->Head().PackageCount);
+   memset(Flags,0,sizeof(*Flags)*PackageCount);
    
    // Map the shapes
    for (pkgCache::PkgIterator Pkg = Cache->PkgBegin(); Pkg.end() == false; ++Pkg)

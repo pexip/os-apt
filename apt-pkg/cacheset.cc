@@ -15,24 +15,23 @@
 #include <apt-pkg/cachefile.h>
 #include <apt-pkg/cachefilter.h>
 #include <apt-pkg/cacheset.h>
-#include <apt-pkg/error.h>
-#include <apt-pkg/versionmatch.h>
-#include <apt-pkg/pkgrecords.h>
-#include <apt-pkg/policy.h>
-#include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/depcache.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
 #include <apt-pkg/macros.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/fileutl.h>
+#include <apt-pkg/pkgrecords.h>
+#include <apt-pkg/policy.h>
+#include <apt-pkg/versionmatch.h>
 
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
-#include <regex.h>
 #include <list>
 #include <string>
 #include <vector>
+#include <regex.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -738,7 +737,7 @@ void CacheSetHelper::canNotFindRegEx(PackageContainerInterface * const /*pci*/, 
 }
 									/*}}}*/
 // canNotFindPackage - handle the case no package is found from a string/*{{{*/
-APT_CONST void CacheSetHelper::canNotFindPackage(PackageContainerInterface * const /*pci*/, pkgCacheFile &/*Cache*/, std::string const &/*str*/) {
+void CacheSetHelper::canNotFindPackage(PackageContainerInterface * const /*pci*/, pkgCacheFile &/*Cache*/, std::string const &/*str*/) {
 }
 									/*}}}*/
 									/*}}}*/
@@ -864,17 +863,17 @@ APT_IGNORE_DEPRECATED_POP
 	}
 }
 // showTaskSelection							/*{{{*/
-APT_CONST void CacheSetHelper::showTaskSelection(pkgCache::PkgIterator const &/*pkg*/,
+void CacheSetHelper::showTaskSelection(pkgCache::PkgIterator const &/*pkg*/,
 				       std::string const &/*pattern*/) {
 }
 									/*}}}*/
 // showRegExSelection							/*{{{*/
-APT_CONST void CacheSetHelper::showRegExSelection(pkgCache::PkgIterator const &/*pkg*/,
+void CacheSetHelper::showRegExSelection(pkgCache::PkgIterator const &/*pkg*/,
 					std::string const &/*pattern*/) {
 }
 									/*}}}*/
 // showFnmatchSelection							/*{{{*/
-APT_CONST void CacheSetHelper::showFnmatchSelection(pkgCache::PkgIterator const &/*pkg*/,
+void CacheSetHelper::showFnmatchSelection(pkgCache::PkgIterator const &/*pkg*/,
                                          std::string const &/*pattern*/) {
 }
 									/*}}}*/
@@ -902,7 +901,7 @@ APT_IGNORE_DEPRECATED_POP
 		break;
 	}
 }
-APT_CONST void CacheSetHelper::showSelectedVersion(pkgCache::PkgIterator const &/*Pkg*/,
+void CacheSetHelper::showSelectedVersion(pkgCache::PkgIterator const &/*Pkg*/,
 					 pkgCache::VerIterator const /*Ver*/,
 					 std::string const &/*ver*/,
 					 bool const /*verIsRel*/) {

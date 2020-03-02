@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: debsrcrecords.cc,v 1.6 2004/03/17 05:58:54 mdz Exp $
 /* ######################################################################
    
    Debian Source Package Records - Parser implementation for Debian style
@@ -11,22 +10,23 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
+#include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/deblistparser.h>
 #include <apt-pkg/debsrcrecords.h>
 #include <apt-pkg/error.h>
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/aptconfiguration.h>
-#include <apt-pkg/srcrecords.h>
-#include <apt-pkg/tagfile.h>
-#include <apt-pkg/hashes.h>
 #include <apt-pkg/gpgv.h>
+#include <apt-pkg/hashes.h>
+#include <apt-pkg/srcrecords.h>
+#include <apt-pkg/strutl.h>
+#include <apt-pkg/tagfile-keys.h>
+#include <apt-pkg/tagfile.h>
 
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 									/*}}}*/
 
 using std::max;
@@ -43,11 +43,10 @@ debSrcRecordParser::debSrcRecordParser(std::string const &File,pkgIndexFile cons
 }
 std::string debSrcRecordParser::Package() const				/*{{{*/
 {
-   auto const name = Sect.FindS("Package");
-   if (iIndex == nullptr)
-      return name.empty() ? Sect.FindS("Source") : name;
-   else
-      return name;
+   auto const name = Sect.Find(pkgTagSection::Key::Package);
+   if (iIndex != nullptr || name.empty() == false)
+      return name.to_string();
+   return Sect.Find(pkgTagSection::Key::Source).to_string();
 }
 									/*}}}*/
 // SrcRecordParser::Binaries - Return the binaries field		/*{{{*/
@@ -60,7 +59,7 @@ std::string debSrcRecordParser::Package() const				/*{{{*/
 const char **debSrcRecordParser::Binaries()
 {
    const char *Start, *End;
-   if (Sect.Find("Binary", Start, End) == false)
+   if (Sect.Find(pkgTagSection::Key::Binary, Start, End) == false)
       return NULL;
    for (; isspace_ascii(*Start) != 0; ++Start);
    if (Start >= End)
@@ -100,53 +99,58 @@ const char **debSrcRecordParser::Binaries()
 bool debSrcRecordParser::BuildDepends(std::vector<pkgSrcRecords::Parser::BuildDepRec> &BuildDeps,
 					bool const &ArchOnly, bool const &StripMultiArch)
 {
-   unsigned int I;
-   const char *Start, *Stop;
-   BuildDepRec rec;
-   const char *fields[] = {"Build-Depends",
-                           "Build-Depends-Indep",
-			   "Build-Conflicts",
-			   "Build-Conflicts-Indep",
-			   "Build-Depends-Arch",
-			   "Build-Conflicts-Arch"};
-
    BuildDeps.clear();
 
-   for (I = 0; I < 6; I++)
+   pkgTagSection::Key const fields[] = {
+      pkgTagSection::Key::Build_Depends,
+      pkgTagSection::Key::Build_Depends_Indep,
+      pkgTagSection::Key::Build_Conflicts,
+      pkgTagSection::Key::Build_Conflicts_Indep,
+      pkgTagSection::Key::Build_Depends_Arch,
+      pkgTagSection::Key::Build_Conflicts_Arch,
+   };
+   for (unsigned short I = 0; I < sizeof(fields) / sizeof(fields[0]); ++I)
    {
-      if (ArchOnly && (I == 1 || I == 3))
-         continue;
+      if (ArchOnly && (fields[I] == pkgTagSection::Key::Build_Depends_Indep || fields[I] == pkgTagSection::Key::Build_Conflicts_Indep))
+	 continue;
 
+      const char *Start, *Stop;
       if (Sect.Find(fields[I], Start, Stop) == false)
          continue;
-      
+
+      if (Start == Stop)
+	 continue;
+
       while (1)
       {
-         Start = debListParser::ParseDepends(Start, Stop, 
-		     rec.Package,rec.Version,rec.Op,true,StripMultiArch,true);
-	 
-         if (Start == 0) 
-            return _error->Error("Problem parsing dependency: %s", fields[I]);
+	 BuildDepRec rec;
+	 Start = debListParser::ParseDepends(Start, Stop,
+					     rec.Package, rec.Version, rec.Op, true, StripMultiArch, true);
+
+	 if (Start == 0)
+	    return _error->Error("Problem parsing dependency: %s", BuildDepType(I));
 	 rec.Type = I;
 
 	 // We parsed a package that was ignored (wrong architecture restriction
 	 // or something).
-	 if (rec.Package == "") {
+	 if (rec.Package.empty())
+	 {
 	    // If we are in an OR group, we need to set the "Or" flag of the
 	    // previous entry to our value.
-	    if (BuildDeps.size() > 0 && (BuildDeps[BuildDeps.size() - 1].Op & pkgCache::Dep::Or) == pkgCache::Dep::Or) {
+	    if (BuildDeps.empty() == false && (BuildDeps[BuildDeps.size() - 1].Op & pkgCache::Dep::Or) == pkgCache::Dep::Or)
+	    {
 	       BuildDeps[BuildDeps.size() - 1].Op &= ~pkgCache::Dep::Or;
 	       BuildDeps[BuildDeps.size() - 1].Op |= (rec.Op & pkgCache::Dep::Or);
 	    }
 	 } else {
-   	    BuildDeps.push_back(rec);
+	    BuildDeps.emplace_back(std::move(rec));
 	 }
-	 
-   	 if (Start == Stop) 
+
+	 if (Start == Stop)
 	    break;
-      }	 
+      }
    }
-   
+
    return true;
 }
 									/*}}}*/
@@ -182,7 +186,7 @@ bool debSrcRecordParser::Files2(std::vector<pkgSrcRecords::File2> &List)
    List.clear();
 
    // Stash the / terminated directory prefix
-   string Base = Sect.FindS("Directory");
+   std::string Base = Sect.Find(pkgTagSection::Key::Directory).to_string();
    if (Base.empty() == false && Base[Base.length()-1] != '/')
       Base += '/';
 
@@ -236,7 +240,11 @@ bool debSrcRecordParser::Files2(std::vector<pkgSrcRecords::File2> &List)
 	 if (file != List.end())
 	 {
 	    if (checksumField == "Files")
-	       APT_IGNORE_DEPRECATED(file->MD5Hash = hash;)
+	    {
+	       APT_IGNORE_DEPRECATED_PUSH
+	       file->MD5Hash = hash;
+	       APT_IGNORE_DEPRECATED_POP
+	    }
 	    // an error here indicates that we have two different hashes for the same file
 	    if (file->Hashes.push_back(hashString) == false)
 	       return _error->Error("Error parsing checksum in %s of source package %s", checksumField.c_str(), Package().c_str());

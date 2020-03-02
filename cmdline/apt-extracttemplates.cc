@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: apt-extracttemplates.cc,v 1.15 2003/07/26 00:00:11 mdz Exp $
 /* ######################################################################
    
    APT Extract Templates - Program to extract debconf config and template
@@ -13,34 +12,33 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
-#include <apt-pkg/init.h>
 #include <apt-pkg/cmndline.h>
-#include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/configuration.h>
-#include <apt-pkg/sourcelist.h>
-#include <apt-pkg/pkgcachegen.h>
-#include <apt-pkg/version.h>
-#include <apt-pkg/tagfile.h>
 #include <apt-pkg/debfile.h>
 #include <apt-pkg/deblistparser.h>
-#include <apt-pkg/error.h>
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/fileutl.h>
-#include <apt-pkg/pkgsystem.h>
 #include <apt-pkg/dirstream.h>
+#include <apt-pkg/error.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/init.h>
 #include <apt-pkg/mmap.h>
+#include <apt-pkg/pkgcache.h>
+#include <apt-pkg/pkgcachegen.h>
+#include <apt-pkg/pkgsystem.h>
+#include <apt-pkg/sourcelist.h>
+#include <apt-pkg/strutl.h>
+#include <apt-pkg/tagfile.h>
+#include <apt-pkg/version.h>
 
 #include <apt-private/private-cmndline.h>
 #include <apt-private/private-main.h>
 
 #include <iostream>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdlib.h>
 
 #include "apt-extracttemplates.h"
 
@@ -231,29 +229,13 @@ static bool ShowHelp(CommandLine &)					/*{{{*/
 /* */
 static string WriteFile(const char *package, const char *prefix, const char *data)
 {
-	char fn[512];
-
-        std::string tempdir = GetTempDir();
-	snprintf(fn, sizeof(fn), "%s/%s.%s.XXXXXX",
-                 _config->Find("APT::ExtractTemplates::TempDir", 
-                               tempdir.c_str()).c_str(),
-                 package, prefix);
-	FileFd f;
-	if (data == NULL)
-		data = "";
-        int fd = mkstemp(fn);
-        if (fd < 0) {
-		_error->Errno("ofstream::ofstream",_("Unable to mkstemp %s"),fn);
-                return string();
-        }
-	if (!f.OpenDescriptor(fd, FileFd::WriteOnly, FileFd::None, true))
-	{
-		_error->Errno("ofstream::ofstream",_("Unable to write to %s"),fn);
-		return string();
-	}
-	f.Write(data, strlen(data));
-	f.Close();
-	return fn;
+   FileFd f;
+   std::string tplname;
+   strprintf(tplname, "%s.%s", package, prefix);
+   GetTempFile(tplname, false, &f);
+   if (data != nullptr)
+      f.Write(data, strlen(data));
+   return f.Name();
 }
 									/*}}}*/
 // WriteConfig - write out the config data from a debian package file	/*{{{*/
@@ -290,6 +272,10 @@ static bool Go(CommandLine &CmdL)
 	string debconfver = DebFile::GetInstalledVer("debconf");
 	if (debconfver.empty() == true)
 		return _error->Error( _("Cannot get debconf version. Is debconf installed?"));
+
+	auto const tmpdir = _config->Find("APT::ExtractTemplates::TempDir");
+	if (tmpdir.empty() == false)
+	   setenv("TMPDIR", tmpdir.c_str(), 1);
 
 	// Process each package passsed in
 	for (unsigned int I = 0; I != CmdL.FileSize(); I++)

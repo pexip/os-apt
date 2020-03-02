@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.8\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2017-09-13 17:18+0000\n"
+"POT-Creation-Date: 2019-02-04 15:34+0100\n"
 "PO-Revision-Date: 2014-09-12 13:48+0700\n"
 "Last-Translator: Trần Ngọc Quân <vnwildman@gmail.com>\n"
 "Language-Team: Vietnamese <translation-team-vi@lists.sourceforge.net>\n"
@@ -151,7 +151,7 @@ msgstr "Tập tin %s/%s ghi đè lên một tập tin trong gói %s"
 #. Only warn if there is no sources.list file.
 #: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
 #: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc methods/mirror.cc
+#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
 #, c-format
 msgid "Unable to read %s"
 msgstr "Không thể đọc %s"
@@ -217,7 +217,7 @@ msgstr "Thư mục %s bị trệch hướng"
 
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
-msgid "The repository '%s' does no longer have a Release file."
+msgid "The repository '%s' no longer has a Release file."
 msgstr "Thư mục %s bị trệch hướng"
 
 #: apt-pkg/acquire-item.cc
@@ -301,6 +301,13 @@ msgstr "Lỗi GPG: %s: %s"
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
+"Skipping acquire of configured file '%s' as repository '%s' doesn't have the "
+"component '%s' (component misspelt in sources.list?)"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
 "Skipping acquire of configured file '%s' as repository '%s' doesn't support "
 "architecture '%s'"
 msgstr ""
@@ -308,11 +315,9 @@ msgstr ""
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
-"Unable to find expected entry '%s' in Release file (Wrong sources.list entry "
-"or malformed file)"
+"Skipping acquire of configured file '%s' as repository '%s' does not seem to "
+"provide it (sources.list entry misspelt?)"
 msgstr ""
-"Không tìm thấy mục cần thiết “%s” trong tập tin Phát hành (Sai mục trong "
-"sources.list hoặc tập tin bị hỏng)"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -333,10 +338,55 @@ msgstr ""
 "Tập tin phát hành %s đã hết hạn (không hợp lệ kể từ %s). Cập nhật cho kho "
 "này sẽ không được áp dụng."
 
+#. TRANSLATOR: The first %s is the URL of the bad Release file, the second is
+#. the time until the file will be valid - formatted in the same way as in
+#. the download progress display (e.g. 7d 3h 42min 1s)
+#: apt-pkg/acquire-item.cc
+#, fuzzy, c-format
+#| msgid ""
+#| "Release file for %s is expired (invalid since %s). Updates for this "
+#| "repository will not be applied."
+msgid ""
+"Release file for %s is not valid yet (invalid for another %s). Updates for "
+"this repository will not be applied."
+msgstr ""
+"Tập tin phát hành %s đã hết hạn (không hợp lệ kể từ %s). Cập nhật cho kho "
+"này sẽ không được áp dụng."
+
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Bản phát hành xung đột: %s (cần %s nhưng lại nhận được %s)"
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
+msgstr ""
+
+#. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"More information about this can be found online in the Release notes at: %s"
+msgstr ""
+
+#. TRANSLATOR: %s is the name of the manpage in question, e.g. apt-secure(8)
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
+"This must be accepted explicitly before updates for this repository can be "
+"applied. See %s manpage for details."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc apt-pkg/update.cc apt-private/private-download.cc
+#, c-format
+msgid "Failed to fetch %s  %s"
+msgstr "Gặp lỗi khi lấy về %s  %s"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -352,19 +402,18 @@ msgstr ""
 msgid "Can't find a source to download version '%s' of '%s'"
 msgstr "Không tìm thấy nguồn cho việc tải về phiên bản “%s” of “%s”"
 
-#: apt-pkg/acquire-item.cc
-#, c-format
-msgid ""
-"The package index files are corrupted. No Filename: field for package %s."
-msgstr ""
-"Các tập tin chỉ mục của gói này bị hỏng. Không có trường Filename: (Tên tập "
-"tin:) cho gói %s."
-
 #. TRANSLATOR: %s=%s is sourcename=sourceversion, e.g. apt=1.1
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "Changelog cho %s (%s)"
+
+#: apt-pkg/acquire-worker.cc
+#, c-format
+msgid ""
+"The method '%s' is unsupported and disabled by default. Consider switching "
+"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
+msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -399,13 +448,13 @@ msgstr "Hãy cho đĩa có nhãn “%s” vào ổ “%s” rồi bấm nút Ent
 
 #: apt-pkg/acquire.cc apt-pkg/cdrom.cc
 #, c-format
-msgid "List directory %spartial is missing."
-msgstr "Thiếu thư mục danh sách %spartial."
+msgid "List directory %s is missing."
+msgstr "Thiếu thư mục danh sách %s."
 
 #: apt-pkg/acquire.cc
 #, c-format
-msgid "Archives directory %spartial is missing."
-msgstr "Thiếu thư mục kho lưu %spartial."
+msgid "Archives directory %s is missing."
+msgstr "Thiếu thư mục kho lưu %s."
 
 #: apt-pkg/acquire.cc
 #, c-format
@@ -429,14 +478,6 @@ msgstr ""
 msgid "Clean of %s is not supported"
 msgstr "Không hỗ trợ việc xóa %s"
 
-#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
-#: methods/mirror.cc
-#, c-format
-msgid "Unable to change to %s"
-msgstr "Không thể chuyển đổi sang %s"
-
-#. only show the ETA if it makes sense
-#. two days
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -475,7 +516,7 @@ msgstr ""
 "Bạn nên lấy cơ sở dữ liệu mới bằng lệnh “apt-get update” để sửa các vấn đề "
 "này"
 
-#: apt-pkg/cachefile.cc
+#: apt-pkg/cachefile.cc methods/mirror.cc
 msgid "The list of sources could not be read."
 msgstr "Không thể đọc danh sách nguồn."
 
@@ -628,6 +669,11 @@ msgstr "Các mục tin danh sách nguồn cho đĩa này:\n"
 
 #: apt-pkg/clean.cc
 #, c-format
+msgid "Unable to change to %s"
+msgstr "Không thể chuyển đổi sang %s"
+
+#: apt-pkg/clean.cc
+#, c-format
 msgid "Unable to stat %s."
 msgstr "Không thể lấy trạng thái về %s."
 
@@ -693,11 +739,6 @@ msgstr "Thao tác “%s” không hợp lệ"
 #, c-format
 msgid "Unrecognized type abbreviation: '%c'"
 msgstr "Không chấp nhận kiểu viết tắt: “%c”"
-
-#: apt-pkg/contrib/configuration.cc
-#, c-format
-msgid "Opening configuration file %s"
-msgstr "Đang mở tập tin cấu hình %s..."
 
 #: apt-pkg/contrib/configuration.cc
 #, c-format
@@ -882,12 +923,12 @@ msgstr "Gặp vấn đề khi đổi tên tập tin %s thành %s"
 msgid "Problem syncing the file"
 msgstr "Gặp vấn đề khi đồng bộ hóa tập tin"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to mkstemp %s"
 msgstr "Không thể tạo tập tin tạm (hàm mkstemp) %s"
 
-#: apt-pkg/contrib/fileutl.cc cmdline/apt-extracttemplates.cc
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Unable to write to %s"
 msgstr "Không thể ghi vào %s"
@@ -1062,17 +1103,20 @@ msgid "Unable to parse package file %s (%d)"
 msgstr "Không thể phân tích tập tin gói %s (%d)"
 
 #: apt-pkg/deb/debsystem.cc
-#, c-format
+#, fuzzy, c-format
+#| msgid ""
+#| "Unable to lock the administration directory (%s), is another process "
+#| "using it?"
 msgid ""
-"Unable to lock the administration directory (%s), is another process using "
-"it?"
+"Unable to acquire the dpkg frontend lock (%s), is another process using it?"
 msgstr ""
 "Không thể khoá thư mục quản trị (%s), có một tiến trình khác đang sử dụng nó "
 "phải không?"
 
 #: apt-pkg/deb/debsystem.cc
-#, c-format
-msgid "Unable to lock the administration directory (%s), are you root?"
+#, fuzzy, c-format
+#| msgid "Unable to lock the administration directory (%s), are you root?"
+msgid "Unable to acquire the dpkg frontend lock (%s), are you root?"
 msgstr "Không thể khoá thư mục quản trị (%s), bạn có quyền root không?"
 
 #. TRANSLATORS: the %s contains the recovery command, usually
@@ -1086,29 +1130,43 @@ msgstr ""
 "vấn đề này. "
 
 #: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid ""
+"Unable to lock the administration directory (%s), is another process using "
+"it?"
+msgstr ""
+"Không thể khoá thư mục quản trị (%s), có một tiến trình khác đang sử dụng nó "
+"phải không?"
+
+#: apt-pkg/deb/debsystem.cc
+#, c-format
+msgid "Unable to lock the administration directory (%s), are you root?"
+msgstr "Không thể khoá thư mục quản trị (%s), bạn có quyền root không?"
+
+#: apt-pkg/deb/debsystem.cc
 msgid "Not locked"
 msgstr "Chưa được khoá"
 
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Installing %s"
-msgstr "Đang cài đặt %s"
+msgid "Preparing %s"
+msgstr "Đang chuẩn bị %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Configuring %s"
-msgstr "Đang cấu hình %s"
+msgid "Preparing to configure %s"
+msgstr "Đang chuẩn bị cấu hình %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removing %s"
-msgstr "Đang gỡ bỏ %s"
+msgid "Preparing for removal of %s"
+msgstr "Đang chuẩn bị gỡ bỏ %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Completely removing %s"
-msgstr "Đang gỡ bỏ hoàn toàn %s"
+msgid "Preparing to completely remove %s"
+msgstr "Đang chuẩn bị gỡ bỏ hoàn toàn %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1125,6 +1183,11 @@ msgstr "Đang chạy bẫy sau-cài-đặt %s"
 msgid "Installed %s"
 msgstr "Đã cài đặt %s"
 
+#: apt-pkg/deb/dpkgpm.cc
+#, c-format
+msgid "Configuring %s"
+msgstr "Đang cấu hình %s"
+
 #. FIXME: use a better string after freeze
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1138,33 +1201,23 @@ msgstr "Không thể mở tập tin “%s”"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing %s"
-msgstr "Đang chuẩn bị %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
 msgid "Unpacking %s"
 msgstr "Đang mở gói %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing to configure %s"
-msgstr "Đang chuẩn bị cấu hình %s"
+msgid "Installing %s"
+msgstr "Đang cài đặt %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Preparing for removal of %s"
-msgstr "Đang chuẩn bị gỡ bỏ %s"
+msgid "Removing %s"
+msgstr "Đang gỡ bỏ %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
-msgid "Removed %s"
-msgstr "Đã gỡ bỏ %s"
-
-#: apt-pkg/deb/dpkgpm.cc
-#, c-format
-msgid "Preparing to completely remove %s"
-msgstr "Đang chuẩn bị gỡ bỏ hoàn toàn %s"
+msgid "Completely removing %s"
+msgstr "Đang gỡ bỏ hoàn toàn %s"
 
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1340,8 +1393,8 @@ msgstr "Không thể quyết định kiểu hệ thống đóng gói thích hợ
 
 #: apt-pkg/install-progress.cc
 #, c-format
-msgid "Progress: [%3i%%]"
-msgstr "Diễn biến: [%3i%%]"
+msgid "Progress: [%3li%%]"
+msgstr "Diễn biến: [%3li%%]"
 
 #. send status information that we are about to fork dpkg
 #: apt-pkg/install-progress.cc
@@ -1519,6 +1572,12 @@ msgstr "Không hiểu kiểu ghim %s"
 
 #: apt-pkg/policy.cc
 #, c-format
+msgid ""
+"%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"
+msgstr ""
+
+#: apt-pkg/policy.cc
+#, c-format
 msgid "%s: Value %s is outside the range of valid pin priorities (%d to %d)"
 msgstr ""
 
@@ -1531,11 +1590,6 @@ msgstr "Chưa ghi rõ ưu tiên (hay số không) cho ghim"
 #, fuzzy, c-format
 msgid "Malformed entry %u in %s file %s (%s)"
 msgstr "Sai “override” %s dòng %llu (%s)"
-
-#: apt-pkg/sourcelist.cc
-#, c-format
-msgid "Opening %s"
-msgstr "Đang mở %s"
 
 #: apt-pkg/sourcelist.cc
 #, c-format
@@ -1557,7 +1611,7 @@ msgstr "Gặp dòng sai dạng %u trong danh sách nguồn %s (kiểu)."
 msgid "Type '%s' is not known on stanza %u in source list %s"
 msgstr "Không hiểu kiểu “%s” trên đoạn %u trong danh sách nguồn %s"
 
-#: apt-pkg/sourcelist.cc
+#: apt-pkg/sourcelist.cc apt-private/private-install.cc
 #, c-format
 msgid "Unsupported file %s given on commandline"
 msgstr ""
@@ -1571,11 +1625,6 @@ msgstr ""
 #, c-format
 msgid "Cannot convert %s to integer: out of range"
 msgstr ""
-
-#: apt-pkg/update.cc apt-private/private-download.cc
-#, c-format
-msgid "Failed to fetch %s  %s"
-msgstr "Gặp lỗi khi lấy về %s  %s"
 
 #: apt-pkg/update.cc
 msgid ""
@@ -1635,6 +1684,12 @@ msgstr ""
 "Chuyển đổi thiết bị lưu trữ: vui lòng đưa đĩa có nhãn\n"
 " “%s”\n"
 "vào ổ “%s” rồi bấm nút Enter\n"
+
+#: apt-private/acqprogress.cc
+msgid ""
+"Do you want to accept these changes and continue updating from this "
+"repository?"
+msgstr ""
 
 #: apt-private/private-cachefile.cc
 msgid "Correcting dependencies..."
@@ -1771,8 +1826,14 @@ msgstr "Trình APT này có năng lực của siêu bò."
 msgid "This APT helper has Super Meep Powers."
 msgstr "Lệnh trợ giúp APT này có Sức Mạnh của Siêu “Meep”."
 
-#: apt-private/private-depends.cc apt-private/private-show.cc
-#: cmdline/apt-mark.cc
+#: apt-private/private-cmndline.cc
+msgid ""
+"--force-yes is deprecated, use one of the options starting with --allow "
+"instead."
+msgstr ""
+
+#: apt-private/private-depends.cc apt-private/private-download.cc
+#: apt-private/private-show.cc cmdline/apt-mark.cc
 msgid "No packages found"
 msgstr "Không tìm thấy gói"
 
@@ -1791,12 +1852,6 @@ msgstr "Một số gói không thể được xác thực"
 #: apt-private/private-download.cc
 msgid "Install these packages without verification?"
 msgstr "Cài đặt những gói này mà không cần thẩm tra?"
-
-#: apt-private/private-download.cc apt-private/private-install.cc
-msgid ""
-"--force-yes is deprecated, use one of the options starting with --allow "
-"instead."
-msgstr ""
 
 #: apt-private/private-download.cc
 #, fuzzy
@@ -1949,7 +2004,7 @@ msgstr ""
 msgid "Abort."
 msgstr "Hủy bỏ."
 
-#: apt-private/private-install.cc
+#: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Bạn có muốn tiếp tục không?"
 
@@ -2266,11 +2321,6 @@ msgstr "Bạn phải đưa ra ít nhất một mẫu tìm kiếm"
 msgid "Full Text Search"
 msgstr "Tìm kiếm toàn văn"
 
-#: apt-private/private-show.cc cmdline/apt-cache.cc
-#, c-format
-msgid "Package file %s is out of sync."
-msgstr "Tập tin gói %s không đồng bộ được."
-
 #: apt-private/private-show.cc
 #, c-format
 msgid "There is %i additional record. Please use the '-a' switch to see it"
@@ -2432,11 +2482,6 @@ msgid "%s has no build depends.\n"
 msgstr "%s không phụ thuộc vào gì khi biên dịch.\n"
 
 #: apt-private/private-source.cc
-msgid "Must specify at least one package to check builddeps for"
-msgstr ""
-"Phải chỉ ra ít nhất một gói cần kiểm tra các phần phụ thuộc cần khi biên dịch"
-
-#: apt-private/private-source.cc
 #, c-format
 msgid ""
 "No architecture information available for %s. See apt.conf(5) APT::"
@@ -2444,6 +2489,11 @@ msgid ""
 msgstr ""
 "Không có thông tin kiến trúc sẵn sàng cho %s. Xem apt.conf(5) APT::"
 "Architectures để cài đặt"
+
+#: apt-private/private-source.cc
+msgid "Must specify at least one package to check builddeps for"
+msgstr ""
+"Phải chỉ ra ít nhất một gói cần kiểm tra các phần phụ thuộc cần khi biên dịch"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2466,8 +2516,8 @@ msgstr "Gặp lỗi khi phân tích %s. Sửa lại chứ? "
 
 #: apt-private/private-sources.cc
 #, c-format
-msgid "Your '%s' file changed, please run 'apt-get update'."
-msgstr "Tập tin “%s” của bạn đã thay đổi, hãy chạy lệnh “apt-get update”."
+msgid "Your '%s' file changed, please run 'apt-get update'.\n"
+msgstr "Tập tin “%s” của bạn đã thay đổi, hãy chạy lệnh “apt-get update”.\n"
 
 #: apt-private/private-unmet.cc
 #, c-format
@@ -2477,6 +2527,14 @@ msgstr "Gói %s phiên bản %s có phần phụ thuộc chưa thỏa mãn:\n"
 #: apt-private/private-update.cc
 msgid "The update command takes no arguments"
 msgstr "Lệnh cập nhật không chấp nhận đối số"
+
+#. TRANSLATOR: the first two are manpage references, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid ""
+"Usage of %s should be preferred over embedding login information directly in "
+"the %s entry for '%s'"
+msgstr ""
 
 #: apt-private/private-update.cc
 #, c-format
@@ -2490,9 +2548,9 @@ msgstr[0] ""
 msgid "All packages are up to date."
 msgstr "Mọi gói đã được cập nhật."
 
-#: cmdline/apt-cache.cc
-#, fuzzy
-msgid "apt-cache stats does not take any arguments"
+#: cmdline/apt-cache.cc cmdline/apt-mark.cc
+#, fuzzy, c-format
+msgid "%s does not take any arguments"
 msgstr "Lệnh cập nhật không chấp nhận đối số"
 
 #: cmdline/apt-cache.cc
@@ -2771,6 +2829,12 @@ msgid "Install new packages (pkg is libc6 not libc6.deb)"
 msgstr "Cài đặt gói mới (gói có dạng libc6 không phải libc6.deb)"
 
 #: cmdline/apt-get.cc
+#, fuzzy
+#| msgid "Install new packages (pkg is libc6 not libc6.deb)"
+msgid "Reinstall packages (pkg is libc6 not libc6.deb)"
+msgstr "Cài đặt gói mới (gói có dạng libc6 không phải libc6.deb)"
+
+#: cmdline/apt-get.cc
 msgid "Remove packages"
 msgstr "Gỡ bỏ gói phần mềm"
 
@@ -2866,6 +2930,14 @@ msgstr ""
 msgid "detect proxy using apt.conf"
 msgstr "dò tìm proxy dùng apt.conf"
 
+#: cmdline/apt-helper.cc
+msgid "wait for system to be online"
+msgstr ""
+
+#: cmdline/apt-helper.cc
+msgid "drop privileges before running given command"
+msgstr ""
+
 #: cmdline/apt-internal-planner.cc
 #, fuzzy
 msgid ""
@@ -2922,6 +2994,16 @@ msgstr "%s được đặt thành được cài đặt bằng tay.\n"
 #, c-format
 msgid "%s was already set to automatically installed.\n"
 msgstr "%s đã sẵn được đặt thành cài đặt tự động rồi.\n"
+
+#: cmdline/apt-mark.cc
+msgid "No changes necessary"
+msgstr ""
+
+#: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "The following NEW packages will be installed:"
+msgid "The following packages will be marked as automatically installed:"
+msgstr "Những gói MỚI sau sẽ được CÀI ĐẶT:"
 
 #: cmdline/apt-mark.cc
 #, c-format
@@ -2989,6 +3071,12 @@ msgid "Mark the given packages as manually installed"
 msgstr "Đánh dấu các gói đưa ra là được cài đặt bằng tay"
 
 #: cmdline/apt-mark.cc
+#, fuzzy
+#| msgid "Mark the given packages as automatically installed"
+msgid "Mark all dependencies of meta packages as automatically installed."
+msgstr "Đánh dấu các gói đưa ra là được cài đặt tự động"
+
+#: cmdline/apt-mark.cc
 msgid "Mark a package as held back"
 msgstr "Đánh dấu một gói là giữ lại"
 
@@ -3005,7 +3093,7 @@ msgid "Print the list of manually installed packages"
 msgstr "In ra danh sách các gói được cài đặt bằng tay"
 
 #: cmdline/apt-mark.cc
-msgid "Print the list of package on hold"
+msgid "Print the list of packages on hold"
 msgstr "In ra danh sách các gói được giữ lại"
 
 #: cmdline/apt-sortpkgs.cc
@@ -3048,6 +3136,12 @@ msgstr "hiển thị thông tin chi tiết về gói"
 #. package stuff
 #: cmdline/apt.cc
 msgid "install packages"
+msgstr "cài đặt các gói"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "install packages"
+msgid "reinstall packages"
 msgstr "cài đặt các gói"
 
 #: cmdline/apt.cc
@@ -3456,6 +3550,11 @@ msgstr "Dữ liệu phần đầu sai"
 msgid "Connection failed"
 msgstr "Kết nối bị lỗi"
 
+#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#, c-format
+msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
+msgstr ""
+
 #: methods/basehttp.cc
 #, c-format
 msgid ""
@@ -3503,15 +3602,21 @@ msgstr "Không tìm thấy tập tin"
 msgid "Direct connection to %s domains is blocked by default."
 msgstr ""
 
-#: methods/connect.cc methods/http.cc
-#, c-format
-msgid "Connecting to %s (%s)"
-msgstr "Đang kết nối đến %s (%s)"
-
 #: methods/connect.cc
 #, c-format
 msgid "[IP: %s %s]"
 msgstr "[Địa chỉ IP: %s %s]"
+
+#: methods/connect.cc
+#, fuzzy, c-format
+#| msgid "Connecting to %s (%s)"
+msgid "Connected to %s (%s)"
+msgstr "Đang kết nối đến %s (%s)"
+
+#: methods/connect.cc methods/http.cc
+#, c-format
+msgid "Connecting to %s (%s)"
+msgstr "Đang kết nối đến %s (%s)"
 
 #: methods/connect.cc
 #, c-format
@@ -3523,11 +3628,6 @@ msgstr "Không thể tạo ổ cắm cho %s (f=%u t=%u p=%u)"
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "Không thể khởi tạo kết nối đến %s:%s (%s)."
 
-#: methods/connect.cc
-#, c-format
-msgid "Could not connect to %s:%s (%s), connection timed out"
-msgstr "Không thể kết nối đến %s:%s (%s), kết nối bị quá giờ"
-
 #: methods/connect.cc methods/ftp.cc methods/rsh.cc
 msgid "Failed"
 msgstr "Gặp lỗi"
@@ -3536,6 +3636,11 @@ msgstr "Gặp lỗi"
 #, c-format
 msgid "Could not connect to %s:%s (%s)."
 msgstr "Không thể kết nối đến %s:%s (%s)."
+
+#: methods/connect.cc
+#, c-format
+msgid "Could not connect to %s:%s (%s), connection timed out"
+msgstr "Không thể kết nối đến %s:%s (%s), kết nối bị quá giờ"
 
 #. We say this mainly because the pause here is for the
 #. ssh connection that is still going
@@ -3789,30 +3894,6 @@ msgstr "Kết nối đã quá giờ"
 msgid "Error writing to output file"
 msgstr "Gặp lỗi khi ghi vào tập tin đầu ra"
 
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "No mirror file '%s' found "
-msgstr "Không tìm thấy tập tin bản sao “%s” "
-
-#. FIXME: fallback to a default mirror here instead
-#. and provide a config option to define that default
-#: methods/mirror.cc
-#, c-format
-msgid "Can not read mirror file '%s'"
-msgstr "Không thể đọc tập tin bản sao “%s”"
-
-#: methods/mirror.cc
-#, c-format
-msgid "No entry found in mirror file '%s'"
-msgstr "Không tìm thấy điểm vào trong tập tin bản sao “%s”"
-
-#: methods/mirror.cc
-#, c-format
-msgid "[Mirror: %s]"
-msgstr "[Bản sao: %s]"
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "Gặp lỗi khi đặt giờ sửa đổi"
@@ -3824,6 +3905,43 @@ msgstr "Kết nối bị đóng bất ngờ"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "Các tập tin trống rỗng không phải là kho lưu hợp lệ"
+
+#~ msgid "Removed %s"
+#~ msgstr "Đã gỡ bỏ %s"
+
+#~ msgid "Package file %s is out of sync."
+#~ msgstr "Tập tin gói %s không đồng bộ được."
+
+#~ msgid ""
+#~ "The package index files are corrupted. No Filename: field for package %s."
+#~ msgstr ""
+#~ "Các tập tin chỉ mục của gói này bị hỏng. Không có trường Filename: (Tên "
+#~ "tập tin:) cho gói %s."
+
+#~ msgid "No mirror file '%s' found "
+#~ msgstr "Không tìm thấy tập tin bản sao “%s” "
+
+#~ msgid "Can not read mirror file '%s'"
+#~ msgstr "Không thể đọc tập tin bản sao “%s”"
+
+#~ msgid "No entry found in mirror file '%s'"
+#~ msgstr "Không tìm thấy điểm vào trong tập tin bản sao “%s”"
+
+#~ msgid "[Mirror: %s]"
+#~ msgstr "[Bản sao: %s]"
+
+#~ msgid "Opening configuration file %s"
+#~ msgstr "Đang mở tập tin cấu hình %s..."
+
+#~ msgid "Opening %s"
+#~ msgstr "Đang mở %s"
+
+#~ msgid ""
+#~ "Unable to find expected entry '%s' in Release file (Wrong sources.list "
+#~ "entry or malformed file)"
+#~ msgstr ""
+#~ "Không tìm thấy mục cần thiết “%s” trong tập tin Phát hành (Sai mục trong "
+#~ "sources.list hoặc tập tin bị hỏng)"
 
 #~ msgid "Unmet dependencies. Try using --fix-broken."
 #~ msgstr ""

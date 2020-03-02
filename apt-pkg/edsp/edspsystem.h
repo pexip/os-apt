@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: debsystem.h,v 1.4 2003/01/11 07:16:33 jgg Exp $
 /* ######################################################################
 
    System - Debian version of the  System Class
@@ -10,9 +9,8 @@
 #ifndef PKGLIB_EDSPSYSTEM_H
 #define PKGLIB_EDSPSYSTEM_H
 
-#include <apt-pkg/pkgsystem.h>
-#include <apt-pkg/cacheiterators.h>
 #include <apt-pkg/pkgcache.h>
+#include <apt-pkg/pkgsystem.h>
 
 #include <memory>
 #include <vector>
@@ -30,11 +28,11 @@ protected:
    std::unique_ptr<pkgIndexFile> StatusFile;
 
 public:
-   virtual bool Lock() APT_OVERRIDE APT_CONST;
-   virtual bool UnLock(bool NoErrors = false) APT_OVERRIDE APT_CONST;
-   virtual pkgPackageManager *CreatePM(pkgDepCache *Cache) const APT_OVERRIDE APT_CONST;
+   virtual bool Lock() APT_OVERRIDE APT_PURE;
+   virtual bool UnLock(bool NoErrors = false) APT_OVERRIDE APT_PURE;
+   virtual pkgPackageManager *CreatePM(pkgDepCache *Cache) const APT_OVERRIDE APT_PURE;
    virtual bool Initialize(Configuration &Cnf) APT_OVERRIDE;
-   virtual bool ArchiveSupported(const char *Type) APT_OVERRIDE APT_CONST;
+   virtual bool ArchiveSupported(const char *Type) APT_OVERRIDE APT_PURE;
    virtual signed Score(Configuration const &Cnf) APT_OVERRIDE;
    virtual bool FindIndex(pkgCache::PkgFileIterator File,
 			  pkgIndexFile *&Found) const APT_OVERRIDE;

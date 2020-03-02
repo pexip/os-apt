@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: configuration.h,v 1.16 2002/11/11 06:55:50 doogie Exp $
 /* ######################################################################
 
    Configuration Class
@@ -30,9 +29,9 @@
 
 #include <regex.h>
 
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
 
 #include <apt-pkg/macros.h>
 
@@ -66,7 +65,7 @@ class Configuration
    Item *Lookup(const char *Name,const bool &Create);
    inline const Item *Lookup(const char *Name) const
    {
-      return ((Configuration *)this)->Lookup(Name,false);
+      return const_cast<Configuration *>(this)->Lookup(Name,false);
    }  
    
    public:

@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: policy.cc,v 1.10 2003/08/12 00:17:37 mdz Exp $
 /* ######################################################################
 
    Package Version Policy implementation
@@ -13,32 +12,34 @@
    ##################################################################### */
 									/*}}}*/
 // Include Files							/*{{{*/
-#include<config.h>
+#include <config.h>
 
-#include <apt-pkg/policy.h>
-#include <apt-pkg/configuration.h>
 #include <apt-pkg/cachefilter.h>
-#include <apt-pkg/tagfile.h>
-#include <apt-pkg/strutl.h>
-#include <apt-pkg/fileutl.h>
+#include <apt-pkg/configuration.h>
 #include <apt-pkg/error.h>
-#include <apt-pkg/cacheiterators.h>
+#include <apt-pkg/fileutl.h>
+#include <apt-pkg/netrc.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/versionmatch.h>
+#include <apt-pkg/policy.h>
+#include <apt-pkg/strutl.h>
+#include <apt-pkg/tagfile.h>
 #include <apt-pkg/version.h>
+#include <apt-pkg/versionmatch.h>
 
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
 #include <ctype.h>
 #include <stddef.h>
 #include <string.h>
-#include <string>
-#include <vector>
-#include <iostream>
-#include <sstream>
 
 #include <apti18n.h>
 									/*}}}*/
 
 using namespace std;
+
+constexpr short NEVER_PIN = std::numeric_limits<short>::min();
 
 // Policy::Init - Startup and bind to a cache				/*{{{*/
 // ---------------------------------------------------------------------
@@ -50,12 +51,14 @@ pkgPolicy::pkgPolicy(pkgCache *Owner) : Pins(nullptr), VerPins(nullptr),
    if (Owner == 0)
       return;
    PFPriority = new signed short[Owner->Head().PackageFileCount];
-   Pins = new Pin[Owner->Head().PackageCount];
+   auto PackageCount = Owner->Head().PackageCount;
+   Pins = new Pin[PackageCount];
    VerPins = new Pin[Owner->Head().VersionCount];
 
-   for (unsigned long I = 0; I != Owner->Head().PackageCount; I++)
+   for (decltype(PackageCount) I = 0; I != PackageCount; ++I)
       Pins[I].Type = pkgVersionMatch::None;
-   for (unsigned long I = 0; I != Owner->Head().VersionCount; I++)
+   auto VersionCount = Owner->Head().VersionCount;
+   for (decltype(VersionCount) I = 0; I != VersionCount; ++I)
       VerPins[I].Type = pkgVersionMatch::None;
 
    // The config file has a master override.
@@ -85,7 +88,8 @@ pkgPolicy::pkgPolicy(pkgCache *Owner) : Pins(nullptr), VerPins(nullptr),
 // ---------------------------------------------------------------------
 /* */
 bool pkgPolicy::InitDefaults()
-{   
+{
+   std::vector<std::unique_ptr<FileFd>> authconfs;
    // Initialize the priorities based on the status of the package file
    for (pkgCache::PkgFileIterator I = Cache->FileBegin(); I != Cache->FileEnd(); ++I)
    {
@@ -96,6 +100,8 @@ bool pkgPolicy::InitDefaults()
 	 PFPriority[I->ID] = 100;
       else if (I.Flagged(pkgCache::Flag::NotAutomatic))
 	 PFPriority[I->ID] = 1;
+      if (I.Flagged(pkgCache::Flag::PackagesRequireAuthorization) && !IsAuthorized(I, authconfs))
+	 PFPriority[I->ID] = NEVER_PIN;
    }
 
    // Apply the defaults..
@@ -107,7 +113,7 @@ bool pkgPolicy::InitDefaults()
       pkgVersionMatch Match(I->Data,I->Type);
       for (pkgCache::PkgFileIterator F = Cache->FileBegin(); F != Cache->FileEnd(); ++F)
       {
-	 if (Fixed[F->ID] == false && Match.FileMatch(F) == true)
+	 if ((Fixed[F->ID] == false || I->Priority == NEVER_PIN) && PFPriority[F->ID] != NEVER_PIN && Match.FileMatch(F) == true)
 	 {
 	    PFPriority[F->ID] = I->Priority;
 
@@ -271,7 +277,14 @@ APT_PURE signed short pkgPolicy::GetPriority(pkgCache::PkgIterator const &Pkg)
 APT_PURE signed short pkgPolicy::GetPriority(pkgCache::VerIterator const &Ver, bool ConsiderFiles)
 {
    if (VerPins[Ver->ID].Type != pkgVersionMatch::None)
-      return VerPins[Ver->ID].Priority;
+   {
+      // If all sources are never pins, the never pin wins.
+      if (VerPins[Ver->ID].Priority == NEVER_PIN)
+	 return NEVER_PIN;
+      for (pkgCache::VerFileIterator file = Ver.FileList(); file.end() == false; file++)
+	 if (GetPriority(file.File()) != NEVER_PIN)
+	    return VerPins[Ver->ID].Priority;
+   }
    if (!ConsiderFiles)
       return 0;
 
@@ -323,10 +336,10 @@ bool ReadPinDir(pkgPolicy &Plcy,string Dir)
       return false;
 
    // Read the files
+   bool good = true;
    for (vector<string>::const_iterator I = List.begin(); I != List.end(); ++I)
-      if (ReadPinFile(Plcy, *I) == false)
-	 return false;
-   return true;
+      good = ReadPinFile(Plcy, *I) && good;
+   return good;
 }
 									/*}}}*/
 // ReadPinFile - Load the pin file into a Policy			/*{{{*/
@@ -342,8 +355,11 @@ bool ReadPinFile(pkgPolicy &Plcy,string File)
 
    if (RealFileExists(File) == false)
       return true;
-   
-   FileFd Fd(File,FileFd::ReadOnly);
+
+   FileFd Fd;
+   if (OpenConfigurationFileFd(File, Fd) == false)
+      return false;
+
    pkgTagFile TF(&Fd, pkgTagFile::SUPPORT_COMMENTS);
    if (Fd.IsOpen() == false || Fd.Failed())
       return false;
@@ -385,9 +401,17 @@ bool ReadPinFile(pkgPolicy &Plcy,string File)
       for (; Word != End && isspace(*Word) != 0; Word++);
 
       _error->PushToStack();
-      int const priority = Tags.FindI("Pin-Priority", 0);
+      std::string sPriority = Tags.FindS("Pin-Priority");
+      int priority = sPriority == "never" ? NEVER_PIN : Tags.FindI("Pin-Priority", 0);
       bool const newError = _error->PendingError();
       _error->MergeWithStack();
+
+      if (sPriority == "never" && not Name.empty())
+	 return _error->Error(_("%s: The special 'Pin-Priority: %s' can only be used for 'Package: *' records"), File.c_str(), "never");
+
+      // Silently clamp the never pin to never pin + 1
+      if (priority == NEVER_PIN && sPriority != "never")
+	 priority = NEVER_PIN + 1;
       if (priority < std::numeric_limits<short>::min() ||
           priority > std::numeric_limits<short>::max() ||
 	  newError) {

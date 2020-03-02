@@ -1,6 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
-// $Id: debsystem.h,v 1.4 2003/01/11 07:16:33 jgg Exp $
 /* ######################################################################
 
    System - Debian version of the  System Class
@@ -10,9 +9,8 @@
 #ifndef PKGLIB_DEBSYSTEM_H
 #define PKGLIB_DEBSYSTEM_H
 
-#include <apt-pkg/pkgsystem.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/cacheiterators.h>
+#include <apt-pkg/pkgsystem.h>
 
 #include <vector>
 class Configuration;
@@ -52,6 +50,10 @@ class debSystem : public pkgSystem
    APT_HIDDEN static pid_t ExecDpkg(std::vector<std::string> const &sArgs, int * const inputFd, int * const outputFd, bool const DiscardOutput);
    APT_HIDDEN static bool SupportsMultiArch();
    APT_HIDDEN static std::vector<std::string> SupportedArchitectures();
+
+   APT_HIDDEN bool LockInner();
+   APT_HIDDEN bool UnLockInner(bool NoErrors=false);
+   APT_HIDDEN bool IsLocked();
 };
 
 extern debSystem debSys;
