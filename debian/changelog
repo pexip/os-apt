@@ -1,3 +1,23 @@
+apt (1.4.10pexip1) pexip; urgency=low
+
+  * New upstream release
+
+ -- John-Mark Bell <jmb@pexip.com>  Wed, 27 May 2020 16:08:50 +0100
+
+apt (1.4.10) stretch-security; urgency=high
+
+  * SECURITY UPDATE: Out of bounds read in ar, tar implementations (LP: #1878177)
+    - apt-pkg/contrib/arfile.cc: Fix out-of-bounds read in member name
+    - apt-pkg/contrib/arfile.cc: Fix out-of-bounds read on unterminated
+      member names in error path
+    - apt-pkg/contrib/extracttar.cc: Fix out-of-bounds read on unterminated
+      member names in error path
+    - CVE-2020-3810
+  * Fix-up size in 1.4.9 security fix test case
+  * Add .gitlab-ci.yml for CI testing on Salsa
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 12 May 2020 21:46:37 +0200
+
 apt (1.4.9pexip1) pexip; urgency=low
 
   * New upstream release
