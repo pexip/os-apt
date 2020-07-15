@@ -1,3 +1,9 @@
+apt (1.8.2.1pexip2) pexip; urgency=medium
+
+  * Rebuild in buster environment
+
+ -- Steve McIntyre <steve.mcintyre@pexip.com>  Wed, 15 Jul 2020 16:50:31 +0000
+
 apt (1.8.2.1pexip1) pexip; urgency=low
 
   * New upstream release
