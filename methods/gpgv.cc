@@ -83,7 +83,8 @@ static constexpr Digest Digests[] = {
 static Digest FindDigest(std::string const & Digest)
 {
    int id = atoi(Digest.c_str());
-   if (id >= 0 && static_cast<unsigned>(id) < _count(Digests)) {
+   if (id >= 0 && static_cast<unsigned>(id) < APT_ARRAY_SIZE(Digests))
+   {
       return Digests[id];
    } else {
       return Digests[0];
@@ -122,7 +123,7 @@ class GPGVMethod : public aptMethod
    protected:
    virtual bool URIAcquire(std::string const &Message, FetchItem *Itm) APT_OVERRIDE;
    public:
-   GPGVMethod() : aptMethod("gpgv", "1.1", SingleInstance | SendConfig){};
+   GPGVMethod() : aptMethod("gpgv", "1.1", SingleInstance | SendConfig | SendURIEncoded){};
 };
 static void PushEntryWithKeyID(std::vector<std::string> &Signers, char * const buffer, bool const Debug)
 {
@@ -263,7 +264,7 @@ string GPGVMethod::VerifyGetSigners(const char *file, const char *outfile,
 	    SubKeyMapping[tokens[9]].emplace_back(sig);
       }
       else if (strncmp(buffer, APTKEYWARNING, sizeof(APTKEYWARNING)-1) == 0)
-         Warning("%s", buffer + sizeof(APTKEYWARNING));
+         Warning(buffer + sizeof(APTKEYWARNING));
       else if (strncmp(buffer, APTKEYERROR, sizeof(APTKEYERROR)-1) == 0)
 	 _error->Error("%s", buffer + sizeof(APTKEYERROR));
    }
@@ -306,21 +307,19 @@ string GPGVMethod::VerifyGetSigners(const char *file, const char *outfile,
 	    }
 	    else if (exactKey == false)
 	    {
-	       auto const master = SubKeyMapping.find(l);
-	       if (master == SubKeyMapping.end())
+	       auto const primary = SubKeyMapping.find(l);
+	       if (primary == SubKeyMapping.end())
 		  continue;
-	       for (auto const &sub : master->second)
-		  if (IsTheSameKey(sub, good))
-		  {
-		     if (std::find(Signers.Valid.cbegin(), Signers.Valid.cend(), sub) == Signers.Valid.cend())
-			continue;
-		     found = true;
-		     Signers.SignedBy.push_back(l);
-		     Signers.SignedBy.push_back(sub + "!");
-		     break;
-		  }
-	       if (found)
+	       auto const validsubkeysig = std::find_if(primary->second.cbegin(), primary->second.cend(), [&](auto const subkey) {
+		  return IsTheSameKey(subkey, good) && std::find(Signers.Valid.cbegin(), Signers.Valid.cend(), subkey) != Signers.Valid.cend();
+	       });
+	       if (validsubkeysig != primary->second.cend())
+	       {
+		  found = true;
+		  Signers.SignedBy.push_back(l);
+		  Signers.SignedBy.push_back(*validsubkeysig + "!");
 		  break;
+	       }
 	    }
 	 }
 	 if (Debug)
@@ -419,8 +418,8 @@ string GPGVMethod::VerifyGetSigners(const char *file, const char *outfile,
 
 bool GPGVMethod::URIAcquire(std::string const &Message, FetchItem *Itm)
 {
-   URI const Get = Itm->Uri;
-   string const Path = Get.Host + Get.Path; // To account for relative paths
+   URI const Get(Itm->Uri);
+   std::string const Path = DecodeSendURI(Get.Host + Get.Path); // To account for relative paths
    SignersStorage Signers;
 
    std::vector<std::string> keyFpts, keyFiles;
@@ -443,8 +442,12 @@ bool GPGVMethod::URIAcquire(std::string const &Message, FetchItem *Itm)
 	    }))
    {
       for (auto const & Signer : Signers.SoonWorthless)
+      {
+	 std::string msg;
          // TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
-         Warning(_("Signature by key %s uses weak digest algorithm (%s)"), Signer.key.c_str(), Signer.note.c_str());
+	 strprintf(msg, _("Signature by key %s uses weak digest algorithm (%s)"), Signer.key.c_str(), Signer.note.c_str());
+         Warning(std::move(msg));
+      }
    }
 
    if (Signers.Good.empty() || !Signers.Bad.empty() || !Signers.NoPubKey.empty())

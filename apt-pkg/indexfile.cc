@@ -9,6 +9,7 @@
 // Include Files							/*{{{*/
 #include <config.h>
 
+#include <apt-pkg/acquire.h>
 #include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/deblistparser.h>
@@ -65,11 +66,8 @@ pkgIndexFile::pkgIndexFile(bool const Trusted) :			/*{{{*/
 }
 									/*}}}*/
 // IndexFile::ArchiveInfo - Stub					/*{{{*/
-std::string pkgIndexFile::ArchiveInfo(pkgCache::VerIterator const &Ver) const
+std::string pkgIndexFile::ArchiveInfo(pkgCache::VerIterator const &) const
 {
-   debDebPkgFileIndex const * const debfile = dynamic_cast<debDebPkgFileIndex const*>(this);
-   if (debfile != nullptr)
-      return debfile->ArchiveInfo_impl(Ver);
    return std::string();
 }
 									/*}}}*/
@@ -84,32 +82,6 @@ std::string pkgIndexFile::SourceInfo(pkgSrcRecords::Parser const &/*Record*/,
 				pkgSrcRecords::File const &/*File*/) const
 {
    return std::string();
-}
-									/*}}}*/
-// IndexFile::TranslationsAvailable - Check if will use Translation	/*{{{*/
-bool pkgIndexFile::TranslationsAvailable() {
-	return (APT::Configuration::getLanguages().empty() != true);
-}
-									/*}}}*/
-// IndexFile::CheckLanguageCode - Check the Language Code		/*{{{*/
-bool pkgIndexFile::CheckLanguageCode(const char * const Lang)
-{
-  if (strlen(Lang) == 2 || (strlen(Lang) == 5 && Lang[2] == '_'))
-    return true;
-
-  if (strcmp(Lang,"C") != 0)
-    _error->Warning("Wrong language code %s", Lang);
-
-  return false;
-}
-									/*}}}*/
-// IndexFile::LanguageCode - Return the Language Code			/*{{{*/
-std::string pkgIndexFile::LanguageCode() {
-APT_IGNORE_DEPRECATED_PUSH
-	if (TranslationsAvailable() == false)
-		return "";
-	return APT::Configuration::getLanguages()[0];
-APT_IGNORE_DEPRECATED_POP
 }
 									/*}}}*/
 
@@ -203,7 +175,7 @@ pkgDebianIndexTargetFile::pkgDebianIndexTargetFile(IndexTarget const &Target, bo
 									/*}}}*/
 std::string pkgDebianIndexTargetFile::ArchiveURI(std::string const &File) const/*{{{*/
 {
-   return Target.Option(IndexTarget::REPO_URI) + File;
+   return Target.Option(IndexTarget::REPO_URI) + pkgAcquire::URIEncode(File);
 }
 									/*}}}*/
 std::string pkgDebianIndexTargetFile::Describe(bool const Short) const	/*{{{*/
@@ -310,7 +282,7 @@ std::string pkgDebianIndexRealFile::Describe(bool const /*Short*/) const/*{{{*/
 									/*}}}*/
 std::string pkgDebianIndexRealFile::ArchiveURI(std::string const &/*File*/) const/*{{{*/
 {
-   return "file:" + File;
+   return "file:" + pkgAcquire::URIEncode(File);
 }
 									/*}}}*/
 std::string pkgDebianIndexRealFile::IndexFileName() const			/*{{{*/

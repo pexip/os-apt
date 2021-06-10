@@ -609,7 +609,8 @@ bool pkgPackageManager::SmartConfigure(PkgIterator Pkg, int const Depth)
 
    List->Flag(Pkg,pkgOrderList::Configured,pkgOrderList::States);
 
-   if ((Cache[Pkg].InstVerIter(Cache)->MultiArch & pkgCache::Version::Same) == pkgCache::Version::Same)
+   if ((Cache[Pkg].InstVerIter(Cache)->MultiArch & pkgCache::Version::Same) == pkgCache::Version::Same &&
+       not List->IsFlag(Pkg, pkgOrderList::Immediate))
       for (PkgIterator P = Pkg.Group().PackageList();
 	   P.end() == false; P = Pkg.Group().NextPkg(P))
       {
@@ -632,10 +633,6 @@ bool pkgPackageManager::SmartConfigure(PkgIterator Pkg, int const Depth)
 // PM::EarlyRemove - Perform removal of packages before their time	/*{{{*/
 // ---------------------------------------------------------------------
 /* This is called to deal with conflicts arising from unpacking */
-bool pkgPackageManager::EarlyRemove(PkgIterator Pkg)
-{
-   return EarlyRemove(Pkg, NULL);
-}
 bool pkgPackageManager::EarlyRemove(PkgIterator Pkg, DepIterator const * const Dep)
 {
    if (List->IsNow(Pkg) == false)
@@ -655,9 +652,11 @@ bool pkgPackageManager::EarlyRemove(PkgIterator Pkg, DepIterator const * const D
 
    // Essential packages get special treatment
    bool IsEssential = false;
-   if ((Pkg->Flags & pkgCache::Flag::Essential) != 0 ||
-       (Pkg->Flags & pkgCache::Flag::Important) != 0)
+   if ((Pkg->Flags & pkgCache::Flag::Essential) != 0)
       IsEssential = true;
+   bool IsProtected = false;
+   if ((Pkg->Flags & pkgCache::Flag::Important) != 0)
+      IsProtected = true;
 
    /* Check for packages that are the dependents of essential packages and
       promote them too */
@@ -665,14 +664,17 @@ bool pkgPackageManager::EarlyRemove(PkgIterator Pkg, DepIterator const * const D
    {
       for (pkgCache::DepIterator D = Pkg.RevDependsList(); D.end() == false &&
 	   IsEssential == false; ++D)
-	 if (D->Type == pkgCache::Dep::Depends || D->Type == pkgCache::Dep::PreDepends)
-	    if ((D.ParentPkg()->Flags & pkgCache::Flag::Essential) != 0 ||
-	        (D.ParentPkg()->Flags & pkgCache::Flag::Important) != 0)
+	 if (D->Type == pkgCache::Dep::Depends || D->Type == pkgCache::Dep::PreDepends) {
+	    if ((D.ParentPkg()->Flags & pkgCache::Flag::Essential) != 0)
 	       IsEssential = true;
+	    if ((D.ParentPkg()->Flags & pkgCache::Flag::Important) != 0)
+	       IsProtected = true;
+	 }
    }
 
    if (IsEssential == true)
    {
+      // FIXME: Unify messaging with Protected below.
       if (_config->FindB("APT::Force-LoopBreak",false) == false)
 	 return _error->Error(_("This installation run will require temporarily "
 				"removing the essential package %s due to a "
@@ -683,6 +685,16 @@ bool pkgPackageManager::EarlyRemove(PkgIterator Pkg, DepIterator const * const D
    // dpkg will auto-deconfigure it, no need for the big remove hammer
    else if (Dep != NULL && (*Dep)->Type == pkgCache::Dep::DpkgBreaks)
       return true;
+   else if (IsProtected == true)
+   {
+      // FIXME: Message should talk about Protected, not Essential, and unified.
+      if (_config->FindB("APT::Force-LoopBreak",false) == false)
+	 return _error->Error(_("This installation run will require temporarily "
+				"removing the essential package %s due to a "
+				"Conflicts/Pre-Depends loop. This is often bad, "
+				"but if you really want to do it, activate the "
+				"APT::Force-LoopBreak option."),Pkg.FullName().c_str());
+   }
 
    bool Res = SmartRemove(Pkg);
    if (Cache[Pkg].Delete() == false)
@@ -708,10 +720,6 @@ bool pkgPackageManager::SmartRemove(PkgIterator Pkg)
 // ---------------------------------------------------------------------
 /* This puts the system in a state where it can Unpack Pkg, if Pkg is already
    unpacked, or when it has been unpacked, if Immediate==true it configures it. */
-bool pkgPackageManager::SmartUnPack(PkgIterator Pkg)
-{
-   return SmartUnPack(Pkg, true, 0);
-}
 bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int const Depth)
 {
    bool PkgLoop = List->IsFlag(Pkg,pkgOrderList::Loop);
@@ -922,7 +930,7 @@ bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int c
 		     else
 		     {
 			if (Debug)
-			   clog << OutputInDepth(Depth) << "So temprorary remove/deconfigure " << ConflictPkg.FullName() << " to satisfy " <<  APT::PrettyDep(&Cache, End) << endl;
+			   clog << OutputInDepth(Depth) << "So temporary remove/deconfigure " << ConflictPkg.FullName() << " to satisfy " <<  APT::PrettyDep(&Cache, End) << endl;
 			if (EarlyRemove(ConflictPkg, &End) == false)
 			   return _error->Error("Internal Error, Could not early remove %s (%d)",ConflictPkg.FullName().c_str(), 2);
 		     }
@@ -1013,10 +1021,18 @@ bool pkgPackageManager::SmartUnPack(PkgIterator Pkg, bool const Immediate, int c
       return false;
 
    if (Immediate == true) {
-      // Perform immediate configuration of the package. 
-         if (SmartConfigure(Pkg, Depth + 1) == false)
-            _error->Error(_("Could not perform immediate configuration on '%s'. "
-               "Please see man 5 apt.conf under APT::Immediate-Configure for details. (%d)"),Pkg.FullName().c_str(),2);
+      // Perform immediate configuration of the package.
+      _error->PushToStack();
+      bool configured = SmartConfigure(Pkg, Depth + 1);
+      _error->RevertToStack();
+
+      if (not configured && Debug) {
+	 clog << OutputInDepth(Depth);
+	 ioprintf(clog, _("Could not perform immediate configuration on '%s'. "
+			   "Please see man 5 apt.conf under APT::Immediate-Configure for details. (%d)"),
+			 Pkg.FullName().c_str(), 2);
+	 clog << endl;
+      }
    }
    
    return true;
@@ -1128,48 +1144,18 @@ pkgPackageManager::OrderResult pkgPackageManager::OrderInstall()
 	 
    return Completed;
 }
-// PM::DoInstallPostFork - compat /*{{{*/
-// ---------------------------------------------------------------------
-									/*}}}*/
-pkgPackageManager::OrderResult
-pkgPackageManager::DoInstallPostFork(int statusFd)
-{
-   APT::Progress::PackageManager *progress = new
-      APT::Progress::PackageManagerProgressFd(statusFd);
-   pkgPackageManager::OrderResult res = DoInstallPostFork(progress);
-   delete progress;
-   return res;
-}
-									/*}}}*/
 // PM::DoInstallPostFork - Does install part that happens after the fork /*{{{*/
 // ---------------------------------------------------------------------
 pkgPackageManager::OrderResult 
 pkgPackageManager::DoInstallPostFork(APT::Progress::PackageManager *progress)
 {
    bool goResult;
-   auto simulation = dynamic_cast<pkgSimulate*>(this);
-   if (simulation == nullptr)
-      goResult = Go(progress);
-   else
-      goResult = simulation->Go2(progress);
+   goResult = Go(progress);
    if(goResult == false) 
       return Failed;
    
    return Res;
 }
-									/*}}}*/	
-// PM::DoInstall - Does the installation				/*{{{*/
-// ---------------------------------------------------------------------
-/* compat */
-pkgPackageManager::OrderResult 
-pkgPackageManager::DoInstall(int statusFd)
-{
-    APT::Progress::PackageManager *progress = new
-       APT::Progress::PackageManagerProgressFd(statusFd);
-    OrderResult res = DoInstall(progress);
-    delete progress;
-    return res;
- }
 									/*}}}*/	
 // PM::DoInstall - Does the installation				/*{{{*/
 // ---------------------------------------------------------------------

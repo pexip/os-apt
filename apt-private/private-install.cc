@@ -18,7 +18,6 @@
 #include <apt-pkg/pkgrecords.h>
 #include <apt-pkg/pkgsystem.h>
 #include <apt-pkg/prettyprinters.h>
-#include <apt-pkg/sptr.h>
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/upgrade.h>
 
@@ -407,7 +406,14 @@ bool DoAutomaticRemove(CacheFile &Cache)
 {
    bool Debug = _config->FindB("Debug::pkgAutoRemove",false);
    bool doAutoRemove = _config->FindB("APT::Get::AutomaticRemove", false);
+   bool doAutoRemoveKernels = _config->FindB("APT::Get::AutomaticRemove::Kernels", false);
    bool hideAutoRemove = _config->FindB("APT::Get::HideAutoRemove");
+
+   std::unique_ptr<APT::CacheFilter::Matcher> kernelAutoremovalMatcher;
+   if (doAutoRemoveKernels && !doAutoRemove)
+   {
+      kernelAutoremovalMatcher = APT::KernelAutoRemoveHelper::GetProtectedKernelsFilter(Cache, true);
+   }
 
    pkgDepCache::ActionGroup group(*Cache);
    if(Debug)
@@ -437,7 +443,7 @@ bool DoAutomaticRemove(CacheFile &Cache)
 	    if(Debug)
 	       std::cout << "We could delete " <<  APT::PrettyPkg(Cache, Pkg) << std::endl;
 
-	 if (doAutoRemove)
+	 if (doAutoRemove || (kernelAutoremovalMatcher != nullptr && (*kernelAutoremovalMatcher)(Pkg)))
 	 {
 	    if(Pkg.CurrentVer() != 0 &&
 	       Pkg->CurrentState != pkgCache::State::ConfigFiles)
@@ -693,6 +699,9 @@ bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, std::vector<PseudoPkg
 	 OpTextProgress Progress(*_config);
 	 bool const distUpgradeMode = strcmp(CmdL.FileList[0], "dist-upgrade") == 0 || strcmp(CmdL.FileList[0], "full-upgrade") == 0;
 
+	 if (distUpgradeMode && _config->Find("Binary") == "apt")
+	    _config->CndSet("APT::Get::AutomaticRemove::Kernels", _config->FindB("APT::Get::AutomaticRemove", true));
+
 	 bool resolver_fail = false;
 	 if (distUpgradeMode == true || UpgradeMode != APT::Upgrade::ALLOW_EVERYTHING)
 	    resolver_fail = APT::Upgrade::Upgrade(Cache, UpgradeMode, &Progress);
@@ -728,8 +737,7 @@ bool AddVolatileSourceFile(pkgSourceList *const SL, PseudoPkg &&pkg, std::vector
       return false;
    std::vector<std::string> files;
    SL->AddVolatileFile(pkg.name, &files);
-   for (auto &&f: files)
-      VolatileCmdL.emplace_back(std::move(f), pkg.arch, pkg.release, pkg.index);
+   std::transform(files.begin(), files.end(), std::back_inserter(VolatileCmdL), [&](auto &&f) { return PseudoPkg{std::move(f), pkg.arch, pkg.release, pkg.index}; });
    return true;
 
 }
@@ -741,8 +749,7 @@ bool AddVolatileBinaryFile(pkgSourceList *const SL, PseudoPkg &&pkg, std::vector
       return false;
    std::vector<std::string> files;
    SL->AddVolatileFile(pkg.name, &files);
-   for (auto &&f: files)
-      VolatileCmdL.emplace_back(std::move(f), pkg.arch, pkg.release, pkg.index);
+   std::transform(files.begin(), files.end(), std::back_inserter(VolatileCmdL), [&](auto &&f) { return PseudoPkg{std::move(f), pkg.arch, pkg.release, pkg.index}; });
    return true;
 }
 									/*}}}*/

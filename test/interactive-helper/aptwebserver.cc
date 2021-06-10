@@ -573,6 +573,11 @@ static bool parseFirstLine(std::ostream &log, int const client, std::string cons
       params = filename.substr(paramspos + 1);
       filename.erase(paramspos);
    }
+   else if (APT::String::Startswith(filename, "/_config/"))
+   {
+      filename.erase(0, 1);
+      return true;
+   }
 
    filename = DeQuoteString(filename);
 
@@ -620,11 +625,12 @@ static bool parseFirstLine(std::ostream &log, int const client, std::string cons
 }
 									/*}}}*/
 static bool handleOnTheFlyReconfiguration(std::ostream &log, int const client,/*{{{*/
-      std::string const &request, std::vector<std::string> parts, std::list<std::string> &headers)
+      std::string const &request, std::vector<std::string> const &EncodedParts, std::list<std::string> &headers)
 {
-   size_t const pcount = parts.size();
+   size_t const pcount = EncodedParts.size();
+   std::vector<std::string> parts(pcount);
    for (size_t i = 0; i < pcount; ++i)
-      parts[i] = DeQuoteString(parts[i]);
+      parts[i] = DeQuoteString(EncodedParts[i]);
    if (pcount == 4 && parts[1] == "set")
    {
       _config->Set(parts[2], parts[3]);
@@ -707,7 +713,7 @@ static void * handleClient(int const client, size_t const id)		/*{{{*/
 	 // special webserver command request
 	 if (filename.length() > 1 && filename[0] == '_')
 	 {
-	    std::vector<std::string> parts = VectorizeString(filename, '/');
+	    auto const parts = VectorizeString(filename, '/');
 	    if (parts[0] == "_config")
 	    {
 	       handleOnTheFlyReconfiguration(log, client, *m, parts, headers);
@@ -793,7 +799,7 @@ static void * handleClient(int const client, size_t const id)		/*{{{*/
 	    if (_config->FindB("aptwebserver::support::modified-since", true) == true && condition.empty() == false)
 	    {
 	       time_t cache;
-	       if (RFC1123StrToTime(condition.c_str(), cache) == true &&
+	       if (RFC1123StrToTime(condition, cache) == true &&
 		     cache >= data.ModificationTime())
 	       {
 		  sendHead(log, client, 304, headers);
@@ -821,7 +827,7 @@ static void * handleClient(int const client, size_t const id)		/*{{{*/
 	       if (_config->FindB("aptwebserver::support::if-range", true) == true)
 		  ifrange = LookupTag(*m, "If-Range", "");
 	       bool validrange = (ifrange.empty() == true ||
-		     (RFC1123StrToTime(ifrange.c_str(), cache) == true &&
+		     (RFC1123StrToTime(ifrange, cache) == true &&
 		      cache <= data.ModificationTime()));
 
 	       // FIXME: support multiple byte-ranges (APT clients do not do this)
@@ -960,7 +966,8 @@ int main(int const argc, const char * argv[])
    // create socket, bind and listen to it {{{
    // ignore SIGPIPE, this can happen on write() if the socket closes connection
    signal(SIGPIPE, SIG_IGN);
-   // we don't care for our slaves, so ignore their death
+   // ignore worker processes exiting, as we don't want to cause them to stay
+   // around as zombies because we're busy.
    signal(SIGCHLD, SIG_IGN);
 
    int sock = socket(AF_INET6, SOCK_STREAM, 0);
@@ -1051,9 +1058,9 @@ int main(int const argc, const char * argv[])
 
    std::clog << "Serving ANY file on port: " << port << std::endl;
 
-   int const slaves = _config->FindI("aptwebserver::slaves", SOMAXCONN);
-   std::cerr << "SLAVES: " << slaves << std::endl;
-   listen(sock, slaves);
+   int const workers = _config->FindI("aptwebserver::workers", SOMAXCONN);
+   std::cerr << "WORKERS: " << workers << std::endl;
+   listen(sock, workers);
    /*}}}*/
 
    _config->CndSet("aptwebserver::response-header::Server", "APT webserver");

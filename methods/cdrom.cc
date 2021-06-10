@@ -43,7 +43,7 @@ class CDROMMethod : public aptMethod
    bool IsCorrectCD(URI want, string MountPath, string& NewID);
    bool AutoDetectAndMount(const URI, string &NewID);
    virtual bool Fetch(FetchItem *Itm) APT_OVERRIDE;
-   string GetID(string Name);
+   std::string GetID(std::string const &Name);
    virtual void Exit() APT_OVERRIDE;
    virtual bool Configuration(std::string Message) APT_OVERRIDE;
 
@@ -57,12 +57,11 @@ class CDROMMethod : public aptMethod
 /* */
 CDROMMethod::CDROMMethod() : aptMethod("cdrom", "1.0",SingleInstance | LocalOnly |
 					  SendConfig | NeedsCleanup |
-					  Removable),
+					  Removable | SendURIEncoded),
                                           DatabaseLoaded(false),
 					  Debug(false),
                                           MountedByApt(false)
 {
-   UdevCdroms.Dlopen();
 }
 									/*}}}*/
 // CDROMMethod::Exit - Unmount the disc if necessary			/*{{{*/
@@ -77,7 +76,7 @@ void CDROMMethod::Exit()
 // CDROMMethod::GetID - Search the database for a matching string	/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-string CDROMMethod::GetID(string Name)
+std::string CDROMMethod::GetID(std::string const &Name)
 {
    // Search for an ID
    const Configuration::Item *Top = Database.Tree("CD");
@@ -175,8 +174,8 @@ bool CDROMMethod::Fetch(FetchItem *Itm)
 {
    FetchResult Res;
 
-   URI Get = Itm->Uri;
-   string File = Get.Path;
+   URI Get(Itm->Uri);
+   std::string const File = DecodeSendURI(Get.Path);
    Debug = DebugEnabled();
 
    if (Debug)

@@ -32,7 +32,7 @@ class FileMethod : public aptMethod
    virtual bool Fetch(FetchItem *Itm) APT_OVERRIDE;
 
    public:
-   FileMethod() : aptMethod("file", "1.0", SingleInstance | SendConfig | LocalOnly)
+   FileMethod() : aptMethod("file", "1.0", SingleInstance | SendConfig | LocalOnly | SendURIEncoded)
    {
       SeccompFlags = aptMethod::BASE;
    }
@@ -43,8 +43,8 @@ class FileMethod : public aptMethod
 /* */
 bool FileMethod::Fetch(FetchItem *Itm)
 {
-   URI Get = Itm->Uri;
-   std::string File = Get.Path;
+   URI Get(Itm->Uri);
+   std::string const File = DecodeSendURI(Get.Path);
    FetchResult Res;
    if (Get.Host.empty() == false)
       return _error->Error(_("Invalid URI, local URIS must not start with //"));
@@ -57,7 +57,6 @@ bool FileMethod::Fetch(FetchItem *Itm)
       {
 	 if (Itm->LastModified == Buf.st_mtime && Itm->LastModified != 0)
 	 {
-	    HashStringList const hsl = Itm->ExpectedHashes;
 	    if (Itm->ExpectedHashes.VerifyFile(File))
 	    {
 	       Res.Filename = Itm->DestFile;

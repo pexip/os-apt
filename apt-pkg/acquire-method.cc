@@ -21,9 +21,6 @@
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/hashes.h>
-#include <apt-pkg/md5.h>
-#include <apt-pkg/sha1.h>
-#include <apt-pkg/sha2.h>
 #include <apt-pkg/strutl.h>
 
 #include <algorithm>
@@ -77,6 +74,9 @@ pkgAcqMethod::pkgAcqMethod(const char *Ver,unsigned long Flags)
 
    if ((Flags & AuxRequests) == AuxRequests)
       try_emplace(fields, "AuxRequests", "true");
+
+   if ((Flags & SendURIEncoded) == SendURIEncoded)
+      try_emplace(fields, "Send-URI-Encoded", "true");
 
    SendMessage("100 Capabilities", std::move(fields));
 
@@ -142,27 +142,30 @@ void pkgAcqMethod::SendMessage(std::string const &header, std::unordered_map<std
 /* */
 void pkgAcqMethod::Fail(bool Transient)
 {
-   string Err = "Undetermined Error";
-   if (_error->empty() == false)
+
+   Fail("", Transient);
+}
+									/*}}}*/
+// AcqMethod::Fail - A fetch has failed					/*{{{*/
+void pkgAcqMethod::Fail(string Err, bool Transient)
+{
+
+   if (not _error->empty())
    {
-      Err.clear();
-      while (_error->empty() == false)
+      while (not _error->empty())
       {
 	 std::string msg;
 	 if (_error->PopMessage(msg))
 	 {
-	    if (Err.empty() == false)
+	    if (not Err.empty())
 	       Err.append("\n");
 	    Err.append(msg);
 	 }
       }
    }
-   Fail(Err, Transient);
-}
-									/*}}}*/
-// AcqMethod::Fail - A fetch has failed					/*{{{*/
-void pkgAcqMethod::Fail(string Err,bool Transient)
-{
+   if (Err.empty())
+      Err = "Undetermined Error";
+
    // Strip out junk from the error messages
    std::transform(Err.begin(), Err.end(), Err.begin(), [](char const c) {
       if (c == '\r' || c == '\n')
@@ -416,7 +419,7 @@ int pkgAcqMethod::Run(bool Single)
 	    Tmp->Uri = LookupTag(Message,"URI");
 	    Tmp->Proxy(LookupTag(Message, "Proxy"));
 	    Tmp->DestFile = LookupTag(Message,"FileName");
-	    if (RFC1123StrToTime(LookupTag(Message,"Last-Modified").c_str(),Tmp->LastModified) == false)
+	    if (RFC1123StrToTime(LookupTag(Message,"Last-Modified"),Tmp->LastModified) == false)
 	       Tmp->LastModified = 0;
 	    Tmp->IndexFile = StringToBool(LookupTag(Message,"Index-File"),false);
 	    Tmp->FailIgnore = StringToBool(LookupTag(Message,"Fail-Ignore"),false);
@@ -479,9 +482,25 @@ void pkgAcqMethod::PrintStatus(char const * const header, const char* Format,
 void pkgAcqMethod::Log(const char *Format,...)
 {
    va_list args;
-   va_start(args,Format);
-   PrintStatus("101 Log", Format, args);
-   va_end(args);
+   ssize_t size = 400;
+   std::ostringstream outstr;
+   while (true) {
+      bool ret;
+      va_start(args,Format);
+      ret = iovprintf(outstr, Format, args, size);
+      va_end(args);
+      if (ret == true)
+	 break;
+   }
+   std::unordered_map<std::string, std::string> fields;
+   if (Queue != 0)
+      try_emplace(fields, "URI", Queue->Uri);
+   else
+      try_emplace(fields, "URI", "<UNKNOWN>");
+   if (not UsedMirror.empty())
+      try_emplace(fields, "UsedMirror", UsedMirror);
+   try_emplace(fields, "Message", outstr.str());
+   SendMessage("101 Log", std::move(fields));
 }
 									/*}}}*/
 // AcqMethod::Status - Send a status message				/*{{{*/
@@ -490,9 +509,25 @@ void pkgAcqMethod::Log(const char *Format,...)
 void pkgAcqMethod::Status(const char *Format,...)
 {
    va_list args;
-   va_start(args,Format);
-   PrintStatus("102 Status", Format, args);
-   va_end(args);
+   ssize_t size = 400;
+   std::ostringstream outstr;
+   while (true) {
+      bool ret;
+      va_start(args,Format);
+      ret = iovprintf(outstr, Format, args, size);
+      va_end(args);
+      if (ret == true)
+	 break;
+   }
+   std::unordered_map<std::string, std::string> fields;
+   if (Queue != 0)
+      try_emplace(fields, "URI", Queue->Uri);
+   else
+      try_emplace(fields, "URI", "<UNKNOWN>");
+   if (not UsedMirror.empty())
+      try_emplace(fields, "UsedMirror", UsedMirror);
+   try_emplace(fields, "Message", outstr.str());
+   SendMessage("102 Status", std::move(fields));
 }
 									/*}}}*/
 // AcqMethod::Redirect - Send a redirect message                       /*{{{*/

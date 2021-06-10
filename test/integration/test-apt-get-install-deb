@@ -22,9 +22,9 @@ done
 mv foo.rpm foo.deb
 for exe in apt aptget; do
 	for cmd in install remove purge upgrade full-upgrade; do
-		testfailuremsg "E: Sub-process Popen returned an error code (2)
-E: Encountered a section with no Package: header
-E: Problem with MergeList ${TMPWORKINGDIRECTORY}/foo.deb
+		testfailuremsg "E: Invalid archive signature
+E: Internal error, could not locate member control.tar{.zst,.lz4,.gz,.xz,.bz2,.lzma,}
+E: Could not read meta data from ${TMPWORKINGDIRECTORY}/foo.deb
 E: The package lists or status file could not be parsed or opened." $exe $cmd ./foo.deb
 	done
 done
@@ -168,12 +168,16 @@ createpkg 'trailing-newline' '' '
 createpkg 'double-trailing-newline' '' '
 
 '
+createpkg 'last-line-parse' '' 'Pre-Depends: pkg-as-it-should-be
+'
 
 echo 'Package: /pkg-/
 Pin: release a=experimental
 Pin-Priority: 501' > rootdir/etc/apt/preferences.d/pinit
 
+testfailuremsg 'E: Unable to correct problems, you have held broken packages.' aptget install -q=0 ./incoming/pkg-last-line-parse_0_all.deb
 testsuccess aptget install ./incoming/pkg-as-it-should-be_0_all.deb
+testsuccess aptget install ./incoming/pkg-last-line-parse_0_all.deb
 testsuccess aptget install "$(readlink -f ./incoming/pkg-leading-newline_0_all.deb)"
 testsuccess aptget install ./incoming/pkg-trailing-newline_0_all.deb
 testsuccess aptget install ./incoming/pkg-double-trailing-newline_0_all.deb
@@ -205,30 +209,31 @@ echo "Package: pkg-as-it-should-be
 Architecture: all
 Version: 0
 Installed-Size: 2903
-Filename: incoming/pkg-as-it-should-be_0_all.deb
+Filename: incoming/pkg-as-it-should-be_0%3a0+0_all.deb
 Size: $(stat -c %s incoming/pkg-as-it-should-be_0_all.deb)
 SHA256: $(sha256sum incoming/pkg-as-it-should-be_0_all.deb | cut -d' ' -f 1)
 " > Packages
+ln -s pkg-as-it-should-be_0_all.deb incoming/pkg-as-it-should-be_0%3a0+0_all.deb
 testdpkgnotinstalled 'pkg-as-it-should-be'
 testnopackage pkg-as-it-should-be
 testsuccess apt install --with-source ./Packages pkg-as-it-should-be -s
 testsuccess apt install --with-source ./Packages pkg-as-it-should-be --print-uris
 testsuccess apt show --with-source ./Packages pkg-as-it-should-be
 testequal 'Package: pkg-as-it-should-be' head -n1 rootdir/tmp/testsuccess.output
-testsuccess apt install -y --with-source ./Packages pkg-as-it-should-be
+testsuccess apt install -y --with-source ./Packages pkg-as-it-should-be -o Debug::pkgAcquire::Worker=1
 testdpkginstalled 'pkg-as-it-should-be'
 rm -f ./Packages
 
 echo 'dpkg::install::recursive "true";
 dpkg::install::recursive::force "true";
 dpkg::install::recursive::minimum "0";' > rootdir/etc/apt/apt.conf.d/lowerminimum.conf
-mv ./incoming/pkg-as-it-should-be_0_all.deb ./incoming/pkg-as-it-should-be_0_all.ddeb
-testsuccess aptget install -y ./incoming/pkg-as-it-should-be_0_all.ddeb --reinstall
+mv ./incoming/pkg-as-it-should-be_0_all.deb ./incoming/pkg-as-it-should-be_0%3a0+0_all.ddeb
+testsuccess aptget install -y ./incoming/pkg-as-it-should-be_0%3a0+0_all.ddeb --reinstall
 testfailure grep 'is already the newest version' rootdir/tmp/testsuccess.output
 testsuccess apt purge -y pkg-as-it-should-be
 testdpkgnotinstalled 'pkg-as-it-should-be'
 
-mv ./incoming/pkg-as-it-should-be_0_all.ddeb ./incoming/pkg-as-it-should-be_0_all.foobar
+mv ./incoming/pkg-as-it-should-be_0%3a0+0_all.ddeb ./incoming/pkg-as-it-should-be_0_all.foobar
 echo "Package: pkg-as-it-should-be
 Architecture: all
 Version: 0

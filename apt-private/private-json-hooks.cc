@@ -7,9 +7,13 @@
  */
 
 #include <apt-pkg/debsystem.h>
+#include <apt-pkg/fileutl.h>
 #include <apt-pkg/macros.h>
+#include <apt-pkg/strutl.h>
 #include <apt-private/private-json-hooks.h>
+#include <apt-private/private-output.h>
 
+#include <iomanip>
 #include <ostream>
 #include <sstream>
 #include <stack>
@@ -21,7 +25,7 @@
 /**
  * @brief Simple JSON writer
  *
- * This performs no error checking, or string escaping, be careful.
+ * This performs no error checking, so be careful.
  */
 class APT_HIDDEN JsonWriter
 {
@@ -76,10 +80,11 @@ class APT_HIDDEN JsonWriter
    void popState()
    {
       this->state = old_states.top();
+      old_states.pop();
    }
 
    public:
-   JsonWriter(std::ostream &os) : os(os) { old_locale = os.imbue(std::locale::classic()); }
+   explicit JsonWriter(std::ostream &os) : os(os), old_locale{os.imbue(std::locale::classic())} {}
    ~JsonWriter() { os.imbue(old_locale); }
    JsonWriter &beginArray()
    {
@@ -107,22 +112,40 @@ class APT_HIDDEN JsonWriter
       os << '}';
       return *this;
    }
+   std::ostream &encodeString(std::ostream &out, std::string const &str)
+   {
+      out << '"';
+
+      for (std::string::const_iterator c = str.begin(); c != str.end(); c++)
+      {
+	 if (*c <= 0x1F || *c == '"' || *c == '\\')
+	    ioprintf(out, "\\u%04X", *c);
+	 else
+	    out << *c;
+      }
+
+      out << '"';
+      return out;
+   }
    JsonWriter &name(std::string const &name)
    {
       maybeComma();
-      os << '"' << name << '"' << ':';
+      encodeString(os, name) << ':';
       return *this;
    }
    JsonWriter &value(std::string const &value)
    {
       maybeComma();
-      os << '"' << value << '"';
+      encodeString(os, value);
       return *this;
    }
    JsonWriter &value(const char *value)
    {
       maybeComma();
-      os << '"' << value << '"';
+      if (value == nullptr)
+	 os << "null";
+      else
+	 encodeString(os, value);
       return *this;
    }
    JsonWriter &value(int value)
@@ -313,6 +336,13 @@ bool RunJsonHook(std::string const &option, std::string const &method, const cha
       return true;
    Opts = Opts->Child;
 
+   // Flush output before calling hooks
+   std::clog.flush();
+   std::cerr.flush();
+   std::cout.flush();
+   c2out.flush();
+   c1out.flush();
+
    sighandler_t old_sigpipe = signal(SIGPIPE, SIG_IGN);
    sighandler_t old_sigint = signal(SIGINT, SIG_IGN);
    sighandler_t old_sigquit = signal(SIGQUIT, SIG_IGN);
@@ -356,7 +386,7 @@ bool RunJsonHook(std::string const &option, std::string const &method, const cha
 	 SetCloseExec(STDIN_FILENO, false);
 	 SetCloseExec(STDERR_FILENO, false);
 
-	 string hookfd;
+	 std::string hookfd;
 	 strprintf(hookfd, "%d", InfoFD);
 	 setenv("APT_HOOK_SOCKET", hookfd.c_str(), 1);
 

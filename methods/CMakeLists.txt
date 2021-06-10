@@ -17,17 +17,20 @@ add_executable(rsh rsh.cc)
 
 target_compile_definitions(connectlib PRIVATE ${GNUTLS_DEFINITIONS})
 target_include_directories(connectlib PRIVATE ${GNUTLS_INCLUDE_DIR})
+target_include_directories(http PRIVATE $<$<BOOL:${SYSTEMD_FOUND}>:${SYSTEMD_INCLUDE_DIRS}>)
 
 # Additional libraries to link against for networked stuff
-target_link_libraries(http ${GNUTLS_LIBRARIES})
+target_link_libraries(http ${GNUTLS_LIBRARIES} $<$<BOOL:${SYSTEMD_FOUND}>:${SYSTEMD_LIBRARIES}>)
 target_link_libraries(ftp ${GNUTLS_LIBRARIES})
+
+target_link_libraries(rred apt-private)
 
 # Install the library
 install(TARGETS file copy store gpgv cdrom http ftp rred rsh mirror
         RUNTIME DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/apt/methods)
 
-add_slaves(${CMAKE_INSTALL_LIBEXECDIR}/apt/methods mirror mirror+ftp mirror+http mirror+https mirror+file mirror+copy)
-add_slaves(${CMAKE_INSTALL_LIBEXECDIR}/apt/methods rsh ssh)
+add_links(${CMAKE_INSTALL_LIBEXECDIR}/apt/methods mirror mirror+ftp mirror+http mirror+https mirror+file mirror+copy)
+add_links(${CMAKE_INSTALL_LIBEXECDIR}/apt/methods rsh ssh)
 
 
-add_slaves(${CMAKE_INSTALL_LIBEXECDIR}/apt/methods http https)
+add_links(${CMAKE_INSTALL_LIBEXECDIR}/apt/methods http https)

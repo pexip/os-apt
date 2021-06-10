@@ -229,6 +229,27 @@ gdb() {
 	fi
 	runapt command gdb --quiet -ex "directory '$SOURCEDIRECTORY'" -ex run "$CMD" --args "$CMD" "$@"
 }
+
+valgrind() {
+	local CMD
+	case "$1" in
+	aptget) CMD="apt-get";;
+	aptcache) CMD="apt-cache";;
+	aptcdrom) CMD="apt-cdrom";;
+	aptconfig) CMD="apt-config";;
+	aptmark) CMD="apt-mark";;
+	apthelper) CMD="apt-helper";;
+	aptftparchive) CMD="apt-ftparchive";;
+	dpkg) shift; runapt "${TMPWORKINGDIRECTORY}/rootdir/usr/bin/gdb-dpkg" "$@"; return;;
+	*) CMD="$1";;
+	esac
+	shift
+	if [ "${CMD##*/}" = "$CMD" ]; then
+		CMD="${BUILDDIRECTORY}/${CMD}"
+	fi
+	runapt command valgrind "$CMD" "$@"
+}
+
 lastmodification() {
 	date -u -d "@$(stat -c '%Y' "${TMPWORKINGDIRECTORY}/$1")" -R
 }
@@ -463,6 +484,12 @@ EOF
 	# Allow release files to be 10 hours in the future, rather than 10 seconds
 	echo 'Acquire::Max-FutureTime "'$((10 * 60 * 60))'";' > rootdir/etc/apt/apt.conf.d/future-time
 
+	echo 'APT::Machine-ID "912e43bd1c1d4ba481f9f8ccab25f9ee";' > rootdir/etc/apt/apt.conf.d/machine-id
+
+	# XXX: We really ought to make the packages in the test suite all have Size fields.
+	# But this needs a lot more changes, so let's keep it simple for stable updates.
+	echo 'Acquire::AllowUnsizedPackages "true";' >> rootdir/etc/apt/apt.conf.d/temporary-allow-unsized-packages
+
 	configcompression '.' 'gz' #'bz2' 'lzma' 'xz'
 	confighashes 'SHA256' # these are tests, not security best-practices
 
@@ -483,7 +510,8 @@ EOF
 	unset http_proxy HTTP_PROXY https_proxy HTTPS_PROXY no_proxy
 
 	# Make dpkg inherit testing path
-	echo 'DPkg::Path "";\n' >> aptconfig.conf
+	echo 'DPkg::Path "";' >> aptconfig.conf
+	echo 'Dir::Bin::ischroot "/bin/false";' >> aptconfig.conf
 
 	# Make gcov shut up
 	export GCOV_ERROR_FILE=/dev/null
@@ -564,10 +592,14 @@ configdpkg() {
 		# the arch apt treats as native might be foreign for dpkg
 		for ARCH in ${ARCHS}; do
 			if [ "${ARCH}" != "${DPKGARCH}" ]; then
-				if ! dpkg --add-architecture ${ARCH} >/dev/null 2>&1; then
-					# old-style used e.g. in Ubuntu-P – and as it seems travis
-					echo "DPKG::options:: \"--foreign-architecture\";" >> rootdir/etc/apt/apt.conf.d/00foreigndpkg
-					echo "DPKG::options:: \"${ARCH}\";"  >> rootdir/etc/apt/apt.conf.d/00foreigndpkg
+				if ! dpkg --add-architecture ${ARCH} >rootdir/tmp/dpkgaddarch.output 2>&1; then
+					if grep -q 'pkg-config-dpkghook' rootdir/tmp/dpkgaddarch.output; then
+						msgwarn 'Ignoring failure of dpkg --add-architecture as it is likely due to pkg-config-dpkghook (see #824774)'
+					else
+						# old-style used e.g. in Ubuntu-P – and as it seems travis
+						echo "DPKG::options:: \"--foreign-architecture\";" >> rootdir/etc/apt/apt.conf.d/00foreigndpkg
+						echo "DPKG::options:: \"${ARCH}\";"  >> rootdir/etc/apt/apt.conf.d/00foreigndpkg
+					fi
 				fi
 			fi
 		done
@@ -1302,14 +1334,13 @@ webserverconfig() {
 	local DOWNLOG="${TMPWORKINGDIRECTORY}/rootdir/tmp/download-testfile.log"
 	local STATUS="${TMPWORKINGDIRECTORY}/downloaded/webserverconfig.status"
 	rm -f "$STATUS" "$DOWNLOG"
-	# very very basic URI encoding
 	local URI
 	if [ -n "$2" ]; then
 		msgtest "Set webserver config option '${1}' to" "$2"
-		URI="${WEBSERVER}/_config/set/$(echo "${1}" | sed -e 's/\//%2f/g')/$(echo "${2}" | sed -e 's/\//%2f/g')"
+		URI="${WEBSERVER}/_config/set/$(apthelper quote-string "${1}" '/?#')/$(apthelper quote-string "${2}" '/?#')"
 	else
 		msgtest 'Clear webserver config option' "${1}"
-		URI="${WEBSERVER}/_config/clear/$(echo "${1}" | sed -e 's/\//%2f/g')"
+		URI="${WEBSERVER}/_config/clear/$(apthelper quote-string "${1}" '/?#')"
 	fi
 	if downloadfile "$URI" "$STATUS" > "$DOWNLOG"; then
 		msgpass
@@ -2099,6 +2130,9 @@ aptautotest() {
 	fi
 }
 
+cdfind() {
+	( cd /; find "$@" )
+}
 aptautotest_aptget_update() {
 	local TESTCALL="$1"
 	while [ -n "$2" ]; do
@@ -2108,24 +2142,21 @@ aptautotest_aptget_update() {
 	if ! test -d "${TMPWORKINGDIRECTORY}/rootdir/var/lib/apt/lists"; then return; fi
 	testfilestats "${TMPWORKINGDIRECTORY}/rootdir/var/lib/apt" '%U:%G:%a' '=' "${TEST_DEFAULT_USER}:${TEST_DEFAULT_GROUP}:755"
 	testfilestats "${TMPWORKINGDIRECTORY}/rootdir/var/lib/apt/lists" '%U:%G:%a' '=' "${TEST_DEFAULT_USER}:${TEST_DEFAULT_GROUP}:755"
-	(
-	cd /
 	# all copied files are properly chmodded
 	local backupIFS="$IFS"
 	IFS="$(printf "\n\b")"
-	find "${TMPWORKINGDIRECTORY}/rootdir/var/lib/apt/lists" -type f ! -name 'lock' | while read file; do
+	cdfind "${TMPWORKINGDIRECTORY}/rootdir/var/lib/apt/lists" -type f ! -name 'lock' | while read file; do
 		testfilestats "$file" '%U:%G:%a' '=' "${TEST_DEFAULT_USER}:${TEST_DEFAULT_GROUP}:644"
 	done
 	IFS="$backupIFS"
 	if [ "$TESTCALL" = 'testsuccess' ]; then
 		# failure cases can retain partial files and such
-		testempty find "${TMPWORKINGDIRECTORY}/rootdir/var/lib/apt/lists/partial" -mindepth 1 ! \( -name 'lock' -o -name '*.FAILED' \)
+		testempty cdfind "${TMPWORKINGDIRECTORY}/rootdir/var/lib/apt/lists/partial" -mindepth 1 ! \( -name 'lock' -o -name '*.FAILED' \)
 	fi
 	if [ -s "${TMPWORKINGDIRECTORY}/rootdir/var/log/aptgetupdate.before.lst" ]; then
 		testfileequal "${TMPWORKINGDIRECTORY}/rootdir/var/log/aptgetupdate.before.lst" \
-			"$(find "${TMPWORKINGDIRECTORY}/aptarchive/dists" -type f | while read line; do stat --format '%U:%G:%a:%n' "$line"; done | sort)"
+			"$(cdfind "${TMPWORKINGDIRECTORY}/aptarchive/dists" -type f | while read line; do stat --format '%U:%G:%a:%n' "$line"; done | sort)"
 	fi
-	)
 }
 aptautotest_apt_update() { aptautotest_aptget_update "$@"; }
 aptautotest_aptcdrom_add() { aptautotest_aptget_update "$@"; }

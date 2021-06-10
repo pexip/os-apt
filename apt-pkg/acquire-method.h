@@ -29,12 +29,8 @@
 #include <unordered_map>
 #include <vector>
 
-#ifndef APT_8_CLEANER_HEADERS
-#include <apt-pkg/configuration.h>
-#include <apt-pkg/strutl.h>
-#endif
 
-class pkgAcqMethod
+class APT_PUBLIC pkgAcqMethod
 {
    protected:
 
@@ -105,7 +101,7 @@ class pkgAcqMethod
    bool MediaFail(std::string Required,std::string Drive);
    virtual void Exit() {};
 
-   void PrintStatus(char const * const header, const char* Format, va_list &args) const;
+   APT_DEPRECATED_MSG("Use SendMessage instead") void PrintStatus(char const * const header, const char* Format, va_list &args) const;
 
    public:
    enum CnfFlags
@@ -116,7 +112,8 @@ class pkgAcqMethod
       LocalOnly = (1 << 3),
       NeedsCleanup = (1 << 4),
       Removable = (1 << 5),
-      AuxRequests = (1 << 6)
+      AuxRequests = (1 << 6),
+      SendURIEncoded = (1 << 7),
    };
 
    void Log(const char *Format,...);

@@ -25,7 +25,6 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/macros.h>
 #include <apt-pkg/pkgsystem.h>
-#include <apt-pkg/sptr.h>
 #include <apt-pkg/strutl.h>
 
 #include <cstdio>
@@ -86,9 +85,6 @@
 
 using namespace std;
 
-/* Should be a multiple of the common page size (4096) */
-static constexpr unsigned long long APT_BUFFER_SIZE = 64 * 1024;
-
 // RunScripts - Run a set of scripts from a configuration subtree	/*{{{*/
 // ---------------------------------------------------------------------
 /* */
@@ -143,10 +139,6 @@ bool RunScripts(const char *Cnf)
 	 continue;
       return _error->Errno("waitpid","Couldn't wait for subprocess");
    }
-
-   // Restore sig int/quit
-   signal(SIGQUIT,SIG_DFL);
-   signal(SIGINT,SIG_DFL);   
 
    // Check for an error code.
    if (WIFEXITED(Status) == 0 || WEXITSTATUS(Status) != 0)
@@ -224,6 +216,30 @@ bool RemoveFile(char const * const Function, std::string const &FileName)/*{{{*/
    is done all other calls to GetLock in any other process will fail with
    -1. The return result is the fd of the file, the call should call
    close at some time. */
+
+static std::string GetProcessName(int pid)
+{
+   struct HideError
+   {
+      int err;
+      HideError() : err(errno) { _error->PushToStack(); }
+      ~HideError()
+      {
+	 errno = err;
+	 _error->RevertToStack();
+      }
+   } hideError;
+   std::string path;
+   strprintf(path, "/proc/%d/status", pid);
+   FileFd status(path, FileFd::ReadOnly);
+   std::string line;
+   while (status.ReadLine(line))
+   {
+      if (line.substr(0, 5) == "Name:")
+	 return line.substr(6);
+   }
+   return "";
+}
 int GetLock(string File,bool Errors)
 {
    // GetLock() is used in aptitude on directories with public-write access
@@ -257,6 +273,20 @@ int GetLock(string File,bool Errors)
    {
       // always close to not leak resources
       int Tmp = errno;
+
+      if ((errno == EACCES || errno == EAGAIN))
+      {
+	 fl.l_type = F_WRLCK;
+	 fl.l_whence = SEEK_SET;
+	 fl.l_start = 0;
+	 fl.l_len = 0;
+	 fl.l_pid = -1;
+	 fcntl(FD, F_GETLK, &fl);
+      }
+      else
+      {
+	 fl.l_pid = -1;
+      }
       close(FD);
       errno = Tmp;
 
@@ -267,8 +297,23 @@ int GetLock(string File,bool Errors)
       }
   
       if (Errors == true)
-	 _error->Errno("open",_("Could not get lock %s"),File.c_str());
-      
+      {
+	 // We only do the lookup in the if ((errno == EACCES || errno == EAGAIN))
+	 // case, so we do not need to show the errno strerrr here...
+	 if (fl.l_pid != -1)
+	 {
+	    auto name = GetProcessName(fl.l_pid);
+	    if (name.empty())
+	       _error->Error(_("Could not get lock %s. It is held by process %d"), File.c_str(), fl.l_pid);
+	    else
+	       _error->Error(_("Could not get lock %s. It is held by process %d (%s)"), File.c_str(), fl.l_pid, name.c_str());
+	 }
+	 else
+	    _error->Errno("open", _("Could not get lock %s"), File.c_str());
+
+	 _error->Notice(_("Be aware that removing the lock file is not a solution and may break your system."));
+      }
+
       return -1;
    }
 
@@ -1725,13 +1770,12 @@ public:
 #endif
 };
 									/*}}}*/
-
-class APT_HIDDEN ZstdFileFdPrivate : public FileFdPrivate
-{ /*{{{*/
+class APT_HIDDEN ZstdFileFdPrivate : public FileFdPrivate		/*{{{*/
+{
 #ifdef HAVE_ZSTD
    ZSTD_DStream *dctx;
    ZSTD_CStream *cctx;
-   size_t res;
+   size_t res = 0;
    FileFd backend;
    simple_buffer zstd_buffer;
    // Count of bytes that the decompressor expects to read next, or buffer size.
@@ -1937,7 +1981,7 @@ class APT_HIDDEN ZstdFileFdPrivate : public FileFdPrivate
 #endif
 };
 									/*}}}*/
-class APT_HIDDEN LzmaFileFdPrivate: public FileFdPrivate {				/*{{{*/
+class APT_HIDDEN LzmaFileFdPrivate: public FileFdPrivate {		/*{{{*/
 #ifdef HAVE_LZMA
    struct LZMAFILE {
       FILE* file;
@@ -1948,7 +1992,7 @@ class APT_HIDDEN LzmaFileFdPrivate: public FileFdPrivate {				/*{{{*/
       bool eof;
       bool compressing;
 
-      LZMAFILE(FileFd * const fd) : file(nullptr), filefd(fd), eof(false), compressing(false) { buffer[0] = '\0'; }
+      explicit LZMAFILE(FileFd * const fd) : file(nullptr), filefd(fd), eof(false), compressing(false) { buffer[0] = '\0'; }
       ~LZMAFILE()
       {
 	 if (compressing == true && filefd->Failed() == false)
@@ -2043,17 +2087,9 @@ public:
       }
       else
       {
-	 uint64_t const memlimit = UINT64_MAX;
-	 if (compressor.Name == "xz")
-	 {
-	    if (lzma_auto_decoder(&lzma->stream, memlimit, 0) != LZMA_OK)
-	       return false;
-	 }
-	 else
-	 {
-	    if (lzma_alone_decoder(&lzma->stream, memlimit) != LZMA_OK)
-	       return false;
-	 }
+	 uint64_t constexpr memlimit = 1024 * 1024 * 500;
+	 if (lzma_auto_decoder(&lzma->stream, memlimit, 0) != LZMA_OK)
+	    return false;
 	 lzma->compressing = false;
       }
       return true;
@@ -3018,19 +3054,6 @@ bool FileFd::FileFdError(const char *Description,...) {
    return false;
 }
 									/*}}}*/
-gzFile FileFd::gzFd() {							/*{{{*/
-#ifdef HAVE_ZLIB
-   GzipFileFdPrivate * const gzipd = dynamic_cast<GzipFileFdPrivate*>(d);
-   if (gzipd == nullptr)
-      return nullptr;
-   else
-      return gzipd->gz;
-#else
-   return nullptr;
-#endif
-}
-									/*}}}*/
-
 // Glob - wrapper around "glob()"					/*{{{*/
 std::vector<std::string> Glob(std::string const &pattern, int flags)
 {
@@ -3114,30 +3137,49 @@ FileFd* GetTempFile(std::string const &Prefix, bool ImmediateUnlink, FileFd * co
 }
 FileFd* GetTempFile(std::string const &Prefix, bool ImmediateUnlink, FileFd * const TmpFd, bool Buffered)
 {
-   char fn[512];
-   FileFd * const Fd = TmpFd == nullptr ? new FileFd() : TmpFd;
-
+   std::string fn;
    std::string const tempdir = GetTempDir();
-   snprintf(fn, sizeof(fn), "%s/%s.XXXXXX",
-            tempdir.c_str(), Prefix.c_str());
-   int const fd = mkstemp(fn);
+   int fd = -1;
+#ifdef O_TMPFILE
    if (ImmediateUnlink)
-      unlink(fn);
+      fd = open(tempdir.c_str(), O_RDWR|O_TMPFILE|O_EXCL|O_CLOEXEC, 0600);
+   if (fd < 0)
+#endif
+   {
+      auto const suffix = Prefix.find(".XXXXXX.");
+      std::vector<char> buffer(tempdir.length() + 1 + Prefix.length() + (suffix == std::string::npos ? 7 : 0) + 1, '\0');
+      if (suffix != std::string::npos)
+      {
+	 if (snprintf(buffer.data(), buffer.size(), "%s/%s", tempdir.c_str(), Prefix.c_str()) > 0)
+	 {
+	    ssize_t const suffixlen = (buffer.size() - 1) - (tempdir.length() + 1 + suffix + 7);
+	    if (likely(suffixlen > 0))
+	       fd = mkstemps(buffer.data(), suffixlen);
+	 }
+      }
+      else
+      {
+	 if (snprintf(buffer.data(), buffer.size(), "%s/%s.XXXXXX", tempdir.c_str(), Prefix.c_str()) > 0)
+	    fd = mkstemp(buffer.data());
+      }
+      fn.assign(buffer.data(), buffer.size() - 1);
+      if (ImmediateUnlink && fd != -1)
+	 unlink(fn.c_str());
+   }
    if (fd < 0)
    {
-      _error->Errno("GetTempFile",_("Unable to mkstemp %s"), fn);
-      if (TmpFd == nullptr)
-	 delete Fd;
+      _error->Errno("GetTempFile",_("Unable to mkstemp %s"), fn.c_str());
       return nullptr;
    }
-   if (!Fd->OpenDescriptor(fd, FileFd::ReadWrite | (Buffered ? FileFd::BufferedWrite : 0), FileFd::None, true))
+   FileFd * const Fd = TmpFd == nullptr ? new FileFd() : TmpFd;
+   if (not Fd->OpenDescriptor(fd, FileFd::ReadWrite | (Buffered ? FileFd::BufferedWrite : 0), FileFd::None, true))
    {
-      _error->Errno("GetTempFile",_("Unable to write to %s"),fn);
+      _error->Errno("GetTempFile",_("Unable to write to %s"),fn.c_str());
       if (TmpFd == nullptr)
 	 delete Fd;
       return nullptr;
    }
-   if (ImmediateUnlink == false)
+   if (not ImmediateUnlink)
       Fd->SetFileName(fn);
    return Fd;
 }
@@ -3151,16 +3193,6 @@ bool Rename(std::string From, std::string To)				/*{{{*/
       return false;
    }
    return true;
-}
-									/*}}}*/
-bool Popen(const char* Args[], FileFd &Fd, pid_t &Child, FileFd::OpenMode Mode)/*{{{*/
-{
-   return Popen(Args, Fd, Child, Mode, true);
-}
-									/*}}}*/
-bool Popen(const char* Args[], FileFd &Fd, pid_t &Child, FileFd::OpenMode Mode, bool CaptureStderr)/*{{{*/
-{
-   return Popen(Args, Fd, Child, Mode, CaptureStderr, false);
 }
 									/*}}}*/
 bool Popen(const char *Args[], FileFd &Fd, pid_t &Child, FileFd::OpenMode Mode, bool CaptureStderr, bool Sandbox) /*{{{*/

@@ -121,21 +121,6 @@ static bool operator!=(LineBuffer const &buf, APT::StringView const exp) noexcep
    And as a cherry on the cake, we use our apt-key wrapper to do part
    of the lifting in regards to merging keyrings. Fun for the whole family.
 */
-static bool iovprintf(std::ostream &out, const char *format,
-		      va_list &args, ssize_t &size) {
-   auto S = make_unique_char(malloc(size));
-   ssize_t const n = vsnprintf(S.get(), size, format, args);
-   if (n > -1 && n < size) {
-      out << S.get();
-      return true;
-   } else {
-      if (n > -1)
-	 size = n + 1;
-      else
-	 size *= 2;
-   }
-   return false;
-}
 static void APT_PRINTF(4) apt_error(std::ostream &outterm, int const statusfd, int fd[2], const char *format, ...)
 {
    std::ostringstream outstr;
@@ -250,6 +235,9 @@ void ExecGPGV(std::string const &File, std::string const &FileGPG,
       confStream.close();
       setenv("APT_CONFIG", conf.get(), 1);
    }
+
+   // Tell apt-key not to emit warnings
+   setenv("APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE", "1", 1);
 
    if (releaseSignature == DETACHED)
    {

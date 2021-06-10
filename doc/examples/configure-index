@@ -54,6 +54,9 @@ APT
   Build-Profiles "<STRING_OR_LIST>";
 
   NeverAutoRemove "<LIST>";  // list of package name regexes
+  LastInstalledKernel "<STRING>"; // last installed kernel version
+  VersionedKernelPackages "<LIST>"; // regular expressions to be protected from autoremoval (kernel uname will be appended)
+  Protect-Kernels "<BOOL>"; // whether to protect installed kernels against autoremoval (default: true)
 
   // Options for apt-get
   Get
@@ -63,6 +66,7 @@ APT
      Arch-Only "<BOOL>";
      Indep-Only "<BOOL>";
      Build-Dep-Automatic "<BOOL>";
+     Satisfy-Automatic "<BOOL>";
 
      // (non-)confirming options
      Force-Yes "<BOOL>"; // allows downgrades, essential removal and eats children
@@ -72,10 +76,13 @@ APT
      Assume-Yes "<BOOL>"; // not as dangerous, but use with care still
      Assume-No "<BOOL>";
      Trivial-Only "<BOOL>";
+     Mark-Auto "<BOOL>";
      Remove "<BOOL>";
      AllowUnauthenticated "<BOOL>"; // skip security
 
-     AutomaticRemove "<BOOL>";
+     AutomaticRemove "<BOOL>" {
+        "Kernels" "<BOOL>";     // Allow removing kernels even if not removing other packages (true for dist-upgrade)
+     };
      HideAutoRemove "<STRING_OR_BOOL>"; // yes, no, small
 
      Simulate "<BOOL>";
@@ -94,6 +101,8 @@ APT
      Upgrade "<BOOL>";
      Only-Upgrade "<BOOL>";
      Upgrade-Allow-New "<BOOL>";
+     Always-Include-Phased-Updates "<BOOL>";
+     Never-Include-Phased-Updates "<BOOL>";
      Purge "<BOOL>";
      ReInstall "<BOOL>";
      Compile "<BOOL>";
@@ -157,6 +166,7 @@ APT
   {
      Pre-Invoke {"touch /var/lib/apt/pre-update-stamp"; };
      Post-Invoke {"touch /var/lib/apt/post-update-stamp"; };
+     Error-Mode "<STRING>";
   };
 
   /* define a new supported compressor on the fly
@@ -212,6 +222,8 @@ APT
 
   // control parameters for cron jobs by /etc/cron.daily/apt documented there
   Periodic {};
+
+  Machine-ID "<STRING>"; // Value of /etc/machine-id
 };
 
 // Options for the downloading routines
@@ -221,6 +233,8 @@ Acquire
   Retries "<INT>";
   Source-Symlinks "<BOOL>";
   ForceHash "<STRING>"; // hashmethod used for expected hash: sha256, sha1 or md5sum
+  Send-URI-Encoded "<BOOL>"; // false does the old encode/decode dance even if we could avoid it
+  URIEncode "<STRING>"; // characters to encode with percent encoding
 
   AllowTLS "<BOOL>";    // whether support for tls is enabled
 
@@ -243,6 +257,7 @@ Acquire
   AllowInsecureRepositories "<BOOL>";
   AllowWeakRepositories "<BOOL>";
   AllowDowngradeToInsecureRepositories "<BOOL>";
+  AllowUnsizedPackages "<BOOL>";
   // allow repositories to change information potentially breaking user config like pinning
   AllowReleaseInfoChange "<BOOL>"
   {
@@ -270,6 +285,7 @@ Acquire
     No-Store "false";    // Prevent the cache from storing archives
     Dl-Limit "<INT>"; // Kb/sec maximum download rate
     User-Agent "Debian APT-HTTP/1.3";
+    User-Agent-Non-Interactive "false"; // include non-interactive if run in systemd service (true on Ubuntu)
     Referer "<STRING>"; // Set the HTTP Referer [sic!] header to given value
   };
 
@@ -407,6 +423,7 @@ Dir "<DIR>"
      SourceParts "<DIR>";
      Trusted "<FILE>";
      TrustedParts "<DIR>";
+     Machine-ID "<FILE>";   // by default points to ../machine-id effectively
   };
 
   // Locations of binaries
@@ -424,6 +441,7 @@ Dir "<DIR>"
      bzip2 "<PROGRAM_PATH>";
      lzma "<PROGRAM_PATH>";
      uncompressed "<PROGRAM_PATH>";
+     ischroot "<PROGRAM_PATH>";
 
      solvers "<LIST>"; // of directories
      planners "<LIST>"; // of directories
@@ -550,11 +568,14 @@ Debug
   InstallProgress::Fancy "<BOOL>";
   APT::Progress::PackageManagerFd "<BOOL>";
   SetupAPTPartialDirectory::AssumeGood "<BOOL>";
+  Locking "<BOOL>";
+  Phasing "<BOOL>";
 };
 
 pkgCacheGen
 {
   Essential "<STRING>"; // native,all, none, installed
+  Protected "<STRING>"; // native,all, none, installed
   ForceEssential "<STRING_OR_LIST>"; // package names
   ForceImportant "<LIST>"; // package names
 };
@@ -583,6 +604,7 @@ pkgProblemResolver::Scores
   AddEssential "<INT>";
 };
 pkgProblemResolver::FixByInstall "<BOOL>";
+pkgProblemResolver::MaxCounter "<INT>";
 
 APT::FTPArchive::release
 {
@@ -683,6 +705,7 @@ dpkg::selection::remove::approved "<BOOL>";
 dpkg::remove::crossgrade::implicit "<BOOL>";
 dpkg::selection::current::saveandrestore "<BOOL>";
 dpkg::use-pty "<BOOL>";
+dpkg::lock::timeout "<INT>";
 
 apt::cmd::disable-script-warning "<BOOL>";
 apt::cmd::show-update-stats "<BOOL>";
@@ -694,6 +717,7 @@ apt::cmd::list-include-summary "<BOOL>";
 apt::cmd::use-regexp "<BOOL>";
 apt::cmd::all-versions "<BOOL>";
 apt::cmd::format "<STRING>";
+apt::cmd::pattern-only "<BOOL>";  // internal
 
 apt::config::dump::emptyvalue "<BOOL>";
 apt::config::dump::format "<STRING>";
@@ -822,3 +846,12 @@ dir::filelistdir "<STRING>";
 dir::dpkg::tupletable "<FILE>";
 dir::dpkg::triplettable "<FILE>";
 dir::dpkg::cputable "<FILE>";
+Rred::t "<BOOL>";
+Rred::f "<BOOL>";
+Rred::Compress "<STRING>";
+
+APT::Internal::OpProgress::Absolute "<BOOL>";
+APT::Color "<BOOL>";
+
+update-manager::always-include-phased-updates "<BOOL>";
+update-manager::never-include-phased-updates "<BOOL>";
