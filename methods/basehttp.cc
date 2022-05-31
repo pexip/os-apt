@@ -110,6 +110,9 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
 	 if (sscanf(Line.c_str(),"HTTP %3u%359[^\n]",&Result,Code) != 2)
 	    return _error->Error(_("The HTTP server sent an invalid reply header"));
       }
+      auto const CodeLen = strlen(Code);
+      auto const CodeEnd = std::remove_if(Code, Code + CodeLen, [](char c) { return isprint(c) == 0; });
+      *CodeEnd = '\0';
 
       /* Check the HTTP response header to get the default persistence
          state. */
@@ -232,7 +235,7 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
 
    if (stringcasecmp(Tag,"Last-Modified:") == 0)
    {
-      if (RFC1123StrToTime(Val.c_str(), Date) == false)
+      if (RFC1123StrToTime(Val, Date) == false)
 	 return _error->Error(_("Unknown date format"));
       return true;
    }
@@ -283,6 +286,14 @@ void ServerState::Reset()						/*{{{*/
 /* We look at the header data we got back from the server and decide what
    to do. Returns DealWithHeadersResult (see http.h for details).
  */
+static std::string fixURIEncoding(std::string const &part)
+{
+   // if the server sends a space this is not an encoded URI
+   // so other clients seem to encode it and we do it as well
+   if (part.find_first_of(" ") != std::string::npos)
+      return aptMethod::URIEncode(part);
+   return part;
+}
 BaseHttpMethod::DealWithHeadersResult
 BaseHttpMethod::DealWithHeaders(FetchResult &Res, RequestState &Req)
 {
@@ -313,12 +324,15 @@ BaseHttpMethod::DealWithHeaders(FetchResult &Res, RequestState &Req)
 	 ;
       else if (Req.Location[0] == '/' && Queue->Uri.empty() == false)
       {
-	 URI Uri = Queue->Uri;
+	 URI Uri(Queue->Uri);
 	 if (Uri.Host.empty() == false)
             NextURI = URI::SiteOnly(Uri);
 	 else
 	    NextURI.clear();
-	 NextURI.append(DeQuoteString(Req.Location));
+	 if (_config->FindB("Acquire::Send-URI-Encoded", false))
+	    NextURI.append(fixURIEncoding(Req.Location));
+	 else
+	    NextURI.append(DeQuoteString(Req.Location));
 	 if (Queue->Uri == NextURI)
 	 {
 	    SetFailReason("RedirectionLoop");
@@ -331,8 +345,12 @@ BaseHttpMethod::DealWithHeaders(FetchResult &Res, RequestState &Req)
       }
       else
       {
-	 NextURI = DeQuoteString(Req.Location);
-	 URI tmpURI = NextURI;
+	 bool const SendURIEncoded = _config->FindB("Acquire::Send-URI-Encoded", false);
+	 if (not SendURIEncoded)
+	    Req.Location = DeQuoteString(Req.Location);
+	 URI tmpURI(Req.Location);
+	 if (SendURIEncoded)
+	    tmpURI.Path = fixURIEncoding(tmpURI.Path);
 	 if (tmpURI.Access.find('+') != std::string::npos)
 	 {
 	    _error->Error("Server tried to trick us into using a specific implementation: %s", tmpURI.Access.c_str());
@@ -340,7 +358,8 @@ BaseHttpMethod::DealWithHeaders(FetchResult &Res, RequestState &Req)
 	       return ERROR_WITH_CONTENT_PAGE;
 	    return ERROR_UNRECOVERABLE;
 	 }
-	 URI Uri = Queue->Uri;
+	 NextURI = tmpURI;
+	 URI Uri(Queue->Uri);
 	 if (Binary.find('+') != std::string::npos)
 	 {
 	    auto base = Binary.substr(0, Binary.find('+'));
@@ -349,7 +368,6 @@ BaseHttpMethod::DealWithHeaders(FetchResult &Res, RequestState &Req)
 	       tmpURI.Access = base + '+' + tmpURI.Access;
 	       if (tmpURI.Access == Binary)
 	       {
-		  std::string tmpAccess = Uri.Access;
 		  std::swap(tmpURI.Access, Uri.Access);
 		  NextURI = tmpURI;
 		  std::swap(tmpURI.Access, Uri.Access);
@@ -493,7 +511,7 @@ bool BaseHttpMethod::Fetch(FetchItem *)
 
    do {
       // Make sure we stick with the same server
-      if (Server->Comp(QueueBack->Uri) == false)
+      if (Server->Comp(URI(QueueBack->Uri)) == false)
 	 break;
 
       bool const UsableHashes = QueueBack->ExpectedHashes.usable();
@@ -578,14 +596,14 @@ int BaseHttpMethod::Loop()
 	 continue;
       
       // Connect to the server
-      if (Server == 0 || Server->Comp(Queue->Uri) == false)
+      if (Server == 0 || Server->Comp(URI(Queue->Uri)) == false)
       {
 	 if (!Queue->Proxy().empty())
 	 {
-	    URI uri = Queue->Uri;
+	    URI uri(Queue->Uri);
 	    _config->Set("Acquire::" + uri.Access + "::proxy::" + uri.Host, Queue->Proxy());
 	 }
-	 Server = CreateServerState(Queue->Uri);
+	 Server = CreateServerState(URI(Queue->Uri));
 	 setPostfixForMethodNames(::URI(Queue->Uri).Host.c_str());
 	 AllowRedirect = ConfigFindB("AllowRedirect", true);
 	 PipelineDepth = ConfigFindI("Pipeline-Depth", 10);
@@ -747,7 +765,9 @@ int BaseHttpMethod::Loop()
 			// yes, he did! Disable pipelining and rewrite queue
 			if (Server->Pipeline == true)
 			{
-			   Warning(_("Automatically disabled %s due to incorrect response from server/proxy. (man 5 apt.conf)"), "Acquire::http::Pipeline-Depth");
+			   std::string msg;
+			   strprintf(msg, _("Automatically disabled %s due to incorrect response from server/proxy. (man 5 apt.conf)"), "Acquire::http::Pipeline-Depth");
+			   Warning(std::move(msg));
 			   Server->Pipeline = false;
 			   Server->PipelineAllowed = false;
 			   // we keep the PipelineDepth value so that the rest of the queue can be fixed up as well
@@ -771,33 +791,24 @@ int BaseHttpMethod::Loop()
 	    }
 	    else
 	    {
-	       if (Server->IsOpen() == false)
+	       if (not Server->IsOpen())
 	       {
-		  FailCounter++;
-		  _error->Discard();
-		  Server->Close();
-		  
-		  if (FailCounter >= 2)
-		  {
-		     Fail(_("Connection failed"),true);
-		     FailCounter = 0;
-		  }
-		  
+		  // Reset the pipeline
 		  QueueBack = Queue;
+		  Server->PipelineAnswersReceived = 0;
 	       }
-	       else
-               {
-                  Server->Close();
-		  switch (Result)
-		  {
-		  case ResultState::TRANSIENT_ERROR:
-		     Fail(true);
-		     break;
-		  case ResultState::FATAL_ERROR:
-		  case ResultState::SUCCESSFUL:
-		     Fail(false);
-		     break;
-		  }
+
+	       Server->Close();
+	       FailCounter = 0;
+	       switch (Result)
+	       {
+	       case ResultState::TRANSIENT_ERROR:
+		  Fail(true);
+		  break;
+	       case ResultState::FATAL_ERROR:
+	       case ResultState::SUCCESSFUL:
+		  Fail(false);
+		  break;
 	       }
 	    }
 	    break;
@@ -871,7 +882,11 @@ unsigned long long BaseHttpMethod::FindMaximumObjectSizeInQueue() const	/*{{{*/
 {
    unsigned long long MaxSizeInQueue = 0;
    for (FetchItem *I = Queue; I != 0 && I != QueueBack; I = I->Next)
+   {
+      if (I->MaximumSize == 0)
+	 return 0;
       MaxSizeInQueue = std::max(MaxSizeInQueue, I->MaximumSize);
+   }
    return MaxSizeInQueue;
 }
 									/*}}}*/

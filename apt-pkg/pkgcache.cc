@@ -31,7 +31,6 @@
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/version.h>
 
-#include <zlib.h>
 #include <algorithm>
 #include <sstream>
 #include <string>
@@ -39,6 +38,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <xxhash.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -57,7 +57,7 @@ pkgCache::Header::Header()
 
    /* Whenever the structures change the major version should be bumped,
       whenever the generator changes the minor version should be bumped. */
-   APT_HEADER_SET(MajorVersion, 13);
+   APT_HEADER_SET(MajorVersion, 16);
    APT_HEADER_SET(MinorVersion, 0);
    APT_HEADER_SET(Dirty, false);
 
@@ -94,7 +94,7 @@ pkgCache::Header::Header()
    VerSysName = 0;
    Architecture = 0;
    SetArchitectures(0);
-   SetHashTableSize(_config->FindI("APT::Cache-HashTableSize", 50503));
+   SetHashTableSize(_config->FindI("APT::Cache-HashTableSize", 196613));
    memset(Pools,0,sizeof(Pools));
 
    CacheFileSize = 0;
@@ -125,17 +125,15 @@ bool pkgCache::Header::CheckSizes(Header &Against) const
 // Cache::pkgCache - Constructor					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-APT_IGNORE_DEPRECATED_PUSH
 pkgCache::pkgCache(MMap *Map, bool DoMap) : Map(*Map), VS(nullptr), d(NULL)
 {
    // call getArchitectures() with cached=false to ensure that the 
-   // architectures cache is re-evaulated. this is needed in cases
+   // architectures cache is re-evaluated. this is needed in cases
    // when the APT::Architecture field changes between two cache creations
    MultiArchEnabled = APT::Configuration::getArchitectures(false).size() > 1;
    if (DoMap == true)
       ReMap();
 }
-APT_IGNORE_DEPRECATED_POP
 									/*}}}*/
 // Cache::ReMap - Reopen the cache file					/*{{{*/
 // ---------------------------------------------------------------------
@@ -211,106 +209,60 @@ bool pkgCache::ReMap(bool const &Errorchecks)
 map_id_t pkgCache::sHash(StringView Str) const
 {
    uint32_t Hash = 5381;
-   for (auto I = Str.begin(); I != Str.end(); ++I)
-      Hash = 33 * Hash + tolower_ascii_unsafe(*I);
+   auto I = Str.begin();
+   auto End = Str.end();
+   for (; I + 7 < End; I += 8)
+   {
+      Hash = (33u * 33u * 33u * 33u * 33u * 33u * 33u * 33u * Hash +
+	      33u * 33u * 33u * 33u * 33u * 33u * 33u * tolower_ascii_unsafe(I[0]) +
+	      33u * 33u * 33u * 33u * 33u * 33u * tolower_ascii_unsafe(I[1]) +
+	      33u * 33u * 33u * 33u * 33u * tolower_ascii_unsafe(I[2]) +
+	      33u * 33u * 33u * 33u * tolower_ascii_unsafe(I[3]) +
+	      33u * 33u * 33u * tolower_ascii_unsafe(I[4]) +
+	      33u * 33u * tolower_ascii_unsafe(I[5]) +
+	      33u * tolower_ascii_unsafe(I[6]) +
+	      tolower_ascii_unsafe(I[7]));
+   }
+   for (; I != End; ++I)
+      Hash = 33u * Hash + tolower_ascii_unsafe(*I);
    return Hash % HeaderP->GetHashTableSize();
 }
-map_id_t pkgCache::sHash(const string &Str) const
-{
-   uint32_t Hash = 5381;
-   for (string::const_iterator I = Str.begin(); I != Str.end(); ++I)
-      Hash = 33 * Hash + tolower_ascii_unsafe((signed char)*I);
-   return Hash % HeaderP->GetHashTableSize();
-}
-
-map_id_t pkgCache::sHash(const char *Str) const
-{
-   uint32_t Hash = 5381;
-   for (const char *I = Str; *I != 0; ++I)
-      Hash = 33 * Hash + tolower_ascii_unsafe((signed char)*I);
-   return Hash % HeaderP->GetHashTableSize();
-}
-
-#if defined(HAVE_FMV_SSE42_AND_CRC32)
-
-#ifdef HAVE_FMV_SSE42_AND_CRC32
-__attribute__((target("sse4.2"))) static uint32_t hash32(uint32_t crc32, const unsigned char *input, size_t size)
-{
-   if (input == nullptr)
-      return 0;
-
-   crc32 ^= 0xffffffffU;
-#ifdef HAVE_FMV_SSE42_AND_CRC32DI
-   while (size >= 8) {
-      crc32 = __builtin_ia32_crc32di(crc32, *(uint64_t *)input);
-      input += 8;
-      size -= 8;
-   }
-
-   if (size >= 4) {
-#else
-   while (size >= 4) {
-#endif
-      crc32 = __builtin_ia32_crc32si(crc32, *(uint32_t *)input);
-      input += 4;
-      size -= 4;
-   }
-
-   if (size >= 2) {
-      crc32 = __builtin_ia32_crc32hi(crc32, *(uint16_t *)input);
-      input += 2;
-      size -= 2;
-   }
-
-   if (size >= 1) {
-      crc32 = __builtin_ia32_crc32qi(crc32, *(uint8_t *)input);
-      input += 1;
-      size -= 1;
-   }
-   crc32 ^= 0xffffffffU;
-   return crc32;
-}
-#endif
-
-__attribute__((target("default")))
-#endif
-static uint32_t hash32(uint32_t crc32, const unsigned char *input, size_t size)
-{
-   return adler32(crc32, input, size);
-}
-
 uint32_t pkgCache::CacheHash()
 {
    pkgCache::Header header = {};
-   uLong adler = hash32(0L, Z_NULL, 0);
+   XXH3_state_t *state = XXH3_createState();
 
    if (Map.Size() < sizeof(header))
-      return adler;
+      return 0;
+
+   XXH3_64bits_reset(state);
    memcpy(&header, GetMap().Data(), sizeof(header));
 
    header.Dirty = false;
    header.CacheFileSize = 0;
 
-   adler = hash32(adler,
-		  reinterpret_cast<const unsigned char *>(&header),
-		  sizeof(header));
+   XXH3_64bits_update(state,
+		      reinterpret_cast<const unsigned char *>(PACKAGE_VERSION),
+		      APT_ARRAY_SIZE(PACKAGE_VERSION));
+
+   XXH3_64bits_update(state,
+		      reinterpret_cast<const unsigned char *>(&header),
+		      sizeof(header));
 
    if (Map.Size() > sizeof(header)) {
-      adler = hash32(adler,
-		     static_cast<const unsigned char *>(GetMap().Data()) + sizeof(header),
-		     GetMap().Size() - sizeof(header));
+      XXH3_64bits_update(state,
+			 static_cast<const unsigned char *>(GetMap().Data()) + sizeof(header),
+			 GetMap().Size() - sizeof(header));
    }
 
-   return adler;
+   auto const digest = XXH3_64bits_digest(state);
+   XXH3_freeState(state);
+   return digest & 0xFFFFFFFF;
 }
 									/*}}}*/
 // Cache::FindPkg - Locate a package by name				/*{{{*/
 // ---------------------------------------------------------------------
 /* Returns 0 on error, pointer to the package otherwise */
-pkgCache::PkgIterator pkgCache::FindPkg(const string &Name) {
-   return FindPkg(StringView(Name));
-}
-
 pkgCache::PkgIterator pkgCache::FindPkg(StringView Name) {
 	auto const found = Name.rfind(':');
 	if (found == string::npos)
@@ -327,10 +279,6 @@ pkgCache::PkgIterator pkgCache::FindPkg(StringView Name) {
 // Cache::FindPkg - Locate a package by name				/*{{{*/
 // ---------------------------------------------------------------------
 /* Returns 0 on error, pointer to the package otherwise */
-pkgCache::PkgIterator pkgCache::FindPkg(const string &Name, string const &Arch) {
-   return FindPkg(StringView(Name), StringView(Arch));
-}
-
 pkgCache::PkgIterator pkgCache::FindPkg(StringView Name, StringView Arch) {
 	/* We make a detour via the GrpIterator here as
 	   on a multi-arch environment a group is easier to
@@ -345,10 +293,6 @@ pkgCache::PkgIterator pkgCache::FindPkg(StringView Name, StringView Arch) {
 // Cache::FindGrp - Locate a group by name				/*{{{*/
 // ---------------------------------------------------------------------
 /* Returns End-Pointer on error, pointer to the group otherwise */
-pkgCache::GrpIterator pkgCache::FindGrp(const string &Name) {
-   return FindGrp(StringView(Name));
-}
-
 pkgCache::GrpIterator pkgCache::FindGrp(StringView Name) {
 	if (unlikely(Name.empty() == true))
 		return GrpIterator(*this,0);
@@ -410,7 +354,7 @@ const char *pkgCache::Priority(unsigned char Prio)
 {
    const char *Mapping[] = {0,_("required"),_("important"),_("standard"),
                             _("optional"),_("extra")};
-   if (Prio < _count(Mapping))
+   if (Prio < APT_ARRAY_SIZE(Mapping))
       return Mapping[Prio];
    return 0;
 }
@@ -418,12 +362,6 @@ const char *pkgCache::Priority(unsigned char Prio)
 // GrpIterator::FindPkg - Locate a package by arch			/*{{{*/
 // ---------------------------------------------------------------------
 /* Returns an End-Pointer on error, pointer to the package otherwise */
-pkgCache::PkgIterator pkgCache::GrpIterator::FindPkg(string Arch) const {
-   return FindPkg(StringView(Arch));
-}
-pkgCache::PkgIterator pkgCache::GrpIterator::FindPkg(const char *Arch) const {
-   return FindPkg(StringView(Arch));
-}
 pkgCache::PkgIterator pkgCache::GrpIterator::FindPkg(StringView Arch) const {
 	if (unlikely(IsGood() == false || S->FirstPackage == 0))
 		return PkgIterator(*Owner, 0);
@@ -482,7 +420,7 @@ pkgCache::PkgIterator pkgCache::GrpIterator::NextPkg(pkgCache::PkgIterator const
 	    LastPkg.end() == true))
 		return PkgIterator(*Owner, 0);
 
-	if (S->LastPackage == LastPkg.Index())
+	if (S->LastPackage == LastPkg.MapPointer())
 		return PkgIterator(*Owner, 0);
 
 	return PkgIterator(*Owner, Owner->PkgP + LastPkg->NextPackage);
@@ -562,19 +500,6 @@ pkgCache::PkgIterator::OkState pkgCache::PkgIterator::State() const
    return NeedsNothing;
 }
 									/*}}}*/
-// PkgIterator::CandVersion - Returns the candidate version string	/*{{{*/
-// ---------------------------------------------------------------------
-/* Return string representing of the candidate version. */
-const char *
-pkgCache::PkgIterator::CandVersion() const
-{
-  //TargetVer is empty, so don't use it.
-  VerIterator version = pkgPolicy(Owner).GetCandidateVer(*this);
-  if (version.IsGood())
-    return version.VerStr();
-  return 0;
-}
-									/*}}}*/
 // PkgIterator::CurVersion - Returns the current version string		/*{{{*/
 // ---------------------------------------------------------------------
 /* Return string representing of the current version. */
@@ -600,15 +525,10 @@ operator<<(std::ostream& out, pkgCache::PkgIterator Pkg)
       return out << "invalid package";
 
    string current = string(Pkg.CurVersion() == 0 ? "none" : Pkg.CurVersion());
-APT_IGNORE_DEPRECATED_PUSH
-   string candidate = string(Pkg.CandVersion() == 0 ? "none" : Pkg.CandVersion());
-APT_IGNORE_DEPRECATED_POP
    string newest = string(Pkg.VersionList().end() ? "none" : Pkg.VersionList().VerStr());
 
    out << Pkg.Name() << " [ " << Pkg.Arch() << " ] < " << current;
-   if (current != candidate)
-      out << " -> " << candidate;
-   if ( newest != "none" && candidate != newest)
+   if ( newest != "none")
       out << " | " << newest;
    if (Pkg->VersionList == 0)
       out << " > ( none )";
@@ -1009,16 +929,6 @@ const char * pkgCache::VerIterator::MultiArchType() const
    return "none";
 }
 									/*}}}*/
-// RlsFileIterator::IsOk - Checks if the cache is in sync with the file	/*{{{*/
-// ---------------------------------------------------------------------
-/* This stats the file and compares its stats with the ones that were
-   stored during generation. Date checks should probably also be
-   included here. */
-bool pkgCache::RlsFileIterator::IsOk()
-{
-   return true;
-}
-									/*}}}*/
 // RlsFileIterator::RelStr - Return the release string			/*{{{*/
 string pkgCache::RlsFileIterator::RelStr()
 {
@@ -1034,16 +944,6 @@ string pkgCache::RlsFileIterator::RelStr()
    if (Label() != 0)
       Res = Res + (Res.empty() == true?"l=":",l=")  + Label();
    return Res;
-}
-									/*}}}*/
-// PkgFileIterator::IsOk - Checks if the cache is in sync with the file	/*{{{*/
-// ---------------------------------------------------------------------
-/* This stats the file and compares its stats with the ones that were
-   stored during generation. Date checks should probably also be
-   included here. */
-bool pkgCache::PkgFileIterator::IsOk()
-{
-   return true;
 }
 									/*}}}*/
 string pkgCache::PkgFileIterator::RelStr()				/*{{{*/
@@ -1065,6 +965,23 @@ string pkgCache::PkgFileIterator::RelStr()				/*{{{*/
    return Res;
 }
 									/*}}}*/
+// VerIterator::TranslatedDescriptionForLanguage - Return a DescIter for language/*{{{*/
+// ---------------------------------------------------------------------
+/* return a DescIter for the specified language
+ */
+pkgCache::DescIterator pkgCache::VerIterator::TranslatedDescriptionForLanguage(StringView lang) const
+{
+   for (pkgCache::DescIterator Desc = DescriptionList(); Desc.end() == false; ++Desc)
+      if (lang == Desc.LanguageCode())
+         return Desc;
+
+   if (lang == "en")
+      return TranslatedDescriptionForLanguage("");
+
+   return DescIterator();
+}
+
+									/*}}}*/
 // VerIterator::TranslatedDescription - Return the a DescIter for locale/*{{{*/
 // ---------------------------------------------------------------------
 /* return a DescIter for the current locale or the default if none is
@@ -1076,30 +993,15 @@ pkgCache::DescIterator pkgCache::VerIterator::TranslatedDescription() const
    for (std::vector<string>::const_iterator l = lang.begin();
 	l != lang.end(); ++l)
    {
-      pkgCache::DescIterator Desc = DescriptionList();
-      for (; Desc.end() == false; ++Desc)
-	 if (*l == Desc.LanguageCode())
-	    break;
-      if (Desc.end() == true)
-      {
-	 if (*l == "en")
-	 {
-	    Desc = DescriptionList();
-	    for (; Desc.end() == false; ++Desc)
-	       if (strcmp(Desc.LanguageCode(), "") == 0)
-		  break;
-	    if (Desc.end() == true)
-	       continue;
-	 }
-	 else
-	    continue;
-      }
-      return Desc;
+      pkgCache::DescIterator Desc = TranslatedDescriptionForLanguage(*l);
+      if (Desc.IsGood())
+         return Desc;
    }
-   for (pkgCache::DescIterator Desc = DescriptionList();
-	Desc.end() == false; ++Desc)
-      if (strcmp(Desc.LanguageCode(), "") == 0)
-	 return Desc;
+
+   pkgCache::DescIterator Desc = TranslatedDescriptionForLanguage("");
+   if (Desc.IsGood())
+      return Desc;
+
    return DescriptionList();
 }
 

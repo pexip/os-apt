@@ -1,6 +1,3 @@
-#if !(defined APT_PKG_EXPOSE_STRING_VIEW)
-	#define APT_PKG_EXPOSE_STRING_VIEW
-#endif
 
 #include <config.h>
 #include <apt-pkg/string_view.h>
@@ -77,6 +74,14 @@ TEST(StringViewTest,Find)
    EXPECT_EQ(defString.to_string().find('e',3), defString.find('e',3));
    EXPECT_EQ(defString.to_string().find('l',6), defString.find('l',6));
    EXPECT_EQ(defString.to_string().find('l',11), defString.find('l',11));
+
+   EXPECT_EQ(defString.to_string().find("l"), defString.find("l"));
+   EXPECT_EQ(defString.to_string().find("ll"), defString.find("ll"));
+   EXPECT_EQ(defString.to_string().find("lo"), defString.find("lo"));
+   EXPECT_EQ(defString.to_string().find("ll", 1), defString.find("ll", 1));
+   EXPECT_EQ(defString.to_string().find("ll", 6), defString.find("ll", 6));
+   EXPECT_EQ(defString.to_string().find("or"), defString.find("or"));
+   EXPECT_EQ(defString.to_string().find("od"), defString.find("od"));
 }
 
 TEST(StringViewTest,RFind)

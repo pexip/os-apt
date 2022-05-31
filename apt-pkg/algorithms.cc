@@ -16,20 +16,31 @@
 #include <config.h>
 
 #include <apt-pkg/algorithms.h>
+#include <apt-pkg/cachefilter.h>
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/depcache.h>
 #include <apt-pkg/dpkgpm.h>
 #include <apt-pkg/edsp.h>
 #include <apt-pkg/error.h>
+#include <apt-pkg/macros.h>
 #include <apt-pkg/packagemanager.h>
 #include <apt-pkg/pkgcache.h>
+#include <apt-pkg/string_view.h>
+#include <apt-pkg/strutl.h>
+#include <apt-pkg/version.h>
+
 #include <apt-pkg/prettyprinters.h>
 
 #include <cstdlib>
 #include <iostream>
+#include <map>
+#include <set>
+#include <sstream>
 #include <string>
 #include <utility>
+#include <vector>
 #include <string.h>
+#include <sys/utsname.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -58,6 +69,8 @@ pkgSimulate::pkgSimulate(pkgDepCache *Cache) : pkgPackageManager(Cache),
    string Jnk = "SIMULATE";
    for (decltype(PackageCount) I = 0; I != PackageCount; ++I)
       FileNames[I] = Jnk;
+
+   Cache->CheckConsistency("simulate");
 }
 									/*}}}*/
 // Simulate::~Simulate - Destructor					/*{{{*/
@@ -260,7 +273,7 @@ void pkgSimulate::ShortBreaks()
    cout << ']' << endl;
 }
 									/*}}}*/
-bool pkgSimulate::Go2(APT::Progress::PackageManager *)			/*{{{*/
+bool pkgSimulate::Go(APT::Progress::PackageManager *)			/*{{{*/
 {
    if (pkgDPkgPM::ExpandPendingCalls(d->List, Cache) == false)
       return false;
@@ -515,18 +528,37 @@ void pkgProblemResolver::MakeScores()
 	 Score += PrioInstalledAndNotObsolete;
 
       // propagate score points along dependencies
-      for (pkgCache::DepIterator D = InstVer.DependsList(); D.end() == false; ++D)
+      for (pkgCache::DepIterator D = InstVer.DependsList(); not D.end(); ++D)
       {
 	 if (DepMap[D->Type] == 0)
 	    continue;
 	 pkgCache::PkgIterator const T = D.TargetPkg();
-	 if (D->Version != 0)
+	 if (not D.IsIgnorable(T))
 	 {
-	    pkgCache::VerIterator const IV = Cache[T].InstVerIter(Cache);
-	    if (IV.end() == true || D.IsSatisfied(IV) == false)
-	       continue;
+	    if (D->Version != 0)
+	    {
+	       pkgCache::VerIterator const IV = Cache[T].InstVerIter(Cache);
+	       if (IV.end() || not D.IsSatisfied(IV))
+		  continue;
+	    }
+	    Scores[T->ID] += DepMap[D->Type];
 	 }
-	 Scores[T->ID] += DepMap[D->Type];
+
+	 std::vector<map_id_t> providers;
+	 for (auto Prv = T.ProvidesList(); not Prv.end(); ++Prv)
+	 {
+	    if (D.IsIgnorable(Prv))
+	       continue;
+	    auto const PV = Prv.OwnerVer();
+	    auto const PP = PV.ParentPkg();
+	    if (PV != Cache[PP].InstVerIter(Cache) || not D.IsSatisfied(Prv))
+	       continue;
+	    providers.push_back(PP->ID);
+	 }
+	 std::sort(providers.begin(), providers.end());
+	 providers.erase(std::unique(providers.begin(), providers.end()), providers.end());
+	 for (auto const prv : providers)
+	    Scores[prv] += DepMap[D->Type];
       }
    }
 
@@ -562,13 +594,25 @@ void pkgProblemResolver::MakeScores()
       provide important packages extremely important */
    for (pkgCache::PkgIterator I = Cache.PkgBegin(); I.end() == false; ++I)
    {
-      for (pkgCache::PrvIterator P = I.ProvidesList(); P.end() == false; ++P)
+      auto const transfer = abs(Scores[I->ID] - OldScores[I->ID]);
+      if (transfer == 0)
+	 continue;
+
+      std::vector<map_id_t> providers;
+      for (auto Prv = I.ProvidesList(); not Prv.end(); ++Prv)
       {
-	 // Only do it once per package
-	 if ((pkgCache::Version *)P.OwnerVer() != Cache[P.OwnerPkg()].InstallVer)
+	 if (Prv.IsMultiArchImplicit())
 	    continue;
-	 Scores[P.OwnerPkg()->ID] += abs(Scores[I->ID] - OldScores[I->ID]);
+	 auto const PV = Prv.OwnerVer();
+	 auto const PP = PV.ParentPkg();
+	 if (PV != Cache[PP].InstVerIter(Cache))
+	    continue;
+	 providers.push_back(PP->ID);
       }
+      std::sort(providers.begin(), providers.end());
+      providers.erase(std::unique(providers.begin(), providers.end()), providers.end());
+      for (auto const prv : providers)
+	 Scores[prv] += transfer;
    }
 
    /* Protected things are pushed really high up. This number should put them
@@ -599,7 +643,8 @@ bool pkgProblemResolver::DoUpgrade(pkgCache::PkgIterator Pkg)
    Flags[Pkg->ID] &= ~Upgradable;
    
    bool WasKept = Cache[Pkg].Keep();
-   Cache.MarkInstall(Pkg, false, 0, false);
+   if (not Cache.MarkInstall(Pkg, false, 0, false))
+     return false;
 
    // This must be a virtual package or something like that.
    if (Cache[Pkg].InstVerIter(Cache).end() == true)
@@ -633,7 +678,7 @@ bool pkgProblemResolver::DoUpgrade(pkgCache::PkgIterator Pkg)
 	 
 	 // Do not change protected packages
 	 PkgIterator P = Start.SmartTargetPkg();
-	 if ((Flags[P->ID] & Protected) == Protected)
+	 if (Cache[P].Protect())
 	 {
 	    if (Debug == true)
 	       clog << "    Reinst Failed because of protected " << P.FullName(false) << endl;
@@ -720,6 +765,9 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
 {
    pkgDepCache::ActionGroup group(Cache);
 
+   if (Debug)
+      Cache.CheckConsistency("resolve start");
+
    // Record which packages are marked for install
    bool Again = false;
    do
@@ -787,8 +835,9 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
       changing a breaks c) */
    bool Change = true;
    bool const TryFixByInstall = _config->FindB("pkgProblemResolver::FixByInstall", true);
+   int const MaxCounter = _config->FindI("pkgProblemResolver::MaxCounter", 20);
    std::vector<PackageKill> KillList;
-   for (int Counter = 0; Counter != 10 && Change == true; Counter++)
+   for (int Counter = 0; Counter < MaxCounter && Change; ++Counter)
    {
       Change = false;
       for (pkgCache::Package **K = PList.get(); K != PEnd; K++)
@@ -800,7 +849,7 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
 	 if (Cache[I].CandidateVer != Cache[I].InstallVer &&
 	     I->CurrentVer != 0 && Cache[I].InstallVer != 0 &&
 	     (Flags[I->ID] & PreInstalled) != 0 &&
-	     (Flags[I->ID] & Protected) == 0 &&
+	     not Cache[I].Protect() &&
 	     (Flags[I->ID] & ReInstateTried) == 0)
 	 {
 	    if (Debug == true)
@@ -835,7 +884,7 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
 	 pkgCache::DepIterator End;
 	 size_t OldSize = 0;
 
-	 KillList.resize(0);
+	 KillList.clear();
 	 
 	 enum {OrRemove,OrKeep} OrOp = OrRemove;
 	 for (pkgCache::DepIterator D = Cache[I].InstVerIter(Cache).DependsList();
@@ -849,7 +898,7 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
 	       {
 		  if (OrOp == OrRemove)
 		  {
-		     if ((Flags[I->ID] & Protected) != Protected)
+		     if (not Cache[I].Protect())
 		     {
 			if (Debug == true)
 			   clog << "  Or group remove for " << I.FullName(false) << endl;
@@ -903,7 +952,7 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
 	       targets then we keep the package and bail. This is necessary
 	       if a package has a dep on another package that can't be found */
 	    std::unique_ptr<pkgCache::Version *[]> VList(Start.AllTargets());
-	    if (VList[0] == 0 && (Flags[I->ID] & Protected) != Protected &&
+	    if (VList[0] == 0 && not Cache[I].Protect() &&
 		Start.IsNegative() == false &&
 		Cache[I].NowBroken() == false)
 	    {	       
@@ -950,7 +999,7 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
 		    End.IsNegative() == false))
 	       {
 		  // Try a little harder to fix protected packages..
-		  if ((Flags[I->ID] & Protected) == Protected)
+		  if (Cache[I].Protect())
 		  {
 		     if (DoUpgrade(Pkg) == true)
 		     {
@@ -1037,7 +1086,7 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
 		  }
 
 		  // Skip adding to the kill list if it is protected
-		  if ((Flags[Pkg->ID] & Protected) != 0)
+		  if (Cache[Pkg].Protect() && Cache[Pkg].Mode != pkgDepCache::ModeDelete)
 		     continue;
 		
 		  if (Debug == true)
@@ -1053,7 +1102,7 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
 	    // Hm, nothing can possibly satisfy this dep. Nuke it.
 	    if (VList[0] == 0 &&
 		Start.IsNegative() == false &&
-		(Flags[I->ID] & Protected) != Protected)
+		not Cache[I].Protect())
 	    {
 	       bool Installed = Cache[I].Install();
 	       Cache.MarkKeep(I);
@@ -1093,33 +1142,38 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
 	 // Apply the kill list now
 	 if (Cache[I].InstallVer != 0)
 	 {
-	    for (auto J = KillList.begin(); J != KillList.end(); J++)
+	    for (auto const &J : KillList)
 	    {
-	       Change = true;
-	       if ((Cache[J->Dep] & pkgDepCache::DepGNow) == 0)
+	       bool foundSomething = false;
+	       if ((Cache[J.Dep] & pkgDepCache::DepGNow) == 0)
 	       {
-		  if (J->Dep.IsNegative() == true)
+		  if (J.Dep.IsNegative() && Cache.MarkDelete(J.Pkg, false, 0, false))
 		  {
-		     if (Debug == true)
-			clog << "  Fixing " << I.FullName(false) << " via remove of " << J->Pkg.FullName(false) << endl;
-		     Cache.MarkDelete(J->Pkg, false, 0, false);
+		     if (Debug)
+			std::clog << "  Fixing " << I.FullName(false) << " via remove of " << J.Pkg.FullName(false) << '\n';
+		     foundSomething = true;
 		  }
 	       }
-	       else
+	       else if (Cache.MarkKeep(J.Pkg, false, false))
 	       {
-		  if (Debug == true)
-		     clog << "  Fixing " << I.FullName(false) << " via keep of " << J->Pkg.FullName(false) << endl;
-		  Cache.MarkKeep(J->Pkg, false, false);
+		  if (Debug)
+		     std::clog << "  Fixing " << I.FullName(false) << " via keep of " << J.Pkg.FullName(false) << '\n';
+		  foundSomething = true;
 	       }
 
-	       if (Counter > 1)
+	       if (not foundSomething || Counter > 1)
 	       {
-		  if (Scores[I->ID] > Scores[J->Pkg->ID])		  
-		     Scores[J->Pkg->ID] = Scores[I->ID];
-	       }	       
-	    }      
+		  if (Scores[I->ID] > Scores[J.Pkg->ID])
+		  {
+		     Scores[J.Pkg->ID] = Scores[I->ID];
+		     Change = true;
+		  }
+	       }
+	       if (foundSomething)
+		  Change = true;
+	    }
 	 }
-      }      
+      }
    }
 
    if (Debug == true)
@@ -1133,7 +1187,7 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
       {
 	 if (Cache[I].InstBroken() == false)
 	    continue;
-	 if ((Flags[I->ID] & Protected) != Protected)
+	 if (not Cache[I].Protect())
 	    return _error->Error(_("Error, pkgProblemResolver::Resolve generated breaks, this may be caused by held packages."));
       }
       return _error->Error(_("Unable to correct problems, you have held broken packages."));
@@ -1151,6 +1205,8 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
       }
    }
 
+   if (Debug)
+      Cache.CheckConsistency("resolve done");
 
    return true;
 }
@@ -1210,6 +1266,9 @@ bool pkgProblemResolver::ResolveByKeepInternal()
 {
    pkgDepCache::ActionGroup group(Cache);
 
+   if (Debug)
+      Cache.CheckConsistency("keep start");
+
    MakeScores();
 
    /* We have to order the packages so that the broken fixing pass 
@@ -1253,7 +1312,7 @@ bool pkgProblemResolver::ResolveByKeepInternal()
 
       /* Keep the package. If this works then great, otherwise we have
 	 to be significantly more aggressive and manipulate its dependencies */
-      if ((Flags[I->ID] & Protected) == 0)
+      if (not Cache[I].Protect())
       {
 	 if (Debug == true)
 	    clog << "Keeping package " << I.FullName(false) << endl;
@@ -1301,7 +1360,7 @@ bool pkgProblemResolver::ResolveByKeepInternal()
 		   Pkg->CurrentVer == 0)
 		  continue;
 	       
-	       if ((Flags[I->ID] & Protected) == 0)
+	       if (not Cache[I].Protect())
 	       {
 		  if (Debug == true)
 		     clog << "  Keeping Package " << Pkg.FullName(false) << " due to " << Start.DepType() << endl;
@@ -1340,33 +1399,11 @@ bool pkgProblemResolver::ResolveByKeepInternal()
    }
 
    delete[] PList;
-   return true;
-}
-									/*}}}*/
-// ProblemResolver::InstallProtect - deprecated cpu-eating no-op	/*{{{*/
-// ---------------------------------------------------------------------
-/* Actions issued with FromUser bit set are protected from further
-   modification (expect by other calls with FromUser set) nowadays , so we
-   don't need to reissue actions here, they are already set in stone. */
-void pkgProblemResolver::InstallProtect()
-{
-   pkgDepCache::ActionGroup group(Cache);
 
-   for (pkgCache::PkgIterator I = Cache.PkgBegin(); I.end() == false; ++I)
-   {
-      if ((Flags[I->ID] & Protected) == Protected)
-      {
-	 if ((Flags[I->ID] & ToRemove) == ToRemove)
-	    Cache.MarkDelete(I);
-	 else 
-	 {
-	    // preserve the information whether the package was auto
-	    // or manually installed
-	    bool autoInst = (Cache[I].Flags & pkgCache::Flag::Auto);
-	    Cache.MarkInstall(I, false, 0, !autoInst);
-	 }
-      }
-   }   
+   if (Debug)
+      Cache.CheckConsistency("keep done");
+
+   return true;
 }
 									/*}}}*/
 // PrioSortList - Sort a list of versions by priority			/*{{{*/
@@ -1416,3 +1453,184 @@ void pkgPrioSortList(pkgCache &Cache,pkgCache::Version **List)
    std::sort(List,List+Count,PrioComp(Cache));
 }
 									/*}}}*/
+
+namespace APT
+{
+
+namespace KernelAutoRemoveHelper
+{
+
+// \brief Returns the uname from a kernel package name, or "" for non-kernel packages.
+std::string getUname(std::string const &packageName)
+{
+
+   static const constexpr char *const prefixes[] = {
+      "linux-image-",
+      "kfreebsd-image-",
+      "gnumach-image-",
+   };
+
+   for (auto prefix : prefixes)
+   {
+      if (likely(not APT::String::Startswith(packageName, prefix)))
+	 continue;
+      if (unlikely(APT::String::Endswith(packageName, "-dbgsym")))
+	 continue;
+      if (unlikely(APT::String::Endswith(packageName, "-dbg")))
+	 continue;
+
+      auto aUname = packageName.substr(strlen(prefix));
+
+      // aUname must start with [0-9]+\.
+      if (aUname.length() < 2)
+	 continue;
+      if (strchr("0123456789", aUname[0]) == nullptr)
+	 continue;
+      auto dot = aUname.find_first_not_of("0123456789");
+      if (dot == aUname.npos || aUname[dot] != '.')
+	 continue;
+
+      return aUname;
+   }
+
+   return "";
+}
+std::string GetProtectedKernelsRegex(pkgCache *cache, bool ReturnRemove)
+{
+   if (_config->FindB("APT::Protect-Kernels", true) == false)
+      return "";
+
+   struct CompareKernel
+   {
+      pkgCache *cache;
+      bool operator()(const std::string &a, const std::string &b) const
+      {
+	 return cache->VS->CmpVersion(a, b) < 0;
+      }
+   };
+   bool Debug = _config->FindB("Debug::pkgAutoRemove", false);
+   // kernel version -> list of unames
+   std::map<std::string, std::vector<std::string>, CompareKernel> version2unames(CompareKernel{cache});
+   // needs to be initialized to 0s, might not be set up.
+   utsname uts{};
+   std::string bootedVersion;
+   std::string lastInstalledVersion;
+
+   std::string lastInstalledUname = _config->Find("APT::LastInstalledKernel");
+
+   // Get currently booted version, but only when not on reproducible build.
+   if (getenv("SOURCE_DATE_EPOCH") == 0)
+   {
+      if (uname(&uts) != 0)
+	 abort();
+   }
+
+   auto VirtualKernelPkg = cache->FindPkg("$kernel", "any");
+   if (VirtualKernelPkg.end())
+      return "";
+
+   for (pkgCache::PrvIterator Prv = VirtualKernelPkg.ProvidesList(); Prv.end() == false; ++Prv)
+   {
+      auto Pkg = Prv.OwnerPkg();
+      if (likely(Pkg->CurrentVer == 0))
+	 continue;
+
+      auto pkgUname = APT::KernelAutoRemoveHelper::getUname(Pkg.Name());
+      auto pkgVersion = Pkg.CurrentVer().VerStr();
+
+      if (pkgUname.empty())
+	 continue;
+
+      if (Debug)
+	 std::clog << "Found kernel " << pkgUname << "(" << pkgVersion << ")" << std::endl;
+
+      version2unames[pkgVersion].push_back(pkgUname);
+
+      if (pkgUname == uts.release)
+	 bootedVersion = pkgVersion;
+      if (pkgUname == lastInstalledUname)
+	 lastInstalledVersion = pkgVersion;
+   }
+
+   if (version2unames.size() == 0)
+      return "";
+
+   auto latest = version2unames.rbegin();
+   auto previous = latest;
+   ++previous;
+
+   std::set<std::string> keep;
+
+   if (not bootedVersion.empty())
+   {
+      if (Debug)
+	 std::clog << "Keeping booted kernel " << bootedVersion << std::endl;
+      keep.insert(bootedVersion);
+   }
+   if (not lastInstalledVersion.empty())
+   {
+      if (Debug)
+	 std::clog << "Keeping installed kernel " << lastInstalledVersion << std::endl;
+      keep.insert(lastInstalledVersion);
+   }
+   if (latest != version2unames.rend())
+   {
+      if (Debug)
+	 std::clog << "Keeping latest kernel " << latest->first << std::endl;
+      keep.insert(latest->first);
+   }
+   if (keep.size() < 3 && previous != version2unames.rend())
+   {
+      if (Debug)
+	 std::clog << "Keeping previous kernel " << previous->first << std::endl;
+      keep.insert(previous->first);
+   }
+   // Escape special characters '.' and '+' in version strings so we can build a regular expression
+   auto escapeSpecial = [](std::string input) -> std::string {
+      for (size_t pos = 0; (pos = input.find_first_of(".+", pos)) != input.npos; pos += 2) {
+	 input.insert(pos, 1, '\\');
+      }
+      return input;
+   };
+   std::ostringstream ss;
+   for (auto &pattern : _config->FindVector("APT::VersionedKernelPackages"))
+   {
+      // Legacy compatibility: Always protected the booted uname and last installed uname
+      if (not lastInstalledUname.empty())
+	 ss << "|^" << pattern << "-" << escapeSpecial(lastInstalledUname) << "$";
+      if (*uts.release)
+	 ss << "|^" << pattern << "-" << escapeSpecial(uts.release) << "$";
+      for (auto const &kernel : version2unames)
+      {
+	 if (ReturnRemove ? keep.find(kernel.first) == keep.end() : keep.find(kernel.first) != keep.end())
+	 {
+	    for (auto const &uname : kernel.second)
+	       ss << "|^" << pattern << "-" << escapeSpecial(uname) << "$";
+	 }
+      }
+   }
+
+   auto re_with_leading_or = ss.str();
+
+   if (re_with_leading_or.empty())
+      return "";
+
+   auto re = re_with_leading_or.substr(1);
+   if (Debug)
+      std::clog << "Kernel protection regex: " << re << "\n";
+
+   return re;
+}
+
+std::unique_ptr<APT::CacheFilter::Matcher> GetProtectedKernelsFilter(pkgCache *cache, bool returnRemove)
+{
+   auto regex = GetProtectedKernelsRegex(cache, returnRemove);
+
+   if (regex.empty())
+      return std::make_unique<APT::CacheFilter::FalseMatcher>();
+
+   return std::make_unique<APT::CacheFilter::PackageNameMatchesRegEx>(regex);
+}
+
+} // namespace KernelAutoRemoveHelper
+} // namespace APT

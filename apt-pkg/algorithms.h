@@ -16,7 +16,7 @@
 
    pkgFixBroken corrects a broken system so that it is in a sane state.
  
-   pkgAllUpgrade attempts to upgade as many packages as possible but 
+   pkgAllUpgrade attempts to upgrade as many packages as possible but
    without installing new packages.
    
    The problem resolver class contains a number of complex algorithms
@@ -29,34 +29,27 @@
 #ifndef PKGLIB_ALGORITHMS_H
 #define PKGLIB_ALGORITHMS_H
 
+#include <apt-pkg/cachefilter.h>
 #include <apt-pkg/depcache.h>
 #include <apt-pkg/packagemanager.h>
 #include <apt-pkg/pkgcache.h>
 
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include <apt-pkg/macros.h>
 
-#ifndef APT_8_CLEANER_HEADERS
-#include <apt-pkg/acquire.h>
-using std::ostream;
-#endif
 
-#ifndef APT_9_CLEANER_HEADERS
-// include pkg{DistUpgrade,AllUpgrade,MiniizeUpgrade} here for compatibility
-#include <apt-pkg/update.h>
-#include <apt-pkg/upgrade.h>
-#endif
 
 
 class pkgSimulatePrivate;
-class pkgSimulate : public pkgPackageManager				/*{{{*/
+class APT_PUBLIC pkgSimulate : public pkgPackageManager				/*{{{*/
 {
    pkgSimulatePrivate * const d;
    protected:
 
-   class Policy : public pkgDepCache::Policy
+   class APT_PUBLIC Policy : public pkgDepCache::Policy
    {
       pkgDepCache *Cache;
       public:
@@ -80,9 +73,8 @@ class pkgSimulate : public pkgPackageManager				/*{{{*/
    virtual bool Configure(PkgIterator Pkg) APT_OVERRIDE;
    virtual bool Remove(PkgIterator Pkg,bool Purge) APT_OVERRIDE;
 
-   // FIXME: trick to avoid ABI break for virtual reimplementation; fix on next ABI break
 public:
-   APT_HIDDEN bool Go2(APT::Progress::PackageManager * progress);
+   bool Go(APT::Progress::PackageManager * progress) override;
 
 private:
    APT_HIDDEN void ShortBreaks();
@@ -97,7 +89,7 @@ private:
    virtual ~pkgSimulate();
 };
 									/*}}}*/
-class pkgProblemResolver						/*{{{*/
+class APT_PUBLIC pkgProblemResolver						/*{{{*/
 {
  private:
    /** \brief dpointer placeholder (for later in case we need it) */
@@ -121,7 +113,7 @@ class pkgProblemResolver						/*{{{*/
    // Sort stuff
    APT_HIDDEN int ScoreSort(Package const *A, Package const *B) APT_PURE;
 
-   struct PackageKill
+   struct APT_PUBLIC PackageKill
    {
       PkgIterator Pkg;
       DepIterator Dep;
@@ -147,16 +139,26 @@ class pkgProblemResolver						/*{{{*/
    bool ResolveByKeep(OpProgress * const Progress = NULL);
    APT_HIDDEN bool ResolveByKeepInternal();
 
-   APT_DEPRECATED_MSG("NOOP as MarkInstall enforces not overriding FromUser markings") void InstallProtect();
-
    explicit pkgProblemResolver(pkgDepCache *Cache);
    virtual ~pkgProblemResolver();
 };
 									/*}}}*/
-bool pkgApplyStatus(pkgDepCache &Cache);
-bool pkgFixBroken(pkgDepCache &Cache);
+APT_PUBLIC bool pkgApplyStatus(pkgDepCache &Cache);
+APT_PUBLIC bool pkgFixBroken(pkgDepCache &Cache);
 
-void pkgPrioSortList(pkgCache &Cache,pkgCache::Version **List);
+APT_PUBLIC void pkgPrioSortList(pkgCache &Cache,pkgCache::Version **List);
 
+namespace APT
+{
+namespace KernelAutoRemoveHelper
+{
+// Public for linking to apt-private, but no A{P,B}I guarantee.
+APT_PUBLIC std::unique_ptr<APT::CacheFilter::Matcher> GetProtectedKernelsFilter(pkgCache *cache, bool returnRemove = false);
+std::string GetProtectedKernelsRegex(pkgCache *cache, bool ReturnRemove = false);
+std::string getUname(std::string const &packageName);
+
+} // namespace KernelAutoRemoveHelper
+
+} // namespace APT
 
 #endif

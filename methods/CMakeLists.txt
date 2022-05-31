@@ -24,12 +24,17 @@ if (GNUTLS_FOUND)
   target_link_libraries(ftp ${GNUTLS_LIBRARIES})
 endif()
 
+target_include_directories(http PRIVATE $<$<BOOL:${SYSTEMD_FOUND}>:${SYSTEMD_INCLUDE_DIRS}>)
+target_link_libraries(http $<$<BOOL:${SYSTEMD_FOUND}>:${SYSTEMD_LIBRARIES}>)
+
+target_link_libraries(rred apt-private)
+
 # Install the library
 install(TARGETS file copy store gpgv cdrom http ftp rred rsh mirror
         RUNTIME DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/apt/methods)
 
-add_slaves(${CMAKE_INSTALL_LIBEXECDIR}/apt/methods mirror mirror+ftp mirror+http mirror+https mirror+file mirror+copy)
-add_slaves(${CMAKE_INSTALL_LIBEXECDIR}/apt/methods rsh ssh)
+add_links(${CMAKE_INSTALL_LIBEXECDIR}/apt/methods mirror mirror+ftp mirror+http mirror+https mirror+file mirror+copy)
+add_links(${CMAKE_INSTALL_LIBEXECDIR}/apt/methods rsh ssh)
 
 
-add_slaves(${CMAKE_INSTALL_LIBEXECDIR}/apt/methods http https)
+add_links(${CMAKE_INSTALL_LIBEXECDIR}/apt/methods http https)

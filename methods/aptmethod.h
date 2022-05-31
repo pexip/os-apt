@@ -8,6 +8,7 @@
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/netrc.h>
+#include <apt-pkg/strutl.h>
 
 #include <algorithm>
 #include <locale>
@@ -137,8 +138,11 @@ protected:
       ALLOW(chown);
       ALLOW(chown32);
       ALLOW(clock_getres);
+      ALLOW(clock_getres_time64);
       ALLOW(clock_gettime);
+      ALLOW(clock_gettime64);
       ALLOW(clock_nanosleep);
+      ALLOW(clock_nanosleep_time64);
       ALLOW(close);
       ALLOW(creat);
       ALLOW(dup);
@@ -166,6 +170,7 @@ protected:
       ALLOW(ftruncate);
       ALLOW(ftruncate64);
       ALLOW(futex);
+      ALLOW(futex_time64);
       ALLOW(futimesat);
       ALLOW(getegid);
       ALLOW(getegid32);
@@ -220,9 +225,11 @@ protected:
       ALLOW(pipe2);
       ALLOW(poll);
       ALLOW(ppoll);
+      ALLOW(ppoll_time64);
       ALLOW(prctl);
       ALLOW(prlimit64);
       ALLOW(pselect6);
+      ALLOW(pselect6_time64);
       ALLOW(read);
       ALLOW(readv);
       ALLOW(rename);
@@ -264,6 +271,7 @@ protected:
       ALLOW(unlinkat);
       ALLOW(utime);
       ALLOW(utimensat);
+      ALLOW(utimensat_time64);
       ALLOW(utimes);
       ALLOW(write);
       ALLOW(writev);
@@ -277,6 +285,7 @@ protected:
 	 ALLOW(recv);
 	 ALLOW(recvfrom);
 	 ALLOW(recvmmsg);
+	 ALLOW(recvmmsg_time64);
 	 ALLOW(recvmsg);
 	 ALLOW(send);
 	 ALLOW(sendmmsg);
@@ -316,7 +325,11 @@ protected:
 
       rc = seccomp_load(ctx);
       if (rc == -EINVAL)
-	 Warning("aptMethod::Configuration: could not load seccomp policy: %s", strerror(-rc));
+      {
+	 std::string msg;
+	 strprintf(msg, "aptMethod::Configuration: could not load seccomp policy: %s", strerror(-rc));
+	 Warning(std::move(msg));
+      }
       else if (rc != 0)
 	 return _error->FatalE("aptMethod::Configuration", "could not load seccomp policy: %s", strerror(-rc));
 
@@ -371,12 +384,17 @@ protected:
       return true;
    }
 
-   void Warning(const char *Format,...)
+   void Warning(std::string &&msg)
    {
-      va_list args;
-      va_start(args,Format);
-      PrintStatus("104 Warning", Format, args);
-      va_end(args);
+      std::unordered_map<std::string, std::string> fields;
+      if (Queue != 0)
+	 fields.emplace("URI", Queue->Uri);
+      else
+	 fields.emplace("URI", "<UNKNOWN>");
+      if (not UsedMirror.empty())
+	 fields.emplace("UsedMirror", UsedMirror);
+      fields.emplace("Message", std::move(msg));
+      SendMessage("104 Warning", std::move(fields));
    }
 
    std::vector<std::string> methodNames;
@@ -466,6 +484,18 @@ protected:
 	 QueueBack = Queue;
       delete Tmp;
    }
+   static std::string URIEncode(std::string const &part)
+   {
+      // The "+" is encoded as a workaround for an S3 bug (LP#1003633 and LP#1086997)
+      return QuoteString(part, _config->Find("Acquire::URIEncode", "+~ ").c_str());
+   }
+
+   static std::string DecodeSendURI(std::string const &part)
+   {
+      if (_config->FindB("Acquire::Send-URI-Encoded", false))
+	 return DeQuoteString(part);
+      return part;
+   }
 
    aptMethod(std::string &&Binary, char const *const Ver, unsigned long const Flags) APT_NONNULL(3)
        : pkgAcqMethod(Ver, Flags), Binary(Binary), SeccompFlags(0), methodNames({Binary})
@@ -502,10 +532,10 @@ class aptAuthConfMethod : public aptMethod
       auto const netrcparts = _config->FindDir("Dir::Etc::netrcparts");
       if (netrcparts.empty() == false)
       {
-	 for (auto const &netrc : GetListOfFilesInDir(netrcparts, "conf", true, true))
+	 for (auto &&netrcpart : GetListOfFilesInDir(netrcparts, "conf", true, true))
 	 {
 	    authconfs.emplace_back(new FileFd());
-	    authconfs.back()->Open(netrc, FileFd::ReadOnly);
+	    authconfs.back()->Open(netrcpart, FileFd::ReadOnly);
 	 }
       }
       _error->RevertToStack();
@@ -525,6 +555,7 @@ class aptAuthConfMethod : public aptMethod
       if (uri.User.empty() == false || uri.Password.empty() == false)
 	 return true;
 
+      _error->PushToStack();
       for (auto &authconf : authconfs)
       {
 	 if (authconf->IsOpen() == false)
@@ -537,6 +568,14 @@ class aptAuthConfMethod : public aptMethod
 
 	 result &= MaybeAddAuth(*authconf, uri);
       }
+
+      while (not _error->empty())
+      {
+	 std::string message;
+	 _error->PopMessage(message);
+	 Warning(std::move(message));
+      }
+      _error->RevertToStack();
 
       return result;
    }

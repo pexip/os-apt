@@ -23,8 +23,10 @@
 #include <algorithm>
 #include <array>
 #include <iomanip>
+#include <limits>
 #include <locale>
 #include <sstream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -40,6 +42,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <wchar.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -94,6 +97,53 @@ std::string Join(std::vector<std::string> list, const std::string &sep)
       oss << *it;
    }
    return oss.str();
+}
+
+// Returns string display length honoring multi-byte characters
+size_t DisplayLength(StringView str)
+{
+   size_t len = 0;
+
+   const char *p = str.data();
+   const char *const end = str.end();
+
+   mbstate_t state{};
+   while (p < end)
+   {
+      wchar_t wch;
+      size_t res = mbrtowc(&wch, p, end - p, &state);
+      switch (res)
+      {
+      case 0:
+         // Null wide character (i.e. L'\0') - stop
+         p = end;
+         break;
+
+      case static_cast<size_t>(-1):
+         // Byte sequence is invalid. Assume that it's
+         // a single-byte single-width character.
+         len += 1;
+         p += 1;
+
+         // state is undefined in this case - reset it
+         state = {};
+
+         break;
+
+      case static_cast<size_t>(-2):
+         // Byte sequence is too short. Assume that it's
+         // an incomplete single-width character and stop.
+         len += 1;
+         p = end;
+         break;
+
+      default:
+         len += wcwidth(wch);
+         p += res;
+      }
+   }
+
+   return len;
 }
 
 }
@@ -239,7 +289,8 @@ bool ParseQuoteWord(const char *&String,string &Res)
 {
    // Skip leading whitespace
    const char *C = String;
-   for (;*C != 0 && *C == ' '; C++);
+   for (; *C == ' '; C++)
+      ;
    if (*C == 0)
       return false;
    
@@ -261,11 +312,11 @@ bool ParseQuoteWord(const char *&String,string &Res)
    }
 
    // Now de-quote characters
-   char Buffer[1024];
+   Res.clear();
+   Res.reserve(C - String);
    char Tmp[3];
    const char *Start = String;
-   char *I;
-   for (I = Buffer; I < Buffer + sizeof(Buffer) && Start != C; I++)
+   while (Start != C)
    {
       if (*Start == '%' && Start + 2 < C &&
 	  isxdigit(Start[1]) && isxdigit(Start[2]))
@@ -273,21 +324,18 @@ bool ParseQuoteWord(const char *&String,string &Res)
 	 Tmp[0] = Start[1];
 	 Tmp[1] = Start[2];
 	 Tmp[2] = 0;
-	 *I = (char)strtol(Tmp,0,16);
+	 Res.push_back(static_cast<char>(strtol(Tmp, 0, 16)));
 	 Start += 3;
 	 continue;
       }
       if (*Start != '"')
-	 *I = *Start;
-      else
-	 I--;
-      Start++;
+	 Res.push_back(*Start);
+      ++Start;
    }
-   *I = 0;
-   Res = Buffer;
-   
+
    // Skip ending white space
-   for (;*C != 0 && isspace(*C) != 0; C++);
+   for (; isspace(*C) != 0; C++)
+      ;
    String = C;
    return true;
 }
@@ -300,36 +348,32 @@ bool ParseCWord(const char *&String,string &Res)
 {
    // Skip leading whitespace
    const char *C = String;
-   for (;*C != 0 && *C == ' '; C++);
+   for (; *C == ' '; C++)
+      ;
    if (*C == 0)
       return false;
-   
-   char Buffer[1024];
-   char *Buf = Buffer;
-   if (strlen(String) >= sizeof(Buffer))
-       return false;
-       
-   for (; *C != 0; C++)
+
+   Res.clear();
+   Res.reserve(strlen(String));
+   for (; *C != 0; ++C)
    {
       if (*C == '"')
       {
 	 for (C++; *C != 0 && *C != '"'; C++)
-	    *Buf++ = *C;
-	 
+	    Res.push_back(*C);
+
 	 if (*C == 0)
 	    return false;
-	 
+
 	 continue;
-      }      
-      
+      }
+
       if (C != String && isspace(*C) != 0 && isspace(C[-1]) != 0)
 	 continue;
       if (isspace(*C) == 0)
 	 return false;
-      *Buf++ = ' ';
+      Res.push_back(' ');
    }
-   *Buf = 0;
-   Res = Buffer;
    String = C;
    return true;
 }
@@ -546,7 +590,7 @@ string Base64Encode(const string &S)
       base64.  */
    for (string::const_iterator I = S.begin(); I < S.end(); I += 3)
    {
-      char Bits[3] = {0,0,0};
+      uint8_t Bits[3] = {0,0,0};
       Bits[0] = I[0];
       if (I + 1 < S.end())
 	 Bits[1] = I[1];
@@ -806,10 +850,6 @@ int StringToBool(const string &Text,int Default)
 // ---------------------------------------------------------------------
 /* This converts a time_t into a string time representation that is
    year 2000 compliant and timezone neutral */
-string TimeRFC1123(time_t Date)
-{
-   return TimeRFC1123(Date, false);
-}
 string TimeRFC1123(time_t Date, bool const NumericTimezone)
 {
    struct tm Conv;
@@ -997,7 +1037,7 @@ static time_t timegm(struct tm *t)
    we allow them here to to be able to reuse the method. Either way, a date
    must be in UTC or parsing will fail. Previous implementations of this
    method used to ignore the timezone and assume always UTC. */
-bool RFC1123StrToTime(const char* const str,time_t &time)
+bool RFC1123StrToTime(std::string const &str,time_t &time)
 {
    unsigned short day = 0;
    signed int year = 0; // yes, Y23K problem – we going to worry then…
@@ -1099,87 +1139,26 @@ bool FTPMDTMStrToTime(const char* const str,time_t &time)
    return true;
 }
 									/*}}}*/
-// StrToTime - Converts a string into a time_t				/*{{{*/
-// ---------------------------------------------------------------------
-/* This handles all 3 popular time formats including RFC 1123, RFC 1036
-   and the C library asctime format. It requires the GNU library function
-   'timegm' to convert a struct tm in UTC to a time_t. For some bizzar
-   reason the C library does not provide any such function :< This also
-   handles the weird, but unambiguous FTP time format*/
-bool StrToTime(const string &Val,time_t &Result)
-{
-   struct tm Tm;
-   char Month[10];
-
-   // Skip the day of the week
-   const char *I = strchr(Val.c_str(), ' ');
-
-   // Handle RFC 1123 time
-   Month[0] = 0;
-   if (sscanf(I," %2d %3s %4d %2d:%2d:%2d GMT",&Tm.tm_mday,Month,&Tm.tm_year,
-	      &Tm.tm_hour,&Tm.tm_min,&Tm.tm_sec) != 6)
-   {
-      // Handle RFC 1036 time
-      if (sscanf(I," %2d-%3s-%3d %2d:%2d:%2d GMT",&Tm.tm_mday,Month,
-		 &Tm.tm_year,&Tm.tm_hour,&Tm.tm_min,&Tm.tm_sec) == 6)
-	 Tm.tm_year += 1900;
-      else
-      {
-	 // asctime format
-	 if (sscanf(I," %3s %2d %2d:%2d:%2d %4d",Month,&Tm.tm_mday,
-		    &Tm.tm_hour,&Tm.tm_min,&Tm.tm_sec,&Tm.tm_year) != 6)
-	 {
-	    // 'ftp' time
-	    if (sscanf(Val.c_str(),"%4d%2d%2d%2d%2d%2d",&Tm.tm_year,&Tm.tm_mon,
-		       &Tm.tm_mday,&Tm.tm_hour,&Tm.tm_min,&Tm.tm_sec) != 6)
-	       return false;
-	    Tm.tm_mon--;
-	 }	 
-      }
-   }
-   
-   Tm.tm_isdst = 0;
-   if (Month[0] != 0)
-      Tm.tm_mon = MonthConv(Month);
-   else
-      Tm.tm_mon = 0; // we don't have a month, so pick something
-   Tm.tm_year -= 1900;
-   
-   // Convert to local time and then to GMT
-   Result = timegm(&Tm);
-   return true;
-}
-									/*}}}*/
 // StrToNum - Convert a fixed length string to a number			/*{{{*/
 // ---------------------------------------------------------------------
-/* This is used in decoding the crazy fixed length string headers in 
+/* This is used in decoding the crazy fixed length string headers in
    tar and ar files. */
 bool StrToNum(const char *Str,unsigned long &Res,unsigned Len,unsigned Base)
 {
-   char S[30];
-   if (Len >= sizeof(S))
+   unsigned long long BigRes;
+   if (not StrToNum(Str, BigRes, Len, Base))
       return false;
-   memcpy(S,Str,Len);
-   S[Len] = 0;
-   
-   // All spaces is a zero
-   Res = 0;
-   unsigned I;
-   for (I = 0; S[I] == ' '; I++);
-   if (S[I] == 0)
-      return true;
-   
-   char *End;
-   Res = strtoul(S,&End,Base);
-   if (End == S)
+
+   if (std::numeric_limits<unsigned long>::max() < BigRes)
       return false;
-   
+
+   Res = BigRes;
    return true;
 }
 									/*}}}*/
 // StrToNum - Convert a fixed length string to a number			/*{{{*/
 // ---------------------------------------------------------------------
-/* This is used in decoding the crazy fixed length string headers in 
+/* This is used in decoding the crazy fixed length string headers in
    tar and ar files. */
 bool StrToNum(const char *Str,unsigned long long &Res,unsigned Len,unsigned Base)
 {
@@ -1188,20 +1167,20 @@ bool StrToNum(const char *Str,unsigned long long &Res,unsigned Len,unsigned Base
       return false;
    memcpy(S,Str,Len);
    S[Len] = 0;
-   
+
    // All spaces is a zero
    Res = 0;
    unsigned I;
-   for (I = 0; S[I] == ' '; I++);
+   for (I = 0; S[I] == ' '; ++I);
    if (S[I] == 0)
       return true;
-   
-   char *End;
-   Res = strtoull(S,&End,Base);
-   if (End == S)
+   if (S[I] == '-')
       return false;
-   
-   return true;
+
+   char *End;
+   errno = 0;
+   Res = strtoull(S,&End,Base);
+   return not (End == S || errno != 0);
 }
 									/*}}}*/
 
@@ -1257,11 +1236,6 @@ static int HexDigit(int c)
 // Hex2Num - Convert a long hex number into a buffer			/*{{{*/
 // ---------------------------------------------------------------------
 /* The length of the buffer must be exactly 1/2 the length of the string. */
-bool Hex2Num(const string &Str,unsigned char *Num,unsigned int Length)
-{
-   return Hex2Num(APT::StringView(Str), Num, Length);
-}
-
 bool Hex2Num(const APT::StringView Str,unsigned char *Num,unsigned int Length)
 {
    if (Str.length() != Length*2)
@@ -1441,13 +1415,12 @@ unsigned long RegexChoice(RxChoiceList *Rxs,const char **ListBegin,
 // ---------------------------------------------------------------------
 /* This is used to make the internationalization strings easier to translate
    and to allow reordering of parameters */
-static bool iovprintf(ostream &out, const char *format,
+bool iovprintf(std::ostream &out, const char *format,
 		      va_list &args, ssize_t &size) {
-   char *S = (char*)malloc(size);
-   ssize_t const n = vsnprintf(S, size, format, args);
+   auto S = std::unique_ptr<char,decltype(&free)>{static_cast<char*>(malloc(size)), &free};
+   ssize_t const n = vsnprintf(S.get(), size, format, args);
    if (n > -1 && n < size) {
-      out << S;
-      free(S);
+      out << S.get();
       return true;
    } else {
       if (n > -1)
@@ -1455,7 +1428,6 @@ static bool iovprintf(ostream &out, const char *format,
       else
 	 size *= 2;
    }
-   free(S);
    return false;
 }
 void ioprintf(ostream &out,const char *format,...)
@@ -1620,22 +1592,26 @@ string DeEscapeString(const string &input)
       switch (*it)
       {
          case '0':
-            if (it + 2 <= input.end()) {
+            if (it + 2 < input.end()) {
                tmp[0] = it[1];
                tmp[1] = it[2];
                tmp[2] = 0;
                output += (char)strtol(tmp, 0, 8);
                it += 2;
-            }
+            } else {
+	       // FIXME: raise exception here?
+	    }
             break;
          case 'x':
-            if (it + 2 <= input.end()) {
+            if (it + 2 < input.end()) {
                tmp[0] = it[1];
                tmp[1] = it[2];
                tmp[2] = 0;
                output += (char)strtol(tmp, 0, 16);
                it += 2;
-            }
+            } else {
+	       // FIXME: raise exception here?
+	    }
             break;
          default:
             // FIXME: raise exception here?
@@ -1780,7 +1756,7 @@ URI::operator string()
       {
 	 // FIXME: Technically userinfo is permitted even less
 	 // characters than these, but this is not conveniently
-	 // expressed with a blacklist.
+	 // expressed with a denylist.
 	 Res << QuoteString(User, ":/?#[]@");
 	 if (Password.empty() == false)
 	    Res << ":" << QuoteString(Password, ":/?#[]@");

@@ -23,6 +23,7 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/hashes.h>
 #include <apt-pkg/proxy.h>
+#include <apt-pkg/string_view.h>
 #include <apt-pkg/strutl.h>
 
 #include <chrono>
@@ -45,6 +46,10 @@
 #include "http.h"
 
 #include <apti18n.h>
+
+#ifdef HAVE_SYSTEMD
+#include <systemd/sd-login.h>
+#endif
 									/*}}}*/
 using namespace std;
 
@@ -89,6 +94,7 @@ void CircleBuf::Reset()
    is non-blocking.. */
 bool CircleBuf::Read(std::unique_ptr<MethodFd> const &Fd)
 {
+   size_t ReadThisCycle = 0;
    while (1)
    {
       // Woops, buffer is full
@@ -126,7 +132,7 @@ bool CircleBuf::Read(std::unique_ptr<MethodFd> const &Fd)
 	 CircleBuf::BwTickReadData += Res;
     
       if (Res == 0)
-	 return false;
+	 return ReadThisCycle != 0;
       if (Res < 0)
       {
 	 if (errno == EAGAIN)
@@ -135,6 +141,7 @@ bool CircleBuf::Read(std::unique_ptr<MethodFd> const &Fd)
       }
 
       InP += Res;
+      ReadThisCycle += Res;
    }
 }
 									/*}}}*/
@@ -199,8 +206,6 @@ bool CircleBuf::Write(std::unique_ptr<MethodFd> const &Fd)
       ssize_t Res;
       Res = Fd->Write(Buf + (OutP % Size), LeftWrite());
 
-      if (Res == 0)
-	 return false;
       if (Res < 0)
       {
 	 if (errno == EAGAIN)
@@ -210,7 +215,7 @@ bool CircleBuf::Write(std::unique_ptr<MethodFd> const &Fd)
       }
 
       TotalWriten += Res;
-      
+
       if (Hash != NULL)
 	 Hash->Add(Buf + (OutP%Size),Res);
       
@@ -320,14 +325,14 @@ static ResultState UnwrapHTTPConnect(std::string Host, int Port, URI Proxy, std:
    std::string ProperHost;
 
    if (Host.find(':') != std::string::npos)
-      ProperHost = '[' + Proxy.Host + ']';
+      ProperHost = '[' + Host + ']';
    else
-      ProperHost = Proxy.Host;
+      ProperHost = Host;
 
    // Build the connect
    Req << "CONNECT " << Host << ":" << std::to_string(Port) << " HTTP/1.1\r\n";
    if (Proxy.Port != 0)
-      Req << "Host: " << ProperHost << ":" << std::to_string(Proxy.Port) << "\r\n";
+      Req << "Host: " << ProperHost << ":" << std::to_string(Port) << "\r\n";
    else
       Req << "Host: " << ProperHost << "\r\n";
 
@@ -349,7 +354,7 @@ static ResultState UnwrapHTTPConnect(std::string Host, int Port, URI Proxy, std:
    Out.Read(Req.str());
 
    // Writing from proxy
-   while (Out.WriteSpace() > 0)
+   while (Out.WriteSpace())
    {
       if (WaitFd(Fd->Fd(), true, Timeout) == false)
       {
@@ -363,7 +368,7 @@ static ResultState UnwrapHTTPConnect(std::string Host, int Port, URI Proxy, std:
       }
    }
 
-   while (In.ReadSpace() > 0)
+   while (In.ReadSpace())
    {
       if (WaitFd(Fd->Fd(), false, Timeout) == false)
       {
@@ -389,7 +394,7 @@ static ResultState UnwrapHTTPConnect(std::string Host, int Port, URI Proxy, std:
       return ResultState::TRANSIENT_ERROR;
    }
 
-   if (In.WriteSpace() > 0)
+   if (In.WriteSpace())
    {
       // Maybe there is actual data already read, if so we need to buffer it
       std::unique_ptr<HttpConnectFd> NewFd(new HttpConnectFd());
@@ -403,7 +408,7 @@ static ResultState UnwrapHTTPConnect(std::string Host, int Port, URI Proxy, std:
 									/*}}}*/
 
 // HttpServerState::HttpServerState - Constructor			/*{{{*/
-HttpServerState::HttpServerState(URI Srv,HttpMethod *Owner) : ServerState(Srv, Owner), In(Owner, 64*1024), Out(Owner, 4*1024)
+HttpServerState::HttpServerState(URI Srv, HttpMethod *Owner) : ServerState(Srv, Owner), In(Owner, APT_BUFFER_SIZE), Out(Owner, 4 * 1024)
 {
    TimeOut = Owner->ConfigFindI("Timeout", TimeOut);
    ServerFd = MethodFd::FromFd(-1);
@@ -695,55 +700,32 @@ ResultState HttpServerState::Die(RequestState &Req)
 {
    unsigned int LErrno = errno;
 
-   // Dump the buffer to the file
-   if (Req.State == RequestState::Data)
-   {
-      if (Req.File.IsOpen() == false)
-	 return ResultState::SUCCESSFUL;
-      // on GNU/kFreeBSD, apt dies on /dev/null because non-blocking
-      // can't be set
-      if (Req.File.Name() != "/dev/null")
-	 SetNonBlock(Req.File.Fd(),false);
-      while (In.WriteSpace() == true)
-      {
-	 if (In.Write(MethodFd::FromFd(Req.File.Fd())) == false)
-	 {
-	    _error->Errno("write", _("Error writing to the file"));
-	    return ResultState::TRANSIENT_ERROR;
-	 }
+   Close();
 
-	 // Done
-	 if (In.IsLimit() == true)
-	    return ResultState::SUCCESSFUL;
-      }
+   switch (Req.State)
+   {
+   case RequestState::Data:
+      // We have read all data we could, or the connection is not persistent
+      if (In.IsLimit() == true || Persistent == false)
+	 return ResultState::SUCCESSFUL;
+      break;
+   case RequestState::Header:
+      In.Limit(-1);
+      // We have read some headers, but we might also have read the content
+      // and an EOF and hence reached this point. This is fine.
+      if (In.WriteSpace())
+	 return ResultState::SUCCESSFUL;
+      break;
    }
 
-   // See if this is because the server finished the data stream
-   if (In.IsLimit() == false && Req.State != RequestState::Header &&
-       Persistent == true)
+   // We have reached an actual error, tell the user about it.
+   if (LErrno == 0)
    {
-      Close();
-      if (LErrno == 0)
-      {
-	 _error->Error(_("Error reading from server. Remote end closed connection"));
-	 return ResultState::TRANSIENT_ERROR;
-      }
-      errno = LErrno;
-      _error->Errno("read", _("Error reading from server"));
+      _error->Error(_("Error reading from server. Remote end closed connection"));
       return ResultState::TRANSIENT_ERROR;
    }
-   else
-   {
-      In.Limit(-1);
-
-      // Nothing left in the buffer
-      if (In.WriteSpace() == false)
-	 return ResultState::TRANSIENT_ERROR;
-
-      // We may have got multiple responses back in one packet..
-      Close();
-      return ResultState::SUCCESSFUL;
-   }
+   errno = LErrno;
+   _error->Errno("read", _("Error reading from server"));
 
    return ResultState::TRANSIENT_ERROR;
 }
@@ -752,14 +734,10 @@ ResultState HttpServerState::Die(RequestState &Req)
 // ---------------------------------------------------------------------
 /* This takes the current input buffer from the Server FD and writes it
    into the file */
-bool HttpServerState::Flush(FileFd * const File)
+bool HttpServerState::Flush(FileFd *const File, bool MustComplete)
 {
    if (File != nullptr)
    {
-      // on GNU/kFreeBSD, apt dies on /dev/null because non-blocking
-      // can't be set
-      if (File->Name() != "/dev/null")
-	 SetNonBlock(File->Fd(),false);
       if (In.WriteSpace() == false)
 	 return true;
       
@@ -771,7 +749,7 @@ bool HttpServerState::Flush(FileFd * const File)
 	    return true;
       }
 
-      if (In.IsLimit() == true || Persistent == false)
+      if (In.IsLimit() == true || Persistent == false || not MustComplete)
 	 return true;
    }
    return false;
@@ -788,13 +766,11 @@ ResultState HttpServerState::Go(bool ToFile, RequestState &Req)
 				ToFile == false))
       return ResultState::TRANSIENT_ERROR;
 
-   // Handle server IO
-   if (ServerFd->HasPending() && In.ReadSpace() == true)
-   {
-      errno = 0;
-      if (In.Read(ServerFd) == false)
-	 return Die(Req);
-   }
+   // Record if we have data pending to read in the server, so that we can
+   // skip the wait in select(). This can happen if data has already been
+   // read into a methodfd's buffer - the TCP queue might be empty at that
+   // point.
+   bool ServerPending = ServerFd->HasPending();
 
    fd_set rfds,wfds;
    FD_ZERO(&rfds);
@@ -807,26 +783,29 @@ ResultState HttpServerState::Go(bool ToFile, RequestState &Req)
    if (In.ReadSpace() == true && ServerFd->Fd() != -1)
       FD_SET(ServerFd->Fd(), &rfds);
 
-   // Add the file
-   auto FileFD = MethodFd::FromFd(-1);
-   if (Req.File.IsOpen())
-      FileFD = MethodFd::FromFd(Req.File.Fd());
-
-   if (In.WriteSpace() == true && ToFile == true && FileFD->Fd() != -1)
-      FD_SET(FileFD->Fd(), &wfds);
+   // Add the file. Note that we need to add the file to the select and
+   // then write before we read from the server so we do not have content
+   // left to write if the server closes the connection when we read from it.
+   //
+   // An alternative would be to just flush the file in those circumstances
+   // and then return. Because otherwise we might end up blocking indefinitely
+   // in the select() call if we were to continue but all that was left to do
+   // was write to the local file.
+   if (In.WriteSpace() == true && ToFile == true && Req.File.IsOpen())
+      FD_SET(Req.File.Fd(), &wfds);
 
    // Add stdin
    if (Owner->ConfigFindB("DependOnSTDIN", true) == true)
       FD_SET(STDIN_FILENO,&rfds);
 	  
    // Figure out the max fd
-   int MaxFd = FileFD->Fd();
+   int MaxFd = Req.File.Fd();
    if (MaxFd < ServerFd->Fd())
       MaxFd = ServerFd->Fd();
 
    // Select
    struct timeval tv;
-   tv.tv_sec = TimeOut;
+   tv.tv_sec = ServerPending ? 0 : TimeOut;
    tv.tv_usec = 0;
    int Res = 0;
    if ((Res = select(MaxFd+1,&rfds,&wfds,0,&tv)) < 0)
@@ -837,18 +816,33 @@ ResultState HttpServerState::Go(bool ToFile, RequestState &Req)
       return ResultState::TRANSIENT_ERROR;
    }
    
-   if (Res == 0)
+   if (Res == 0 && not ServerPending)
    {
       _error->Error(_("Connection timed out"));
-      return Die(Req);
+      return ResultState::TRANSIENT_ERROR;
    }
-   
+
+   // Flush any data before talking to the server, in case the server
+   // closed the connection, we want to be done writing.
+   if (Req.File.IsOpen() && FD_ISSET(Req.File.Fd(), &wfds))
+   {
+      if (not Flush(&Req.File, false))
+	 return ResultState::TRANSIENT_ERROR;
+   }
+
    // Handle server IO
-   if (ServerFd->Fd() != -1 && FD_ISSET(ServerFd->Fd(), &rfds))
+   if (ServerPending || (ServerFd->Fd() != -1 && FD_ISSET(ServerFd->Fd(), &rfds)))
    {
       errno = 0;
       if (In.Read(ServerFd) == false)
 	 return Die(Req);
+   }
+
+   // Send data to the file
+   if (In.WriteSpace() == true && ToFile == true && Req.File.IsOpen())
+   {
+      if (not Flush(&Req.File, false))
+	 return ResultState::TRANSIENT_ERROR;
    }
 
    if (ServerFd->Fd() != -1 && FD_ISSET(ServerFd->Fd(), &wfds))
@@ -856,16 +850,6 @@ ResultState HttpServerState::Go(bool ToFile, RequestState &Req)
       errno = 0;
       if (Out.Write(ServerFd) == false)
 	 return Die(Req);
-   }
-
-   // Send data to the file
-   if (FileFD->Fd() != -1 && FD_ISSET(FileFD->Fd(), &wfds))
-   {
-      if (In.Write(FileFD) == false)
-      {
-	 _error->Errno("write", _("Error writing to output file"));
-	 return ResultState::TRANSIENT_ERROR;
-      }
    }
 
    if (Req.MaximumSize > 0 && Req.File.IsOpen() && Req.File.Failed() == false && Req.File.Tell() > Req.MaximumSize)
@@ -892,7 +876,7 @@ ResultState HttpServerState::Go(bool ToFile, RequestState &Req)
 /* This places the http request in the outbound buffer */
 void HttpMethod::SendReq(FetchItem *Itm)
 {
-   URI Uri = Itm->Uri;
+   URI Uri(Itm->Uri);
    {
       auto const plus = Binary.find('+');
       if (plus != std::string::npos)
@@ -917,9 +901,8 @@ void HttpMethod::SendReq(FetchItem *Itm)
    else
       requesturi = Uri;
 
-   // The "+" is encoded as a workaround for a amazon S3 bug
-   // see LP bugs #1003633 and #1086997.
-   requesturi = QuoteString(requesturi, "+~ ");
+   if (not _config->FindB("Acquire::Send-URI-Encoded", false))
+      requesturi = URIEncode(requesturi);
 
    /* Build the request. No keep-alive is included as it is the default
       in 1.1, can cause problems with proxies, and we are an HTTP/1.1
@@ -972,11 +955,29 @@ void HttpMethod::SendReq(FetchItem *Itm)
 	 << Base64Encode(Uri.User + ":" + Uri.Password) << "\r\n";
 
    Req << "User-Agent: " << ConfigFind("User-Agent",
-		"Debian APT-HTTP/1.3 (" PACKAGE_VERSION ")") << "\r\n";
+		"Debian APT-HTTP/1.3 (" PACKAGE_VERSION ")");
 
-   auto const referer = ConfigFind("Referer", "");
-   if (referer.empty() == false)
-      Req << "Referer: " << referer << "\r\n";
+#ifdef HAVE_SYSTEMD
+   if (ConfigFindB("User-Agent-Non-Interactive", false))
+   {
+      using APT::operator""_sv;
+      char *unit = nullptr;
+      sd_pid_get_unit(getpid(), &unit);
+      if (unit != nullptr && *unit != '\0' && not APT::String::Startswith(unit, "user@") // user@ _is_ interactive
+	  && "packagekit.service"_sv != unit						 // packagekit likely is interactive
+	  && "dbus.service"_sv != unit)							 // aptdaemon and qapt don't have systemd services
+	 Req << " non-interactive";
+
+      free(unit);
+   }
+#endif
+
+   Req << "\r\n";
+
+   // the famously typoed HTTP header field
+   auto const referrer = ConfigFind("Referer", "");
+   if (referrer.empty() == false)
+      Req << "Referer: " << referrer << "\r\n";
 
    Req << "\r\n";
 
@@ -1017,11 +1018,10 @@ BaseHttpMethod::DealWithHeadersResult HttpMethod::DealWithHeaders(FetchResult &R
    if (Req.StartPos > 0)
       Res.ResumePoint = Req.StartPos;
 
-   SetNonBlock(Req.File.Fd(),true);
    return FILE_IS_OPEN;
 }
 									/*}}}*/
-HttpMethod::HttpMethod(std::string &&pProg) : BaseHttpMethod(std::move(pProg), "1.2", Pipeline | SendConfig) /*{{{*/
+HttpMethod::HttpMethod(std::string &&pProg) : BaseHttpMethod(std::move(pProg), "1.2", Pipeline | SendConfig | SendURIEncoded) /*{{{*/
 {
    SeccompFlags = aptMethod::BASE | aptMethod::NETWORK;
 

@@ -988,7 +988,7 @@ bool FTPConn::Get(const char *Path,FileFd &To,unsigned long long Resume,
 // FtpMethod::FtpMethod - Constructor					/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-FtpMethod::FtpMethod() : aptAuthConfMethod("ftp", "1.0", SendConfig)
+FtpMethod::FtpMethod() : aptAuthConfMethod("ftp", "1.0", SendConfig | SendURIEncoded)
 {
    SeccompFlags = aptMethod::BASE | aptMethod::NETWORK;
    signal(SIGTERM,SigTerm);
@@ -1037,8 +1037,8 @@ bool FtpMethod::Configuration(string Message)
 /* Fetch a single file, called by the base class..  */
 bool FtpMethod::Fetch(FetchItem *Itm)
 {
-   URI Get = Itm->Uri;
-   const char *File = Get.Path.c_str();
+   URI Get(Itm->Uri);
+   auto const File = DecodeSendURI(Get.Path);
    FetchResult Res;
    Res.Filename = Itm->DestFile;
    Res.IMSHit = false;
@@ -1070,8 +1070,8 @@ bool FtpMethod::Fetch(FetchItem *Itm)
    // Get the files information
    Status(_("Query"));
    unsigned long long Size;
-   if (Server->Size(File,Size) == false ||
-       Server->ModTime(File,FailTime) == false)
+   if (not Server->Size(File.c_str(), Size) ||
+       not Server->ModTime(File.c_str(), FailTime))
    {
       Fail(true);
       return true;
@@ -1119,7 +1119,7 @@ bool FtpMethod::Fetch(FetchItem *Itm)
       FailFd = Fd.Fd();
       
       bool Missing;
-      if (Server->Get(File,Fd,Res.ResumePoint,Hash,Missing,Itm->MaximumSize,this) == false)
+      if (not Server->Get(File.c_str(), Fd, Res.ResumePoint, Hash, Missing, Itm->MaximumSize, this))
       {
 	 Fd.Close();
 
@@ -1166,8 +1166,8 @@ int main(int, const char *argv[])
       proxy urls */
    if (getenv("ftp_proxy") != 0)
    {
-      URI Proxy = string(getenv("ftp_proxy"));
-      
+      URI Proxy(string(getenv("ftp_proxy")));
+
       // Run the HTTP method
       if (Proxy.Access == "http")
       {

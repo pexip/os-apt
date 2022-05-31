@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2020-05-12 18:00+0000\n"
+"POT-Creation-Date: 2021-02-09 10:45+0100\n"
 "PO-Revision-Date: 2011-05-12 15:28+0100\n"
 "Last-Translator: Miguel Anxo Bouzada <mbouzada@gmail.com>\n"
 "Language-Team: galician <proxecto@trasno.net>\n"
@@ -21,172 +21,6 @@ msgstr ""
 "X-Generator: KBabel 1.11.4\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Poedit-Language: Galician\n"
-
-#: apt-inst/contrib/arfile.cc
-msgid "Invalid archive signature"
-msgstr "Sinatura de arquivo incorrecta"
-
-#: apt-inst/contrib/arfile.cc
-msgid "Error reading archive member header"
-msgstr "Produciuse un erro ao ler a cabeceira do membro do arquivo"
-
-#: apt-inst/contrib/arfile.cc
-msgid "Invalid archive member header"
-msgstr "Cabeceira do membro do arquivo incorrecta"
-
-#: apt-inst/contrib/arfile.cc
-msgid "Archive is too short"
-msgstr "O arquivo é curto de máis"
-
-#: apt-inst/contrib/arfile.cc
-msgid "Failed to read the archive headers"
-msgstr "Non foi posíbel ler as cabeceiras dos arquivos"
-
-#: apt-inst/contrib/extracttar.cc
-#, fuzzy, c-format
-msgid "Cannot find a configured compressor for '%s'"
-msgstr "Non é posíbel atopar un rexistro de autenticación para: %s"
-
-#: apt-inst/contrib/extracttar.cc
-msgid "Corrupted archive"
-msgstr "Arquivo danado"
-
-#: apt-inst/contrib/extracttar.cc
-msgid "Tar checksum failed, archive corrupted"
-msgstr "A suma de comprobación do arquivo tar non coincide, está danado"
-
-#: apt-inst/contrib/extracttar.cc
-#, fuzzy, c-format
-#| msgid "Unknown TAR header type %u, member %s"
-msgid "Unknown TAR header type %u"
-msgstr "Tipo de cabeceira TAR %u descoñecido, membro %s"
-
-#: apt-inst/deb/debfile.cc
-#, c-format
-msgid "This is not a valid DEB archive, missing '%s' member"
-msgstr "Este non é un arquivo DEB correcto, falta o membro «%s»"
-
-#: apt-inst/deb/debfile.cc
-#, c-format
-msgid "Internal error, could not locate member %s"
-msgstr "Produciuse un erro interno, non foi posíbel atopar o membro %s"
-
-#: apt-inst/deb/debfile.cc
-msgid "Unparsable control file"
-msgstr "Ficheiro de control non analizábel"
-
-#: apt-inst/dirstream.cc
-#, c-format
-msgid "Failed to write file %s"
-msgstr "Non foi posíbel escribir no ficheiro «%s»"
-
-#: apt-inst/dirstream.cc
-#, c-format
-msgid "Failed to close file %s"
-msgstr "Non foi posíbel pechar o ficheiro %s"
-
-#: apt-inst/extract.cc
-#, c-format
-msgid "The path %s is too long"
-msgstr "A ruta %s é longa de máis"
-
-#: apt-inst/extract.cc
-#, c-format
-msgid "Unpacking %s more than once"
-msgstr "Desempaquetando %s máis dunha vez"
-
-#: apt-inst/extract.cc
-#, c-format
-msgid "The directory %s is diverted"
-msgstr "O directorio %s está desviado"
-
-#: apt-inst/extract.cc
-#, c-format
-msgid "The package is trying to write to the diversion target %s/%s"
-msgstr "O paquete tenta escribir no destino do desvío %s/%s"
-
-#: apt-inst/extract.cc
-msgid "The diversion path is too long"
-msgstr "A ruta do desvío é longa de máis"
-
-#: apt-inst/extract.cc apt-pkg/acquire-item.cc ftparchive/cachedb.cc
-#: methods/rred.cc
-#, c-format
-msgid "Failed to stat %s"
-msgstr "Non foi posíbel determinar o estado %s"
-
-#: apt-inst/extract.cc ftparchive/multicompress.cc
-#, c-format
-msgid "Failed to rename %s to %s"
-msgstr "Non foi posíbel cambiar o nome de %s a %s"
-
-#: apt-inst/extract.cc
-#, c-format
-msgid "The directory %s is being replaced by a non-directory"
-msgstr "O directorio %s estase a substituír por algo que non é un directorio"
-
-#: apt-inst/extract.cc
-msgid "Failed to locate node in its hash bucket"
-msgstr "Non foi posíbel atopar o nodo no seu contedor hash"
-
-#: apt-inst/extract.cc
-msgid "The path is too long"
-msgstr "A ruta é longa de máis"
-
-#: apt-inst/extract.cc
-#, c-format
-msgid "Overwrite package match with no version for %s"
-msgstr "Coincidencia na sobrescritura sen versión para %s"
-
-#: apt-inst/extract.cc
-#, c-format
-msgid "File %s/%s overwrites the one in the package %s"
-msgstr "O ficheiro %s/%s sobrescribe o do paquete %s"
-
-#. Only warn if there are no sources.list.d.
-#. Only warn if there is no sources.list file.
-#: apt-inst/extract.cc apt-pkg/acquire.cc apt-pkg/clean.cc
-#: apt-pkg/contrib/cdromutl.cc apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc
-#: apt-pkg/init.cc apt-pkg/policy.cc apt-pkg/sourcelist.cc
-#, c-format
-msgid "Unable to read %s"
-msgstr "Non é posíbel ler %s"
-
-#: apt-inst/extract.cc
-#, c-format
-msgid "Unable to stat %s"
-msgstr "Non é posíbel determinar o estado %s"
-
-#: apt-inst/filelist.cc
-msgid "DropNode called on still linked node"
-msgstr "Chamouse a DropNode nun nodo aínda ligado"
-
-#: apt-inst/filelist.cc
-msgid "Failed to locate the hash element!"
-msgstr "Non foi posíbel atopar o elemento hash"
-
-#: apt-inst/filelist.cc
-msgid "Failed to allocate diversion"
-msgstr "Non foi posíbel reservar un desvío"
-
-#: apt-inst/filelist.cc
-msgid "Internal error in AddDiversion"
-msgstr "Produciuse un erro interno en AddDiversion"
-
-#: apt-inst/filelist.cc
-#, c-format
-msgid "Trying to overwrite a diversion, %s -> %s and %s/%s"
-msgstr "Téntase sobrescribir un desvío, %s -> %s e %s/%s"
-
-#: apt-inst/filelist.cc
-#, c-format
-msgid "Double add of diversion %s -> %s"
-msgstr "Desvío %s -> %s engadido dúas veces"
-
-#: apt-inst/filelist.cc
-#, c-format
-msgid "Duplicate conf file %s/%s"
-msgstr "Ficheiro de configuración %s/%s duplicado"
 
 #: apt-pkg/acquire-item.cc
 msgid ""
@@ -241,6 +75,11 @@ msgstr "O directorio %s está desviado"
 #, c-format
 msgid "Failed to readlink %s"
 msgstr "Non foi posíbel ler a ligazón %s"
+
+#: apt-pkg/acquire-item.cc ftparchive/cachedb.cc methods/rred.cc
+#, c-format
+msgid "Failed to stat %s"
+msgstr "Non foi posíbel determinar o estado %s"
 
 #: apt-pkg/acquire-item.cc
 msgid "Hash Sum mismatch"
@@ -466,6 +305,15 @@ msgstr ""
 msgid "Clean of %s is not supported"
 msgstr "O tipo de ficheiros de índices «%s» non está admitido"
 
+#. Only warn if there are no sources.list.d.
+#. Only warn if there is no sources.list file.
+#: apt-pkg/acquire.cc apt-pkg/clean.cc apt-pkg/contrib/cdromutl.cc
+#: apt-pkg/contrib/fileutl.cc apt-pkg/deb/dpkgpm.cc apt-pkg/init.cc
+#: apt-pkg/policy.cc apt-pkg/sourcelist.cc
+#, c-format
+msgid "Unable to read %s"
+msgstr "Non é posíbel ler %s"
+
 #: apt-pkg/acquire.cc
 #, c-format
 msgid "Retrieving file %li of %li (%s remaining)"
@@ -510,7 +358,8 @@ msgstr "Pode querer executar «apt-get update» para corrixir estes problemas"
 msgid "The list of sources could not be read."
 msgstr "Non foi posíbel ler a lista de orixes."
 
-#: apt-pkg/cachefilter.cc apt-private/private-output.cc
+#: apt-pkg/cachefilter-patterns.cc apt-pkg/cachefilter.cc
+#: apt-private/private-output.cc
 #, c-format
 msgid "Regex compilation error - %s"
 msgstr "Produciuse un erro na compilación da expresión regular - %s"
@@ -581,11 +430,6 @@ msgid ""
 msgstr ""
 "Non é posíbel seleccionar nin a versión instalada nin a candidata do paquete "
 "«%s» xa que non ten ningunha delas"
-
-#: apt-pkg/cdrom.cc
-#, c-format
-msgid "Line %u too long in source list %s."
-msgstr "Liña %u longa de máis na lista de orixes %s."
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -666,13 +510,28 @@ msgstr "As entradas da lista de orixes deste disco son:\n"
 
 #: apt-pkg/clean.cc
 #, c-format
-msgid "Unable to change to %s"
-msgstr "Non é posíbel cambiar a %s"
-
-#: apt-pkg/clean.cc
-#, c-format
 msgid "Unable to stat %s."
 msgstr "Non é posíbel analizar %s."
+
+#: apt-pkg/contrib/arfile.cc
+msgid "Invalid archive signature"
+msgstr "Sinatura de arquivo incorrecta"
+
+#: apt-pkg/contrib/arfile.cc
+msgid "Error reading archive member header"
+msgstr "Produciuse un erro ao ler a cabeceira do membro do arquivo"
+
+#: apt-pkg/contrib/arfile.cc
+msgid "Invalid archive member header"
+msgstr "Cabeceira do membro do arquivo incorrecta"
+
+#: apt-pkg/contrib/arfile.cc
+msgid "Archive is too short"
+msgstr "O arquivo é curto de máis"
+
+#: apt-pkg/contrib/arfile.cc
+msgid "Failed to read the archive headers"
+msgstr "Non foi posíbel ler as cabeceiras dos arquivos"
 
 #: apt-pkg/contrib/cdromutl.cc
 #, c-format
@@ -787,6 +646,25 @@ msgstr ""
 msgid "Syntax error %s:%u: Extra junk at end of file"
 msgstr "Produciuse un erro de sintaxe %s:%u: Lixo extra á fin da liña"
 
+#: apt-pkg/contrib/extracttar.cc
+#, fuzzy, c-format
+msgid "Cannot find a configured compressor for '%s'"
+msgstr "Non é posíbel atopar un rexistro de autenticación para: %s"
+
+#: apt-pkg/contrib/extracttar.cc
+msgid "Corrupted archive"
+msgstr "Arquivo danado"
+
+#: apt-pkg/contrib/extracttar.cc
+msgid "Tar checksum failed, archive corrupted"
+msgstr "A suma de comprobación do arquivo tar non coincide, está danado"
+
+#: apt-pkg/contrib/extracttar.cc
+#, fuzzy, c-format
+#| msgid "Unknown TAR header type %u, member %s"
+msgid "Unknown TAR header type %u"
+msgstr "Tipo de cabeceira TAR %u descoñecido, membro %s"
+
 #: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Problem unlinking the file %s"
@@ -808,9 +686,26 @@ msgid "Not using locking for nfs mounted lock file %s"
 msgstr "Non se empregan bloqueos para o ficheiro de bloqueo montado por NFS %s"
 
 #: apt-pkg/contrib/fileutl.cc
+#, fuzzy, c-format
+#| msgid "Could not get lock %s"
+msgid "Could not get lock %s. It is held by process %d"
+msgstr "Non foi posíbel obter o bloqueo %s"
+
+#: apt-pkg/contrib/fileutl.cc
+#, c-format
+msgid "Could not get lock %s. It is held by process %d (%s)"
+msgstr ""
+
+#: apt-pkg/contrib/fileutl.cc
 #, c-format
 msgid "Could not get lock %s"
 msgstr "Non foi posíbel obter o bloqueo %s"
+
+#: apt-pkg/contrib/fileutl.cc
+msgid ""
+"Be aware that removing the lock file is not a solution and may break your "
+"system."
+msgstr ""
 
 #: apt-pkg/contrib/fileutl.cc
 #, c-format
@@ -988,6 +883,13 @@ msgstr ""
 "Non é posíbel aumentar o tamaño de MMap xa que o crecemento automático foi "
 "desactivado polo usuario."
 
+#: apt-pkg/contrib/netrc.cc
+#, c-format
+msgid ""
+"%s: Credentials for %s match, but the protocol is not encrypted. Annotate "
+"with %s:// to use."
+msgstr ""
+
 #: apt-pkg/contrib/progress.cc
 #, c-format
 msgid "%c%s... Error!"
@@ -1002,7 +904,16 @@ msgstr "%c%s... Feito"
 msgid "..."
 msgstr ""
 
-#. Print the spinner
+#: apt-pkg/contrib/progress.cc
+#, fuzzy, c-format
+msgid "%c%s... %llu/%llus"
+msgstr "%c%s... Feito"
+
+#: apt-pkg/contrib/progress.cc
+#, fuzzy, c-format
+msgid "%c%s... %llus"
+msgstr "%c%s... Feito"
+
 #: apt-pkg/contrib/progress.cc
 #, fuzzy, c-format
 msgid "%c%s... %u%%"
@@ -1036,6 +947,26 @@ msgstr "%lis"
 #, c-format
 msgid "Selection %s not found"
 msgstr "Non se atopou a selección %s"
+
+#: apt-pkg/deb/debfile.cc
+#, c-format
+msgid "This is not a valid DEB archive, missing '%s' member"
+msgstr "Este non é un arquivo DEB correcto, falta o membro «%s»"
+
+#: apt-pkg/deb/debfile.cc
+#, c-format
+msgid "Internal error, could not locate member %s"
+msgstr "Produciuse un erro interno, non foi posíbel atopar o membro %s"
+
+#: apt-pkg/deb/debfile.cc
+msgid "Unparsable control file"
+msgstr "Ficheiro de control non analizábel"
+
+#: apt-pkg/deb/debindexfile.cc
+#, fuzzy, c-format
+#| msgid "Could not get lock %s"
+msgid "Could not read meta data from %s"
+msgstr "Non foi posíbel obter o bloqueo %s"
 
 #. TRANSLATOR: an identifier like Packages; Releasefile key indicating
 #. a file like main/binary-amd64/Packages; another identifier like Contents;
@@ -1100,6 +1031,12 @@ msgstr ""
 #, c-format
 msgid "Unable to parse package file %s (%d)"
 msgstr "Non é posíbel analizar o ficheiro de paquetes %s (%d)"
+
+#: apt-pkg/deb/debsystem.cc
+#, fuzzy, c-format
+#| msgid "Waiting for headers"
+msgid "Waiting for cache lock: %s"
+msgstr "Agardando polas cabeceiras"
 
 #: apt-pkg/deb/debsystem.cc
 #, fuzzy, c-format
@@ -1315,6 +1252,16 @@ msgstr "Non foi posíbel abrir o ficheiro de estado %s"
 #, c-format
 msgid "Failed to write temporary StateFile %s"
 msgstr "Non foi posíbel gravar o ficheiro de estado temporal %s"
+
+#: apt-pkg/dirstream.cc
+#, c-format
+msgid "Failed to write file %s"
+msgstr "Non foi posíbel escribir no ficheiro «%s»"
+
+#: apt-pkg/dirstream.cc
+#, c-format
+msgid "Failed to close file %s"
+msgstr "Non foi posíbel pechar o ficheiro %s"
 
 #: apt-pkg/edsp.cc
 msgid "Send scenario to solver"
@@ -1618,7 +1565,9 @@ msgid "Unsupported file %s given on commandline"
 msgstr ""
 
 #: apt-pkg/srcrecords.cc
-msgid "You must put some 'source' URIs in your sources.list"
+#, fuzzy
+#| msgid "You must put some 'source' URIs in your sources.list"
+msgid "You must put some 'deb-src' URIs in your sources.list"
 msgstr "Debe introducir algúns URI «orixe» no seu ficheiro sources.list"
 
 #: apt-pkg/tagfile.cc
@@ -2386,6 +2335,10 @@ msgstr "(ningún)"
 msgid "  Version table:"
 msgstr "  Táboa de versións:"
 
+#: apt-private/private-show.cc
+msgid "phased"
+msgstr ""
+
 #: apt-private/private-source.cc
 #, fuzzy, c-format
 msgid "Can not find a package for architecture '%s'"
@@ -2510,6 +2463,12 @@ msgid "Must specify at least one package to check builddeps for"
 msgstr ""
 "Ten que especificar polo menos un paquete para comprobarlle as dependencias "
 "de compilación"
+
+#: apt-private/private-source.cc
+#, c-format
+msgid ""
+"Invalid operator '%c' at offset %d, did you mean '%c%c' or '%c='? - in: %s"
+msgstr ""
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2857,6 +2816,12 @@ msgid "Configure build-dependencies for source packages"
 msgstr "Configura as dependencias para paquetes de fontes"
 
 #: cmdline/apt-get.cc
+#, fuzzy
+#| msgid "Building dependency tree"
+msgid "Satisfy dependency strings"
+msgstr "Construindo a árbore de dependencias"
+
+#: cmdline/apt-get.cc
 msgid "Erase downloaded archive files"
 msgstr "Borra os arquivos de ficheiros"
 
@@ -2930,6 +2895,10 @@ msgstr ""
 
 #: cmdline/apt-helper.cc
 msgid "drop privileges before running given command"
+msgstr ""
+
+#: cmdline/apt-helper.cc
+msgid "analyse a pattern"
 msgstr ""
 
 #: cmdline/apt-internal-planner.cc
@@ -3159,6 +3128,12 @@ msgstr ""
 msgid "edit the source information file"
 msgstr "Lendo a información do estado"
 
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "Failed to satisfy %s dependency for %s: %s"
+msgid "satisfy dependency strings"
+msgstr "Non foi posíbel satisfacer a dependencia «%s» de %s: %s"
+
 #: dselect/install
 msgid "Bad default setting!"
 msgstr "Configuración predeterminada incorrecta!"
@@ -3384,6 +3359,11 @@ msgstr "Produciuse un fallo na E/S do subproceso/ficheiro"
 #: ftparchive/multicompress.cc
 msgid "Failed to read while computing MD5"
 msgstr "Non foi posíbel ler ao calcular o MD5"
+
+#: ftparchive/multicompress.cc
+#, c-format
+msgid "Failed to rename %s to %s"
+msgstr "Non foi posíbel cambiar o nome de %s a %s"
 
 #: ftparchive/override.cc
 #, c-format
@@ -3848,10 +3828,6 @@ msgstr ""
 "está dispoñíbel:\n"
 
 #: methods/http.cc
-msgid "Error writing to the file"
-msgstr "Produciuse un erro ao escribir no ficheiro"
-
-#: methods/http.cc
 msgid "Error reading from server. Remote end closed connection"
 msgstr ""
 "Produciuse un erro ao ler do servidor. O extremo remoto pechou a conexión"
@@ -3872,10 +3848,6 @@ msgstr "Fallou a chamada a select"
 msgid "Connection timed out"
 msgstr "A conexión esgotou o tempo"
 
-#: methods/http.cc
-msgid "Error writing to output file"
-msgstr "Produciuse un erro ao escribir no ficheiro de saída"
-
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "Non foi posíbel estabelecer a hora de modificación"
@@ -3888,8 +3860,76 @@ msgstr "A conexión pechouse prematuramente"
 msgid "Empty files can't be valid archives"
 msgstr "Os ficheiros baleiros non poden ser arquivadores válidos"
 
+#, c-format
+#~ msgid "Line %u too long in source list %s."
+#~ msgstr "Liña %u longa de máis na lista de orixes %s."
+
+#~ msgid "Error writing to output file"
+#~ msgstr "Produciuse un erro ao escribir no ficheiro de saída"
+
+#~ msgid "Error writing to the file"
+#~ msgstr "Produciuse un erro ao escribir no ficheiro"
+
 #~ msgid "Invalid archive member header %s"
 #~ msgstr "Cabeceira do membro do arquivo incorrecta %s"
+
+#~ msgid "The path %s is too long"
+#~ msgstr "A ruta %s é longa de máis"
+
+#~ msgid "Unpacking %s more than once"
+#~ msgstr "Desempaquetando %s máis dunha vez"
+
+#~ msgid "The directory %s is diverted"
+#~ msgstr "O directorio %s está desviado"
+
+#~ msgid "The package is trying to write to the diversion target %s/%s"
+#~ msgstr "O paquete tenta escribir no destino do desvío %s/%s"
+
+#~ msgid "The diversion path is too long"
+#~ msgstr "A ruta do desvío é longa de máis"
+
+#~ msgid "The directory %s is being replaced by a non-directory"
+#~ msgstr ""
+#~ "O directorio %s estase a substituír por algo que non é un directorio"
+
+#~ msgid "Failed to locate node in its hash bucket"
+#~ msgstr "Non foi posíbel atopar o nodo no seu contedor hash"
+
+#~ msgid "The path is too long"
+#~ msgstr "A ruta é longa de máis"
+
+#~ msgid "Overwrite package match with no version for %s"
+#~ msgstr "Coincidencia na sobrescritura sen versión para %s"
+
+#~ msgid "File %s/%s overwrites the one in the package %s"
+#~ msgstr "O ficheiro %s/%s sobrescribe o do paquete %s"
+
+#~ msgid "Unable to stat %s"
+#~ msgstr "Non é posíbel determinar o estado %s"
+
+#~ msgid "DropNode called on still linked node"
+#~ msgstr "Chamouse a DropNode nun nodo aínda ligado"
+
+#~ msgid "Failed to locate the hash element!"
+#~ msgstr "Non foi posíbel atopar o elemento hash"
+
+#~ msgid "Failed to allocate diversion"
+#~ msgstr "Non foi posíbel reservar un desvío"
+
+#~ msgid "Internal error in AddDiversion"
+#~ msgstr "Produciuse un erro interno en AddDiversion"
+
+#~ msgid "Trying to overwrite a diversion, %s -> %s and %s/%s"
+#~ msgstr "Téntase sobrescribir un desvío, %s -> %s e %s/%s"
+
+#~ msgid "Double add of diversion %s -> %s"
+#~ msgstr "Desvío %s -> %s engadido dúas veces"
+
+#~ msgid "Duplicate conf file %s/%s"
+#~ msgstr "Ficheiro de configuración %s/%s duplicado"
+
+#~ msgid "Unable to change to %s"
+#~ msgstr "Non é posíbel cambiar a %s"
 
 #~ msgid "Removed %s"
 #~ msgstr "Retirouse %s"
@@ -3985,9 +4025,6 @@ msgstr "Os ficheiros baleiros non poden ser arquivadores válidos"
 #~ msgstr ""
 #~ "A dependencia «%s» de %s non se pode satisfacer porque non se pode atopar "
 #~ "o paquete %s"
-
-#~ msgid "Failed to satisfy %s dependency for %s: %s"
-#~ msgstr "Non foi posíbel satisfacer a dependencia «%s» de %s: %s"
 
 #~ msgid "Build-dependencies for %s could not be satisfied."
 #~ msgstr "Non se puideron satisfacer as dependencias de construción de %s."

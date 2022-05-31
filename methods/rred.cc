@@ -7,13 +7,18 @@
 
 #include <config.h>
 
+#ifndef APT_EXCLUDE_RRED_METHOD_CODE
 #include "aptmethod.h"
 #include <apt-pkg/configuration.h>
+#include <apt-pkg/init.h>
+#endif
+
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/hashes.h>
-#include <apt-pkg/init.h>
 #include <apt-pkg/strutl.h>
+
+#include <apt-private/private-cmndline.h>
 
 #include <iostream>
 #include <list>
@@ -21,7 +26,7 @@
 #include <vector>
 #include <stddef.h>
 
-#include <assert.h>
+#include <cassert>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,15 +36,44 @@
 
 #include <apti18n.h>
 
-#define BLOCK_SIZE (512*1024)
+#ifndef APT_MEMBLOCK_SIZE
+#define APT_MEMBLOCK_SIZE (512*1024)
+#endif
+
+static bool ShowHelp(CommandLine &)
+{
+   std::cout <<
+      "Usage: rred [options] -t input output patch-1 … patch-N\n"
+      "       rred [options] -f patch-1 … patch-N < input > output\n"
+      "       rred [options] patch-1 … patch-N > merged-patch\n"
+      "\n"
+      "The main use of this binary is by APTs acquire system, a mode reached\n"
+      "by calling it without any arguments and driven via messages on stdin.\n"
+      "\n"
+      "For the propose of testing as well as simpler direct usage the above\n"
+      "mentioned modes to work with \"reversed restricted ed\" patches as well.\n"
+      "\n"
+      "The arguments used above are:\n"
+      "* input: denotes a file you want to patch.\n"
+      "* output: a file you want to store the patched content in.\n"
+      "* patch-1 … patch-N: One or more files containing a patch.\n"
+      "* merged-patch: All changes by patch-1 … patch-N in one patch.\n"
+      "\n"
+      "This rred supports the commands 'a', 'c' and 'd', both single as well\n"
+      "as multi line. Other commands are not supported (hence 'restricted').\n"
+      "The command to patch the last line must appear first in the patch\n"
+      "(hence 'reversed'). Such a patch can e.g. be produced with 'diff --ed'.\n"
+      ;
+   return true;
+}
 
 class MemBlock {
    char *start;
    size_t size;
    char *free;
-   MemBlock *next;
+   MemBlock *next = nullptr;
 
-   explicit MemBlock(size_t size) : size(size), next(NULL)
+   explicit MemBlock(size_t size) : size(size)
    {
       free = start = new char[size];
    }
@@ -48,11 +82,7 @@ class MemBlock {
 
    public:
 
-   MemBlock(void) {
-      free = start = new char[BLOCK_SIZE];
-      size = BLOCK_SIZE;
-      next = NULL;
-   }
+   MemBlock() : MemBlock(APT_MEMBLOCK_SIZE) {}
 
    ~MemBlock() {
       delete [] start;
@@ -71,11 +101,9 @@ class MemBlock {
 	 for (MemBlock *k = this; k; k = k->next) {
 	    if (k->free == last) {
 	       if (len <= k->avail()) {
-		  char *n = k->add(src, len);
-		  assert(last == n);
-		  if (last == n)
-		     return NULL;
-		  return n;
+		  char * const n = k->add(src, len);
+		  assert(last == n); // we checked already that the block is big enough, so a new one shouldn't be used
+		  return (last == n) ? nullptr : n;
 	       } else {
 		  break;
 	       }
@@ -90,10 +118,10 @@ class MemBlock {
    char *add(char *src, size_t len) {
       if (len > avail()) {
 	 if (!next) {
-	    if (len > BLOCK_SIZE)  {
+	    if (len > APT_MEMBLOCK_SIZE)  {
 	       next = new MemBlock(len);
 	    } else {
-	       next = new MemBlock;
+	       next = new MemBlock();
 	    }
 	 }
 	 return next->add(src, len);
@@ -126,24 +154,27 @@ struct Change {
    }
 
    /* actually, don't write <lines> lines from <add> */
-   void skip_lines(size_t lines)
+   bool skip_lines(size_t lines)
    {
       while (lines > 0) {
 	 char *s = (char*) memchr(add, '\n', add_len);
-	 assert(s != NULL);
+	 if (s == nullptr)
+	    return _error->Error("No line left in add_len data to skip (1)");
 	 s++;
 	 add_len -= (s - add);
 	 add_cnt--;
 	 lines--;
 	 if (add_len == 0) {
-	    add = NULL;
-	    assert(add_cnt == 0);
-	    assert(lines == 0);
+	    add = nullptr;
+	    if (add_cnt != 0 || lines != 0)
+	       return _error->Error("No line left in add_len data to skip (2)");
 	 } else {
 	    add = s;
-	    assert(add_cnt > 0);
+	    if (add_cnt == 0)
+	       return _error->Error("No line left in add_len data to skip (3)");
 	 }
       }
+      return true;
    }
 };
 
@@ -154,7 +185,8 @@ class FileChanges {
 
    bool pos_is_okay(void) const
    {
-#ifdef POSDEBUG
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+      // this isn't unsafe, it is just a moderately expensive check we want to avoid normally
       size_t cpos = 0;
       std::list<struct Change>::const_iterator x;
       for (x = changes.begin(); x != where; ++x) {
@@ -179,33 +211,40 @@ class FileChanges {
    std::list<struct Change>::reverse_iterator rbegin(void) { return changes.rbegin(); }
    std::list<struct Change>::reverse_iterator rend(void) { return changes.rend(); }
 
-   void add_change(Change c) {
+   bool add_change(Change c) {
       assert(pos_is_okay());
-      go_to_change_for(c.offset);
-      assert(pos + where->offset == c.offset);
+      if (not go_to_change_for(c.offset) ||
+	  pos + where->offset != c.offset)
+	 return false;
       if (c.del_cnt > 0)
-	 delete_lines(c.del_cnt);
-      assert(pos + where->offset == c.offset);
+	 if (not delete_lines(c.del_cnt))
+	    return false;
+      if (pos + where->offset != c.offset)
+	 return false;
       if (c.add_len > 0) {
 	 assert(pos_is_okay());
 	 if (where->add_len > 0)
-	    new_change();
-	 assert(where->add_len == 0 && where->add_cnt == 0);
+	    if (not new_change())
+	       return false;
+	 if (where->add_len != 0 || where->add_cnt != 0)
+	    return false;
 
 	 where->add_len = c.add_len;
 	 where->add_cnt = c.add_cnt;
 	 where->add = c.add;
       }
       assert(pos_is_okay());
-      merge();
-      assert(pos_is_okay());
+      if (not merge())
+	 return false;
+      return pos_is_okay();
    }
 
    private:
-   void merge(void)
+   bool merge(void)
    {
       while (where->offset == 0 && where != changes.begin()) {
-	 left();
+	 if (not left())
+	    return false;
       }
       std::list<struct Change>::iterator next = where;
       ++next;
@@ -224,53 +263,56 @@ class FileChanges {
 	    ++next;
 	 }
       }
+      return true;
    }
 
-   void go_to_change_for(size_t line)
+   bool go_to_change_for(size_t line)
    {
       while(where != changes.end()) {
 	 if (line < pos) {
-	    left();
+	    if (not left())
+	       return false;
 	    continue;
 	 }
 	 if (pos + where->offset + where->add_cnt <= line) {
-	    right();
+	    if (not right())
+	       return false;
 	    continue;
 	 }
 	 // line is somewhere in this slot
 	 if (line < pos + where->offset) {
 	    break;
 	 } else if (line == pos + where->offset) {
-	    return;
+	    return true;
 	 } else {
-	    split(line - pos);
-	    right();
-	    return;
+	    if (not split(line - pos))
+	       return false;
+	    return right();
 	 }
       }
       /* it goes before this patch */
-      insert(line-pos);
+      return insert(line-pos);
    }
 
-   void new_change(void) { insert(where->offset); }
+   bool new_change(void) { return insert(where->offset); }
 
-   void insert(size_t offset)
+   bool insert(size_t offset)
    {
       assert(pos_is_okay());
-      assert(where == changes.end() || offset <= where->offset);
+      if (where != changes.end() && offset > where->offset)
+	 return false;
       if (where != changes.end())
 	 where->offset -= offset;
       changes.insert(where, Change(offset));
       --where;
-      assert(pos_is_okay());
+      return pos_is_okay();
    }
 
-   void split(size_t offset)
+   bool split(size_t offset)
    {
       assert(pos_is_okay());
-
-      assert(where->offset < offset);
-      assert(offset < where->offset + where->add_cnt);
+      if (where->offset >= offset || offset >= where->offset + where->add_cnt)
+	 return false;
 
       size_t keep_lines = offset - where->offset;
 
@@ -278,27 +320,29 @@ class FileChanges {
 
       where->del_cnt = 0;
       where->offset = 0;
-      where->skip_lines(keep_lines);
+      if (not where->skip_lines(keep_lines))
+	 return false;
 
       before.add_cnt = keep_lines;
       before.add_len -= where->add_len;
 
       changes.insert(where, before);
       --where;
-      assert(pos_is_okay());
+      return pos_is_okay();
    }
 
-   void delete_lines(size_t cnt)
+   bool delete_lines(size_t cnt)
    {
-      std::list<struct Change>::iterator x = where;
       assert(pos_is_okay());
+      std::list<struct Change>::iterator x = where;
       while (cnt > 0)
       {
 	 size_t del;
 	 del = x->add_cnt;
 	 if (del > cnt)
 	    del = cnt;
-	 x->skip_lines(del);
+	 if (not x->skip_lines(del))
+	    return false;
 	 cnt -= del;
 
 	 ++x;
@@ -313,21 +357,21 @@ class FileChanges {
 	 where->del_cnt += del;
 	 cnt -= del;
       }
-      assert(pos_is_okay());
+      return pos_is_okay();
    }
 
-   void left(void) {
+   bool left(void) {
       assert(pos_is_okay());
       --where;
       pos -= where->offset + where->add_cnt;
-      assert(pos_is_okay());
+      return pos_is_okay();
    }
 
-   void right(void) {
+   bool right(void) {
       assert(pos_is_okay());
       pos += where->offset + where->add_cnt;
       ++where;
-      assert(pos_is_okay());
+      return pos_is_okay();
    }
 };
 
@@ -349,7 +393,7 @@ class Patch {
    static void dump_rest(FileFd &o, FileFd &i,
 	 Hashes * const start_hash, Hashes * const end_hash)
    {
-      char buffer[BLOCK_SIZE];
+      char buffer[APT_MEMBLOCK_SIZE];
       unsigned long long l = 0;
       while (i.Read(buffer, sizeof(buffer), &l)) {
 	 if (l ==0  || !retry_fwrite(buffer, l, o, start_hash, end_hash))
@@ -360,7 +404,7 @@ class Patch {
    static void dump_lines(FileFd &o, FileFd &i, size_t n,
 	 Hashes * const start_hash, Hashes * const end_hash)
    {
-      char buffer[BLOCK_SIZE];
+      char buffer[APT_MEMBLOCK_SIZE];
       while (n > 0) {
 	 if (i.ReadLine(buffer, sizeof(buffer)) == NULL)
 	    buffer[0] = '\0';
@@ -373,7 +417,7 @@ class Patch {
 
    static void skip_lines(FileFd &i, int n, Hashes * const start_hash)
    {
-      char buffer[BLOCK_SIZE];
+      char buffer[APT_MEMBLOCK_SIZE];
       while (n > 0) {
 	 if (i.ReadLine(buffer, sizeof(buffer)) == NULL)
 	    buffer[0] = '\0';
@@ -393,12 +437,16 @@ class Patch {
 
    bool read_diff(FileFd &f, Hashes * const h)
    {
-      char buffer[BLOCK_SIZE];
+      char buffer[APT_MEMBLOCK_SIZE];
       bool cmdwanted = true;
 
       Change ch(std::numeric_limits<size_t>::max());
-      if (f.ReadLine(buffer, sizeof(buffer)) == NULL)
+      if (f.ReadLine(buffer, sizeof(buffer)) == nullptr)
+      {
+	 if (f.Eof())
+	    return true;
 	 return _error->Error("Reading first line of patchfile %s failed", f.Name().c_str());
+      }
       do {
 	 if (h != NULL)
 	    h->Add(buffer);
@@ -449,7 +497,8 @@ class Patch {
 		  ch.add = NULL;
 		  ch.add_cnt = 0;
 		  ch.add_len = 0;
-		  filechanges.add_change(ch);
+		  if (not filechanges.add_change(ch))
+		     return _error->Error("Parsing patchfile %s failed: Delete command could not be added to changes", f.Name().c_str());
 		  break;
 	       default:
 		  return _error->Error("Parsing patchfile %s failed: Unknown command", f.Name().c_str());
@@ -457,7 +506,8 @@ class Patch {
 	 } else { /* !cmdwanted */
 	    if (strcmp(buffer, ".\n") == 0) {
 	       cmdwanted = true;
-	       filechanges.add_change(ch);
+	       if (not filechanges.add_change(ch))
+		  return _error->Error("Parsing patchfile %s failed: Data couldn't be added for command (1)", f.Name().c_str());
 	    } else {
 	       char *last = NULL;
 	       char *add;
@@ -471,7 +521,8 @@ class Patch {
 		  ch.add_cnt++;
 	       } else {
 		  if (ch.add) {
-		     filechanges.add_change(ch);
+		     if (not filechanges.add_change(ch))
+			return _error->Error("Parsing patchfile %s failed: Data couldn't be added for command (2)", f.Name().c_str());
 		     ch.del_cnt = 0;
 		  }
 		  ch.offset += ch.add_cnt;
@@ -546,6 +597,7 @@ class Patch {
    }
 };
 
+#ifndef APT_EXCLUDE_RRED_METHOD_CODE
 class RredMethod : public aptMethod {
    private:
       bool Debug;
@@ -574,8 +626,8 @@ class RredMethod : public aptMethod {
    protected:
       virtual bool URIAcquire(std::string const &Message, FetchItem *Itm) APT_OVERRIDE {
 	 Debug = DebugEnabled();
-	 URI Get = Itm->Uri;
-	 std::string Path = Get.Host + Get.Path; // rred:/path - no host
+	 URI Get(Itm->Uri);
+	 std::string Path = DecodeSendURI(Get.Host + Get.Path); // rred:/path - no host
 
 	 FetchResult Res;
 	 Res.Filename = Itm->DestFile;
@@ -721,68 +773,113 @@ class RredMethod : public aptMethod {
       }
 
    public:
-   RredMethod() : aptMethod("rred", "2.0", SendConfig), Debug(false)
+   RredMethod() : aptMethod("rred", "2.0", SendConfig | SendURIEncoded), Debug(false)
    {
       SeccompFlags = aptMethod::BASE | aptMethod::DIRECTORY;
    }
 };
 
-int main(int argc, char **argv)
+static const APT::Configuration::Compressor *FindCompressor(std::vector<APT::Configuration::Compressor> const &compressors, std::string const &name) /*{{{*/
 {
-   int i;
-   bool just_diff = true;
-   bool test = false;
-   Patch patch;
-
-   if (argc <= 1) {
+   APT::Configuration::Compressor const * compressor = nullptr;
+   for (auto const & c : compressors)
+   {
+      if (compressor != nullptr && c.Cost >= compressor->Cost)
+         continue;
+      if (c.Name == name || c.Extension == name || (!c.Extension.empty() && c.Extension.substr(1) == name))
+         compressor = &c;
+   }
+   return compressor;
+}
+									/*}}}*/
+static std::vector<aptDispatchWithHelp> GetCommands()
+{
+   return {{nullptr, nullptr, nullptr}};
+}
+int main(int argc, const char *argv[])
+{
+   if (argc <= 1)
       return RredMethod().Run();
-   }
 
-   // Usage: rred -t input output diff ...
-   if (argc > 1 && strcmp(argv[1], "-t") == 0) {
-      // Read config files so we see compressors.
-      pkgInitConfig(*_config);
-      just_diff = false;
-      test = true;
-      i = 4;
-   } else if (argc > 1 && strcmp(argv[1], "-f") == 0) {
-      just_diff = false;
-      i = 2;
-   } else {
-      i = 1;
-   }
+   CommandLine CmdL;
+   auto const Cmds = ParseCommandLine(CmdL, APT_CMD::RRED, &_config, nullptr, argc, argv, &ShowHelp, &GetCommands);
 
-   for (; i < argc; i++) {
-      FileFd p;
-      if (p.Open(argv[i], FileFd::ReadOnly) == false) {
-	 _error->DumpErrors(std::cerr);
-	 exit(1);
+   FileFd input, output;
+   unsigned int argi = 0;
+   auto const argmax = CmdL.FileSize();
+   bool const quiet = _config->FindI("quiet", 0) >= 2;
+
+   std::string const compressorName = _config->Find("Rred::Compress", "");
+   auto const compressors = APT::Configuration::getCompressors();
+   APT::Configuration::Compressor const * compressor = nullptr;
+   if (not compressorName.empty())
+   {
+      compressor = FindCompressor(compressors, compressorName);
+      if (compressor == nullptr)
+      {
+	 std::cerr << "E: Could not find compressor: " << compressorName << '\n';
+	 return 101;
       }
-      if (patch.read_diff(p, NULL) == false)
+   }
+
+   bool just_diff = false;
+   if (_config->FindB("Rred::T", false))
+   {
+      if (argmax < 3)
+      {
+	 std::cerr << "E: Not enough filenames given on the command line for mode 't'\n";
+	 return 101;
+      }
+      if (not quiet)
+	 std::clog << "Patching " << CmdL.FileList[0] << " into " << CmdL.FileList[1] << "\n";
+      input.Open(CmdL.FileList[0], FileFd::ReadOnly,FileFd::Extension);
+      if (compressor == nullptr)
+	 output.Open(CmdL.FileList[1], FileFd::WriteOnly | FileFd::Create | FileFd::Empty | FileFd::BufferedWrite, FileFd::Extension);
+      else
+	 output.Open(CmdL.FileList[1], FileFd::WriteOnly | FileFd::Create | FileFd::Empty | FileFd::BufferedWrite, *compressor);
+      argi = 2;
+   }
+   else
+   {
+      if (compressor == nullptr)
+	 output.OpenDescriptor(STDOUT_FILENO, FileFd::WriteOnly | FileFd::Create | FileFd::BufferedWrite);
+      else
+	 output.OpenDescriptor(STDOUT_FILENO, FileFd::WriteOnly | FileFd::Create | FileFd::BufferedWrite, *compressor);
+      if (_config->FindB("Rred::F", false))
+	 input.OpenDescriptor(STDIN_FILENO, FileFd::ReadOnly);
+      else
+	 just_diff = true;
+   }
+
+   if (argi + 1 > argmax)
+   {
+	 std::cerr << "E: At least one patch needs to be given on the command line\n";
+	 return 101;
+   }
+
+   Patch merged_patch;
+   for (; argi < argmax; ++argi)
+   {
+      FileFd patch;
+      if (not patch.Open(CmdL.FileList[argi], FileFd::ReadOnly, FileFd::Extension))
       {
 	 _error->DumpErrors(std::cerr);
-	 exit(2);
+	 return 1;
+      }
+      if (not merged_patch.read_diff(patch, nullptr))
+      {
+	 _error->DumpErrors(std::cerr);
+	 return 2;
       }
    }
 
-   if (test) {
-      FileFd out, inp;
-      std::cerr << "Patching " << argv[2] << " into " << argv[3] << "\n";
-      inp.Open(argv[2], FileFd::ReadOnly,FileFd::Extension);
-      out.Open(argv[3], FileFd::WriteOnly | FileFd::Create | FileFd::Empty | FileFd::BufferedWrite, FileFd::Extension);
-      patch.apply_against_file(out, inp);
-      out.Close();
-   } else if (just_diff) {
-      FileFd out;
-      out.OpenDescriptor(STDOUT_FILENO, FileFd::WriteOnly | FileFd::Create);
-      patch.write_diff(out);
-      out.Close();
-   } else {
-      FileFd out, inp;
-      out.OpenDescriptor(STDOUT_FILENO, FileFd::WriteOnly | FileFd::Create | FileFd::BufferedWrite);
-      inp.OpenDescriptor(STDIN_FILENO, FileFd::ReadOnly);
-      patch.apply_against_file(out, inp);
-      out.Close();
-   }
-   return 0;
+   if (just_diff)
+      merged_patch.write_diff(output);
+   else
+      merged_patch.apply_against_file(output, input);
+
+   output.Close();
+   input.Close();
+   return DispatchCommandLine(CmdL, {});
 }
+#endif

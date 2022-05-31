@@ -60,7 +60,7 @@ struct RequestState
    bool AddPartialFileToHashes(FileFd &File);
 
    RequestState(BaseHttpMethod * const Owner, ServerState * const Server) :
-      Owner(Owner), Server(Server) { time(&Date); }
+      Owner(Owner), Server(Server) { time(&Date); Code[0] = '\0'; }
 };
 struct ServerState
 {
@@ -94,7 +94,7 @@ struct ServerState
    /** \brief Get the headers before the data */
    RunHeadersResult RunHeaders(RequestState &Req, const std::string &Uri);
 
-   bool Comp(URI Other) const {return Other.Host == ServerName.Host && Other.Port == ServerName.Port;};
+   bool Comp(URI Other) const {return Other.Access == ServerName.Access && Other.Host == ServerName.Host && Other.Port == ServerName.Port;};
    virtual void Reset();
    virtual bool WriteResponse(std::string const &Data) = 0;
 
@@ -107,7 +107,7 @@ struct ServerState
    virtual bool Close() = 0;
    virtual bool InitHashes(HashStringList const &ExpectedHashes) = 0;
    virtual ResultState Die(RequestState &Req) = 0;
-   virtual bool Flush(FileFd * const File) = 0;
+   virtual bool Flush(FileFd *const File, bool MustComplete = false) = 0;
    virtual ResultState Go(bool ToFile, RequestState &Req) = 0;
    virtual Hashes * GetHashes() = 0;
 

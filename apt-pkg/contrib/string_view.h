@@ -9,7 +9,7 @@
  * (at your option) any later version.
  */
 
-#if !defined(APT_STRINGVIEW_H) && defined(APT_PKG_EXPOSE_STRING_VIEW)
+#if !defined(APT_STRINGVIEW_H)
 #define APT_STRINGVIEW_H
 #include <apt-pkg/macros.h>
 #include <string>
@@ -24,7 +24,7 @@ namespace APT {
  * used by APT. It is not meant to be used in programs, only inside the
  * library for performance critical paths.
  */
-class APT_HIDDEN StringView {
+class StringView {
     const char *data_;
     size_t size_;
 
@@ -39,6 +39,10 @@ public:
     StringView(const char *data) : data_(data), size_(strlen(data)) {}
     StringView(std::string const & str): data_(str.data()), size_(str.size()) {}
 
+    /* Modifiers */
+    void remove_prefix(size_t n) { data_ += n; size_ -= n; }
+    void remove_suffix(size_t n) { size_ -= n; }
+    void clear() { size_ = 0; }
 
     /* Viewers */
     constexpr StringView substr(size_t pos, size_t n = npos) const {
@@ -74,6 +78,28 @@ public:
             return npos;
 
         return found - data_;
+    }
+
+    size_t find(APT::StringView const needle) const {
+       if (needle.empty())
+	  return npos;
+       if (needle.length() == 1)
+	  return find(*needle.data());
+       size_t found = 0;
+       while ((found = find(*needle.data(), found)) != npos) {
+	  if (compare(found, needle.length(), needle) == 0)
+	     return found;
+	  ++found;
+       }
+       return found;
+    }
+    size_t find(APT::StringView const needle, size_t pos) const {
+       if (pos == 0)
+	  return find(needle);
+       size_t const found = substr(pos).find(needle);
+       if (found == npos)
+	  return npos;
+       return pos + found;
     }
 
     /* Conversions */
@@ -123,10 +149,15 @@ static inline int StringViewCompareFast(StringView a, StringView b) {
     return memcmp(a.data(), b.data(), a.size());
 }
 
-
+static constexpr inline APT::StringView operator""_sv(const char *data, size_t size)
+{
+   return APT::StringView(data, size);
+}
 }
 
 inline bool operator ==(const char *other, APT::StringView that);
 inline bool operator ==(const char *other, APT::StringView that) { return that.operator==(other); }
+inline bool operator ==(std::string const &other, APT::StringView that);
+inline bool operator ==(std::string const &other, APT::StringView that) { return that.operator==(other); }
 
 #endif
