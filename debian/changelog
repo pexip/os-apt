@@ -1,3 +1,9 @@
+apt (2.2.4pexip1) pexip; urgency=medium
+
+  * Initial bullseye build
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Thu, 02 Jun 2022 14:42:00 +0100
+
 apt (2.2.4) unstable; urgency=medium
 
   [ Julian Andres Klode ]
