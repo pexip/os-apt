@@ -41,8 +41,7 @@ N: See apt-secure(8) manpage for repository creation and user configuration deta
 
 assert_repo_is_intact()
 {
-    testsuccessequal "dpkg/now 1.16.2+fake all [installed,local]
-foo/unstable 2.0 all" apt list -qq
+    testsuccessequal 'foo/unstable 2.0 all' apt list -qq
     testsuccess aptget install -y -s foo
     testfailure aptget install -y evil
     testsuccess aptget source foo --print-uris
@@ -178,7 +177,7 @@ test_subvert_inrelease()
     # replace InRelease with something else
     mv "$APTARCHIVE/dists/unstable/Release" "$APTARCHIVE/dists/unstable/InRelease"
 
-    testfailuremsg "E: Failed to fetch file://${APTARCHIVE}/dists/unstable/InRelease  Clearsigned file isn't valid, got 'NOSPLIT' (does the network require authentication?)
+    testfailuremsg "E: Failed to fetch file:${APTARCHIVE}/dists/unstable/InRelease  Clearsigned file isn't valid, got 'NOSPLIT' (does the network require authentication?)
 E: The repository 'file:${APTARCHIVE} unstable InRelease' is no longer signed.
 N: Updating from such a repository can't be done securely, and is therefore disabled by default.
 N: See apt-secure(8) manpage for repository creation and user configuration details." aptget update

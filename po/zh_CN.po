@@ -1,18 +1,23 @@
 # Chinese/Simplified translation of apt.
+#
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
+# This file originally stated:
 # This file is put in the public domain.
 # Deng Xiyue <manphiz-guest@users.alioth.debian.org>, 2007, 2008.
 # Tchaikov <tchaikov@sjtu.org>, 2005, 2007.
 # Carlos Z.F. Liu <carlosliu@users.sourceforge.net>, 2004, 2006.
 # Aron Xu <happyaron.xu@gmail.com>, 2009, 2010.
 # Mo Zhou <cdluminate@gmail.com>, 2014, 2015, 2016, 2017, 2019.
-# Boyuan Yang <073plan@gmail.com>, 2018, 2020.
+# Boyuan Yang <073plan@gmail.com>, 2018, 2020, 2022.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: apt 2.0.1\n"
+"Project-Id-Version: apt 2.5.3\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
-"PO-Revision-Date: 2020-03-26 17:38-0400\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
+"PO-Revision-Date: 2022-10-05 17:20-0400\n"
 "Last-Translator: Boyuan Yang <073plan@gmail.com>\n"
 "Language-Team: Chinese (simplified) <debian-l10n-chinese@lists.debian.org>\n"
 "Language: zh_CN\n"
@@ -20,7 +25,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Poedit 2.3\n"
+"X-Generator: Poedit 3.1.1\n"
 
 #: apt-pkg/acquire-item.cc
 msgid ""
@@ -189,7 +194,8 @@ msgstr "%s 的 Release 文件已经过期(已经过期了 %s)。该仓库的更�
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "冲突的发行版：%s (期望 %s 但得到 %s)"
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr "仓库'%s'将其'%s'值从'%s'修改到了'%s'"
@@ -200,7 +206,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr "仓库'%s'将其'%s'的默认优先级从'%hi'修改到了'%hi'。"
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -371,16 +377,6 @@ msgstr "编译正则表达式时出错 - %s"
 
 #: apt-pkg/cacheset.cc
 #, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "未找到“%2$s”的“%1$s”发布版本"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "未找到“%2$s”的“%1$s”版本"
-
-#: apt-pkg/cacheset.cc
-#, c-format
 msgid "Couldn't find task '%s'"
 msgstr "无法找到任务 %s"
 
@@ -425,6 +421,16 @@ msgid ""
 "Can't select installed nor candidate version from package '%s' as it has "
 "neither of them"
 msgstr "因为软件包 %s 没有已安装或候选的版本，无法进行选择"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "未找到“%2$s”的“%1$s”发布版本"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "未找到“%2$s”的“%1$s”版本"
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -650,10 +656,9 @@ msgid "Tar checksum failed, archive corrupted"
 msgstr "Tar 的校验和不符，文件已损坏"
 
 #: apt-pkg/contrib/extracttar.cc
-#, fuzzy, c-format
-#| msgid "Unknown TAR header type %u, member %s"
+#, c-format
 msgid "Unknown TAR header type %u"
-msgstr "未知的 TAR 数据头类型 %u，成员 %s"
+msgstr "未知的 TAR 数据头类型 %u"
 
 #: apt-pkg/contrib/fileutl.cc
 #, c-format
@@ -1876,30 +1881,19 @@ msgstr "解压缩后将会空出 %sB 的空间。\n"
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr "虽然您指定了仅执行常规操作，但这并不是常规操作。"
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "是，按我说的做！"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
-msgstr ""
-"您的操作有潜在的危害性。\n"
-"若要继续，请输入下面的短句“%s”\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "中止。"
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
+msgstr "不允许移除系统必需的关键软件包。这么做可能损坏系统。"
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "您希望继续执行吗？"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "中止。"
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2026,7 +2020,7 @@ msgstr "正在列表"
 msgid "There is %i additional version. Please use the '-a' switch to see it"
 msgid_plural ""
 "There are %i additional versions. Please use the '-a' switch to see them."
-msgstr[0] "还有 %i 个版本。请使用 -a 选项来查看它(他们)。"
+msgstr[0] "还有 %i 个版本。请使用 -a 选项来查看它(它们)。"
 
 #. TRANSLATORS: placeholder is a binary name like apt or apt-get
 #: apt-private/private-main.cc
@@ -2254,7 +2248,7 @@ msgstr "  版本列表："
 
 #: apt-private/private-show.cc
 msgid "phased"
-msgstr ""
+msgstr "阶段更新"
 
 #: apt-private/private-source.cc
 #, c-format
@@ -2722,7 +2716,7 @@ msgstr "卸载软件包"
 msgid "Remove packages and config files"
 msgstr "卸载并清除软件包的配置"
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 msgid "Remove automatically all unused packages"
 msgstr "卸载所有自动安装且不再使用的软件包"
 
@@ -2882,7 +2876,7 @@ msgstr "%s 已经设置为保留。\n"
 
 #: cmdline/apt-mark.cc
 #, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "%s 已经设置为不保留。\n"
 
 #: cmdline/apt-mark.cc
@@ -3019,6 +3013,12 @@ msgstr "重新安装软件包"
 #: cmdline/apt.cc
 msgid "remove packages"
 msgstr "移除软件包"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "Remove automatically all unused packages"
+msgid "automatically remove all unused packages"
+msgstr "卸载所有自动安装且不再使用的软件包"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3700,6 +3700,15 @@ msgstr "无法运行 apt-key 以验证签名(您安装了 gnupg 吗？)"
 msgid "Unknown error executing apt-key"
 msgstr "运行 apt-key 时发生未知错误"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+"密钥存储在过时的 trusted.gpg 密钥环中（%s），请参见 apt-key(8) 的 "
+"DEPRECATION 一节以了解详情。"
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3747,6 +3756,19 @@ msgstr "连接被永久关闭"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "空文件不是有效归档"
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "是，按我说的做！"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "您的操作有潜在的危害性。\n"
+#~ "若要继续，请输入下面的短句“%s”\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

@@ -1,10 +1,15 @@
+#
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
+# This file originally stated:
 # This file is put in the public domain.
 # Kinley Tshering <gasepkuenden2k3@hotmail.com>, 2006
 msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
 "PO-Revision-Date: 2006-09-19 09:49+0530\n"
 "Last-Translator: Kinley Tshering <gasepkuenden2k3@hotmail.com>\n"
 "Language-Team: Dzongkha <pgeyleg@dit.gov.bt>\n"
@@ -178,7 +183,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -189,7 +195,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -356,16 +362,6 @@ msgid "Regex compilation error - %s"
 msgstr "རི་ཇེགསི་ཕྱོགས་སྒྲིག་འཛོལ་བ་- %s"
 
 #: apt-pkg/cacheset.cc
-#, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "%sགི་དོན་ལུ་འཛིན་གྲོལ་'%s'་དེ་མ་འཐོབ་པས།"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "'%s'་གི་དོན་ལུ་འཐོན་རིམ་'%s'་དེ་མ་འཐོབ་པས།"
-
-#: apt-pkg/cacheset.cc
 #, fuzzy, c-format
 msgid "Couldn't find task '%s'"
 msgstr "%s་ཐུམ་སྒྲིལ་འཚོལ་མ་ཐོབ།"
@@ -411,6 +407,16 @@ msgid ""
 "Can't select installed nor candidate version from package '%s' as it has "
 "neither of them"
 msgstr ""
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "%sགི་དོན་ལུ་འཛིན་གྲོལ་'%s'་དེ་མ་འཐོབ་པས།"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "'%s'་གི་དོན་ལུ་འཐོན་རིམ་'%s'་དེ་མ་འཐོབ་པས།"
 
 #: apt-pkg/cdrom.cc
 #, fuzzy
@@ -1875,31 +1881,20 @@ msgstr "%sB་འདི་ཤུབ་པའི་ཤུལ་ལས་ཀྱི
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr "གལ་ཆུང་རྐྱངམ་ཅིག་ཁསལ་བཀོད་འབད་ནུག་ འདི་འབདཝ་ད་འ་ནི་འདི་གལ་ཆུང་གི་བཀོལ་སྤྱོད་མེན།"
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "ཨིན་ ང་གིས་སླབ་དོ་བཟུམ་སྦེ་རང་འབད!"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"ཁྱོད་ཀྱི་གནོད་ངན་འབྱུང་ནིའི་ལཱ་ཅི་འབད་ནི་འབད་དོ།\n"
-"འཕྲོ་མཐུད་འབད་ནིའི་དོན་ལུ་'%s'ཚིག་ཚན་ནང་ལུ་ཡིག་དཔར་རྐྱབས།\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "བར་བཤོལ་འབད།"
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 #, fuzzy
 msgid "Do you want to continue?"
 msgstr "ཁྱོན་ཀྱི་འཕྲོ་མཐུད་ནི་འབད་ནི་ཨིན་ན་"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "བར་བཤོལ་འབད།"
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2727,7 +2722,7 @@ msgstr "འདི་གིས་ ཐུམ་སྒྲིལ་ཚུ་རྩ�
 msgid "Remove packages and config files"
 msgstr ""
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 #, fuzzy
 msgid "Remove automatically all unused packages"
 msgstr "འདི་འབདཝ་ད་%sའདི་གཞི་བཙུགས་འབད་ནི་ཨིན།"
@@ -2902,7 +2897,7 @@ msgstr "%s ་འདི་ཧེ་མ་ལས་རང་འཐོན་རི
 
 #: cmdline/apt-mark.cc
 #, fuzzy, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "%s ་འདི་ཧེ་མ་ལས་རང་འཐོན་རིམ་གསར་ཤོས་ཅིག་ཨིན།\n"
 
 #: cmdline/apt-mark.cc
@@ -3034,6 +3029,11 @@ msgstr "ཁབ་གཟེར་བཏབ་ཡོད་པའི་ཐུམ་
 #, fuzzy
 msgid "remove packages"
 msgstr "ཆད་པ་ཡོད་པའི་ཐུམ་སྒྲིལ་ཚུ།"
+
+#: cmdline/apt.cc
+#, fuzzy
+msgid "automatically remove all unused packages"
+msgstr "འདི་འབདཝ་ད་%sའདི་གཞི་བཙུགས་འབད་ནི་ཨིན།"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3741,6 +3741,13 @@ msgstr ""
 msgid "Unknown error executing apt-key"
 msgstr "apt-key་ལག་ལེན་འཐབ་ནི་ལུ་མ་ཤེས་པའི་འཛོལ་བ་།"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3789,6 +3796,19 @@ msgstr "དུས་སུ་མ་འབབ་པ་རང་མཐུད་ལ
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "ཨིན་ ང་གིས་སླབ་དོ་བཟུམ་སྦེ་རང་འབད!"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "ཁྱོད་ཀྱི་གནོད་ངན་འབྱུང་ནིའི་ལཱ་ཅི་འབད་ནི་འབད་དོ།\n"
+#~ "འཕྲོ་མཐུད་འབད་ནིའི་དོན་ལུ་'%s'ཚིག་ཚན་ནང་ལུ་ཡིག་དཔར་རྐྱབས།\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

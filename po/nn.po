@@ -2,6 +2,10 @@
 # translation of apt.po to Norwegian nynorsk
 # translation of nn.po to Norwegian Nynorsk
 # translation of apt.po to Norwegian Nynorsk
+#
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
 # Gaute Hvoslef Kvalnes <gaute@verdsveven.com>, 2003.
 # Havard Korsvoll <korsvoll@skulelinux.no>, 2004, 2005.
 #
@@ -9,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
 "PO-Revision-Date: 2005-02-14 23:30+0100\n"
 "Last-Translator: Havard Korsvoll <korsvoll@skulelinux.no>\n"
 "Language-Team: Norwegian nynorsk <i18n-nn@lister.ping.uio.no>\n"
@@ -181,7 +185,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -192,7 +197,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -362,16 +367,6 @@ msgid "Regex compilation error - %s"
 msgstr "Regex-kompileringsfeil - %s"
 
 #: apt-pkg/cacheset.cc
-#, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "Fann ikkje utgåva «%s» av «%s»"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "Fann ikkje versjonen «%s» av «%s»"
-
-#: apt-pkg/cacheset.cc
 #, fuzzy, c-format
 msgid "Couldn't find task '%s'"
 msgstr "Fann ikkje pakken %s"
@@ -417,6 +412,16 @@ msgid ""
 "Can't select installed nor candidate version from package '%s' as it has "
 "neither of them"
 msgstr ""
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "Fann ikkje utgåva «%s» av «%s»"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "Fann ikkje versjonen «%s» av «%s»"
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -1874,30 +1879,19 @@ msgid "Trivial Only specified but this is not a trivial operation."
 msgstr ""
 "«Trivial Only» var spesifisert, men dette er ikkje noka triviell handling."
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "Ja, gjer som eg seier!"
-
-#: apt-private/private-install.cc
-#, fuzzy, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"Du er i ferd med å utføra ei handling som kan vera skadeleg.\n"
-"For å halda fram, må du skriva nøyaktig «%s».\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "Avbryt."
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Vil du halda fram?"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "Avbryt."
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2727,7 +2721,7 @@ msgstr "Fjern pakkar."
 msgid "Remove packages and config files"
 msgstr ""
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 #, fuzzy
 msgid "Remove automatically all unused packages"
 msgstr "men %s skal installerast"
@@ -2902,7 +2896,7 @@ msgstr "Den nyaste versjonen av %s er installert frå før.\n"
 
 #: cmdline/apt-mark.cc
 #, fuzzy, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "Den nyaste versjonen av %s er installert frå før.\n"
 
 #: cmdline/apt-mark.cc
@@ -3034,6 +3028,11 @@ msgstr "Spikra pakkar:"
 #, fuzzy
 msgid "remove packages"
 msgstr "Øydelagde pakkar"
+
+#: cmdline/apt.cc
+#, fuzzy
+msgid "automatically remove all unused packages"
+msgstr "men %s skal installerast"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3726,6 +3725,13 @@ msgstr ""
 msgid "Unknown error executing apt-key"
 msgstr ""
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3774,6 +3780,19 @@ msgstr "Sambandet vart uventa stengd"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "Ja, gjer som eg seier!"
+
+#, fuzzy, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "Du er i ferd med å utføra ei handling som kan vera skadeleg.\n"
+#~ "For å halda fram, må du skriva nøyaktig «%s».\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

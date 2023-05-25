@@ -1,5 +1,9 @@
 # Japanese messages for apt.
 # Copyright (C) 2001 Free Software Foundation, Inc.
+#
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
 # Project Vine, Daisuke SUZUKI <daisuke@linux.or.jp>, 2001-2002
 # Debian Project, Masato Taruishi <taru@debian.org>, 2002
 # Debian Project, Keita Maehara <maehara@debian.org>, 2003
@@ -8,18 +12,17 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: apt 1.4\n"
+"Project-Id-Version: apt 2.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
-"PO-Revision-Date: 2017-01-06 04:50+0900\n"
-"Last-Translator: Takuma Yamada <tyamada@takumayamada.com>\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
+"PO-Revision-Date: 2022-08-14 14:30+0900\n"
+"Last-Translator: Hideki Yamane <henrich@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Gtranslator 2.91.6\n"
 
 #: apt-pkg/acquire-item.cc
 msgid ""
@@ -214,7 +217,8 @@ msgstr ""
 "ディストリビューションが競合しています: %s (%s を期待していたのに %s を取得し"
 "ました)"
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -225,7 +229,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -402,16 +406,6 @@ msgstr "正規表現の展開エラー - %s"
 
 #: apt-pkg/cacheset.cc
 #, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "'%2$s' のリリース '%1$s' が見つかりませんでした"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "'%2$s' のバージョン '%1$s' が見つかりませんでした"
-
-#: apt-pkg/cacheset.cc
-#, c-format
 msgid "Couldn't find task '%s'"
 msgstr "タスク '%s' が見つかりません"
 
@@ -461,6 +455,16 @@ msgid ""
 msgstr ""
 "パッケージ '%s' のインストール済みまたは候補のバージョンはいずれも存在しない"
 "ので選べません"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "'%2$s' のリリース '%1$s' が見つかりませんでした"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "'%2$s' のバージョン '%1$s' が見つかりませんでした"
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -1977,30 +1981,19 @@ msgstr "この操作後に %sB のディスク容量が解放されます。\n"
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr "Trivial Only が指定されましたが、これは簡単な操作ではありません。"
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "Yes, do as I say!"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"重大な問題を引き起こす可能性のあることをしようとしています。\n"
-"続行するには、'%s' というフレーズをタイプしてください。\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "中断しました。"
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "続行しますか?"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "中断しました。"
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2035,7 +2028,7 @@ msgstr[0] ""
 
 #: apt-private/private-install.cc
 msgid "Note: This is done automatically and on purpose by dpkg."
-msgstr "注意: これは dpkg により自動でわざと行われれます。"
+msgstr "注意: これは dpkg により自動かつ意図的に実施されます。"
 
 #: apt-private/private-install.cc
 msgid "We are not supposed to delete stuff, can't start AutoRemover"
@@ -2864,7 +2857,7 @@ msgstr "パッケージを削除する"
 msgid "Remove packages and config files"
 msgstr "設定ファイルまで含めてパッケージを削除する"
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 msgid "Remove automatically all unused packages"
 msgstr "自動インストールされ使われていないすべてのパッケージを削除する"
 
@@ -3029,7 +3022,7 @@ msgstr "%s はすでに保留に設定されています。\n"
 
 #: cmdline/apt-mark.cc
 #, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "%s はすでに保留されていません。\n"
 
 #: cmdline/apt-mark.cc
@@ -3173,6 +3166,12 @@ msgstr "パッケージをインストール"
 #: cmdline/apt.cc
 msgid "remove packages"
 msgstr "パッケージを削除"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "Remove automatically all unused packages"
+msgid "automatically remove all unused packages"
+msgstr "自動インストールされ使われていないすべてのパッケージを削除する"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3865,6 +3864,13 @@ msgstr ""
 msgid "Unknown error executing apt-key"
 msgstr "apt-key の実行中に未知のエラーが発生"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3912,6 +3918,19 @@ msgstr "途中で接続がクローズされました"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "空のファイルは有効なアーカイブと認められません"
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "Yes, do as I say!"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "重大な問題を引き起こす可能性のあることをしようとしています。\n"
+#~ "続行するには、'%s' というフレーズをタイプしてください。\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

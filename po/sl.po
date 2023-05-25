@@ -1,10 +1,13 @@
 # translation of apt.po to Slovenian
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
 # Matjaz Horvat <matjaz@owca.info>, 2004.
 msgid ""
 msgstr ""
 "Project-Id-Version: apt 0.5.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
 "PO-Revision-Date: 2012-06-27 21:29+0000\n"
 "Last-Translator: Andrej Znidarsic <andrej.znidarsic@gmail.com>\n"
 "Language-Team: Slovenian <sl@li.org>\n"
@@ -12,8 +15,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n%100==1 ? 1 : n%100==2 ? 2 : n%100==3 || n"
-"%100==4 ? 3 : 0);\n"
+"Plural-Forms: nplurals=4; plural=(n%100==1 ? 1 : n%100==2 ? 2 : n%100==3 || "
+"n%100==4 ? 3 : 0);\n"
 "X-Launchpad-Export-Date: 2012-06-25 20:00+0000\n"
 "X-Generator: Launchpad (build 15482)\n"
 "X-Poedit-Country: SLOVENIA\n"
@@ -189,7 +192,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Distribucija v sporu: %s (pričakovana %s, toda dobljena %s)"
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -200,7 +204,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -366,16 +370,6 @@ msgstr "Napaka med prevajanjem logičnega izraza - %s"
 
 #: apt-pkg/cacheset.cc
 #, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "Izdaje '%s' za '%s' ni mogoče najti"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "Različice '%s' za '%s' ni mogoče najti"
-
-#: apt-pkg/cacheset.cc
-#, c-format
 msgid "Couldn't find task '%s'"
 msgstr "Ni mogoče najti naloge '%s'"
 
@@ -424,6 +418,16 @@ msgid ""
 msgstr ""
 "Ni mogoče izbrati nameščene različice ali različice kandidata iz paketa "
 "'%s', saj nima nobenega od njiju"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "Izdaje '%s' za '%s' ni mogoče najti"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "Različice '%s' za '%s' ni mogoče najti"
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -1912,30 +1916,19 @@ msgstr "Po tem opravilu bo sproščenega %sB prostora na disku.\n"
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr "Navedena je možnost Samo preprosto, a to opravilo ni preprosto."
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "Da, naredi tako kot pravim!"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"Naredili boste nekaj, kar je morda lahko škodljivo.\n"
-"Za nadaljevanje vtipkajte frazo '%s'\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "Prekini."
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Ali želite nadaljevati?"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "Prekini."
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2793,7 +2786,7 @@ msgstr "Odstrani pakete"
 msgid "Remove packages and config files"
 msgstr "Odstrani pakete in nastavitvene datoteke"
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 msgid "Remove automatically all unused packages"
 msgstr "Samodejno odstrani vse neuporabljene pakete"
 
@@ -2970,7 +2963,7 @@ msgstr "paket %s je bil že nastavljen kot na čakanju.\n"
 
 #: cmdline/apt-mark.cc
 #, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "paket %s je bil že nastavljen kot ne na čakanju.\n"
 
 #: cmdline/apt-mark.cc
@@ -3104,6 +3097,12 @@ msgstr "Pripeti paketi:"
 #, fuzzy
 msgid "remove packages"
 msgstr "Pokvarjeni paketi"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "Remove automatically all unused packages"
+msgid "automatically remove all unused packages"
+msgstr "Samodejno odstrani vse neuporabljene pakete"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3799,6 +3798,13 @@ msgstr ""
 msgid "Unknown error executing apt-key"
 msgstr "Neznana napaka med izvajanjem apt-key"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3847,6 +3853,19 @@ msgstr "Povezava se je prezgodaj zaprla"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "Prazne datoteke ne morejo biti veljavni arhivi"
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "Da, naredi tako kot pravim!"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "Naredili boste nekaj, kar je morda lahko škodljivo.\n"
+#~ "Za nadaljevanje vtipkajte frazo '%s'\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

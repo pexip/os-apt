@@ -1,5 +1,10 @@
 # translation of apt_po_gl.po to galician
 # Galician translation of apt
+#
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
+# This file originally stated:
 # This file is put in the public domain.
 #
 # Jacobo Tarrío <jtarrio@debian.org>, 2005, 2007, 2008.
@@ -10,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
 "PO-Revision-Date: 2011-05-12 15:28+0100\n"
 "Last-Translator: Miguel Anxo Bouzada <mbouzada@gmail.com>\n"
 "Language-Team: galician <proxecto@trasno.net>\n"
@@ -185,7 +190,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Conflito na distribución: %s (agardábase %s mais obtívose %s)"
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -196,7 +202,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -366,16 +372,6 @@ msgstr "Produciuse un erro na compilación da expresión regular - %s"
 
 #: apt-pkg/cacheset.cc
 #, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "Non se atopou a publicación «%s» de «%s»"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "Non se atopou a versión «%s» de «%s»"
-
-#: apt-pkg/cacheset.cc
-#, c-format
 msgid "Couldn't find task '%s'"
 msgstr "Non foi posíbel atopar a tarefa «%s»"
 
@@ -430,6 +426,16 @@ msgid ""
 msgstr ""
 "Non é posíbel seleccionar nin a versión instalada nin a candidata do paquete "
 "«%s» xa que non ten ningunha delas"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "Non se atopou a publicación «%s» de «%s»"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "Non se atopou a versión «%s» de «%s»"
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -1933,30 +1939,19 @@ msgstr "Despois desta operación liberaranse %sB de espazo de disco.\n"
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr "Especificouse «Só triviais» mais esta non é unha operación trivial."
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "Si, fai o que digo!"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"Está a piques de facer algo perigoso.\n"
-"Para continuar escriba a frase «%s»\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "Interromper."
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Quere continuar?"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "Interromper."
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2799,7 +2794,7 @@ msgstr "Retira paquetes"
 msgid "Remove packages and config files"
 msgstr "Retira paquetes e ficheiros de configuración"
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 msgid "Remove automatically all unused packages"
 msgstr "Retira automaticamente todos os paquetes sen uso"
 
@@ -2975,7 +2970,7 @@ msgstr "%s xa é a versión máis recente.\n"
 
 #: cmdline/apt-mark.cc
 #, fuzzy, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "%s xa é a versión máis recente.\n"
 
 #: cmdline/apt-mark.cc
@@ -3107,6 +3102,12 @@ msgstr "Paquetes inmobilizados:"
 #, fuzzy
 msgid "remove packages"
 msgstr "Paquetes estragados"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "Remove automatically all unused packages"
+msgid "automatically remove all unused packages"
+msgstr "Retira automaticamente todos os paquetes sen uso"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3809,6 +3810,13 @@ msgstr ""
 msgid "Unknown error executing apt-key"
 msgstr "Produciuse un erro descoñecido ao executar apt-key"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3859,6 +3867,19 @@ msgstr "A conexión pechouse prematuramente"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "Os ficheiros baleiros non poden ser arquivadores válidos"
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "Si, fai o que digo!"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "Está a piques de facer algo perigoso.\n"
+#~ "Para continuar escriba a frase «%s»\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

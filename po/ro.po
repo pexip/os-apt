@@ -1,4 +1,9 @@
 # translation of ro.po to Romanian
+#
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
+# This file originally stated:
 # This file is put in the public domain.
 #
 # Sorin Batariuc <sorin@bonbon.net>, 2004, 2005, 2006.
@@ -7,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
 "PO-Revision-Date: 2008-11-15 02:21+0200\n"
 "Last-Translator: Eddy Petrișor <eddy.petrisor@gmail.com>\n"
 "Language-Team: Romanian <debian-l10n-romanian@lists.debian.org>\n"
@@ -179,7 +184,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -190,7 +196,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -360,16 +366,6 @@ msgid "Regex compilation error - %s"
 msgstr "Eroare de compilare expresie regulată - %s"
 
 #: apt-pkg/cacheset.cc
-#, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "Release '%s' pentru '%s' n-a fost găsită"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "Versiunea '%s' pentru '%s' n-a fost găsită"
-
-#: apt-pkg/cacheset.cc
 #, fuzzy, c-format
 msgid "Couldn't find task '%s'"
 msgstr "Nu s-a putut găsi sarcina %s"
@@ -415,6 +411,16 @@ msgid ""
 "Can't select installed nor candidate version from package '%s' as it has "
 "neither of them"
 msgstr ""
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "Release '%s' pentru '%s' n-a fost găsită"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "Versiunea '%s' pentru '%s' n-a fost găsită"
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -1883,30 +1889,19 @@ msgid "Trivial Only specified but this is not a trivial operation."
 msgstr ""
 "A fost specificat 'doar neimportant' dar nu este o operațiune neimportantă."
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "Da, fă cum îți spun!"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"Sunteți pe cale de a face ceva cu potențial distructiv.\n"
-"Pentru a continua tastați fraza '%s'\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "Renunțare."
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Vreți să continuați?"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "Renunțare."
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2747,7 +2742,7 @@ msgstr "Șterge pachete"
 msgid "Remove packages and config files"
 msgstr "Șterge și curăță pachete"
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 msgid "Remove automatically all unused packages"
 msgstr "Șterge automat toate pachetele nefolosite"
 
@@ -2921,7 +2916,7 @@ msgstr "%s este deja la cea mai nouă versiune.\n"
 
 #: cmdline/apt-mark.cc
 #, fuzzy, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "%s este deja la cea mai nouă versiune.\n"
 
 #: cmdline/apt-mark.cc
@@ -3053,6 +3048,12 @@ msgstr "Pachete alese special:"
 #, fuzzy
 msgid "remove packages"
 msgstr "Pachete deteriorate"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "Remove automatically all unused packages"
+msgid "automatically remove all unused packages"
+msgstr "Șterge automat toate pachetele nefolosite"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3765,6 +3766,13 @@ msgstr ""
 msgid "Unknown error executing apt-key"
 msgstr "Eroare necunoscută în timp ce se execută apt-key"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3815,6 +3823,19 @@ msgstr "Conexiune închisă prematur"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "Da, fă cum îți spun!"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "Sunteți pe cale de a face ceva cu potențial distructiv.\n"
+#~ "Pentru a continua tastați fraza '%s'\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

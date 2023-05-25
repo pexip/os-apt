@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <map>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -53,8 +54,26 @@ static std::string transformFingergrpintsWithFilenames(std::string const &finger
    return transformFingergrpints(finger);
 }
 									/*}}}*/
-static std::string NormalizeSignedBy(std::string SignedBy, bool const SupportFilenames) /*{{{*/
+// Introducer is set if additional keys may be introduced, for example	/*{{{*/
+// by setting it to a filename or a complete key
+static std::string NormalizeSignedBy(std::string SignedBy, bool const Introducer)
 {
+   // This is an embedded public pgp key, normalize spaces inside it and empty "." lines
+   if (Introducer && SignedBy.find("-----BEGIN PGP PUBLIC KEY BLOCK-----") != std::string::npos) {
+      std::istringstream is(SignedBy);
+      std::ostringstream os;
+      std::string line;
+
+      while (std::getline(is, line)) {
+	 line = APT::String::Strip(line);
+	 // The special encoding for empty lines in deb822
+	 if (line == ".")
+	    line="";
+	 os << line << std::endl;
+      }
+      return os.str();
+   }
+
    // we could go all fancy and allow short/long/string matches as gpgv/apt-key does,
    // but fingerprints are harder to fake than the others and this option is set once,
    // not interactively all the time so easy to type is not really a concern.
@@ -66,7 +85,7 @@ static std::string NormalizeSignedBy(std::string SignedBy, bool const SupportFil
    fingers.erase(std::remove_if(fingers.begin(), fingers.end(), isAnEmptyString), fingers.end());
    if (unlikely(fingers.empty()))
       return "";
-   if (SupportFilenames)
+   if (Introducer)
       std::transform(fingers.begin(), fingers.end(), fingers.begin(), transformFingergrpintsWithFilenames);
    else
       std::transform(fingers.begin(), fingers.end(), fingers.begin(), transformFingergrpints);
@@ -496,10 +515,9 @@ bool debReleaseIndex::Load(std::string const &Filename, std::string * const Erro
 
    bool FoundHashSum = false;
    bool FoundStrongHashSum = false;
-   auto const SupportedHashes = HashString::SupportedHashes();
-   for (int i=0; SupportedHashes[i] != NULL; i++)
+   for (auto const hashinfo : HashString::SupportedHashesInfo())
    {
-      if (!Section.Find(SupportedHashes[i], Start, End))
+      if (not Section.Find(hashinfo.namekey, Start, End))
 	 continue;
 
       std::string Name;
@@ -510,7 +528,7 @@ bool debReleaseIndex::Load(std::string const &Filename, std::string * const Erro
 	 if (!parseSumData(Start, End, Name, Hash, Size))
 	    return false;
 
-	 HashString const hs(SupportedHashes[i], Hash);
+	 HashString const hs(hashinfo.name.to_string(), Hash);
          if (Entries.find(Name) == Entries.end())
          {
             metaIndex::checkSum *Sum = new metaIndex::checkSum;
@@ -966,13 +984,13 @@ pkgCache::RlsFileIterator debReleaseIndex::FindInCache(pkgCache &Cache, bool con
 
 class APT_HIDDEN debSLTypeDebian : public pkgSourceList::Type		/*{{{*/
 {
-   static std::vector<std::string> getDefaultSetOf(std::string const &Name,
-	 std::map<std::string, std::string> const &Options, std::vector<std::string> const &defaultValues)
+   static std::optional<std::vector<std::string>> getDefaultSetOf(std::string const &Name,
+	 std::map<std::string, std::string> const &Options)
    {
       auto const val = Options.find(Name);
       if (val != Options.end())
 	 return VectorizeString(val->second, ',');
-      return defaultValues;
+      return {};
    }
    static std::vector<std::string> applyPlusMinusOptions(std::string const &Name,
 	 std::map<std::string, std::string> const &Options, std::vector<std::string> &&Values)
@@ -997,12 +1015,21 @@ class APT_HIDDEN debSLTypeDebian : public pkgSourceList::Type		/*{{{*/
    static std::vector<std::string> parsePlusMinusOptions(std::string const &Name,
 	 std::map<std::string, std::string> const &Options, std::vector<std::string> const &defaultValues)
    {
-      return applyPlusMinusOptions(Name, Options, getDefaultSetOf(Name, Options, defaultValues));
+      return applyPlusMinusOptions(Name, Options, getDefaultSetOf(Name, Options).value_or(defaultValues));
    }
    static std::vector<std::string> parsePlusMinusArchOptions(std::string const &Name,
 	 std::map<std::string, std::string> const &Options)
    {
-      auto Values = getDefaultSetOf(Name, Options, APT::Configuration::getArchitectures());
+      std::vector<std::string> Values;
+     if (auto opt = getDefaultSetOf(Name, Options); opt.has_value())
+        Values = opt.value();
+     else
+     {
+	Values = APT::Configuration::getArchitectures();
+	auto veryforeign = _config->FindVector("APT::BarbarianArchitectures");
+	Values.reserve(Values.size() + veryforeign.size());
+	std::move(veryforeign.begin(), veryforeign.end(), std::back_inserter(Values));
+     }
       // all is a very special architecture users shouldn't be concerned with explicitly
       // but if the user does, do not override the choice
       auto const val = Options.find(Name + "-");

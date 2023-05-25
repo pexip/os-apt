@@ -19,7 +19,6 @@ insertpackage 'stable' 'libkipi-data' 'i386' '4:15.08.0-1' '' 'important'
 
 setupaptarchive
 
-cp -a rootdir/var/lib/dpkg/status rootdir/var/lib/dpkg/status.backup
 insertinstalledpackage 'libvtk5.4' 'i386' '5.4.2-7'
 testsuccess aptmark markauto 'libvtk5.4'
 testmarkedauto 'libvtk5.4'
@@ -63,6 +62,7 @@ The following additional packages will be installed:
 The following NEW packages will be installed:
   dummy-archive libavcodec52 libopenal-dev
 0 upgraded, 3 newly installed, 0 to remove and 1 not upgraded.
+Need to get 0 B/126 B of archives.
 After this operation, 129 kB of additional disk space will be used.
 E: Trivial Only specified but this is not a trivial operation." aptget install dummy-archive --trivial-only
 testequal "Reading package lists...
@@ -75,11 +75,11 @@ The following additional packages will be installed:
 The following NEW packages will be installed:
   dummy-archive libavcodec52 libopenal-dev
 0 upgraded, 3 newly installed, 0 to remove and 1 not upgraded.
+Need to get 0 B/126 B of archives.
 After this operation, 129 kB of additional disk space will be used.
 E: Trivial Only specified but this is not a trivial operation." aptget install dummy-archive --trivial-only -o APT::Get::HideAutoRemove=small
 
-cp rootdir/var/lib/dpkg/status.backup rootdir/var/lib/dpkg/status
-rm -f rootdir/var/lib/apt/extended_states
+rm -f rootdir/var/lib/dpkg/status rootdir/var/lib/apt/extended_states
 
 CONFLICTING='Reading package lists...
 Building dependency tree...
@@ -88,13 +88,12 @@ Building dependency tree...
     MarkInstall libopenal-dev:i386 < none -> 1:1.12.854-2 @un puN > FU=0
   Ignore MarkGarbage of libopenal-dev:i386 < none -> 1:1.12.854-2 @un puN > as its mode (Install) is protected
   Ignore MarkGarbage of libavcodec52:i386 < none -> 4:0.5.2-6 @un puN > as its mode (Install) is protected
-  Ignore MarkGarbage of libopenal-dev:i386 < none -> 1:1.12.854-2 @un puN > as its mode (Install) is protected
-  Ignore MarkGarbage of libavcodec52:i386 < none -> 4:0.5.2-6 @un puN > as its mode (Install) is protected
 The following additional packages will be installed:
   libavcodec52 libopenal-dev
 The following NEW packages will be installed:
   dummy-archive libavcodec52 libopenal-dev
 0 upgraded, 3 newly installed, 0 to remove and 0 not upgraded.
+Need to get 0 B/126 B of archives.
 After this operation, 129 kB of additional disk space will be used.
 E: Trivial Only specified but this is not a trivial operation.'
 

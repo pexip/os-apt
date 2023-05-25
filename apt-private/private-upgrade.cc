@@ -1,12 +1,15 @@
 // Includes								/*{{{*/
 #include <config.h>
 
+#include <apt-pkg/cmndline.h>
+#include <apt-pkg/cacheset.h>
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/upgrade.h>
 
 #include <apt-private/private-cachefile.h>
 #include <apt-private/private-install.h>
+#include <apt-private/private-json-hooks.h>
 #include <apt-private/private-output.h>
 #include <apt-private/private-upgrade.h>
 
@@ -24,10 +27,19 @@ static bool UpgradeHelper(CommandLine &CmdL, int UpgradeFlags)
    if (Cache.OpenForInstall() == false || Cache.CheckDeps() == false)
       return false;
 
-   if(!DoCacheManipulationFromCommandLine(CmdL, VolatileCmdL,  Cache, UpgradeFlags))
+   std::map<unsigned short, APT::VersionVector> verset;
+   std::set<std::string> UnknownPackages;
+   APT::PackageVector HeldBackPackages;
+   if (not DoCacheManipulationFromCommandLine(CmdL, VolatileCmdL, Cache, verset, UpgradeFlags, UnknownPackages, HeldBackPackages))
+   {
+      RunJsonHook("AptCli::Hooks::Upgrade", "org.debian.apt.hooks.install.fail", CmdL.FileList, Cache, UnknownPackages);
       return false;
-
-   return InstallPackages(Cache,true);
+   }
+   RunJsonHook("AptCli::Hooks::Upgrade", "org.debian.apt.hooks.install.pre-prompt", CmdL.FileList, Cache);
+   if (InstallPackages(Cache, HeldBackPackages, true, true, true, "AptCli::Hooks::Upgrade", CmdL))
+      return RunJsonHook("AptCli::Hooks::Upgrade", "org.debian.apt.hooks.install.post", CmdL.FileList, Cache);
+   else
+      return RunJsonHook("AptCli::Hooks::Upgrade", "org.debian.apt.hooks.install.fail", CmdL.FileList, Cache);
 }
 
 // DoDistUpgrade - Automatic smart upgrader				/*{{{*/

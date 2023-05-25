@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <string>
+#include <sstream>
 #include <vector>
 #include <ctype.h>
 #include <stdlib.h>
@@ -123,6 +124,14 @@ bool debSrcRecordParser::BuildDepends(std::vector<pkgSrcRecords::Parser::BuildDe
 
       while (1)
       {
+	 // Strip off leading spaces (is done by ParseDepends, too) and
+	 // superfluous commas (encountered in user-written dsc/control files)
+	 do {
+	    for (;Start != Stop && isspace_ascii(*Start) != 0; ++Start);
+	 } while (*Start == ',' && ++Start != Stop);
+	 if (Start == Stop)
+	    break;
+
 	 BuildDepRec rec;
 	 Start = debListParser::ParseDepends(Start, Stop,
 					     rec.Package, rec.Version, rec.Op, true, StripMultiArch, true);
@@ -135,19 +144,12 @@ bool debSrcRecordParser::BuildDepends(std::vector<pkgSrcRecords::Parser::BuildDe
 	 // or something).
 	 if (rec.Package.empty())
 	 {
-	    // If we are in an OR group, we need to set the "Or" flag of the
-	    // previous entry to our value.
-	    if (BuildDeps.empty() == false && (BuildDeps[BuildDeps.size() - 1].Op & pkgCache::Dep::Or) == pkgCache::Dep::Or)
-	    {
-	       BuildDeps[BuildDeps.size() - 1].Op &= ~pkgCache::Dep::Or;
-	       BuildDeps[BuildDeps.size() - 1].Op |= (rec.Op & pkgCache::Dep::Or);
-	    }
+	    // If this was the last or-group member, close the or-group with the previous entry
+	    if (not BuildDeps.empty() && (BuildDeps.back().Op & pkgCache::Dep::Or) == pkgCache::Dep::Or && (rec.Op & pkgCache::Dep::Or) != pkgCache::Dep::Or)
+	       BuildDeps.back().Op &= ~pkgCache::Dep::Or;
 	 } else {
 	    BuildDeps.emplace_back(std::move(rec));
 	 }
-
-	 if (Start == Stop)
-	    break;
       }
    }
 
@@ -169,41 +171,31 @@ bool debSrcRecordParser::Files(std::vector<pkgSrcRecords::File> &List)
 
    std::vector<std::string> const compExts = APT::Configuration::getCompressorExtensions();
 
-   for (char const * const * type = HashString::SupportedHashes(); *type != NULL; ++type)
+   auto const &posix = std::locale::classic();
+   for (auto const hashinfo : HashString::SupportedHashesInfo())
    {
-      // derive field from checksum type
-      std::string checksumField("Checksums-");
-      if (strcmp(*type, "MD5Sum") == 0)
-	 checksumField = "Files"; // historic name for MD5 checksums
-      else
-	 checksumField.append(*type);
-
-      string const Files = Sect.FindS(checksumField.c_str());
+      auto const Files = Sect.Find(hashinfo.chksumskey);
       if (Files.empty() == true)
 	 continue;
+      std::istringstream ss(Files.to_string());
+      ss.imbue(posix);
 
-      // Iterate over the entire list grabbing each triplet
-      const char *C = Files.c_str();
-      while (*C != 0)
+      while (ss.good())
       {
-	 string hash, size, path;
-
-	 // Parse each of the elements
-	 if (ParseQuoteWord(C, hash) == false ||
-	       ParseQuoteWord(C, size) == false ||
-	       ParseQuoteWord(C, path) == false)
-	    return _error->Error("Error parsing file record in %s of source package %s", checksumField.c_str(), Package().c_str());
-
-	 if (iIndex == nullptr && checksumField == "Files")
+	 std::string hash, path;
+	 unsigned long long size;
+	 if (iIndex == nullptr && hashinfo.chksumskey == pkgTagSection::Key::Files)
 	 {
-	    // the Files field has a different format than the rest in deb-changes files
 	    std::string ignore;
-	    if (ParseQuoteWord(C, ignore) == false ||
-		  ParseQuoteWord(C, path) == false)
-	       return _error->Error("Error parsing file record in %s of source package %s", checksumField.c_str(), Package().c_str());
+	    ss >> hash >> size >> ignore >> ignore >> path;
 	 }
+	 else
+	    ss >> hash >> size >> path;
 
-	 HashString const hashString(*type, hash);
+	 if (ss.fail() || hash.empty() || path.empty())
+	    return _error->Error("Error parsing file record in %s of source package %s", hashinfo.chksumsname.to_string().c_str(), Package().c_str());
+
+	 HashString const hashString(hashinfo.name.to_string(), hash);
 	 if (Base.empty() == false)
 	    path = Base + path;
 
@@ -218,14 +210,14 @@ bool debSrcRecordParser::Files(std::vector<pkgSrcRecords::File> &List)
 	 {
 	    // an error here indicates that we have two different hashes for the same file
 	    if (file->Hashes.push_back(hashString) == false)
-	       return _error->Error("Error parsing checksum in %s of source package %s", checksumField.c_str(), Package().c_str());
+	       return _error->Error("Error parsing checksum in %s of source package %s", hashinfo.chksumsname.to_string().c_str(), Package().c_str());
 	    continue;
 	 }
 
 	 // we haven't seen this file yet
 	 pkgSrcRecords::File F;
 	 F.Path = path;
-	 F.FileSize = strtoull(size.c_str(), NULL, 10);
+	 F.FileSize = size;
 	 F.Hashes.push_back(hashString);
 	 F.Hashes.FileSize(F.FileSize);
 

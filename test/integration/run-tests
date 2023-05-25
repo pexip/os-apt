@@ -80,9 +80,9 @@ if [ -n "$TESTTORUN" ]; then
 		fi
 	} >"$OUTPUT" 2>&1
 	# without we end up getting stepped output 'randomly'
-	stty sane
+	stty sane || true
 	cat >&2 "$OUTPUT"
-	stty sane
+	stty sane || true
 	if [ "$FAIL" = 'yes' ]; then
 		exit 1
 	else
@@ -104,6 +104,8 @@ if [ -n "$APT_TEST_JOBS" ]; then
 	parallel=parallel
 	if command -v moreutils-parallel >/dev/null 2>&1; then
 		parallel=moreutils-parallel
+	elif command -v parallel.moreutils >/dev/null 2>&1; then
+		parallel=parallel.moreutils
 	fi
 	exec $parallel -j "$APT_TEST_JOBS" "./$(basename "$0")" -- $(echo "$TESTLIST")
 fi

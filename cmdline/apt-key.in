@@ -92,18 +92,7 @@ requires_root() {
 
 command_available() {
     if [ -x "$1" ]; then return 0; fi
-    # command -v "$1" >/dev/null 2>&1 # not required by policy, see #747320
-    # which "$1" >/dev/null 2>&1 # is in debianutils (essential) but not on non-debian systems
-    local OLDIFS="$IFS"
-    IFS=:
-    for p in $PATH; do
-	if [ -x "${p}/${1}" ]; then
-	    IFS="$OLDIFS"
-	    return 0
-	fi
-    done
-    IFS="$OLDIFS"
-    return 1
+    command -v "$1" >/dev/null # required by policy, see #747320
 }
 
 escape_shell() {
@@ -325,11 +314,11 @@ is_supported_keyring() {
     local FILEEXT="${1##*.}"
     if [ "$FILEEXT" = 'gpg' ]; then
 	# 0x98, 0x99 and 0xC6 via octal as hex isn't supported by dashs printf
-	if printf '\231' | cmp --silent --bytes=1 - "$1"; then
+	if printf '\231' | cmp -s -n 1 - "$1"; then
 	    true
-	elif printf '\230' | cmp --silent --bytes=1 - "$1"; then
+	elif printf '\230' | cmp -s -n 1 - "$1"; then
 	    true
-	elif printf '\306' | cmp --silent --bytes=1 - "$1"; then
+	elif printf '\306' | cmp -s -n 1 - "$1"; then
 	    true
 	else
 	    apt_warn "The key(s) in the keyring $1 are ignored as the file has an unsupported filetype."
@@ -656,6 +645,9 @@ if [ -z "$TRUSTEDFILE" ]; then
    TRUSTEDFILE="/etc/apt/trusted.gpg"
    eval $(apt-config shell TRUSTEDFILE Apt::GPGV::TrustedKeyring)
    eval $(apt-config shell TRUSTEDFILE Dir::Etc::Trusted/f)
+   if [ "$APT_KEY_NO_LEGACY_KEYRING" ]; then
+        TRUSTEDFILE="/dev/null"
+   fi
 fi
 
 command="$1"

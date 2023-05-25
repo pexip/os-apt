@@ -29,7 +29,6 @@ override_dh_install-arch:
 	dh_install -papt -Xmethods/curl -Xmethods/curl+https -Xmethods/curl+http
 	dh_install --remaining
 	install -m 644 debian/apt.conf.autoremove debian/apt/etc/apt/apt.conf.d/01autoremove
-	install -m 755 debian/apt.auto-removal.sh debian/apt/etc/kernel/postinst.d/apt-auto-removal
 
 override_dh_gencontrol:
 	dh_gencontrol -- -Vapt:keyring="$(shell ./vendor/getinfo keyring-package)"
@@ -45,7 +44,18 @@ override_dh_installsystemd:
 	dh_installsystemd -papt --no-restart-on-upgrade --no-restart-after-upgrade --no-start apt-daily.service apt-daily-upgrade.service
 	dh_installsystemd --remaining-packages
 
-override_dh_auto_configure-arch: flags=-DWITH_DOC=OFF
-override_dh_auto_configure-indep: flags=-DWITH_DOC=ON
+ifneq ($(filter pkg.apt.nodoxygen,$(DEB_BUILD_PROFILES)),)
+override_dh_auto_configure-arch: configure_doc_flags=-DWITH_DOC=OFF -DWITH_DOC_MANPAGES=ON -DWITH_DOC_EXAMPLES=ON
+override_dh_auto_configure-indep: configure_doc_flags=-DWITH_DOC=OFF -DWITH_DOC_GUIDES=ON -DWITH_DOC_EXAMPLES=ON
+else
+ifneq ($(filter nodoc,$(DEB_BUILD_PROFILES)),)
+override_dh_auto_configure-arch: configure_doc_flags=-DWITH_DOC=OFF
+override_dh_auto_configure-indep: configure_doc_flags=-DWITH_DOC=OFF
+else
+override_dh_auto_configure-arch: configure_doc_flags=-DWITH_DOC=OFF -DWITH_DOC_MANPAGES=ON -DWITH_DOC_EXAMPLES=ON
+override_dh_auto_configure-indep: configure_doc_flags=-DWITH_DOC=ON
+endif
+endif
+
 override_dh_auto_configure-arch override_dh_auto_configure-indep:
-	dh_auto_configure -- $(flags) $(configure_test_flags)
+	dh_auto_configure -- -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON $(configure_doc_flags) $(configure_test_flags)

@@ -1,5 +1,9 @@
 # translation of apt_po_km.po to Khmer
 # translation of apt_po_km.po to
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
+# This file originally stated:
 # This file is put in the public domain.
 #
 # Eng Vannak <evannak@khmeros.info>, 2006.
@@ -10,7 +14,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
 "PO-Revision-Date: 2006-10-10 09:48+0700\n"
 "Last-Translator: Khoem Sokhem <khoemsokhem@khmeros.info>\n"
 "Language-Team: Khmer <support@khmeros.info>\n"
@@ -182,7 +186,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -193,7 +198,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -358,16 +363,6 @@ msgid "Regex compilation error - %s"
 msgstr "Regex កំហុស​ការចងក្រង​ - %s"
 
 #: apt-pkg/cacheset.cc
-#, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "រក​មិន​ឃើញ​ការ​ចេញ​ផ្សាយ​ '%s' សម្រាប់​ '%s' ឡើយ"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "រក​មិន​ឃើញ​កំណែ​ '%s' សម្រាប់ '%s'"
-
-#: apt-pkg/cacheset.cc
 #, fuzzy, c-format
 msgid "Couldn't find task '%s'"
 msgstr "មិន​អាច​រក​កញ្ចប់ %s បានទេ"
@@ -413,6 +408,16 @@ msgid ""
 "Can't select installed nor candidate version from package '%s' as it has "
 "neither of them"
 msgstr ""
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "រក​មិន​ឃើញ​ការ​ចេញ​ផ្សាយ​ '%s' សម្រាប់​ '%s' ឡើយ"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "រក​មិន​ឃើញ​កំណែ​ '%s' សម្រាប់ '%s'"
 
 #: apt-pkg/cdrom.cc
 #, fuzzy
@@ -1867,31 +1872,20 @@ msgstr "បន្ទាប់​ពី​ពន្លា​ %sB ទំហំ​�
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr "បានបញ្ជាក់​តែប្រតិបត្តិការដែលមិនសំខាន់ប៉ុណ្ណោះ ប៉ុន្តែ​នេះមិនមែនជាប្រតិបត្តិការមិនសំខាន់នោះទេ ។"
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "បាទ/ចាស ធ្វើ​ដូច​ដែល​ខ្ញុំ​និយាយ !"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"អ្នកប្រហែល​ជា​ធ្វើ​អ្វីមួយ​ដែល​អាច​បង្ករ​ឲ្យ​មាន​មហន្ដរាយ ។\n"
-"ដើម្បី​បន្ត ​​វាយ​ក្នុង​ឃ្លា​ '%s'\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "បោះបង់ ។"
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 #, fuzzy
 msgid "Do you want to continue?"
 msgstr "តើ​អ្នក​ចង់​បន្តឬ​ [បាទ ចាស/ទេ​] ? "
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "បោះបង់ ។"
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2713,7 +2707,7 @@ msgstr "យក​កញ្ចប់​ចេញ"
 msgid "Remove packages and config files"
 msgstr ""
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 #, fuzzy
 msgid "Remove automatically all unused packages"
 msgstr "ប៉ុន្តែ​ %s នឹង​ត្រូវ​បាន​ដំឡើ​ង"
@@ -2888,7 +2882,7 @@ msgstr "%s ជាកំណែ​ដែលថ្មីបំផុតរួចទ
 
 #: cmdline/apt-mark.cc
 #, fuzzy, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "%s ជាកំណែ​ដែលថ្មីបំផុតរួចទៅហើយ ។\n"
 
 #: cmdline/apt-mark.cc
@@ -3020,6 +3014,11 @@ msgstr "កញ្ចប់​ដែល​បាន​ខ្ទាស់ ៖"
 #, fuzzy
 msgid "remove packages"
 msgstr "កញ្ចប់​ដែល​បាន​ខូច​"
+
+#: cmdline/apt.cc
+#, fuzzy
+msgid "automatically remove all unused packages"
+msgstr "ប៉ុន្តែ​ %s នឹង​ត្រូវ​បាន​ដំឡើ​ង"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3714,6 +3713,13 @@ msgstr "មិន​អាច​ប្រតិបត្តិ '%s' ដើម្
 msgid "Unknown error executing apt-key"
 msgstr "មិនស្គាល់កំហុស ក្នុងការប្រតិបត្តិ apt-key"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3761,6 +3767,19 @@ msgstr "បាន​បិទ​ការ​តភ្ជាប់​មុន​
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "បាទ/ចាស ធ្វើ​ដូច​ដែល​ខ្ញុំ​និយាយ !"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "អ្នកប្រហែល​ជា​ធ្វើ​អ្វីមួយ​ដែល​អាច​បង្ករ​ឲ្យ​មាន​មហន្ដរាយ ។\n"
+#~ "ដើម្បី​បន្ត ​​វាយ​ក្នុង​ឃ្លា​ '%s'\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

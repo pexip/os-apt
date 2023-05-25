@@ -120,6 +120,11 @@ class GPGVMethod : public aptMethod
 				vector<string> const &keyFpts,
 				vector<string> const &keyFiles,
 				SignersStorage &Signers);
+   string VerifyGetSignersWithLegacy(const char *file, const char *outfile,
+				     vector<string> const &keyFpts,
+				     vector<string> const &keyFiles,
+				     SignersStorage &Signers);
+
    protected:
    virtual bool URIAcquire(std::string const &Message, FetchItem *Itm) APT_OVERRIDE;
    public:
@@ -183,6 +188,7 @@ string GPGVMethod::VerifyGetSigners(const char *file, const char *outfile,
    {
       std::ostringstream keys;
       implodeVector(keyFiles, keys, ",");
+      setenv("APT_KEY_NO_LEGACY_KEYRING", "1", true);
       ExecGPGV(outfile, file, 3, fd, keys.str());
    }
    close(fd[1]);
@@ -415,6 +421,56 @@ string GPGVMethod::VerifyGetSigners(const char *file, const char *outfile,
    else
       return _("Unknown error executing apt-key");
 }
+string GPGVMethod::VerifyGetSignersWithLegacy(const char *file, const char *outfile,
+					      vector<string> const &keyFpts,
+					      vector<string> const &keyFiles,
+					      SignersStorage &Signers)
+{
+   string const msg = VerifyGetSigners(file, outfile, keyFpts, keyFiles, Signers);
+   if (_error->PendingError())
+      return msg;
+
+   // Bad signature always remains bad, no need to retry against trusted.gpg
+   if (!Signers.Bad.empty())
+      return msg;
+
+   // We do not have a key file pinned, did not find a good signature, but found
+   // missing keys - let's retry with trusted.gpg
+   if (keyFiles.empty() && Signers.Valid.empty() && !Signers.NoPubKey.empty())
+   {
+      std::vector<std::string> legacyKeyFiles{_config->FindFile("Dir::Etc::trusted")};
+      if (legacyKeyFiles[0].empty())
+	 return msg;
+      if (DebugEnabled())
+	 std::clog << "Retrying against " << legacyKeyFiles[0] << "\n";
+
+      SignersStorage legacySigners;
+
+      string const legacyMsg = VerifyGetSigners(file, outfile, keyFpts, legacyKeyFiles, legacySigners);
+      if (_error->PendingError())
+	 return legacyMsg;
+      // Hooray, we found a key apparently, something verified as good or bad
+      if (!legacySigners.Valid.empty() || !legacySigners.Bad.empty())
+      {
+	 std::string warning;
+	 strprintf(warning,
+		   _("Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION section in apt-key(8) for details."),
+		   legacyKeyFiles[0].c_str());
+	 Warning(std::move(warning));
+	 Signers = std::move(legacySigners);
+	 return legacyMsg;
+      }
+
+   }
+   return msg;
+}
+static std::string GenerateKeyFile(std::string const key)
+{
+   FileFd fd;
+   GetTempFile("apt-key.XXXXXX.asc", false, &fd);
+   fd.Write(key.data(), key.size());
+   return fd.Name();
+}
 
 bool GPGVMethod::URIAcquire(std::string const &Message, FetchItem *Itm)
 {
@@ -423,14 +479,30 @@ bool GPGVMethod::URIAcquire(std::string const &Message, FetchItem *Itm)
    SignersStorage Signers;
 
    std::vector<std::string> keyFpts, keyFiles;
-   for (auto &&key : VectorizeString(LookupTag(Message, "Signed-By"), ','))
-      if (key.empty() == false && key[0] == '/')
-	 keyFiles.emplace_back(std::move(key));
-      else
-	 keyFpts.emplace_back(std::move(key));
+   struct TemporaryFile
+   {
+      std::string name = "";
+      ~TemporaryFile() { RemoveFile("~TemporaryFile", name); }
+   } tmpKey;
+
+   std::string SignedBy = DeQuoteString(LookupTag(Message, "Signed-By"));
+
+   if (SignedBy.find("-----BEGIN PGP PUBLIC KEY BLOCK-----") != std::string::npos)
+   {
+      tmpKey.name = GenerateKeyFile(SignedBy);
+      keyFiles.emplace_back(tmpKey.name);
+   }
+   else
+   {
+      for (auto &&key : VectorizeString(SignedBy, ','))
+	 if (key.empty() == false && key[0] == '/')
+	    keyFiles.emplace_back(std::move(key));
+	 else
+	    keyFpts.emplace_back(std::move(key));
+   }
 
    // Run apt-key on file, extract contents and get the key ID of the signer
-   string const msg = VerifyGetSigners(Path.c_str(), Itm->DestFile.c_str(), keyFpts, keyFiles, Signers);
+   string const msg = VerifyGetSignersWithLegacy(Path.c_str(), Itm->DestFile.c_str(), keyFpts, keyFiles, Signers);
    if (_error->PendingError())
       return false;
 

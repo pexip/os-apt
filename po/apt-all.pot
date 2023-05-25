@@ -5,9 +5,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: apt 2.2.4\n"
+"Project-Id-Version: apt 2.6.1\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-06-10 10:48+0200\n"
+"POT-Creation-Date: 2023-05-25 14:17+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -174,7 +174,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -185,7 +186,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -347,16 +348,6 @@ msgstr ""
 
 #: apt-pkg/cacheset.cc
 #, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr ""
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr ""
-
-#: apt-pkg/cacheset.cc
-#, c-format
 msgid "Couldn't find task '%s'"
 msgstr ""
 
@@ -400,6 +391,16 @@ msgstr ""
 msgid ""
 "Can't select installed nor candidate version from package '%s' as it has "
 "neither of them"
+msgstr ""
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr ""
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
 msgstr ""
 
 #: apt-pkg/cdrom.cc
@@ -1815,26 +1816,18 @@ msgstr ""
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr ""
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr ""
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
-msgstr ""
-
-#: apt-private/private-install.cc
-msgid "Abort."
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
+msgstr ""
+
+#: apt-private/private-install.cc
+msgid "Abort."
 msgstr ""
 
 #: apt-private/private-install.cc
@@ -2618,7 +2611,7 @@ msgstr ""
 msgid "Remove packages and config files"
 msgstr ""
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 msgid "Remove automatically all unused packages"
 msgstr ""
 
@@ -2765,7 +2758,7 @@ msgstr ""
 
 #: cmdline/apt-mark.cc
 #, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr ""
 
 #: cmdline/apt-mark.cc
@@ -2887,6 +2880,10 @@ msgstr ""
 
 #: cmdline/apt.cc
 msgid "remove packages"
+msgstr ""
+
+#: cmdline/apt.cc
+msgid "automatically remove all unused packages"
 msgstr ""
 
 #. system wide stuff
@@ -3525,6 +3522,13 @@ msgstr ""
 
 #: methods/gpgv.cc
 msgid "Unknown error executing apt-key"
+msgstr ""
+
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
 msgstr ""
 
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.

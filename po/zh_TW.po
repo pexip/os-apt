@@ -1,4 +1,7 @@
 # 先進包裝工具 (apt) 繁體中文訊息
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
 # Translators: 黃思文 <steven.huang@upcursor.org>
 #              Asho Yeh <asho@debian.org.tw>
 #              Kanru Chen <kanru.96@stu.csie.ncnu.edu.tw>
@@ -9,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.2.X\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
 "PO-Revision-Date: 2009-01-28 10:41+0800\n"
 "Last-Translator: Tetralet <tetralet@gmail.com>\n"
 "Language-Team: Debian-user in Chinese [Big5] <debian-chinese-big5@lists."
@@ -180,7 +183,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "發行版本衝突：%s（應當是 %s 但卻得到 %s）"
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -191,7 +195,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -356,16 +360,6 @@ msgid "Regex compilation error - %s"
 msgstr "編譯正規表示式時發生錯誤 - %s"
 
 #: apt-pkg/cacheset.cc
-#, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "找不到 '%2$s' 的 '%1$s' 發行版"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "找不到 '%s' 版的 '%s'"
-
-#: apt-pkg/cacheset.cc
 #, fuzzy, c-format
 msgid "Couldn't find task '%s'"
 msgstr "無法找到主題 %s"
@@ -411,6 +405,16 @@ msgid ""
 "Can't select installed nor candidate version from package '%s' as it has "
 "neither of them"
 msgstr ""
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "找不到 '%2$s' 的 '%1$s' 發行版"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "找不到 '%s' 版的 '%s'"
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -1855,30 +1859,19 @@ msgstr "此操作完成之後，會空出 %sB 的磁碟空間。\n"
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr "雖然指定了 Trivial Only（自動答 NO）選項，但這並不是 trivial 操作。"
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "Yes, do as I say!"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"您所進行的操作可能會帶來危險。\n"
-"請輸入 '%s' 這個句子以繼續進行\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "放棄執行。"
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "是否繼續進行 [Y/n]？"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "放棄執行。"
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2697,7 +2690,7 @@ msgstr "移除套件"
 msgid "Remove packages and config files"
 msgstr "移除並清除套件"
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 msgid "Remove automatically all unused packages"
 msgstr "自動移除所有不再使用的套件"
 
@@ -2871,7 +2864,7 @@ msgstr "%s 已經是最新版本了。\n"
 
 #: cmdline/apt-mark.cc
 #, fuzzy, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "%s 已經是最新版本了。\n"
 
 #: cmdline/apt-mark.cc
@@ -3003,6 +2996,12 @@ msgstr "鎖定的套件："
 #, fuzzy
 msgid "remove packages"
 msgstr "損毀的套件"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "Remove automatically all unused packages"
+msgid "automatically remove all unused packages"
+msgstr "自動移除所有不再使用的套件"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3692,6 +3691,13 @@ msgstr "無法執行 '%s' 來驗證簽章（gnupg 是否安裝了？）"
 msgid "Unknown error executing apt-key"
 msgstr "在執行 apt-key 時發生未知的錯誤"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3739,6 +3745,19 @@ msgstr "連線突然終止"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "Yes, do as I say!"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "您所進行的操作可能會帶來危險。\n"
+#~ "請輸入 '%s' 這個句子以繼續進行\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

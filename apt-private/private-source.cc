@@ -243,6 +243,7 @@ static pkgSrcRecords::Parser *FindSrc(const char *Name,
    unsigned long Offset = 0;
    std::string Version;
    pkgSourceList const * const SrcList = Cache.GetSourceList();
+   pkgVersionMatch RelTagMatch{RelTag, pkgVersionMatch::Release};
 
    /* Iterate over all of the hits, which includes the resulting
       binary packages in the search */
@@ -258,12 +259,8 @@ static pkgSrcRecords::Parser *FindSrc(const char *Name,
 		     if (RelTag.empty() == false && UserRequestedVerTag.empty() == true)
 		     {
 			pkgCache::RlsFileIterator const Rls = GetReleaseFileForSourceRecord(Cache, SrcList, Parse);
-			if (Rls.end() == false)
-			{
-			   if ((Rls->Archive != 0 && RelTag != Rls.Archive()) &&
-				 (Rls->Codename != 0 && RelTag != Rls.Codename()))
-			      continue;
-			}
+			if (not Rls.end() && not RelTagMatch.FileMatch(Rls))
+			   continue;
 		     }
 
 		     // Ignore all versions which doesn't fit
@@ -337,7 +334,7 @@ bool DoSource(CommandLine &CmdL)
    // Dsc only mode only fetches .dsc files
    bool const dscOnly = _config->FindB("APT::Get::Dsc-Only", false);
 
-   // Load the requestd sources into the fetcher
+   // Load the requested sources into the fetcher
    aptAcquireWithTextStatus Fetcher;
    std::vector<std::string> UntrustedList;
    for (const char **cmdl = CmdL.FileList + 1; *cmdl != 0; ++cmdl)
@@ -568,7 +565,7 @@ bool DoSource(CommandLine &CmdL)
 /* This function will look at the build depends list of the given source 
    package and install the necessary packages to make it true, or fail. */
 static std::vector<pkgSrcRecords::Parser::BuildDepRec> GetBuildDeps(pkgSrcRecords::Parser * const Last,
-      char const * const Src, bool const StripMultiArch, std::string const &hostArch)
+      char const * const Src, std::string const &hostArch)
 {
    std::vector<pkgSrcRecords::Parser::BuildDepRec> BuildDeps;
    // FIXME: Can't specify architecture to use for [wildcard] matching, so switch default arch temporary
@@ -576,7 +573,7 @@ static std::vector<pkgSrcRecords::Parser::BuildDepRec> GetBuildDeps(pkgSrcRecord
    {
       std::string nativeArch = _config->Find("APT::Architecture");
       _config->Set("APT::Architecture", hostArch);
-      bool Success = Last->BuildDepends(BuildDeps, _config->FindB("APT::Get::Arch-Only", false), StripMultiArch);
+      bool Success = Last->BuildDepends(BuildDeps, _config->FindB("APT::Get::Arch-Only", false), false);
       _config->Set("APT::Architecture", nativeArch);
       if (Success == false)
       {
@@ -584,7 +581,7 @@ static std::vector<pkgSrcRecords::Parser::BuildDepRec> GetBuildDeps(pkgSrcRecord
 	 return {};
       }
    }
-   else if (Last->BuildDepends(BuildDeps, _config->FindB("APT::Get::Arch-Only", false), StripMultiArch) == false)
+   else if (Last->BuildDepends(BuildDeps, _config->FindB("APT::Get::Arch-Only", false), false) == false)
    {
       _error->Error(_("Unable to get build-dependency information for %s"), Src);
       return {};
@@ -637,21 +634,21 @@ static void WriteBuildDependencyPackage(std::ostringstream &buildDepsPkgFile,
 }
 bool DoBuildDep(CommandLine &CmdL)
 {
-   bool StripMultiArch;
    std::string hostArch = _config->Find("APT::Get::Host-Architecture");
-   if (hostArch.empty() == false)
+   if (not hostArch.empty())
    {
-      std::vector<std::string> archs = APT::Configuration::getArchitectures();
-      if (std::find(archs.begin(), archs.end(), hostArch) == archs.end())
-	 return _error->Error(_("No architecture information available for %s. See apt.conf(5) APT::Architectures for setup"), hostArch.c_str());
-      StripMultiArch = false;
+      if (not APT::Configuration::checkArchitecture(hostArch))
+      {
+	 auto const veryforeign = _config->FindVector("APT::BarbarianArchitectures");
+	 if (std::find(veryforeign.begin(), veryforeign.end(), hostArch) == veryforeign.end())
+	    _error->Warning(_("No architecture information available for %s. See apt.conf(5) APT::Architectures for setup"), hostArch.c_str());
+      }
    }
-   else
-      StripMultiArch = true;
    auto const nativeArch = _config->Find("APT::Architecture");
    std::string const pseudoArch = hostArch.empty() ? nativeArch : hostArch;
 
    CacheFile Cache;
+   Cache.InhibitActionGroups(true);
    auto VolatileCmdL = GetPseudoPackages(Cache.GetSourceList(), CmdL, AddVolatileSourceFile, pseudoArch);
    auto AreDoingSatisfy = strcasecmp(CmdL.FileList[0], "satisfy") == 0;
 
@@ -743,7 +740,7 @@ bool DoBuildDep(CommandLine &CmdL)
 	       break;
 	 }
       }
-      std::string const pseudo = "command line argument";
+      std::string const pseudo = "satisfy:command-line";
       WriteBuildDependencyPackage(buildDepsPkgFile, pseudo, pseudoArch, BuildDeps);
       pseudoPkgs.emplace_back(pseudo, pseudoArch, "");
    }
@@ -776,7 +773,7 @@ bool DoBuildDep(CommandLine &CmdL)
 
 	 auto pseudo = std::string("builddeps:") + pkg.name;
 	 WriteBuildDependencyPackage(buildDepsPkgFile, pseudo, pseudoArch,
-				     GetBuildDeps(Last.get(), pkg.name.c_str(), StripMultiArch, hostArch));
+				     GetBuildDeps(Last.get(), pkg.name.c_str(), hostArch));
 	 pkg.name = std::move(pseudo);
 	 pseudoPkgs.push_back(std::move(pkg));
       }
@@ -801,7 +798,7 @@ bool DoBuildDep(CommandLine &CmdL)
 
 	 std::string const pseudo = std::string("builddeps:") + Src;
 	 WriteBuildDependencyPackage(buildDepsPkgFile, pseudo, pseudoArch,
-	       GetBuildDeps(Last, Src.c_str(), StripMultiArch, hostArch));
+	       GetBuildDeps(Last, Src.c_str(), hostArch));
 	 std::string reltag = *I;
 	 size_t found = reltag.find_last_of("/");
 	 if (found == std::string::npos)
@@ -818,9 +815,9 @@ bool DoBuildDep(CommandLine &CmdL)
       return false;
    pkgProblemResolver Fix(Cache.GetDepCache());
 
+   APT::PackageSet UpgradablePackages;
    APT::PackageVector removeAgain;
    {
-      pkgDepCache::ActionGroup group(Cache);
       TryToInstall InstallAction(Cache, &Fix, false);
       std::list<std::pair<pkgCache::VerIterator, std::string>> candSwitch;
       for (auto const &pkg: pseudoPkgs)
@@ -834,7 +831,7 @@ bool DoBuildDep(CommandLine &CmdL)
 	    candSwitch.emplace_back(Pkg.VersionList(), pkg.release);
       }
       if (candSwitch.empty() == false)
-	 InstallAction.propergateReleaseCandiateSwitching(candSwitch, c0out);
+	 InstallAction.propagateReleaseCandidateSwitching(candSwitch, c0out);
       for (auto const &pkg: pseudoPkgs)
       {
 	 pkgCache::PkgIterator const Pkg = Cache->FindPkg(pkg.name, pkg.arch);
@@ -842,6 +839,11 @@ bool DoBuildDep(CommandLine &CmdL)
 	    continue;
 	 InstallAction(Cache[Pkg].CandidateVerIter(Cache));
 	 removeAgain.push_back(Pkg);
+      }
+
+      {
+	 APT::CacheSetHelper helper;
+	 helper.PackageFrom(APT::CacheSetHelper::PATTERN, &UpgradablePackages, Cache, "?upgradable");
       }
       InstallAction.doAutoInstall();
 
@@ -856,7 +858,6 @@ bool DoBuildDep(CommandLine &CmdL)
       return false;
 
    {
-      pkgDepCache::ActionGroup group(Cache);
       if (_config->FindB(AreDoingSatisfy ? "APT::Get::Satisfy-Automatic" : "APT::Get::Build-Dep-Automatic", false) == false)
       {
 	 for (auto const &pkg: removeAgain)
@@ -883,8 +884,15 @@ bool DoBuildDep(CommandLine &CmdL)
 	 Cache->MarkDelete(pkg, false, 0, true);
    }
 
+   APT::PackageVector HeldBackPackages;
+   SortedPackageUniverse Universe(Cache);
+   for (auto const &Pkg: Universe)
+      if (Pkg->CurrentVer != 0 && not Cache[Pkg].Upgrade() && not Cache[Pkg].Delete() &&
+	  UpgradablePackages.find(Pkg) != UpgradablePackages.end())
+	 HeldBackPackages.push_back(Pkg);
+
    pseudoPkgs.clear();
-   if (_error->PendingError() || InstallPackages(Cache, false, true) == false)
+   if (_error->PendingError() || not InstallPackages(Cache, HeldBackPackages, false, true))
       return _error->Error(_("Failed to process build dependencies"));
    return true;
 }
