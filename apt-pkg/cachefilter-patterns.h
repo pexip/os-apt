@@ -11,6 +11,7 @@
 #include <apt-pkg/cachefile.h>
 #include <apt-pkg/cachefilter.h>
 #include <apt-pkg/error.h>
+#include <apt-pkg/header-is-private.h>
 #include <apt-pkg/string_view.h>
 #include <apt-pkg/strutl.h>
 #include <iostream>
@@ -19,10 +20,6 @@
 #include <string>
 #include <vector>
 #include <assert.h>
-
-#ifndef APT_COMPILING_APT
-#error Internal header
-#endif
 
 namespace APT
 {
@@ -215,6 +212,11 @@ struct APT_HIDDEN PackageIsInstalled : public PackageMatcher
       assert(Cache != nullptr);
       return Pkg->CurrentVer != 0;
    }
+   bool operator()(pkgCache::VerIterator const &Ver) override
+   {
+      assert(Cache != nullptr);
+      return Ver == Ver.ParentPkg().CurrentVer();
+   }
 };
 
 struct APT_HIDDEN PackageIsObsolete : public PackageMatcher
@@ -363,6 +365,21 @@ struct APT_HIDDEN VersionIsArchive : public VersionAnyMatcher
    }
 };
 
+struct APT_HIDDEN VersionIsCodename : public VersionAnyMatcher
+{
+   BaseRegexMatcher matcher;
+   VersionIsCodename(std::string const &pattern) : matcher(pattern) {}
+   bool operator()(pkgCache::VerIterator const &Ver) override
+   {
+      for (auto VF = Ver.FileList(); not VF.end(); VF++)
+      {
+	 if (VF.File().Codename() && matcher(VF.File().Codename()))
+	    return true;
+      }
+      return false;
+   }
+};
+
 struct APT_HIDDEN VersionIsOrigin : public VersionAnyMatcher
 {
    BaseRegexMatcher matcher;
@@ -417,6 +434,22 @@ struct APT_HIDDEN VersionIsVersion : public VersionAnyMatcher
       return matcher(Ver.VerStr());
    }
 };
+
+struct APT_HIDDEN VersionIsPriority : public VersionAnyMatcher
+{
+   std::string name;
+   explicit VersionIsPriority(std::string name) : name(name) {}
+   bool operator()(pkgCache::VerIterator const &Ver) override
+   {
+      std::string Mapping[] = {"", "required","important","standard",
+                            "optional","extra"};
+      if (Ver->Priority > 0 && Ver->Priority < APT_ARRAY_SIZE(Mapping)) {
+         return name == Mapping[Ver->Priority];
+      }
+      return false;
+   }
+};
+
 } // namespace Patterns
 } // namespace Internal
 } // namespace APT

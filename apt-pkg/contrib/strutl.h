@@ -1,4 +1,5 @@
 // -*- mode: cpp; mode: fold -*-
+// SPDX-License-Identifier: GPL-2.0+
 // Description								/*{{{*/
 /* ######################################################################
 
@@ -7,6 +8,9 @@
    _strstrip is a function to remove whitespace from the front and end
    of a string.
    
+   This file had this historic note, but now includes further changes
+   under the GPL-2.0+:
+
    This source is placed in the Public Domain, do with it what you will
    It was originally written by Jason Gunthorpe <jgg@gpu.srv.ualberta.ca>   
    
@@ -143,6 +147,21 @@ static inline int isspace_ascii_inline(int const c)
 {
    // 9='\t',10='\n',11='\v',12='\f',13='\r',32=' '
    return (c >= 9 && c <= 13) || c == ' ';
+}
+APT_PURE APT_HOT
+static inline int islower_ascii(int const c)
+{
+   return c >= 'a' && c <= 'z';
+}
+APT_PURE APT_HOT
+static inline int isupper_ascii(int const c)
+{
+   return c >= 'A' && c <= 'Z';
+}
+APT_PURE APT_HOT
+static inline int isalpha_ascii(int const c)
+{
+   return isupper_ascii(c) || islower_ascii(c);
 }
 
 APT_PUBLIC std::string StripEpoch(const std::string &VerStr);

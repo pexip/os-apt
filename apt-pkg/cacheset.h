@@ -157,6 +157,8 @@ public:									/*{{{*/
 		}
 	}
 
+	std::string getLastVersionMatcher() const;
+	void setLastVersionMatcher(std::string const &matcher);
 									/*}}}*/
 protected:
 	bool ShowError;
@@ -166,6 +168,11 @@ protected:
 		pkgCache::PkgIterator const &Pkg);
 	pkgCache::VerIterator canNotGetCandInstVer(pkgCacheFile &Cache,
 		pkgCache::PkgIterator const &Pkg);
+
+	pkgCache::VerIterator canNotGetVerFromRelease(pkgCacheFile &Cache,
+		pkgCache::PkgIterator const &Pkg, std::string const &release);
+	pkgCache::VerIterator canNotGetVerFromVersionNumber(pkgCacheFile &Cache,
+		pkgCache::PkgIterator const &Pkg, std::string const &verstr);
 
 	bool PackageFromTask(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
 	bool PackageFromRegEx(PackageContainerInterface * const pci, pkgCacheFile &Cache, std::string pattern);
@@ -191,16 +198,21 @@ private:
 	pkgCache::VerIterator canNotFindCandidateVer(pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
 	pkgCache::VerIterator canNotFindInstalledVer(pkgCacheFile &Cache, pkgCache::PkgIterator const &Pkg);
 
-	void * const d;
+	class Private;
+	Private * const d;
 };									/*}}}*/
 // Iterator templates for our Containers				/*{{{*/
 template<typename Interface, typename Master, typename iterator_type, typename container_iterator, typename container_value> class Container_iterator_base :
-   public std::iterator<typename std::iterator_traits<container_iterator>::iterator_category, container_value>,
    public Interface::template iterator_base<iterator_type>
 {
 protected:
 	container_iterator _iter;
 public:
+	using iterator_category = typename std::iterator_traits<container_iterator>::iterator_category;
+	using value_type = container_value;
+	using difference_type = std::ptrdiff_t;
+	using pointer = container_value*;
+	using reference = container_value&;
 	explicit Container_iterator_base(container_iterator const &i) : _iter(i) {}
 	inline container_value operator*(void) const { return static_cast<iterator_type const*>(this)->getType(); };
 	operator container_iterator(void) const { return _iter; }

@@ -1,3 +1,578 @@
+apt (2.6.1) unstable; urgency=medium
+
+  * Restore adduser dependency for bookworm.
+    This caused some regressions to late in the bookworm cycle. To keep
+    upgrade paths (which will have adduser installed) the same, we drop
+    the base-password alternative rather than requiring both dependencies,
+    as that could change resolving or ordering bugs. (Closes: #1035654)
+  * Point gitlab-ci and gbp to bookworm/2.6.y
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 25 May 2023 16:11:37 +0200
+
+apt (2.6.0) unstable; urgency=medium
+
+  * The "unhappy bookworm" release. Too many changes needed to clarify
+    licensing.
+
+  [ Cyril Brulebois ]
+  * Teach apt-cdrom's scoring system about non-free-firmware (Closes: #1029751)
+
+  [ David Kalnischkies ]
+  * More support for non-free-firmware
+    - Have values in Section config trees refer to them in all components
+    - Add non-free-firmware component in documentation
+    - Suggest using non-free-firmware in update for Debian
+  * other bookworm regressions:
+    - Bump codenames in docs in preparation for Debian 12
+    - Detect trimmed changelogs and pick online instead (Closes: #1024457)
+  * Do not store trusted=yes Release file unconditionally
+
+  [ Miroslav Kure ]
+  * Czech program translation update (Closes: #1031008)
+
+  [ Bastian Germann ]
+  * machine-readable version of COPYING (Closes: #1019273), initial version
+
+  [ Julian Andres Klode ]
+  * Update lintian override info format in d/apt.lintian-overrides
+  * Further work on machine-readable COPYING file and the source code comments
+    to address licensing inadequacies:
+    - Address statements of public domain
+    - po/nb.po: Relicensing GPL-2.0 -> GPL-2.0+. Thanks Petter for chasing
+      down the copyright holders and getting agreement.
+    - COPYING: Group by license
+    - Address translation licensing concerns
+    - COPYING: Address RunScripts()
+    - We do not believe rsh was supposed to exclude GPL-3
+    This unfortunately creates a bit of churn, but updating the COPYING file
+    without addressing the actual licensing issues would not have solved the
+    bug.
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 06 Mar 2023 13:26:39 +0100
+
+apt (2.5.6) unstable; urgency=medium
+
+  [ MichaIng ]
+  * Document --allow-insecure-repositories
+
+  [ Helge Kreutzmann ]
+  * German program translation update (Closes: #1029280)
+
+  [ David Kalnischkies ]
+  * Build with and fix warnings of gcc-13 (Closes: #1030592)
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 08 Feb 2023 17:07:38 +0100
+
+apt (2.5.5) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * Do not document path to be repeatable in apt-ftparchive cmds
+
+  [ Julian Andres Klode ]
+  * gitlab-ci: Install adduser
+  * make ?installed pattern match installed version only when narrowed
+  * apt-patterns(7): Grouping with () and or using | are supported
+
+  [ Egon Willighagen ]
+  * Typo fix
+
+  [ Camiel Vletter ]
+  * improve `--help` text for cmdline `apt autoremove`
+
+  [ Frans Spiesschaert ]
+  * Dutch manpages translation update (Closes: #1023456, #1025843)
+
+  [ Алексей Шилин ]
+  * Add 'tasks' section to default APT::Never-MarkAuto-Sections list
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 17 Jan 2023 16:33:38 +0100
+
+apt (2.5.4) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * Report failures back from debSystem::AddStatusFiles
+  * Avoid dealing with a fake dpkg stanza in the tests
+  * Allow apt to run if no dpkg/status file exists
+
+  [ Johannes Schauer Marin Rodrigues ]
+  * since base-passwd 3.6.1 the _apt user is in the default /etc/passwd
+
+  [ Boyuan Yang ]
+  * po/zh_CN.po: Update translation for apt/2.5.3
+
+  [ quazgar ]
+  * Documentation for autopurge command
+
+  [ Julian Andres Klode ]
+  * Actually delete temporary apt-key.*.asc helper files (LP: #1995247)
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 31 Oct 2022 12:11:04 +0100
+
+apt (2.5.3) unstable; urgency=medium
+
+  [ Povilas Kanapickas ]
+  * doc: Explain that apt-get download ensures package authenticity
+
+  [ David Kalnischkies ]
+  * Keep color disabled if APT::Color was set to false
+  * Don't reuse filename for in-tree builds of apt
+  * Respect users pkg order on `apt install` for resolving
+
+  [ Hideki Yamane ]
+  * Fix typo in Japanese program translation
+
+  [ lancethepants ]
+  * porting (musl):
+    - apt-pkg/contrib/fileutl.h  Explicitly include sys/stat.h
+
+  [ Khem Raj ]
+  * porting (clang15):
+    - typecast time_t and suseconds_t from std::chrono
+    - interactive-helper: Undefine _FORTIFY_SOURCE
+
+  [ Julian Andres Klode ]
+  * edsp: Add support for phased updates (test in LP#1990586)
+  * Check state of dependency, not depender in dependency keep back
+    (LP: #1990684)
+  * full-upgrade: Mark phased upgrades for keep before anything else
+    (LP: #1990586)
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 28 Sep 2022 17:16:41 +0200
+
+apt (2.5.2) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * Mark broken reverse depends for upgrade (LP: #1974196)
+  * Upgrade all binaries in a source package
+
+  [ Michael Vogt ]
+  * apt-pkg: (re)export pkgTagSection::Key to fix FTBFS in python-apt
+    (Closes: #1011678)
+
+ -- Julian Andres Klode <jak@debian.org>  Sun, 24 Jul 2022 17:57:24 +0200
+
+apt (2.5.1) unstable; urgency=medium
+
+  [ Américo Monteiro ]
+  * Portuguese manpages translation update (Closes: #1011315)
+
+  [ Ronan Desplanques ]
+  * Fix integer underflow in flExtension
+
+  [ Roberto C. Sánchez ]
+  * Some minor tweaks of spelling/grammar for better readability.
+
+  [ Tianon Gravi ]
+  * Switch from "security.d.o" to "deb.d.o" (matching bullseye release notes)
+
+  [ Julian Andres Klode ]
+  * (Temporarily) Rewrite phased updates using a keep-back approach
+    (LP: #1979244)
+  * policy: Do not override negative pins with 1 due to phasing (LP: #1978125)
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 30 Jun 2022 13:27:30 +0200
+
+apt (2.5.0) unstable; urgency=medium
+
+  [ Helmut Grohne ]
+  * Avoid use of deprecated std::iterator (twice) (Closes: #1008036)
+
+  [ David Kalnischkies ]
+  * Document tagfile-keys.h as internal to apt
+  * Drop support for long obsoleted Suggests alias: Optional
+  * Do not order long obsoleted fields anymore
+  * Stop parsing undocumented unknown EDSP field APT-Hash
+  * Avoid .c_str() on strings feed into pkgTagSection::FindS
+  * Use pkgTagSection::Key in more places in src:apt
+  * Parse Checksum fields via pkgTagSection::Key, too
+  * Avoid building all docs in nodoc build profile
+  * Add pkg.apt.nodoxygen build profile
+  * Use build-dep & satisfy for our CI dependency resolution
+  * Mark pkg-config-test autopkgtest as superficial
+  * Avoid building inside the source dir in autopkgtest
+  * Link interactive helpers against system libapt for autopkgtest
+  * Remove unused public zlib include from libapt fileutl.h
+  * Run ./prepare-release post-build checks in Gitlab CI
+  * Do not build documentation twice in CI
+  * Ignore stty failures in testcases
+  * Include our config.h in all C++ files to avoid ODR violations
+  * Ship our README.md in apt package
+
+  [ Frans Spiesschaert ]
+  * Dutch program translation update (Closes: #1010029)
+  * Dutch manpages translation update (Closes: #1010030)
+
+  [ Troy Varney ]
+  * Fix mirror method dequeuing incorrect items
+
+  [ Julian Andres Klode ]
+  * Do not accept arguments for apt-cache dotty, xvcg.
+    These commands do not actually interpret the same
+    arguments as depends, or any own ones for that matter.
+  * tests: Add g++ dependency to pkg-config test
+
+  [ Vagrant Cascadian ]
+  * Pass -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON via dh_auto_configure override
+    (Closes: #1009796)
+  * Add support for "nodoc" build profile (Closes: #1009797)
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 17 May 2022 18:50:45 +0200
+
+apt (2.4.5) unstable; urgency=medium
+
+  * Only protect two kernels, not last installed one (LP: #1968154)
+  * Fix segfault in CacheSetHelperAPTGet::tryVirtualPackage()
+
+ -- Julian Andres Klode <jak@debian.org>  Fri, 08 Apr 2022 12:22:23 +0200
+
+apt (2.4.4) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * Recognize Static-Built-Using and order it below Built-Using
+    (Closes: #1008759)
+
+ -- Julian Andres Klode <jak@debian.org>  Fri, 01 Apr 2022 18:47:31 +0200
+
+apt (2.4.3) unstable; urgency=medium
+
+  [ Guillem Jover ]
+  * Update .mailmap
+
+  [ David Kalnischkies ]
+  * Fix build failure with gcc-12 due to missing include (Closes: #1008036)
+  * Avoid using unqualified make_pair potentially triggering ftbfs
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 21 Mar 2022 09:20:41 +0100
+
+apt (2.4.2) unstable; urgency=medium
+
+  [ Frans Spiesschaert ]
+  * Dutch manpages translation update (Closes: #1005781)
+
+  [ David Kalnischkies ]
+  * Revert "bugscript: switch from bash to POSIX shell" (Closes: #1007121)
+
+  [ Helge Kreutzmann ]
+  * German program translation update (Closes: #1007128)
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 17 Mar 2022 09:17:27 +0100
+
+apt (2.4.1) unstable; urgency=medium
+
+  [ Paul Wise ]
+  * Document the APT::Periodic interval suffixes and "always" value
+
+  [ Julian Andres Klode ]
+  * gpgv: Fix legacy fallback on unavailable keys
+  * gpgv: Use Valid instead of Good to determine fallback
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 07 Mar 2022 14:06:10 +0100
+
+apt (2.4.0) unstable; urgency=medium
+
+  [ Jörn-Thorben Hinz ]
+  * Provide the same bash-completions for autopurge as for autoremove
+  * Provide bash-completions for reinstall (same as for install)
+    (Closes: #930295)
+  * Don’t bash-complete package names before the command word
+
+  [ Boyuan Yang ]
+  * Simplified Chinese program translation update (Closes: #1004931)
+
+  [ David Kalnischkies ]
+  * Allow --solver apt to work on apt satisfy
+
+  [ Julian Andres Klode ]
+  * Install an empty /etc/apt/keyrings directory.
+    This directory is intended to provide an alternative to
+    /usr/share/keyrings for placing keys used with signed-by.
+  * Warn if the legacy trusted.gpg keyring is used for verification
+
+  [ Paul Wise ]
+  * bugscript: switch to POSIX shell, quoting, other improvements
+
+  [ Croydon ]
+  * Readme: Default branch is now main
+
+  [ Johannes Schauer Marin Rodrigues ]
+  * doc/apt-key.8.xml: document alternatives to apt-key add (Closes: #1002820)
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 22 Feb 2022 20:00:46 +0100
+
+apt (2.3.15) unstable; urgency=medium
+
+  [ Arnaud Rebillout ]
+  * Fix incorrect type when parsing Size (int to unsigned long long)
+    (Closes: #1004064)
+
+  [ Julian Andres Klode ]
+  * Add a --full mode to apt show
+
+  [ Ville Skyttä ]
+  * Fix "was already not hold" message grammar
+
+  [ Jörn-Thorben Hinz ]
+  * Also bash-complete .deb filenames after `apt install` for paths starting with ~
+  * Bash-complete either package name or .deb filename for `apt install`
+  * Start bash-completing .deb file paths after the first . passed in an argument to `apt install`
+  * Provide bash-completion of .dsc filenames for `apt build-dep`
+    (Closes: #985899)
+  * Don’t fail bash-completion for `apt` when the nounset option is set
+  * bash-completion: Don’t misidentify short options as commands to `apt`
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 01 Feb 2022 18:04:58 +0100
+
+apt (2.3.14) unstable; urgency=medium
+
+  [ Helge Kreutzmann ]
+  * German program translation update (Closes: #1000537)
+
+  [ Walter Lozano ]
+  * Use short options for cmp
+
+  [ Ville Skyttä ]
+  * Spelling fixes
+
+  [ Zhang Boyang ]
+  * Fix incorrect SIGWINCH handling (Closes: #852757)
+
+  [ Johannes Schauer Marin Rodrigues ]
+  * add pattern to select packages by codename (closes: #1002646)
+  * test/integration/test-policy-pinning: test listing multiple package in Package: field
+  * doc/apt_preferences.5.xml: document Package field syntax
+
+  [ Frans Spiesschaert ]
+  * Dutch program translation update (Closes: #1002476)
+
+  [ Julian Andres Klode ]
+  * Introduce and use isalpha_ascii() in debversion rather than isalpha()
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 06 Jan 2022 20:57:39 +0100
+
+apt (2.3.13) unstable; urgency=medium
+
+  [ Alexander Kanavin ]
+  * apt-pkg/contrib/srvrec.h: Explicitly include sys/types.h
+
+  [ Américo Monteiro ]
+  * Portuguese manpages translation update (Closes: #1000424)
+
+  [ David Kalnischkies ]
+  * Support more than exact release matches in 'source' (Closes: #998444)
+
+  [ Cameron Katri ]
+  * basehttp: Rename HaveContent's Tristate
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 24 Nov 2021 16:24:21 +0100
+
+apt (2.3.12) unstable; urgency=medium
+
+  [ Ville Skyttä ]
+  * Use `command -v` instead of `which`
+  * bash completion: use `grep -E` instead of `egrep`
+
+  [ Victor Westerhuis ]
+  * Don't print every inline PGP key in Signed-By
+
+  [ Frans Spiesschaert ]
+  * Dutch manpages translation update (Closes: #998830)
+
+  [ Julian Andres Klode ]
+  * Require argument to remove essential packages, do not prompt
+  * Do not remove Essential/Protected due to dependencies.
+    Thanks to Ariadne Conill for the inspiration
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 17 Nov 2021 18:26:57 +0100
+
+apt (2.3.11) unstable; urgency=medium
+
+  [ David Kalnischkies ]
+  * Allow version selection to match versioned self-provides
+  * Allow =version and /release selector on virtual packages
+
+  [ Johannes Schauer Marin Rodrigues ]
+  * apt-pkg/deb/dpkgpm.cc: make DPkg::Chroot-Directory work under fakechroot
+
+  [ Julian Andres Klode ]
+  * Respect NO_COLOR environment variable
+  * Invalidate cached architecture list when building cache.
+    Fixes a regression in python-apt where switching the architectures
+    in the config between cache invocations regressed.
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 21 Oct 2021 12:20:24 +0200
+
+apt (2.3.10) unstable; urgency=medium
+
+  [ Julian Andres Klode ]
+  * basehttp: Turn HaveContent into a TriState
+  * Set haveContent to FALSE on `Content-Length: 0` (Closes: #990281)
+  * Add support for embedding PGP keys into Signed-By in deb822 sources
+
+  [ David Kalnischkies ]
+  * All pkgCaches are MultiArch caches
+  * Do not strip M-A for native build-dep resolution
+  * Do not make provides of M-A:allowed implicit M-A:foreign
+  * Barbarian M-A:allowed don't satisfy :any deps of other archs
+  * Streamline access to barbarian architecture functionality
+  * Read and work with canonical file-URIs from sources.lists
+  * Use https config on https proxies for http servers (Closes: #990555)
+  * Add AllowRange option to disable HTTP Range usage
+  * Disable HTTP Range usage if varnish < 6.4 is involved
+  * Use exact If-Range match in our test webserver
+
+  [ Johannes Schauer Marin Rodrigues ]
+  * add pattern to select packages by priority (closes: #989558)
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 18 Oct 2021 16:35:21 +0200
+
+apt (2.3.9) unstable; urgency=medium
+
+  [ Frans Spiesschaert ]
+  * Dutch manpages translation update (Closes: #992352)
+
+  [ David Kalnischkies ]
+  * Fix infinite recursions in MarkPackage and improve recursions in general
+    - Inhibit autoremove calculation in apt-mark and apt show
+    - Don't venture too deeply in AutoRemovers MarkPackage
+    - Stop autoremover from endlessly exploring cyclic providers (Closes: #992993)
+    - Increase recursion limits from 100 to 3000
+
+  [ Julian Andres Klode ]
+  * Improve error handling of cycling delayed queues
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 07 Sep 2021 17:25:44 +0200
+
+apt (2.3.8) unstable; urgency=medium
+
+  * Upload to unstable
+  * Bump to C++17
+
+ -- Julian Andres Klode <jak@debian.org>  Sat, 14 Aug 2021 23:51:55 +0200
+
+apt (2.3.7) experimental; urgency=medium
+
+  [ David Kalnischkies ]
+  * Use full item description in broken repo error
+  * Store size from volatile sources for already installed versions
+  * Restore dpkg::chroot-directory functionality
+
+  [ Dillon Brock ]
+  * apt.conf(5): indicate # is also used for comments (LP: #1309658)
+
+  [ Julian Andres Klode ]
+  * Check sources.list could be parsed before adding volatile files
+    (Closes: #990518)
+  * pkgAcqIndex::CommonFailed: Set StatIdle before calling Init()
+  * Implement exponential backoff between retries
+    - acquire: Automatically reduce select() timeout as needed
+    - Properly convert PulseInterval to timeval
+    - Add support for a maximum delay and testing of delay
+    - tests (retry-downloads): Avoid delay in second test
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 29 Jul 2021 16:59:39 +0200
+
+apt (2.3.6) experimental; urgency=medium
+
+  [ David Kalnischkies ]
+  * URI encode Filename field of Packages files (again)
+  * Do not use filename of local sources in 'apt download'
+  * No URL decode and quoting support for Files in Sources
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 09 Jun 2021 13:41:20 +0200
+
+apt (2.3.5) experimental; urgency=medium
+
+  * policy: Apply phasing to uninstalled packages too (LP: #1925745)
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 17 May 2021 11:43:23 +0200
+
+apt (2.3.4) experimental; urgency=medium
+
+  [ Khem Raj ]
+  * srvrec: Keep support for older resolver
+
+  [ Julian Andres Klode ]
+  * Turn TLS handshake issues into transient errors (LP: #1928100)
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 12 May 2021 18:04:33 +0200
+
+apt (2.3.3) experimental; urgency=medium
+
+  [ David Kalnischkies ]
+  * Allow superfluous commas in build-dependency lines
+  * Mark only provides from protected versioned kernel packages
+  * Count uninstallable packages in "not upgraded" (Closes: #981535)
+  * Reexplore providers of marked packages if some didn't satisfy before
+  * Call MarkAndSweep only manually in apt-get for autoremove
+  * Store versioned kernel package detectors in d-pointer
+
+  [ Brian Murray ]
+  * Fix a typo in json-hooks-protocol.md
+
+  [ Julian Andres Klode ]
+  * Temporarily Revert "2.3-only: Warn that the 0.1 protocol is deprecated"
+
+ -- Julian Andres Klode <jak@debian.org>  Thu, 29 Apr 2021 10:43:19 +0200
+
+apt (2.3.2) experimental; urgency=medium
+
+  * Remove inversed comment for AllowUnsizedPackages
+  * Automatically retry failed downloads 3 times.
+    Enable the Acquire::Retries option by default, set to 3.
+    This will help with slightly unreliable networking; future
+    work is needed for adding backoff and SRV/IP rotation. (LP: #1876035)
+  * Require dpkg >= 1.20.8 and make more use of --auto-deconfigure now that
+    no longer needs forcing for essential/protected:
+    - Support deconfiguring Essential packages
+    - Do not pass --force-remove-protected with --auto-deconfigure
+  * JSON hook bug fixes:
+    - json: Escape strings using \u escape sequences, add test
+    - json: Actually pop states
+    - json: Encode NULL strings as null
+    - json: Flush standard file descriptors before calling hooks
+    - test/json: Make the test hook more reliable
+  * JSON hooks 0.2:
+    - json: Add origins fields to version
+    - upgrade: Add JSON hook support (AptCli::Hooks::Upgrade)
+    - json: Add `package-list` and `statistics` install hooks
+    - json: Hook protocol 0.2 (added upgrade,downgrade,reinstall modes)
+    - 2.3-only: Warn that the 0.1 protocol is deprecated
+  * Avoid infinite loop on EOF on media change prompt
+
+ -- Julian Andres Klode <jak@debian.org>  Fri, 23 Apr 2021 18:23:15 +0200
+
+apt (2.3.1) experimental; urgency=medium
+
+  [ David Kalnischkies ]
+  * Replace macro and manual management with lambda and RAII:
+    - Replace multi-statement macro with lambda
+    - Use RAII to clean up tmp dir for dpkg recursive install
+    - Handle multi-arch pkgnames for dpkg call via RAII
+    - Merge the three RAII vectors managing args lifetime
+  * Harden test for no new acquires after transaction abort (Closes: #984966)
+
+  [ Julian Andres Klode ]
+  * Check for and discard expected warning from MaybeAddAuth
+  * Fix downloads of unsized files that are largest in pipeline (LP: #1921626)
+  * Error on packages without a Size field (option Acquire::AllowUnsizedPackages)
+  * debian/gbp.conf: HEAD branch is main now
+
+  [ Cameron Katri ]
+  * add vendor information for Procursus
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 13 Apr 2021 17:23:49 +0200
+
+apt (2.3.0) experimental; urgency=medium
+
+  [ David Kalnischkies ]
+  * Deal with rred shortcomings around empty patch files (LP: #1918112)
+    - Allow merging with empty pdiff patches
+    - Rename pdiff merge patches only after they are all downloaded
+    - Start pdiff patching from the last possible starting point
+    - Ensure all index files sent custom tags to the methods
+
+ -- Julian Andres Klode <jak@debian.org>  Mon, 08 Mar 2021 11:50:31 +0100
+
 apt (2.2.4pexip4) pexip-bullseye; urgency=medium
 
   * Bullseye rebuild for ARM64 inclusion
@@ -22,61 +597,6 @@ apt (2.2.4pexip1) pexip; urgency=medium
 
  -- Mark Hymers <mark.hymers@pexip.com>  Thu, 02 Jun 2022 14:42:00 +0100
 
-apt (2.2.4) unstable; urgency=medium
-
-  [ Julian Andres Klode ]
-  * Various bugfixes to the JSON hooks:
-    - encoder fixes:
-      + json: Escape strings using \u escape sequences, add test
-      + json: Actually pop states
-      + json: Encode NULL strings as null
-    - json: Flush standard file descriptors before calling hooks
-      (this avoids output from hooks in middle of apt output)
-    - Non-installed JSON changes:
-      + test/json: Make the test hook more reliable
-      + Fix a typo in json-hooks-protocol.md (thanks to Brian Murray)
-  * Avoid infinite loop on EOF on media change prompt (LP: #1928687)
-  * Turn TLS handshake issues into transient errors (LP: #1928100),
-    this makes behavior consistent with TCP and enables Acquire::Retries
-  * policy: Apply phasing to uninstalled packages too (LP: #1925745),
-    this prevents inconsistencies when installing new binaries that depend
-    on the same version of an already installed binary.
-
-  [ David Kalnischkies ]
-  * URI encode Filename field of Packages files (again). This fixes a
-    regression introduced in 2.1.15 that causes download failures of
-    packages with an epoch included in their filename.
-
- -- Julian Andres Klode <jak@debian.org>  Thu, 10 Jun 2021 10:53:34 +0200
-
-apt (2.2.3) unstable; urgency=medium
-
-  * tests: Check for and discard expected warning from MaybeAddAuth. For some
-    reason, this was only noticed with LTO enabled, but should be a general
-    issue.
-  * Fix downloads of unsized files that are largest in pipeline (LP: #1921626)
-  * Warn on packages without a Size field. Such repositories are broken and
-    need to be fixed, as we do not test apt against them, see the bug above
-    for more details. Set Acquire::AllowUnsizedPackages to disable the
-    warning.
-
- -- Julian Andres Klode <jak@debian.org>  Tue, 13 Apr 2021 17:53:32 +0200
-
-apt (2.2.2) unstable; urgency=medium
-
-  [ David Kalnischkies ]
-  * Deal with rred shortcomings around empty patch files (LP: #1918112)
-    - Allow merging with empty pdiff patches
-    - Rename pdiff merge patches only after they are all downloaded
-    - Start pdiff patching from the last possible starting point
-    - Ensure all index files sent custom tags to the methods
-  * Harden test for no new acquires after transaction abort (Closes: #984966)
-
-  [ Julian Andres Klode ]
-  * Make ADDARG{,C}() macros expand to single statements
-
- -- Julian Andres Klode <jak@debian.org>  Fri, 12 Mar 2021 09:15:59 +0100
-
 apt (2.2.1) unstable; urgency=medium
 
   [ Julian Andres Klode ]
@@ -97,7 +617,7 @@ apt (2.2.0) unstable; urgency=medium
   * The "Happy soft freeze" release
   * Do not make DefaultRootSetFunc2 public symbol
   * kernels: Avoid std::regex for escaping '.' and '+'
-  * symbols: Remove spurios package line, add kernel autoremoval helper
+  * symbols: Remove spurious package line, add kernel autoremoval helper
 
  -- Julian Andres Klode <jak@debian.org>  Thu, 18 Feb 2021 20:35:09 +0100
 
@@ -9257,7 +9777,7 @@ apt (0.7.10) unstable; urgency=low
     - make the authentication download code more robust against
       servers/proxies with broken If-Range implementations
   * apt-pkg/packagemanager.{cc,h}:
-    - propergate the Immediate flag to make hitting the
+    - propagate the Immediate flag to make hitting the
       "E: Internal Error, Could not perform immediate configuration (2)"
       harder
   * debian/control:
@@ -11425,7 +11945,7 @@ apt (0.5.0) unstable; urgency=low
   * Ability to parse and return source index build depends from Randolph.
   * new 'apt-get build-dep' command from Randolph. Closes: #63982
   * Added apt-ftparchive the all dancing all singing FTP archive
-    maintinance program
+    maintenance program
   * Allow version specifications with =1.2.4-3 and /2.2 or /stable postfixes
     in apt-get.
   * Removed useless internal cruft including the xstatus file.

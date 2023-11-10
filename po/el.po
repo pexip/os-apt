@@ -1,6 +1,11 @@
 # translation of apt_po_el.po to Greek
 # translation of apt_po_el.po to
 # Greek Translation of APT.
+#
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
+# This file originally stated:
 # This file is put in the public domain.
 #
 # Fanis Dokianakis <madf@hellug.gr>, 2003.
@@ -17,7 +22,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
 "PO-Revision-Date: 2020-12-30 12:20+0200\n"
 "Last-Translator: Vangelis Skarmoutsos <skarmoutsosv@gmail.com>\n"
 "Language-Team: Greek <debian-l10n-greek@lists.debian.org>\n"
@@ -190,7 +195,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -201,7 +207,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -373,16 +379,6 @@ msgstr "Σφάλμα μεταγλωτισμού regex - %s"
 
 #: apt-pkg/cacheset.cc
 #, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "Η έκδοση %s για το %s δεν βρέθηκε"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "Η έκδοση %s για το %s δεν βρέθηκε"
-
-#: apt-pkg/cacheset.cc
-#, c-format
 msgid "Couldn't find task '%s'"
 msgstr "Δεν μπόρεσε να βρεθεί η εργασία '%s'"
 
@@ -427,6 +423,16 @@ msgid ""
 "Can't select installed nor candidate version from package '%s' as it has "
 "neither of them"
 msgstr ""
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "Η έκδοση %s για το %s δεν βρέθηκε"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "Η έκδοση %s για το %s δεν βρέθηκε"
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -1900,30 +1906,19 @@ msgid "Trivial Only specified but this is not a trivial operation."
 msgstr ""
 "Καθορίστηκε μόνο συνηθισμένο, αλλά αυτή δεν είναι μια συνηθισμένη εργασία."
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "Ναι, κανε ότι λέω!"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"Πρόκειται να κάνετε κάτι πιθανόν πολύ επιζήμιο.\n"
-"Για να συνεχίσετε πληκτρολογήστε τη φράση '%s'\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "Εγκατάλειψη."
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Θέλετε να συνεχίσετε;"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "Εγκατάλειψη."
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2748,7 +2743,7 @@ msgstr "Αφαίρεση πακέτων"
 msgid "Remove packages and config files"
 msgstr "Αφαίρεση πακέτων και αρχείων ρυθμίσεων"
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 msgid "Remove automatically all unused packages"
 msgstr "Αυτόματη αφαίρεση όλων των μη χρησιμοποιούμενων πακέτων"
 
@@ -2905,7 +2900,7 @@ msgstr "το %s ήταν ήδη ορισμένο σε κράτηση.\n"
 
 #: cmdline/apt-mark.cc
 #, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "το %s ήταν ήδη χωρίς κράτηση.\n"
 
 #: cmdline/apt-mark.cc
@@ -3029,6 +3024,12 @@ msgstr "επανεγκατάσταση πακέτων"
 #: cmdline/apt.cc
 msgid "remove packages"
 msgstr "αφαίρεση πακέτων"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "Remove automatically all unused packages"
+msgid "automatically remove all unused packages"
+msgstr "Αυτόματη αφαίρεση όλων των μη χρησιμοποιούμενων πακέτων"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3725,6 +3726,13 @@ msgstr ""
 msgid "Unknown error executing apt-key"
 msgstr "Άγνωστο σφάλμα κατά την εκτέλεση του apt-key"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3775,6 +3783,19 @@ msgstr "Η σύνδεση έκλεισε πρόωρα"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "Ναι, κανε ότι λέω!"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "Πρόκειται να κάνετε κάτι πιθανόν πολύ επιζήμιο.\n"
+#~ "Για να συνεχίσετε πληκτρολογήστε τη φράση '%s'\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

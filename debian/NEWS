@@ -1,3 +1,34 @@
+apt (2.5.2) unstable; urgency=medium
+
+  Installing or upgrading a binary package now upgrades other binaries from
+  the same source package if they have the same candidate version. You can
+  disable this by setting `APT::Get::Upgrade-By-Source-Package` to `false`.
+
+ -- Julian Andres Klode <juliank@ubuntu.com>  Sun, 24 Jul 2022 15:45:15 +0200
+
+apt (2.4.0) unstable; urgency=medium
+
+  GPG verification now first tries only the trusted.gpg.d keys, before
+  then falling back to the legacy trusted.gpg keyring and issuing a
+  warning to migrate keys if verification succeeded in the fallback.
+
+ -- Julian Andres Klode <jak@debian.org>  Tue, 22 Feb 2022 20:01:00 +0100
+
+apt (2.3.12) unstable; urgency=medium
+
+  The solver will no longer try to remove Essential or Protected packages,
+  any dependency problem that would need such a solution will have to be
+  resolved manually.
+
+  The "Yes, do as I say" prompt for removing essential packages has been
+  replaced by an error message. The appropriate command-line option needs
+  to be used instead.
+
+  Thank you to Linus Tech Tips and System76 for bringing this issue
+  to our attention.
+
+ -- Julian Andres Klode <jak@debian.org>  Wed, 17 Nov 2021 18:26:40 +0100
+
 apt (2.1.16) unstable; urgency=medium
 
   Automatically remove unused kernels on apt {dist,full}-upgrade. To revert

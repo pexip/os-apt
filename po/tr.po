@@ -2,13 +2,16 @@
 # Copyright (c) 2009 Rosetta Contributors and Canonical Ltd 2009
 # Copyright (c) 2013 Debian L10n Turkish 2013
 # Mert Dirik <mertdirik@gmail.com>, 2013-2018.
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
 # This file is distributed under the same license as the apt package.
 # Rosetta Contributors, 2009.
 msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
 "PO-Revision-Date: 2018-01-03 16:32+0300\n"
 "Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
 "Language-Team: Debian l10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
@@ -210,7 +213,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Dağıtım çakışması: %s (beklenen %s ama eldeki %s)"
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr "'%s' deposu '%s' değerini '%s' yerine '%s' olarak değiştirmiş"
@@ -223,7 +227,7 @@ msgstr ""
 "değiştirdi."
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -400,16 +404,6 @@ msgstr "Regex derleme hatası - %s"
 
 #: apt-pkg/cacheset.cc
 #, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "'%2$s' paketinin '%1$s' sürümü bulunamadı"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "'%2$s' paketinin '%1$s' sürümü bulunamadı"
-
-#: apt-pkg/cacheset.cc
-#, c-format
 msgid "Couldn't find task '%s'"
 msgstr "'%s' görevi bulunamadı"
 
@@ -456,6 +450,16 @@ msgid ""
 msgstr ""
 "'%s' paketi kurulu olmadığı ve aday sürüme sahip olmadığı için her ikisi de "
 "seçilemiyor"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "'%2$s' paketinin '%1$s' sürümü bulunamadı"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "'%2$s' paketinin '%1$s' sürümü bulunamadı"
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -1973,30 +1977,19 @@ msgstr "Bu işlem tamamlandıktan sonra %sB disk alanı boşalacak.\n"
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr "Sadece Önemsiz seçeneği ayarlandı, ama bu önemsiz bir işlem değil."
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "Evet, söylediğim şekilde yap!"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"Tehlikeli bir iş yapmak üzeresiniz.\n"
-"Devam etmek için '%s' ifadesini yazınız\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "Vazgeç."
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Devam etmek istiyor musunuz?"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "Vazgeç."
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2861,7 +2854,7 @@ msgstr "Paket(leri) kaldır"
 msgid "Remove packages and config files"
 msgstr "Paketleri ve yapılandırma dosyalarını kaldır"
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 msgid "Remove automatically all unused packages"
 msgstr "Kullanılmayan tüm paketleri otomatik olarak kaldır"
 
@@ -3027,7 +3020,7 @@ msgstr "%s zaten tutulacak şekilde ayarlanmış.\n"
 
 #: cmdline/apt-mark.cc
 #, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "%s zaten tutulmayacak şekilde ayarlanmış.\n"
 
 #: cmdline/apt-mark.cc
@@ -3172,6 +3165,12 @@ msgstr "paket kur"
 #: cmdline/apt.cc
 msgid "remove packages"
 msgstr "paket kaldır"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "Remove automatically all unused packages"
+msgid "automatically remove all unused packages"
+msgstr "Kullanılmayan tüm paketleri otomatik olarak kaldır"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3871,6 +3870,13 @@ msgstr "İmza doğrulama için 'apt-key' çalıştırılamadı (gnupg kurulu mu?
 msgid "Unknown error executing apt-key"
 msgstr "apt-key çalıştırılırken bilinmeyen hata"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3918,6 +3924,19 @@ msgstr "Bağlantı vaktinden önce kapandı"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "Boş dosyalar geçerli birer arşiv dosyası olamazlar"
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "Evet, söylediğim şekilde yap!"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "Tehlikeli bir iş yapmak üzeresiniz.\n"
+#~ "Devam etmek için '%s' ifadesini yazınız\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

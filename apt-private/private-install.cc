@@ -80,6 +80,16 @@ bool CheckNothingBroken(CacheFile &Cache)				/*{{{*/
 // ---------------------------------------------------------------------
 /* This displays the informative messages describing what is going to 
    happen and then calls the download routines */
+class SimulateWithActionGroupInhibited : public pkgSimulate
+{
+public:
+      SimulateWithActionGroupInhibited(CacheFile &Cache) : pkgSimulate(Cache) { Sim.IncreaseActionGroupLevel(); }
+      SimulateWithActionGroupInhibited(SimulateWithActionGroupInhibited const &Cache) = delete;
+      SimulateWithActionGroupInhibited(SimulateWithActionGroupInhibited &&Cache) = delete;
+      SimulateWithActionGroupInhibited& operator=(SimulateWithActionGroupInhibited const &Cache) = delete;
+      SimulateWithActionGroupInhibited& operator=(SimulateWithActionGroupInhibited &&Cache) = delete;
+      ~SimulateWithActionGroupInhibited() = default;
+};
 static void RemoveDownloadNeedingItemsFromFetcher(pkgAcquire &Fetcher, bool &Transient)
 {
    for (pkgAcquire::ItemIterator I = Fetcher.ItemsBegin(); I < Fetcher.ItemsEnd();)
@@ -100,7 +110,7 @@ static void RemoveDownloadNeedingItemsFromFetcher(pkgAcquire &Fetcher, bool &Tra
       I = Fetcher.ItemsBegin();
    }
 }
-bool InstallPackages(CacheFile &Cache,bool ShwKept,bool Ask, bool Safety)
+bool InstallPackages(CacheFile &Cache, APT::PackageVector &HeldBackPackages, bool ShwKept, bool Ask, bool Safety, std::string const &Hook, CommandLine const &CmdL)
 {
    if (not RunScripts("APT::Install::Pre-Invoke"))
       return false;
@@ -145,7 +155,21 @@ bool InstallPackages(CacheFile &Cache,bool ShwKept,bool Ask, bool Safety)
       if (Missing)
       {
 	 if (_config->FindB("APT::Get::Fix-Missing",false))
+	 {
 	    PM->FixMissing();
+	    SortedPackageUniverse Universe(Cache);
+	    APT::PackageVector NewHeldBackPackages;
+	    for (auto const &Pkg: Universe)
+	    {
+	       if (Pkg->CurrentVer == 0 || Cache[Pkg].Delete())
+		  continue;
+	       if (Cache[Pkg].Upgradable() && not Cache[Pkg].Upgrade())
+		  NewHeldBackPackages.push_back(Pkg);
+	       else if (std::find(HeldBackPackages.begin(), HeldBackPackages.end(), Pkg) != HeldBackPackages.end())
+		  NewHeldBackPackages.push_back(Pkg);
+	    }
+	    std::swap(NewHeldBackPackages, HeldBackPackages);
+	 }
 	 else
 	    return _error->Error(_("Unable to fetch some archives, maybe run apt-get update or try with --fix-missing?"));
       }
@@ -158,8 +182,8 @@ bool InstallPackages(CacheFile &Cache,bool ShwKept,bool Ask, bool Safety)
    ShowDel(c1out,Cache);
    ShowNew(c1out,Cache);
    if (ShwKept == true)
-      ShowKept(c1out,Cache);
-   bool const Hold = !ShowHold(c1out,Cache);
+      ShowKept(c1out,Cache, HeldBackPackages);
+   bool const Hold = not ShowHold(c1out,Cache);
    if (_config->FindB("APT::Get::Show-Upgraded",true) == true)
       ShowUpgraded(c1out,Cache);
    bool const Downgrade = !ShowDowngraded(c1out,Cache);
@@ -168,7 +192,12 @@ bool InstallPackages(CacheFile &Cache,bool ShwKept,bool Ask, bool Safety)
    if (_config->FindB("APT::Get::Download-Only",false) == false)
         Essential = !ShowEssential(c1out,Cache);
 
-   Stats(c1out,Cache);
+   if (not Hook.empty())
+      RunJsonHook(Hook, "org.debian.apt.hooks.install.package-list", CmdL.FileList, Cache);
+
+   Stats(c1out,Cache, HeldBackPackages);
+   if (not Hook.empty())
+      RunJsonHook(Hook, "org.debian.apt.hooks.install.statistics", CmdL.FileList, Cache);
 
    // Sanity check
    if (Cache->BrokenCount() != 0)
@@ -203,7 +232,7 @@ bool InstallPackages(CacheFile &Cache,bool ShwKept,bool Ask, bool Safety)
    // Run the simulator ..
    if (_config->FindB("APT::Get::Simulate") == true)
    {
-      pkgSimulate PM(Cache);
+      SimulateWithActionGroupInhibited PM(Cache);
 
       APT::Progress::PackageManager *progress = APT::Progress::PackageManagerProgressFactory();
       pkgPackageManager::OrderResult Res = PM.DoInstall(progress);
@@ -275,19 +304,7 @@ bool InstallPackages(CacheFile &Cache,bool ShwKept,bool Ask, bool Safety)
       if (_config->FindB("APT::Get::Trivial-Only",false) == true)
 	 return _error->Error(_("Trivial Only specified but this is not a trivial operation."));
 
-      // TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-      //             careful with hard to type or special characters (like non-breaking spaces)
-      const char *Prompt = _("Yes, do as I say!");
-      std::string question;
-      strprintf(question,
-	       _("You are about to do something potentially harmful.\n"
-		 "To continue type in the phrase '%s'\n"
-		 " ?] "),Prompt);
-      if (AnalPrompt(question, Prompt) == false)
-      {
-	 c2out << _("Abort.") << std::endl;
-	 exit(1);
-      }
+      return _error->Error(_("Removing essential system-critical packages is not permitted. This might break the system."));
    }
    else
    {
@@ -415,7 +432,6 @@ bool DoAutomaticRemove(CacheFile &Cache)
       kernelAutoremovalMatcher = APT::KernelAutoRemoveHelper::GetProtectedKernelsFilter(Cache, true);
    }
 
-   pkgDepCache::ActionGroup group(*Cache);
    if(Debug)
       std::cout << "DoAutomaticRemove()" << std::endl;
 
@@ -426,6 +442,7 @@ bool DoAutomaticRemove(CacheFile &Cache)
 		 "AutoRemover") << std::endl;
       return false;
    }
+   Cache->MarkAndSweep();
 
    bool purgePkgs = _config->FindB("APT::Get::Purge", false);
    bool smallList = (hideAutoRemove == false &&
@@ -524,8 +541,6 @@ bool DoAutomaticRemove(CacheFile &Cache)
 	 }
       } while (Changed == true);
    }
-   // trigger marking now so that the package list below is correct
-   group.release();
 
    // Now see if we had destroyed anything (if we had done anything)
    if (Cache->BrokenCount() != 0)
@@ -545,6 +560,8 @@ bool DoAutomaticRemove(CacheFile &Cache)
    {
       if (smallList == false)
       {
+	 // trigger marking now so that the package list is correct
+	 Cache->MarkAndSweep();
 	 SortedPackageUniverse Universe(Cache);
 	 ShowList(c1out, P_("The following package was automatically installed and is no longer required:",
 	          "The following packages were automatically installed and are no longer required:",
@@ -573,19 +590,16 @@ bool DoAutomaticRemove(CacheFile &Cache)
 static const unsigned short MOD_REMOVE = 1;
 static const unsigned short MOD_INSTALL = 2;
 
-bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, CacheFile &Cache, int UpgradeMode)
+bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, std::vector<PseudoPkg> &VolatileCmdL, CacheFile &Cache, int UpgradeMode,
+					APT::PackageVector &HeldBackPackages)
 {
-   std::vector<PseudoPkg> VolatileCmdL;
-   return DoCacheManipulationFromCommandLine(CmdL, VolatileCmdL, Cache, UpgradeMode);
-}
-bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, std::vector<PseudoPkg> &VolatileCmdL, CacheFile &Cache, int UpgradeMode)
-{
-   std::map<unsigned short, APT::VersionSet> verset;
+   std::map<unsigned short, APT::VersionVector> verset;
    std::set<std::string> UnknownPackages;
-   return DoCacheManipulationFromCommandLine(CmdL, VolatileCmdL, Cache, verset, UpgradeMode, UnknownPackages);
+   return DoCacheManipulationFromCommandLine(CmdL, VolatileCmdL, Cache, verset, UpgradeMode, UnknownPackages, HeldBackPackages);
 }
 bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, std::vector<PseudoPkg> &VolatileCmdL, CacheFile &Cache,
-					std::map<unsigned short, APT::VersionSet> &verset, int UpgradeMode, std::set<std::string> &UnknownPackages)
+					std::map<unsigned short, APT::VersionVector> &verset, int UpgradeMode,
+					std::set<std::string> &UnknownPackages, APT::PackageVector &HeldBackPackages)
 {
    // Enter the special broken fixing mode if the user specified arguments
    bool BrokenFix = false;
@@ -625,8 +639,13 @@ bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, std::vector<PseudoPkg
    mods.push_back(APT::VersionSet::Modifier(MOD_REMOVE, "-",
 		APT::VersionSet::Modifier::POSTFIX, APT::CacheSetHelper::NEWEST));
    CacheSetHelperAPTGet helper(c0out);
-   verset = APT::VersionSet::GroupedFromCommandLine(Cache,
+   verset = APT::VersionVector::GroupedFromCommandLine(Cache,
 		CmdL.FileList + 1, mods, fallback, helper);
+   for (auto &vs : verset)
+   {
+      std::set<map_id_t> seen;
+      vs.second.erase(std::remove_if(vs.second.begin(), vs.second.end(), [&](auto const &p) { return not seen.insert(p->ID).second; }), vs.second.end());
+   }
 
    for (auto const &I: VolatileCmdL)
    {
@@ -658,10 +677,9 @@ bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, std::vector<PseudoPkg
 
   TryToInstall InstallAction(Cache, Fix.get(), BrokenFix);
   TryToRemove RemoveAction(Cache, Fix.get());
+  APT::PackageSet UpgradablePackages;
 
-   // new scope for the ActionGroup
    {
-      pkgDepCache::ActionGroup group(Cache);
       unsigned short const order[] = { MOD_REMOVE, MOD_INSTALL, 0 };
 
       for (unsigned short i = 0; order[i] != 0; ++i)
@@ -672,9 +690,14 @@ bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, std::vector<PseudoPkg
 	    RemoveAction = std::for_each(verset[MOD_REMOVE].begin(), verset[MOD_REMOVE].end(), RemoveAction);
       }
 
+      {
+	 APT::CacheSetHelper helper;
+	 helper.PackageFrom(APT::CacheSetHelper::PATTERN, &UpgradablePackages, Cache, "?upgradable");
+      }
+
       if (Fix != NULL && _config->FindB("APT::Get::AutoSolving", true) == true)
       {
-	 InstallAction.propergateReleaseCandiateSwitching(helper.selectedByRelease, c0out);
+	 InstallAction.propagateReleaseCandidateSwitching(helper.selectedByRelease, c0out);
 	 InstallAction.doAutoInstall();
       }
 
@@ -726,6 +749,12 @@ bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, std::vector<PseudoPkg
        Cache->BadCount() == 0 &&
        _config->FindB("APT::Get::Simulate",false) == false)
       Cache->writeStateFile(NULL);
+
+   SortedPackageUniverse Universe(Cache);
+   for (auto const &Pkg: Universe)
+      if (Pkg->CurrentVer != 0 && not Cache[Pkg].Upgrade() && not Cache[Pkg].Delete() &&
+	  UpgradablePackages.find(Pkg) != UpgradablePackages.end())
+	 HeldBackPackages.push_back(Pkg);
 
    return true;
 }
@@ -810,19 +839,22 @@ std::vector<PseudoPkg> GetPseudoPackages(pkgSourceList *const SL, CommandLine &C
 /* Install named packages */
 struct PkgIsExtraInstalled {
    pkgCacheFile * const Cache;
-   APT::VersionSet const * const verset;
-   PkgIsExtraInstalled(pkgCacheFile * const Cache, APT::VersionSet const * const Container) : Cache(Cache), verset(Container) {}
+   APT::VersionVector const * const verset;
+   PkgIsExtraInstalled(pkgCacheFile * const Cache, APT::VersionVector const * const Container) : Cache(Cache), verset(Container) {}
    bool operator() (pkgCache::PkgIterator const &Pkg)
    {
         if ((*Cache)[Pkg].Install() == false)
            return false;
         pkgCache::VerIterator const Cand = (*Cache)[Pkg].CandidateVerIter(*Cache);
-        return verset->find(Cand) == verset->end();
+	return std::find(verset->begin(), verset->end(), Cand) == verset->end();
    }
 };
 bool DoInstall(CommandLine &CmdL)
 {
    CacheFile Cache;
+   Cache.InhibitActionGroups(true);
+   if (Cache.BuildSourceList() == false)
+      return false;
    auto VolatileCmdL = GetPseudoPackages(Cache.GetSourceList(), CmdL, AddVolatileBinaryFile, "");
 
    // then open the cache
@@ -830,10 +862,11 @@ bool DoInstall(CommandLine &CmdL)
        Cache.CheckDeps(CmdL.FileSize() != 1) == false)
       return false;
 
-   std::map<unsigned short, APT::VersionSet> verset;
+   std::map<unsigned short, APT::VersionVector> verset;
    std::set<std::string> UnknownPackages;
+   APT::PackageVector HeldBackPackages;
 
-   if (!DoCacheManipulationFromCommandLine(CmdL, VolatileCmdL, Cache, verset, 0, UnknownPackages))
+   if (not DoCacheManipulationFromCommandLine(CmdL, VolatileCmdL, Cache, verset, 0, UnknownPackages, HeldBackPackages))
    {
       RunJsonHook("AptCli::Hooks::Install", "org.debian.apt.hooks.install.fail", CmdL.FileList, Cache, UnknownPackages);
       return false;
@@ -944,9 +977,9 @@ bool DoInstall(CommandLine &CmdL)
    // See if we need to prompt
    // FIXME: check if really the packages in the set are going to be installed
    if (Cache->InstCount() == verset[MOD_INSTALL].size() && Cache->DelCount() == 0)
-      result = InstallPackages(Cache, false, false);
+      result = InstallPackages(Cache, HeldBackPackages, false, false, true, "AptCli::Hooks::Install", CmdL);
    else
-      result = InstallPackages(Cache, false);
+      result = InstallPackages(Cache, HeldBackPackages, false, true, true, "AptCli::Hooks::Install", CmdL);
 
    if (result)
       result = RunJsonHook("AptCli::Hooks::Install", "org.debian.apt.hooks.install.post", CmdL.FileList, Cache);
@@ -1024,7 +1057,7 @@ void TryToInstall::operator() (pkgCache::VerIterator const &Ver) {
    }
 }
 									/*}}}*/
-bool TryToInstall::propergateReleaseCandiateSwitching(std::list<std::pair<pkgCache::VerIterator, std::string> > const &start, std::ostream &out)/*{{{*/
+bool TryToInstall::propagateReleaseCandidateSwitching(std::list<std::pair<pkgCache::VerIterator, std::string> > const &start, std::ostream &out)/*{{{*/
 {
    for (std::list<std::pair<pkgCache::VerIterator, std::string> >::const_iterator s = start.begin();
 	 s != start.end(); ++s)
@@ -1067,13 +1100,9 @@ bool TryToInstall::propergateReleaseCandiateSwitching(std::list<std::pair<pkgCac
 }
 									/*}}}*/
 void TryToInstall::doAutoInstall() {					/*{{{*/
-   for (APT::PackageSet::const_iterator P = doAutoInstallLater.begin();
-	 P != doAutoInstallLater.end(); ++P) {
-      pkgDepCache::StateCache &State = (*Cache)[P];
-      if (State.InstBroken() == false && State.InstPolicyBroken() == false)
-	 continue;
-      Cache->GetDepCache()->MarkInstall(P, true);
-   }
+   auto * const DCache = Cache->GetDepCache();
+   for (auto const &P: doAutoInstallLater)
+      DCache->MarkInstall(P, true);
    doAutoInstallLater.clear();
 }
 									/*}}}*/

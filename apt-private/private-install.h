@@ -1,6 +1,7 @@
 #ifndef APT_PRIVATE_INSTALL_H
 #define APT_PRIVATE_INSTALL_H
 
+#include <apt-pkg/depcache.h>
 #include <apt-pkg/cachefile.h>
 #include <apt-pkg/cacheset.h>
 #include <apt-pkg/configuration.h>
@@ -32,12 +33,17 @@ bool AddVolatileBinaryFile(pkgSourceList *const SL, PseudoPkg &&pkg, std::vector
 bool AddVolatileSourceFile(pkgSourceList *const SL, PseudoPkg &&pkg, std::vector<PseudoPkg> &VolatileCmdL);
 
 bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, std::vector<PseudoPkg> &VolatileCmdL, CacheFile &Cache,
-					std::map<unsigned short, APT::VersionSet> &verset, int UpgradeMode, std::set<std::string> &UnknownPackages);
-bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, std::vector<PseudoPkg> &VolatileCmdL, CacheFile &Cache, int UpgradeMode);
-bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, CacheFile &Cache, int UpgradeMode);
+					std::map<unsigned short, APT::VersionVector> &verset, int UpgradeMode,
+					std::set<std::string> &UnknownPackages, APT::PackageVector &HeldBackPackages);
+bool DoCacheManipulationFromCommandLine(CommandLine &CmdL, std::vector<PseudoPkg> &VolatileCmdL, CacheFile &Cache, int UpgradeMode,
+					APT::PackageVector &HeldBackPackages);
 
-APT_PUBLIC bool InstallPackages(CacheFile &Cache,bool ShwKept,bool Ask = true,
-                        bool Safety = true);
+APT_PUBLIC bool InstallPackages(CacheFile &Cache,
+				APT::PackageVector &HeldBackPackages,
+				bool ShwKept, bool Ask = true,
+				bool Safety = true,
+				std::string const &Hook = "",
+				CommandLine const &CmdL = {});
 
 bool CheckNothingBroken(CacheFile &Cache);
 bool DoAutomaticRemove(CacheFile &Cache);
@@ -48,13 +54,13 @@ struct TryToInstall {
    pkgProblemResolver* Fix;
    bool FixBroken;
    unsigned long AutoMarkChanged;
-   APT::PackageSet doAutoInstallLater;
+   APT::PackageVector doAutoInstallLater;
 
    TryToInstall(pkgCacheFile &Cache, pkgProblemResolver *PM, bool const FixBroken) : Cache(&Cache), Fix(PM),
 			FixBroken(FixBroken), AutoMarkChanged(0) {};
 
    void operator() (pkgCache::VerIterator const &Ver);
-   bool propergateReleaseCandiateSwitching(std::list<std::pair<pkgCache::VerIterator, std::string> > const &start, std::ostream &out);
+   bool propagateReleaseCandidateSwitching(std::list<std::pair<pkgCache::VerIterator, std::string> > const &start, std::ostream &out);
    void doAutoInstall();
 };
 									/*}}}*/

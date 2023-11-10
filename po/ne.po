@@ -1,4 +1,7 @@
 # translation of apt_po.po to Nepali
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
 # Mahesh Subedi <submanesh@hotmail.com>, 2006.
 # Shyam Krishna Bal <shyamkrishna_bal@yahoo.com>, 2006.
 # Shiva Pokharel <pokharelshiva@hotmail.com>, 2006.
@@ -6,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
 "PO-Revision-Date: 2006-06-12 14:35+0545\n"
 "Last-Translator: Shiva Pokharel <pokharelshiva@hotmail.com>\n"
 "Language-Team: Nepali <info@mpp.org.np>\n"
@@ -178,7 +181,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -189,7 +193,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -354,16 +358,6 @@ msgid "Regex compilation error - %s"
 msgstr "संकलन त्रुटि रिजेक्स गर्नुहोस् - %s"
 
 #: apt-pkg/cacheset.cc
-#, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr " '%s' को लागि '%s' निष्काशन फेला पार्न सकिएन"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr " '%s' को लागि '%s' संस्करण फेला पार्न सकिएन"
-
-#: apt-pkg/cacheset.cc
 #, fuzzy, c-format
 msgid "Couldn't find task '%s'"
 msgstr "प्याकेज फेला पार्न सकिएन  %s"
@@ -409,6 +403,16 @@ msgid ""
 "Can't select installed nor candidate version from package '%s' as it has "
 "neither of them"
 msgstr ""
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr " '%s' को लागि '%s' निष्काशन फेला पार्न सकिएन"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr " '%s' को लागि '%s' संस्करण फेला पार्न सकिएन"
 
 #: apt-pkg/cdrom.cc
 #, fuzzy
@@ -1865,31 +1869,20 @@ msgstr "%sB अनप्याक गरिसके पछि डिस्क �
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr "त्रिभियल मात्र निर्दिष्ट गरिएको छ तर यो त्रिभियल सञ्चालन होइन ।"
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "हो,मैले भने जस्तै गर्नुहोस्!"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"तपाईँले केही संभवत: हानिकारक काम गर्नुपर्छ ।\n"
-"निरन्तरता दिन '%s' वाक्यांशमा टाइप गर्नुहोस् \n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "परित्याग गर्नुहोस् ।"
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 #, fuzzy
 msgid "Do you want to continue?"
 msgstr "के तपाईँ निरन्तरता दिन चाहनुहुन्छ [Y/n]? "
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "परित्याग गर्नुहोस् ।"
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2710,7 +2703,7 @@ msgstr ""
 msgid "Remove packages and config files"
 msgstr ""
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 #, fuzzy
 msgid "Remove automatically all unused packages"
 msgstr "तर %s स्थापना हुनुपर्यो"
@@ -2885,7 +2878,7 @@ msgstr "%s पहिल्यै नयाँ संस्करण हो ।\n
 
 #: cmdline/apt-mark.cc
 #, fuzzy, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "%s पहिल्यै नयाँ संस्करण हो ।\n"
 
 #: cmdline/apt-mark.cc
@@ -3017,6 +3010,11 @@ msgstr "पिन गरिएका प्याकेजहरू:"
 #, fuzzy
 msgid "remove packages"
 msgstr "भाँचिएका प्याकेजहरू"
+
+#: cmdline/apt.cc
+#, fuzzy
+msgid "automatically remove all unused packages"
+msgstr "तर %s स्थापना हुनुपर्यो"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3713,6 +3711,13 @@ msgstr "हस्ताक्षर रूजू गर्न '%s' कार्�
 msgid "Unknown error executing apt-key"
 msgstr "apt-key कार्यन्वयन गर्दा अज्ञात त्रुटि"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3760,6 +3765,19 @@ msgstr "जडान असमायिक बन्द भयो"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "हो,मैले भने जस्तै गर्नुहोस्!"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "तपाईँले केही संभवत: हानिकारक काम गर्नुपर्छ ।\n"
+#~ "निरन्तरता दिन '%s' वाक्यांशमा टाइप गर्नुहोस् \n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

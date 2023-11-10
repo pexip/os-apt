@@ -56,6 +56,7 @@ static const constexpr struct
    {"n"_sv, "?name"_sv, true},
    {"o"_sv, "?obsolete"_sv, false},
    {"O"_sv, "?origin"_sv, true},
+   {"p"_sv, "?priority"_sv, true},
    {"s"_sv, "?section"_sv, true},
    {"e"_sv, "?source-package"_sv, true},
    {"T"_sv, "?true"_sv, false},
@@ -429,6 +430,8 @@ std::unique_ptr<APT::CacheFilter::Matcher> PatternParser::aPattern(std::unique_p
       return std::make_unique<APT::CacheFilter::PackageArchitectureMatchesSpecification>(aWord(node->arguments[0]));
    if (node->matches("?archive", 1, 1))
       return std::make_unique<Patterns::VersionIsArchive>(aWord(node->arguments[0]));
+   if (node->matches("?codename", 1, 1))
+      return std::make_unique<Patterns::VersionIsCodename>(aWord(node->arguments[0]));
    if (node->matches("?all-versions", 1, 1))
       return std::make_unique<Patterns::VersionIsAllVersions>(aPattern(node->arguments[0]));
    if (node->matches("?any-version", 1, 1))
@@ -477,6 +480,8 @@ std::unique_ptr<APT::CacheFilter::Matcher> PatternParser::aPattern(std::unique_p
       return std::make_unique<Patterns::PackageReverseDepends>(aPattern(node->arguments[0]), pkgCache::Dep::Enhances);
    if (node->matches("?essential", 0, 0))
       return std::make_unique<Patterns::PackageIsEssential>();
+   if (node->matches("?priority", 1, 1))
+      return std::make_unique<Patterns::VersionIsPriority>(aWord(node->arguments[0]));
    if (node->matches("?exact-name", 1, 1))
       return std::make_unique<Patterns::PackageHasExactName>(aWord(node->arguments[0]));
    if (node->matches("?false", 0, 0))

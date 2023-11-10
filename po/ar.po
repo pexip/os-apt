@@ -1,4 +1,9 @@
 # translation of apt_po.po to Arabic
+#
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
+# This file originally stated:
 # This file is put in the public domain.
 #
 # Ossama M. Khayat <okhayat@yahoo.com>, 2005, 2006.
@@ -6,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
 "PO-Revision-Date: 2006-10-20 21:28+0300\n"
 "Last-Translator: Ossama M. Khayat <okhayat@yahoo.com>\n"
 "Language-Team: Arabic <support@arabeyes.org>\n"
@@ -182,7 +187,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -193,7 +199,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -354,16 +360,6 @@ msgid "Regex compilation error - %s"
 msgstr ""
 
 #: apt-pkg/cacheset.cc
-#, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "تعذر العثور على الإصدارة '%s' للحزمة '%s'"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "تعذر العثور على النسخة '%s' للحزمة '%s'"
-
-#: apt-pkg/cacheset.cc
 #, fuzzy, c-format
 msgid "Couldn't find task '%s'"
 msgstr "تعذر العثور على الحزمة %s"
@@ -409,6 +405,16 @@ msgid ""
 "Can't select installed nor candidate version from package '%s' as it has "
 "neither of them"
 msgstr ""
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "تعذر العثور على الإصدارة '%s' للحزمة '%s'"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "تعذر العثور على النسخة '%s' للحزمة '%s'"
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -1842,30 +1848,19 @@ msgstr "بعد الاستخراج %sب من المساحة ستفرّغ.\n"
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr ""
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "نعم، افعل ما أقوله!"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"أنت على وشك أن تقوم بشيء ضارّ جداً\n"
-"كي تستمر اكتب العبارة '%s'\n"
-" ؟] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "إجهاض."
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "هل تريد الاستمرار؟"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "إجهاض."
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2664,7 +2659,7 @@ msgstr "حزم معطوبة"
 msgid "Remove packages and config files"
 msgstr ""
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 #, fuzzy
 msgid "Remove automatically all unused packages"
 msgstr "إلا أنه سيتم تثبيت %s"
@@ -2816,7 +2811,7 @@ msgstr "%s هي النسخة الأحدث.\n"
 
 #: cmdline/apt-mark.cc
 #, fuzzy, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "%s هي النسخة الأحدث.\n"
 
 #: cmdline/apt-mark.cc
@@ -2948,6 +2943,11 @@ msgstr "الحزم المُدبّسة:"
 #, fuzzy
 msgid "remove packages"
 msgstr "حزم معطوبة"
+
+#: cmdline/apt.cc
+#, fuzzy
+msgid "automatically remove all unused packages"
+msgstr "إلا أنه سيتم تثبيت %s"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3598,6 +3598,13 @@ msgstr ""
 msgid "Unknown error executing apt-key"
 msgstr ""
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3645,6 +3652,19 @@ msgstr ""
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "نعم، افعل ما أقوله!"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "أنت على وشك أن تقوم بشيء ضارّ جداً\n"
+#~ "كي تستمر اكتب العبارة '%s'\n"
+#~ " ؟] "
 
 #~ msgid "Error writing to output file"
 #~ msgstr "خطأ في الكتابة إلى ملف المُخرجات"

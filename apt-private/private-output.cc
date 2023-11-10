@@ -86,9 +86,9 @@ bool InitOutput(std::basic_streambuf<char> * const out)			/*{{{*/
       SigWinch(0);
    }
 
-   if(!isatty(1))
+   if (isatty(STDOUT_FILENO) == 0 || not _config->FindB("APT::Color", true) || getenv("NO_COLOR") != nullptr)
    {
-      _config->Set("APT::Color", "false");
+      _config->Set("APT::Color", false);
       _config->Set("APT::Color::Highlight", "");
       _config->Set("APT::Color::Neutral", "");
    } else {
@@ -491,17 +491,11 @@ void ShowDel(ostream &out,CacheFile &Cache)
 }
 									/*}}}*/
 // ShowKept - Show kept packages					/*{{{*/
-void ShowKept(ostream &out,CacheFile &Cache)
+void ShowKept(ostream &out,CacheFile &Cache, APT::PackageVector const &HeldBackPackages)
 {
    SortedPackageUniverse Universe(Cache);
-   ShowList(out,_("The following packages have been kept back:"), Universe,
-	 [&Cache](pkgCache::PkgIterator const &Pkg)
-	 {
-	    return Cache[Pkg].Upgrade() == false &&
-		   Cache[Pkg].Upgradable() == true &&
-		   Pkg->CurrentVer != 0 &&
-		   Cache[Pkg].Delete() == false;
-	 },
+   ShowList(out,_("The following packages have been kept back:"), HeldBackPackages,
+	 &AlwaysTrue,
 	 &PrettyFullName,
 	 CurrentToCandidateVersion(&Cache));
 }
@@ -623,7 +617,7 @@ bool ShowEssential(ostream &out,CacheFile &Cache)
 // Stats - Show some statistics						/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-void Stats(ostream &out,pkgDepCache &Dep)
+void Stats(ostream &out, pkgDepCache &Dep, APT::PackageVector const &HeldBackPackages)
 {
    unsigned long Upgrade = 0;
    unsigned long Downgrade = 0;
@@ -655,7 +649,7 @@ void Stats(ostream &out,pkgDepCache &Dep)
       ioprintf(out,_("%lu downgraded, "),Downgrade);
 
    ioprintf(out,_("%lu to remove and %lu not upgraded.\n"),
-	    Dep.DelCount(),Dep.KeepCount());
+	    Dep.DelCount(), HeldBackPackages.size());
    
    if (Dep.BadCount() != 0)
       ioprintf(out,_("%lu not fully installed or removed.\n"),
@@ -751,24 +745,6 @@ bool YnPrompt(char const * const Question, bool const Default)
    return YnPrompt(Question, Default, true, c1out, c2out);
 }
 									/*}}}*/
-// AnalPrompt - Annoying Yes No Prompt.					/*{{{*/
-// ---------------------------------------------------------------------
-/* Returns true on a Yes.*/
-bool AnalPrompt(std::string const &Question, const char *Text)
-{
-   if (_config->FindI("quiet",0) > 0)
-      _error->DumpErrors(c2out);
-   else
-      _error->DumpErrors(c2out, GlobalError::DEBUG);
-   c2out << Question << std::flush;
-
-   char Buf[1024];
-   std::cin.getline(Buf,sizeof(Buf));
-   if (strcmp(Buf,Text) == 0)
-      return true;
-   return false;
-}
-									/*}}}*/
 
 std::string PrettyFullName(pkgCache::PkgIterator const &Pkg)
 {
@@ -784,7 +760,15 @@ std::function<std::string(pkgCache::PkgIterator const &)> CandidateVersion(pkgCa
 }
 std::string CurrentToCandidateVersion(pkgCacheFile * const Cache, pkgCache::PkgIterator const &Pkg)
 {
-   return std::string((*Cache)[Pkg].CurVersion) + " => " + (*Cache)[Pkg].CandVersion;
+   std::string const CurVer = (*Cache)[Pkg].CurVersion;
+   std::string CandVer = (*Cache)[Pkg].CandVersion;
+   if (CurVer == CandVer)
+   {
+      auto const CandVerIter = Cache->GetPolicy()->GetCandidateVer(Pkg);
+      if (not CandVerIter.end())
+	 CandVer = CandVerIter.VerStr();
+   }
+   return  CurVer + " => " + CandVer;
 }
 std::function<std::string(pkgCache::PkgIterator const &)> CurrentToCandidateVersion(pkgCacheFile * const Cache)
 {
@@ -798,4 +782,3 @@ std::string EmptyString(pkgCache::PkgIterator const &)
 {
    return std::string();
 }
-

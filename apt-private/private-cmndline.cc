@@ -15,6 +15,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <iomanip>
@@ -39,7 +40,7 @@ static bool CmdMatches_fn(char const *const Cmd, char const *const Match, Tail..
 
 static bool addArgumentsAPTCache(std::vector<CommandLine::Args> &Args, char const * const Cmd)/*{{{*/
 {
-   if (CmdMatches("depends", "rdepends", "xvcg", "dotty"))
+   if (CmdMatches("depends", "rdepends"))
    {
       addArg('i', "important", "APT::Cache::Important", 0);
       addArg(0, "installed", "APT::Cache::Installed", 0);
@@ -349,6 +350,7 @@ static bool addArgumentsAPT(std::vector<CommandLine::Args> &Args, char const * c
    else if (CmdMatches("show") || CmdMatches("info"))
    {
       addArg('a', "all-versions", "APT::Cache::AllVersions", 0);
+      addArg('f', "full", "APT::Cache::ShowFull", 0);
    }
    else if (addArgumentsAPTGet(Args, Cmd) || addArgumentsAPTCache(Args, Cmd))
    {
@@ -474,7 +476,8 @@ static void BinarySpecificConfiguration(char const * const Binary)	/*{{{*/
    std::string const binary = flNotDir(Binary);
    if (binary == "apt" || binary == "apt-config")
    {
-      _config->CndSet("Binary::apt::APT::Color", true);
+      if (getenv("NO_COLOR") == nullptr)
+         _config->CndSet("Binary::apt::APT::Color", true);
       _config->CndSet("Binary::apt::APT::Cache::Show::Version", 2);
       _config->CndSet("Binary::apt::APT::Cache::AllVersions", false);
       _config->CndSet("Binary::apt::APT::Cache::ShowVirtuals", true);

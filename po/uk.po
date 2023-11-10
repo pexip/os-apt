@@ -1,4 +1,9 @@
 # translation of apt-all.po to Українська
+#
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
+# This file originally stated:
 # This file is put in the public domain.
 #
 # A. Bondarenko <artem.brz@gmail.com>, 2006, 2012.
@@ -12,7 +17,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
 "PO-Revision-Date: 2012-09-25 20:19+0300\n"
 "Last-Translator: A. Bondarenko <artem.brz@gmail.com>\n"
 "Language-Team: Українська <uk@li.org>\n"
@@ -21,8 +26,8 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: KBabel 1.11.1\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
-"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 #: apt-pkg/acquire-item.cc
 msgid ""
@@ -193,7 +198,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Конфліктуючий дистрибутив: %s (очікувався %s, але є %s)"
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -204,7 +210,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -372,16 +378,6 @@ msgstr "Помилка компіляції регулярного виразу 
 
 #: apt-pkg/cacheset.cc
 #, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "Випуск '%s' для '%s' не знайдено"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "Версія '%s' для '%s' не знайдена"
-
-#: apt-pkg/cacheset.cc
-#, c-format
 msgid "Couldn't find task '%s'"
 msgstr "Неможливо знайти завдання '%s'"
 
@@ -432,6 +428,16 @@ msgid ""
 msgstr ""
 "Неможливо вибрати встановлений пакунок, або версію-кандидат пакунку '%s', "
 "так як вони відсутні"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "Випуск '%s' для '%s' не знайдено"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "Версія '%s' для '%s' не знайдена"
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -1947,30 +1953,19 @@ msgid "Trivial Only specified but this is not a trivial operation."
 msgstr ""
 "Вказано виконання тільки тривіальних операцій, але це не тривіальна операція."
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "Так, робити, як я скажу!"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"Те, що ви хочете зробити, може мати небажані наслідки.\n"
-"Щоб продовжити, введіть фразу: '%s'\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "Перервано."
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Бажаєте продовжити?"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "Перервано."
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2827,7 +2822,7 @@ msgstr "видалити пакунки"
 msgid "Remove packages and config files"
 msgstr "видалити пакунки разом з іхніми конфігураційними файлами"
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 msgid "Remove automatically all unused packages"
 msgstr "видалити автоматично усі пакунки, що не використовуються"
 
@@ -3008,7 +3003,7 @@ msgstr "%s вже був зафіксований.\n"
 
 #: cmdline/apt-mark.cc
 #, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "%s вже був незафіксований.\n"
 
 #: cmdline/apt-mark.cc
@@ -3143,6 +3138,12 @@ msgstr "Зафіксовані пакунки:"
 #, fuzzy
 msgid "remove packages"
 msgstr "Зламані пакунки"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "Remove automatically all unused packages"
+msgid "automatically remove all unused packages"
+msgstr "видалити автоматично усі пакунки, що не використовуються"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3853,6 +3854,13 @@ msgstr ""
 msgid "Unknown error executing apt-key"
 msgstr "Невідома помилка виконання apt-key"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3902,6 +3910,19 @@ msgstr "З'єднання завершено передчасно"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "Пусті файли не можуть бути правильними архівами"
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "Так, робити, як я скажу!"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "Те, що ви хочете зробити, може мати небажані наслідки.\n"
+#~ "Щоб продовжити, введіть фразу: '%s'\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

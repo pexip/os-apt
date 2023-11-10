@@ -12,6 +12,7 @@
 #include <apt-pkg/algorithms.h>
 #include <apt-pkg/aptconfiguration.h>
 #include <apt-pkg/cachefile.h>
+#include <apt-pkg/cachefilter.h>
 #include <apt-pkg/cacheset.h>
 #include <apt-pkg/configuration.h>
 #include <apt-pkg/depcache.h>
@@ -22,16 +23,20 @@
 #include <apt-pkg/prettyprinters.h>
 #include <apt-pkg/progress.h>
 #include <apt-pkg/strutl.h>
+#include <apt-pkg/tagfile-keys.h>
 #include <apt-pkg/tagfile.h>
 #include <apt-pkg/version.h>
 #include <apt-pkg/versionmatch.h>
 
 #include <algorithm>
 #include <iostream>
+#include <memory>
+#include <sstream>
 #include <iterator>
 #include <list>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <stdio.h>
@@ -62,52 +67,70 @@ class DefaultRootSetFunc2 : public pkgDepCache::DefaultRootSetFunc
 
 									/*}}}*/
 // helper for Install-Recommends-Sections and Never-MarkAuto-Sections	/*{{{*/
-static bool 
-ConfigValueInSubTree(const char* SubTree, const char *needle)
+// FIXME: Has verbatim copy in cmdline/apt-mark.cc
+static bool ConfigValueInSubTree(const char* SubTree, std::string_view const needle)
 {
-   Configuration::Item const *Opts;
-   Opts = _config->Tree(SubTree);
-   if (Opts != 0 && Opts->Child != 0)
+   if (needle.empty())
+      return false;
+   Configuration::Item const *Opts = _config->Tree(SubTree);
+   if (Opts != nullptr && Opts->Child != nullptr)
    {
       Opts = Opts->Child;
-      for (; Opts != 0; Opts = Opts->Next)
+      for (; Opts != nullptr; Opts = Opts->Next)
       {
-	 if (Opts->Value.empty() == true)
+	 if (Opts->Value.empty())
 	    continue;
-	 if (strcmp(needle, Opts->Value.c_str()) == 0)
+	 if (needle == Opts->Value)
 	    return true;
       }
    }
    return false;
 }
+static bool SectionInSubTree(char const * const SubTree, std::string_view Needle)
+{
+   if (ConfigValueInSubTree(SubTree, Needle))
+      return true;
+   auto const sub = Needle.rfind('/');
+   if (sub == std::string_view::npos)
+   {
+      std::string special{"/"};
+      special.append(Needle);
+      return ConfigValueInSubTree(SubTree, special);
+   }
+   return ConfigValueInSubTree(SubTree, Needle.substr(sub + 1));
+}
 									/*}}}*/
 pkgDepCache::ActionGroup::ActionGroup(pkgDepCache &cache) :		/*{{{*/
   d(NULL), cache(cache), released(false)
 {
-  ++cache.group_level;
+  cache.IncreaseActionGroupLevel();
 }
 
 void pkgDepCache::ActionGroup::release()
 {
-  if(!released)
-    {
-      if(cache.group_level == 0)
-	std::cerr << "W: Unbalanced action groups, expect badness" << std::endl;
-      else
-	{
-	  --cache.group_level;
-
-	  if(cache.group_level == 0)
-	    cache.MarkAndSweep();
-	}
-
-      released = true;
-    }
+  if(released)
+     return;
+  released = true;
+  if (cache.DecreaseActionGroupLevel() == 0)
+     cache.MarkAndSweep();
 }
 
 pkgDepCache::ActionGroup::~ActionGroup()
 {
   release();
+}
+int pkgDepCache::IncreaseActionGroupLevel()
+{
+   return ++group_level;
+}
+int pkgDepCache::DecreaseActionGroupLevel()
+{
+   if(group_level == 0)
+   {
+      std::cerr << "W: Unbalanced action groups, expect badness\n";
+      return -1;
+   }
+   return --group_level;
 }
 									/*}}}*/
 // DepCache::pkgDepCache - Constructors					/*{{{*/
@@ -117,6 +140,7 @@ pkgDepCache::ActionGroup::~ActionGroup()
 struct pkgDepCache::Private
 {
    std::unique_ptr<InRootSetFunc> inRootSetFunc;
+   std::unique_ptr<APT::CacheFilter::Matcher> IsAVersionedKernelPackage, IsProtectedKernelPackage;
 };
 pkgDepCache::pkgDepCache(pkgCache *const pCache, Policy *const Plcy) : group_level(0), Cache(pCache), PkgState(0), DepState(0),
 								       iUsrSize(0), iDownloadSize(0), iInstCount(0), iDelCount(0), iKeepCount(0),
@@ -301,8 +325,8 @@ bool pkgDepCache::readStateFile(OpProgress * const Prog)		/*{{{*/
       off_t amt = 0;
       bool const debug_autoremove = _config->FindB("Debug::pkgAutoRemove",false);
       while(tagfile.Step(section)) {
-	 string const pkgname = section.FindS("Package");
-	 string pkgarch = section.FindS("Architecture");
+	 auto const pkgname = section.Find(pkgTagSection::Key::Package);
+	 auto pkgarch = section.Find(pkgTagSection::Key::Architecture);
 	 if (pkgarch.empty() == true)
 	    pkgarch = "any";
 	 pkgCache::PkgIterator pkg = Cache->FindPkg(pkgname, pkgarch);
@@ -370,8 +394,8 @@ bool pkgDepCache::writeStateFile(OpProgress * const /*prog*/, bool const Install
    pkgTagSection section;
    std::set<string> pkgs_seen;
    while(tagfile.Step(section)) {
-	 string const pkgname = section.FindS("Package");
-	 string pkgarch = section.FindS("Architecture");
+	 auto const pkgname = section.Find(pkgTagSection::Key::Package);
+	 auto pkgarch = section.Find(pkgTagSection::Key::Architecture);
 	 if (pkgarch.empty() == true)
 	    pkgarch = "native";
 	 // Silently ignore unknown packages and packages with no actual
@@ -885,8 +909,8 @@ static char const* PrintMode(char const mode)
 static bool IsModeChangeOk(pkgDepCache &Cache, pkgDepCache::ModeList const mode, pkgCache::PkgIterator const &Pkg,
 			   unsigned long const Depth, bool const FromUser, bool const DebugMarker)
 {
-   // we are not trying to hard…
-   if (unlikely(Depth > 100))
+   // we are not trying too hard…
+   if (unlikely(Depth > 3000))
       return false;
 
    // general sanity
@@ -918,6 +942,24 @@ static bool IsModeChangeOk(pkgDepCache &Cache, pkgDepCache::ModeList const mode,
    {
       if (unlikely(DebugMarker == true))
 	 std::clog << OutputInDepth(Depth) << "Hold prevents Mark" << PrintMode(mode)
+		   << " of " << APT::PrettyPkg(&Cache, Pkg) << std::endl;
+      return false;
+   }
+   // Do not allow removals of essential packages not explicitly triggered by the user
+   else if (mode == pkgDepCache::ModeDelete && (Pkg->Flags & pkgCache::Flag::Essential) == pkgCache::Flag::Essential &&
+	    not _config->FindB("APT::Get::Allow-Solver-Remove-Essential", false))
+   {
+      if (unlikely(DebugMarker == true))
+	 std::clog << OutputInDepth(Depth) << "Essential prevents Mark" << PrintMode(mode)
+		   << " of " << APT::PrettyPkg(&Cache, Pkg) << std::endl;
+      return false;
+   }
+   // Do not allow removals of essential packages not explicitly triggered by the user
+   else if (mode == pkgDepCache::ModeDelete && (Pkg->Flags & pkgCache::Flag::Important) == pkgCache::Flag::Important &&
+	    not _config->FindB("APT::Get::Allow-Solver-Remove-Essential", false))
+   {
+      if (unlikely(DebugMarker == true))
+	 std::clog << OutputInDepth(Depth) << "Protected prevents Mark" << PrintMode(mode)
 		   << " of " << APT::PrettyPkg(&Cache, Pkg) << std::endl;
       return false;
    }
@@ -1022,7 +1064,7 @@ bool pkgDepCache::MarkDelete(PkgIterator const &Pkg, bool rPurge,
 	 // We do not check for or-groups here as we don't know which package takes care of
 	 // providing the feature the user likes e.g.:  browser1 | browser2 | browser3
 	 // Temporary removals are effected by this as well, which is bad, but unlikely in practice
-	 bool const PinNeverMarkAutoSection = (PV->Section != 0 && ConfigValueInSubTree("APT::Never-MarkAuto-Sections", PV.Section()));
+	 bool const PinNeverMarkAutoSection = (PV->Section != 0 && SectionInSubTree("APT::Never-MarkAuto-Sections", PV.Section()));
 	 if (PinNeverMarkAutoSection)
 	 {
 	    for (DepIterator D = PV.DependsList(); D.end() != true; ++D)
@@ -1251,7 +1293,7 @@ bool pkgDepCache::MarkInstall_DiscardInstall(pkgCache::PkgIterator const &Pkg) /
 									/*}}}*/
 static bool MarkInstall_CollectDependencies(pkgDepCache const &Cache, pkgCache::VerIterator const &PV, std::vector<pkgCache::DepIterator> &toInstall, std::vector<pkgCache::DepIterator> &toRemove) /*{{{*/
 {
-   auto const propagateProctected = Cache[PV.ParentPkg()].Protect();
+   auto const propagateProtected = Cache[PV.ParentPkg()].Protect();
    for (auto Dep = PV.DependsList(); not Dep.end();)
    {
       auto const Start = Dep;
@@ -1263,7 +1305,7 @@ static bool MarkInstall_CollectDependencies(pkgDepCache const &Cache, pkgCache::
 	 if ((Cache[Dep] & pkgDepCache::DepInstall) == pkgDepCache::DepInstall)
 	    foundSolution = true;
       }
-      if (foundSolution && not propagateProctected)
+      if (foundSolution && not propagateProtected)
 	 continue;
 
       /* Check if this dep should be consider for install.
@@ -1325,10 +1367,10 @@ static APT::VersionVector getAllPossibleSolutions(pkgDepCache &Cache, pkgCache::
    return toUpgrade;
 }
 									/*}}}*/
-static bool MarkInstall_MarkDeleteForNotUpgradeable(pkgDepCache &Cache, bool const DebugAutoInstall, pkgCache::VerIterator const &PV, unsigned long const Depth, pkgCache::PkgIterator const &Pkg, bool const propagateProctected, APT::PackageVector &delayedRemove)/*{{{*/
+static bool MarkInstall_MarkDeleteForNotUpgradeable(pkgDepCache &Cache, bool const DebugAutoInstall, pkgCache::VerIterator const &PV, unsigned long const Depth, pkgCache::PkgIterator const &Pkg, bool const propagateProtected, APT::PackageVector &delayedRemove)/*{{{*/
 {
    auto &State = Cache[Pkg];
-   if (not propagateProctected)
+   if (not propagateProtected)
    {
       if (State.Delete())
 	 return true;
@@ -1353,7 +1395,7 @@ static bool MarkInstall_MarkDeleteForNotUpgradeable(pkgDepCache &Cache, bool con
    return true;
 }
 									/*}}}*/
-static bool MarkInstall_RemoveConflictsIfNotUpgradeable(pkgDepCache &Cache, bool const DebugAutoInstall, pkgCache::VerIterator const &PV, unsigned long Depth, std::vector<pkgCache::DepIterator> &toRemove, APT::PackageVector &toUpgrade, APT::PackageVector &delayedRemove, bool const propagateProctected, bool const FromUser) /*{{{*/
+static bool MarkInstall_RemoveConflictsIfNotUpgradeable(pkgDepCache &Cache, bool const DebugAutoInstall, pkgCache::VerIterator const &PV, unsigned long Depth, std::vector<pkgCache::DepIterator> &toRemove, APT::PackageVector &toUpgrade, APT::PackageVector &delayedRemove, bool const propagateProtected, bool const FromUser) /*{{{*/
 {
    /* Negative dependencies have no or-group
       If the candidate is effected try to keep current and discard candidate
@@ -1373,10 +1415,10 @@ static bool MarkInstall_RemoveConflictsIfNotUpgradeable(pkgDepCache &Cache, bool
 	    if (State.Install() && not Cache.MarkKeep(Pkg, false, false, Depth))
 	    {
 	       failedToRemoveSomething = true;
-	       if (not propagateProctected && not FromUser)
+	       if (not propagateProtected && not FromUser)
 		  break;
 	    }
-	    else if (propagateProctected)
+	    else if (propagateProtected)
 	    {
 	       MarkInstall_DiscardCandidate(Cache, Pkg);
 	       if (Pkg->CurrentVer == 0)
@@ -1385,14 +1427,14 @@ static bool MarkInstall_RemoveConflictsIfNotUpgradeable(pkgDepCache &Cache, bool
 	    else
 	       badCandidate.push_back(Pkg);
 	 }
-	 else if (not MarkInstall_MarkDeleteForNotUpgradeable(Cache, DebugAutoInstall, PV, Depth, Pkg, propagateProctected, delayedRemove))
+	 else if (not MarkInstall_MarkDeleteForNotUpgradeable(Cache, DebugAutoInstall, PV, Depth, Pkg, propagateProtected, delayedRemove))
 	 {
 	    failedToRemoveSomething = true;
-	    if (not propagateProctected && not FromUser)
+	    if (not propagateProtected && not FromUser)
 	       break;
 	 }
       }
-      if (failedToRemoveSomething && not propagateProctected && not FromUser)
+      if (failedToRemoveSomething && not propagateProtected && not FromUser)
 	 break;
       for (auto const &Ver : getAllPossibleSolutions(Cache, D, D, APT::CacheSetHelper::INSTALLED, true))
       {
@@ -1403,21 +1445,49 @@ static bool MarkInstall_RemoveConflictsIfNotUpgradeable(pkgDepCache &Cache, bool
 	    toUpgrade.push_back(Pkg);
 	 else if (State.CandidateVer == Pkg.CurrentVer())
 	    ; // already done in the first loop above
-	 else if (not MarkInstall_MarkDeleteForNotUpgradeable(Cache, DebugAutoInstall, PV, Depth, Pkg, propagateProctected, delayedRemove))
+	 else if (not MarkInstall_MarkDeleteForNotUpgradeable(Cache, DebugAutoInstall, PV, Depth, Pkg, propagateProtected, delayedRemove))
 	 {
 	    failedToRemoveSomething = true;
-	    if (not propagateProctected && not FromUser)
+	    if (not propagateProtected && not FromUser)
 	       break;
 	 }
       }
-      if (failedToRemoveSomething && not propagateProctected && not FromUser)
+      if (failedToRemoveSomething && not propagateProtected && not FromUser)
 	 break;
    }
    toRemove.clear();
    return not failedToRemoveSomething;
 }
 									/*}}}*/
-static bool MarkInstall_UpgradeOrRemoveConflicts(pkgDepCache &Cache, bool const DebugAutoInstall, unsigned long Depth, bool const ForceImportantDeps, APT::PackageVector &toUpgrade, bool const propagateProctected, bool const FromUser) /*{{{*/
+static bool MarkInstall_CollectReverseDepends(pkgDepCache &Cache, bool const DebugAutoInstall, pkgCache::VerIterator const &PV, unsigned long Depth, APT::PackageVector &toUpgrade) /*{{{*/
+{
+   auto CurrentVer = PV.ParentPkg().CurrentVer();
+   if (CurrentVer.end())
+      return true;
+   for (pkgCache::DepIterator D = PV.ParentPkg().RevDependsList(); D.end() == false; ++D)
+   {
+      auto ParentPkg = D.ParentPkg();
+      // Skip non-installed versions and packages already marked for upgrade
+      if (ParentPkg.CurrentVer() != D.ParentVer() || Cache[ParentPkg].Install())
+	 continue;
+      // We only handle important positive dependencies, RemoveConflictsIfNotUpgradeable handles negative
+      if (not Cache.IsImportantDep(D) || D.IsNegative())
+	 continue;
+      // The dependency was previously not satisfied (e.g. part of an or group) or will be satisfied, so it's OK
+      if (not D.IsSatisfied(CurrentVer) || D.IsSatisfied(PV))
+	 continue;
+      if (std::find(toUpgrade.begin(), toUpgrade.end(), ParentPkg) != toUpgrade.end())
+	 continue;
+
+      if (DebugAutoInstall)
+	 std::clog << OutputInDepth(Depth) << " Upgrading: " << APT::PrettyPkg(&Cache, ParentPkg) << " due to " << APT::PrettyDep(&Cache, D) << "\n";
+
+      toUpgrade.push_back(ParentPkg);
+   }
+   return true;
+}
+									/*}}}*/
+static bool MarkInstall_UpgradeOrRemoveConflicts(pkgDepCache &Cache, bool const DebugAutoInstall, unsigned long Depth, bool const ForceImportantDeps, APT::PackageVector &toUpgrade, bool const propagateProtected, bool const FromUser) /*{{{*/
 {
    bool failedToRemoveSomething = false;
    for (auto const &InstPkg : toUpgrade)
@@ -1428,17 +1498,52 @@ static bool MarkInstall_UpgradeOrRemoveConflicts(pkgDepCache &Cache, bool const 
 	 if (not Cache.MarkDelete(InstPkg, false, Depth + 1, false))
 	 {
 	    failedToRemoveSomething = true;
-	    if (not propagateProctected && not FromUser)
+	    if (not propagateProtected && not FromUser)
 	       break;
 	 }
-	 else if (propagateProctected)
+	 else if (propagateProtected)
 	    Cache.MarkProtected(InstPkg);
       }
    toUpgrade.clear();
    return not failedToRemoveSomething;
 }
 									/*}}}*/
-static bool MarkInstall_InstallDependencies(pkgDepCache &Cache, bool const DebugAutoInstall, bool const DebugMarker, pkgCache::PkgIterator const &Pkg, unsigned long Depth, bool const ForceImportantDeps, std::vector<pkgCache::DepIterator> &toInstall, APT::PackageVector *const toMoveAuto, bool const propagateProctected, bool const FromUser) /*{{{*/
+static bool MarkInstall_UpgradeOtherBinaries(pkgDepCache &Cache, bool const DebugAutoInstall, unsigned long Depth, bool const ForceImportantDeps, pkgCache::PkgIterator Pkg, pkgCache::VerIterator Ver) /*{{{*/
+{
+   APT::PackageSet toUpgrade;
+
+   if (not _config->FindB("APT::Get::Upgrade-By-Source-Package", true))
+      return true;
+
+   auto SrcGrp = Cache.FindGrp(Ver.SourcePkgName());
+   for (auto OtherBinary = SrcGrp.VersionsInSource(); not OtherBinary.end(); OtherBinary = OtherBinary.NextInSource())
+   {
+      auto OtherPkg = OtherBinary.ParentPkg();
+      auto OtherState = Cache[OtherPkg];
+      if (OtherPkg == Pkg)
+	 continue;
+      // Package is not installed or at right version, don't need to upgrade
+      if (OtherPkg->CurrentVer == 0 || OtherPkg.CurrentVer() == OtherBinary)
+	 continue;
+      // Package is to be installed at right version, don't need to upgrade
+      if (OtherState.Install() && OtherState.InstallVer == OtherBinary)
+	 continue;
+      // Package has a different source version than us, so it's not relevant
+      if (strcmp(OtherBinary.SourceVerStr(), Ver.SourceVerStr()) != 0 || OtherState.CandidateVer != OtherBinary)
+	 continue;
+      if (DebugAutoInstall)
+	 std::clog << OutputInDepth(Depth) << "Upgrading " << APT::PrettyPkg(&Cache, OtherPkg) << " due to " << Pkg.FullName() << '\n';
+
+      toUpgrade.insert(OtherPkg);
+   }
+   for (auto &OtherPkg : toUpgrade)
+      Cache.MarkInstall(OtherPkg, false, Depth + 1, false, ForceImportantDeps);
+   for (auto &OtherPkg : toUpgrade)
+      Cache.MarkInstall(OtherPkg, true, Depth + 1, false, ForceImportantDeps);
+   return true;
+}
+									/*}}}*/
+static bool MarkInstall_InstallDependencies(pkgDepCache &Cache, bool const DebugAutoInstall, bool const DebugMarker, pkgCache::PkgIterator const &Pkg, unsigned long Depth, bool const ForceImportantDeps, std::vector<pkgCache::DepIterator> &toInstall, APT::PackageVector *const toMoveAuto, bool const propagateProtected, bool const FromUser) /*{{{*/
 {
    auto const IsSatisfiedByInstalled = [&](auto &D) { return (Cache[pkgCache::DepIterator{Cache, &D}] & pkgDepCache::DepInstall) == pkgDepCache::DepInstall; };
    bool failedToInstallSomething = false;
@@ -1448,7 +1553,7 @@ static bool MarkInstall_InstallDependencies(pkgDepCache &Cache, bool const Debug
       pkgCache::DepIterator Start, End;
       Dep.GlobOr(Start, End);
       bool foundSolution = std::any_of(Start, Dep, IsSatisfiedByInstalled);
-      if (foundSolution && not propagateProctected)
+      if (foundSolution && not propagateProtected)
 	 continue;
       bool const IsCriticalDep = Start.IsCritical();
       if (foundSolution)
@@ -1528,7 +1633,7 @@ static bool MarkInstall_InstallDependencies(pkgDepCache &Cache, bool const Debug
 	 if (DebugAutoInstall)
 	    std::clog << OutputInDepth(Depth) << "Installing " << InstPkg.FullName()
 		      << " as " << End.DepType() << " of " << Pkg.FullName() << '\n';
-	 if (propagateProctected && IsCriticalDep && possibleSolutions.size() == 1)
+	 if (propagateProtected && IsCriticalDep && possibleSolutions.size() == 1)
 	 {
 	    if (not Cache.MarkInstall(InstPkg, false, Depth + 1, false, ForceImportantDeps))
 	       continue;
@@ -1548,7 +1653,7 @@ static bool MarkInstall_InstallDependencies(pkgDepCache &Cache, bool const Debug
       if (not foundSolution && IsCriticalDep)
       {
 	 failedToInstallSomething = true;
-	 if (not propagateProctected && not FromUser)
+	 if (not propagateProtected && not FromUser)
 	    break;
       }
    }
@@ -1613,6 +1718,12 @@ bool pkgDepCache::MarkInstall(PkgIterator const &Pkg, bool AutoInst,
 	    return false;
 	 hasFailed = true;
       }
+      if (not MarkInstall_CollectReverseDepends(*this, DebugAutoInstall, PV, Depth, toUpgrade))
+      {
+	 if (failEarly)
+	    return false;
+	 hasFailed = true;
+      }
    }
 
    if (not FromUser && not MarkInstall_StateChange(Pkg, AutoInst, FromUser))
@@ -1641,9 +1752,11 @@ bool pkgDepCache::MarkInstall(PkgIterator const &Pkg, bool AutoInst,
 	    P.iFlags &= (~Protected);
       }
       operator bool() noexcept { return already; }
-   } propagateProctected{PkgState[Pkg->ID]};
+   } propagateProtected{PkgState[Pkg->ID]};
 
-   if (not MarkInstall_UpgradeOrRemoveConflicts(*this, DebugAutoInstall, Depth, ForceImportantDeps, toUpgrade, propagateProctected, FromUser))
+   if (not MarkInstall_UpgradeOtherBinaries(*this, DebugAutoInstall, Depth, ForceImportantDeps, Pkg, P.CandidateVerIter(*this)))
+      return false;
+   if (not MarkInstall_UpgradeOrRemoveConflicts(*this, DebugAutoInstall, Depth, ForceImportantDeps, toUpgrade, propagateProtected, FromUser))
    {
       if (failEarly)
       {
@@ -1662,8 +1775,8 @@ bool pkgDepCache::MarkInstall(PkgIterator const &Pkg, bool AutoInst,
       VerIterator const CurVer = Pkg.CurrentVer();
       if (not CurVer.end() && CurVer->Section != 0 && strcmp(CurVer.Section(), PV.Section()) != 0)
       {
-	 bool const CurVerInMoveSection = ConfigValueInSubTree("APT::Move-Autobit-Sections", CurVer.Section());
-	 bool const InstVerInMoveSection = ConfigValueInSubTree("APT::Move-Autobit-Sections", PV.Section());
+	 bool const CurVerInMoveSection = SectionInSubTree("APT::Move-Autobit-Sections", CurVer.Section());
+	 bool const InstVerInMoveSection = SectionInSubTree("APT::Move-Autobit-Sections", PV.Section());
 	 return (not CurVerInMoveSection && InstVerInMoveSection);
       }
       return false;
@@ -1671,7 +1784,7 @@ bool pkgDepCache::MarkInstall(PkgIterator const &Pkg, bool AutoInst,
 
    APT::PackageVector toMoveAuto;
    if (not MarkInstall_InstallDependencies(*this, DebugAutoInstall, DebugMarker, Pkg, Depth, ForceImportantDeps, toInstall,
-					   MoveAutoBitToDependencies ? &toMoveAuto : nullptr, propagateProctected, FromUser))
+					   MoveAutoBitToDependencies ? &toMoveAuto : nullptr, propagateProtected, FromUser))
    {
       if (failEarly)
       {
@@ -1784,7 +1897,7 @@ bool pkgDepCache::IsInstallOkDependenciesSatisfiableByCandidates(PkgIterator con
       DepIterator Start = Dep;
       bool foundSolution = false;
       unsigned Ors = 0;
-      // Is it possible to statisfy this dependency?
+      // Is it possible to satisfy this dependency?
       for (bool LastOR = true; not Dep.end() && LastOR; ++Dep, ++Ors)
       {
 	 LastOR = (Dep->CompareOp & Dep::Or) == Dep::Or;
@@ -2029,7 +2142,7 @@ bool pkgDepCache::SetCandidateRelease(pkgCache::VerIterator TargetVer,
 	 if (itsFine == false)
 	 {
 	    // change the candidate
-	    Changed.push_back(make_pair(V, TargetVer));
+	    Changed.emplace_back(V, TargetVer);
 	    if (SetCandidateRelease(V, TargetRel, Changed) == false)
 	    {
 	       if (stillOr == false)
@@ -2155,7 +2268,7 @@ bool pkgDepCache::Policy::IsImportantDep(DepIterator const &Dep) const
       // FIXME: this is a meant as a temporary solution until the
       //        recommends are cleaned up
       const char *sec = Dep.ParentVer().Section();
-      if (sec && ConfigValueInSubTree("APT::Install-Recommends-Sections", sec))
+      if (sec && SectionInSubTree("APT::Install-Recommends-Sections", sec))
 	 return true;
    }
    else if(Dep->Type == pkgCache::Dep::Suggests)
@@ -2191,18 +2304,17 @@ pkgDepCache::InRootSetFunc *pkgDepCache::GetCachedRootSetFunc()
    return d->inRootSetFunc.get();
 }
 									/*}}}*/
-bool pkgDepCache::MarkFollowsRecommends()
+bool pkgDepCache::MarkFollowsRecommends()				/*{{{*/
 {
   return _config->FindB("APT::AutoRemove::RecommendsImportant", true);
 }
-
-bool pkgDepCache::MarkFollowsSuggests()
+									/*}}}*/
+bool pkgDepCache::MarkFollowsSuggests()					/*{{{*/
 {
   return _config->FindB("APT::AutoRemove::SuggestsImportant", true);
 }
-
-// pkgDepCache::MarkRequired - the main mark algorithm			/*{{{*/
-static bool IsPkgInBoringState(pkgCache::PkgIterator const &Pkg, pkgDepCache::StateCache const * const PkgState)
+									/*}}}*/
+static bool IsPkgInBoringState(pkgCache::PkgIterator const &Pkg, pkgDepCache::StateCache const * const PkgState)/*{{{*/
 {
    if (Pkg->CurrentVer == 0)
    {
@@ -2216,12 +2328,150 @@ static bool IsPkgInBoringState(pkgCache::PkgIterator const &Pkg, pkgDepCache::St
    }
    return false;
 }
+									/*}}}*/
+// MarkPackage - mark a single package in Mark-and-Sweep		/*{{{*/
+static bool MarkPackage(pkgCache::PkgIterator const &Pkg,
+			pkgCache::VerIterator const &Ver,
+			bool const follow_recommends,
+			bool const follow_suggests,
+			bool const debug_autoremove,
+			std::string_view const reason,
+			size_t const Depth,
+			pkgCache &Cache,
+			pkgDepCache &DepCache,
+			pkgDepCache::StateCache *const PkgState,
+			std::vector<bool> &fullyExplored,
+			std::unique_ptr<APT::CacheFilter::Matcher> &IsAVersionedKernelPackage,
+			std::unique_ptr<APT::CacheFilter::Matcher> &IsProtectedKernelPackage)
+{
+   if (Ver.end() || PkgState[Pkg->ID].Marked)
+      return true;
+
+   if (IsPkgInBoringState(Pkg, PkgState))
+   {
+      fullyExplored[Pkg->ID] = true;
+      return true;
+   }
+
+   // we are not trying too hard…
+   if (unlikely(Depth > 3000))
+      return false;
+
+   PkgState[Pkg->ID].Marked = true;
+   if(debug_autoremove)
+      std::clog << "Marking: " << Pkg.FullName() << " " << Ver.VerStr()
+		<< " (" << reason << ")" << std::endl;
+
+   auto const sort_by_source_version = [](pkgCache::VerIterator const &A, pkgCache::VerIterator const &B) {
+      auto const verret = A.Cache()->VS->CmpVersion(A.SourceVerStr(), B.SourceVerStr());
+      if (verret != 0)
+	 return verret < 0;
+      return A->ID < B->ID;
+   };
+
+   for (auto D = Ver.DependsList(); not D.end(); ++D)
+   {
+      auto const T = D.TargetPkg();
+      if (T.end() || fullyExplored[T->ID])
+	 continue;
+
+      if (D->Type != pkgCache::Dep::Depends &&
+	    D->Type != pkgCache::Dep::PreDepends &&
+	    (not follow_recommends || D->Type != pkgCache::Dep::Recommends) &&
+	    (not follow_suggests || D->Type != pkgCache::Dep::Suggests))
+	 continue;
+
+      bool unsatisfied_choice = false;
+      std::unordered_map<std::string, APT::VersionVector> providers_by_source;
+      // collect real part
+      if (not IsPkgInBoringState(T, PkgState))
+      {
+	 auto const TV = (PkgState[T->ID].Install()) ? PkgState[T->ID].InstVerIter(DepCache) : T.CurrentVer();
+	 if (likely(not TV.end()))
+	 {
+	    if (not D.IsSatisfied(TV))
+	       unsatisfied_choice = true;
+	    else
+	       providers_by_source[TV.SourcePkgName()].push_back(TV);
+	 }
+      }
+      if (providers_by_source.empty() && not unsatisfied_choice)
+	 PkgState[T->ID].Marked = true;
+      // collect virtual part
+      for (auto Prv = T.ProvidesList(); not Prv.end(); ++Prv)
+      {
+	 auto const PP = Prv.OwnerPkg();
+	 if (IsPkgInBoringState(PP, PkgState))
+	    continue;
+
+	 // we want to ignore provides from uninteresting versions
+	 auto const PV = (PkgState[PP->ID].Install()) ?
+	    PkgState[PP->ID].InstVerIter(DepCache) : PP.CurrentVer();
+	 if (unlikely(PV.end()) || PV != Prv.OwnerVer())
+	    continue;
+
+	 if (not D.IsSatisfied(Prv))
+	    unsatisfied_choice = true;
+	 else
+	    providers_by_source[PV.SourcePkgName()].push_back(PV);
+      }
+      // only latest binary package of a source package is marked instead of all
+      for (auto &providers : providers_by_source)
+      {
+	 auto const highestSrcVer = (*std::max_element(providers.second.begin(), providers.second.end(), sort_by_source_version)).SourceVerStr();
+	 providers.second.erase(std::remove_if(providers.second.begin(), providers.second.end(), [&](auto const &V) { return strcmp(highestSrcVer, V.SourceVerStr()) != 0; }), providers.second.end());
+	 // if the provider is a versioned kernel package mark them only for protected kernels
+	 if (providers.second.size() == 1)
+	    continue;
+	 if (not IsAVersionedKernelPackage)
+	    IsAVersionedKernelPackage = [&]() -> std::unique_ptr<APT::CacheFilter::Matcher> {
+	       auto const patterns = _config->FindVector("APT::VersionedKernelPackages");
+	       if (patterns.empty())
+		  return std::make_unique<APT::CacheFilter::FalseMatcher>();
+	       std::ostringstream regex;
+	       regex << '^';
+	       std::copy(patterns.begin(), patterns.end() - 1, std::ostream_iterator<std::string>(regex, "-.*$|^"));
+	       regex << patterns.back() << "-.*$";
+	       return std::make_unique<APT::CacheFilter::PackageNameMatchesRegEx>(regex.str());
+	    }();
+	 if (not std::all_of(providers.second.begin(), providers.second.end(), [&](auto const &Prv) { return (*IsAVersionedKernelPackage)(Prv.ParentPkg()); }))
+	    continue;
+	 // … if there is at least one for protected kernels installed
+	 if (not IsProtectedKernelPackage)
+	    IsProtectedKernelPackage = APT::KernelAutoRemoveHelper::GetProtectedKernelsFilter(&Cache);
+	 if (not std::any_of(providers.second.begin(), providers.second.end(), [&](auto const &Prv) { return (*IsProtectedKernelPackage)(Prv.ParentPkg()); }))
+	    continue;
+	 providers.second.erase(std::remove_if(providers.second.begin(), providers.second.end(),
+					       [&](auto const &Prv) { return not((*IsProtectedKernelPackage)(Prv.ParentPkg())); }),
+				providers.second.end());
+      }
+
+      if (not unsatisfied_choice)
+	 fullyExplored[T->ID] = true;
+      for (auto const &providers : providers_by_source)
+      {
+	 for (auto const &PV : providers.second)
+	 {
+	    auto const PP = PV.ParentPkg();
+	    if (debug_autoremove)
+	       std::clog << "Following dep: " << APT::PrettyDep(&DepCache, D)
+			 << ", provided by " << PP.FullName() << " " << PV.VerStr()
+			 << " (" << providers_by_source.size() << "/" << providers.second.size() << ")\n";
+	    if (not MarkPackage(PP, PV, follow_recommends, follow_suggests, debug_autoremove,
+				"Dependency", Depth + 1, Cache, DepCache, PkgState, fullyExplored,
+				IsAVersionedKernelPackage, IsProtectedKernelPackage))
+	       return false;
+	 }
+      }
+   }
+   return true;
+}
+									/*}}}*/
+// pkgDepCache::MarkRequired - the main mark algorithm			/*{{{*/
 bool pkgDepCache::MarkRequired(InRootSetFunc &userFunc)
 {
    if (_config->Find("APT::Solver", "internal") != "internal")
       return true;
-
-   bool const debug_autoremove = _config->FindB("Debug::pkgAutoRemove",false);
 
    // init the states
    auto const PackagesCount = Head().PackageCount;
@@ -2230,6 +2480,9 @@ bool pkgDepCache::MarkRequired(InRootSetFunc &userFunc)
       PkgState[i].Marked  = false;
       PkgState[i].Garbage = false;
    }
+   std::vector<bool> fullyExplored(PackagesCount, false);
+
+   bool const debug_autoremove = _config->FindB("Debug::pkgAutoRemove", false);
    if (debug_autoremove)
       for(PkgIterator p = PkgBegin(); !p.end(); ++p)
 	 if(PkgState[p->ID].Flags & Flag::Auto)
@@ -2244,8 +2497,7 @@ bool pkgDepCache::MarkRequired(InRootSetFunc &userFunc)
       if (PkgState[P->ID].Marked || IsPkgInBoringState(P, PkgState))
 	 continue;
 
-      const char *reason = nullptr;
-
+      std::string_view reason;
       if ((PkgState[P->ID].Flags & Flag::Auto) == 0)
 	 reason = "Manual-Installed";
       else if (P->Flags & Flag::Essential)
@@ -2261,112 +2513,13 @@ bool pkgDepCache::MarkRequired(InRootSetFunc &userFunc)
       else
 	 continue;
 
-      if (PkgState[P->ID].Install())
-	 MarkPackage(P, PkgState[P->ID].InstVerIter(*this),
-	       follow_recommends, follow_suggests, reason);
-      else
-	 MarkPackage(P, P.CurrentVer(),
-	       follow_recommends, follow_suggests, reason);
+      pkgCache::VerIterator const PV = (PkgState[P->ID].Install()) ? PkgState[P->ID].InstVerIter(*this) : P.CurrentVer();
+      if (not MarkPackage(P, PV, follow_recommends, follow_suggests, debug_autoremove,
+			  reason, 0, *Cache, *this, PkgState, fullyExplored,
+			  d->IsAVersionedKernelPackage, d->IsProtectedKernelPackage))
+	 return false;
    }
-
    return true;
-}
-									/*}}}*/
-// MarkPackage - mark a single package in Mark-and-Sweep		/*{{{*/
-void pkgDepCache::MarkPackage(const pkgCache::PkgIterator &Pkg,
-			      const pkgCache::VerIterator &Ver,
-			      bool const &follow_recommends,
-			      bool const &follow_suggests,
-			      const char *reason)
-{
-   {
-      pkgDepCache::StateCache &state = PkgState[Pkg->ID];
-      // if we are marked already we are done
-      if(state.Marked || unlikely(Ver.end()))
-	 return;
-      state.Marked=true;
-   }
-
-   if (IsPkgInBoringState(Pkg, PkgState))
-      return;
-
-   bool const debug_autoremove = _config->FindB("Debug::pkgAutoRemove", false);
-   if(debug_autoremove)
-      std::clog << "Marking: " << Pkg.FullName() << " " << Ver.VerStr()
-		<< " (" << reason << ")" << std::endl;
-
-   for (auto D = Ver.DependsList(); D.end() == false; ++D)
-   {
-      auto const T = D.TargetPkg();
-      if (PkgState[T->ID].Marked)
-	 continue;
-
-      if (D->Type != Dep::Depends &&
-	    D->Type != Dep::PreDepends &&
-	    (follow_recommends == false || D->Type != Dep::Recommends) &&
-	    (follow_suggests == false || D->Type != Dep::Suggests))
-	 continue;
-
-      // handle the virtual part first
-      APT::VersionVector providers;
-      for(auto Prv = T.ProvidesList(); Prv.end() == false; ++Prv)
-      {
-	 auto PP = Prv.OwnerPkg();
-	 if (IsPkgInBoringState(PP, PkgState))
-	    continue;
-
-	 // we want to ignore provides from uninteresting versions
-	 auto const PV = (PkgState[PP->ID].Install()) ?
-	    PkgState[PP->ID].InstVerIter(*this) : PP.CurrentVer();
-	 if (unlikely(PV.end()) || PV != Prv.OwnerVer() || D.IsSatisfied(Prv) == false)
-	    continue;
-
-	 providers.emplace_back(PV);
-      }
-      if (providers.empty() == false)
-      {
-	 // sort providers by source version so that only the latest versioned
-	 // binary package of a source package is marked instead of all
-	 std::sort(providers.begin(), providers.end(),
-	    [](pkgCache::VerIterator const &A, pkgCache::VerIterator const &B) {
-	       auto const nameret = strcmp(A.SourcePkgName(), B.SourcePkgName());
-	       if (nameret != 0)
-	          return nameret < 0;
-	       auto const verret = A.Cache()->VS->CmpVersion(A.SourceVerStr(), B.SourceVerStr());
-	       if (verret != 0)
-	          return verret > 0;
-	       return strcmp(A.ParentPkg().Name(), B.ParentPkg().Name()) < 0;
-	 });
-	 auto const prvsize = providers.size();
-	 providers.erase(std::unique(providers.begin(), providers.end(),
-	    [](pkgCache::VerIterator const &A, pkgCache::VerIterator const &B) {
-	       return strcmp(A.SourcePkgName(), B.SourcePkgName()) == 0 &&
-	          strcmp(A.SourceVerStr(), B.SourceVerStr()) != 0;
-	    }), providers.end());
-	 for (auto && PV: providers)
-	 {
-	    auto const PP = PV.ParentPkg();
-	    if (debug_autoremove)
-	       std::clog << "Following dep: " << APT::PrettyDep(this, D)
-		  << ", provided by " << PP.FullName() << " " << PV.VerStr()
-		  << " (" << providers.size() << "/" << prvsize << ")"<< std::endl;
-	    MarkPackage(PP, PV, follow_recommends, follow_suggests, "Provider");
-	 }
-      }
-
-      // now deal with the real part of the package
-      if (IsPkgInBoringState(T, PkgState))
-	 continue;
-
-      auto const TV = (PkgState[T->ID].Install()) ?
-	 PkgState[T->ID].InstVerIter(*this) : T.CurrentVer();
-      if (unlikely(TV.end()) || D.IsSatisfied(TV) == false)
-	 continue;
-
-      if (debug_autoremove)
-	 std::clog << "Following dep: " << APT::PrettyDep(this, D) << std::endl;
-      MarkPackage(T, TV, follow_recommends, follow_suggests, "Dependency");
-   }
 }
 									/*}}}*/
 bool pkgDepCache::Sweep()						/*{{{*/

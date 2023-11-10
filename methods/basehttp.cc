@@ -11,6 +11,7 @@
 #include <config.h>
 
 #include <apt-pkg/configuration.h>
+#include <apt-pkg/debversion.h>
 #include <apt-pkg/error.h>
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/strutl.h>
@@ -19,6 +20,7 @@
 #include <limits>
 #include <map>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <ctype.h>
 #include <signal.h>
@@ -74,7 +76,7 @@ ServerState::RunHeadersResult ServerState::RunHeaders(RequestState &Req,
 	 continue;
       
       // Tidy up the connection persistence state.
-      if (Req.Encoding == RequestState::Closes && Req.HaveContent == true)
+      if (Req.Encoding == RequestState::Closes && Req.haveContent == HaveContent::TRI_TRUE)
 	 Persistent = false;
       
       return RUN_HEADERS_OK;
@@ -154,10 +156,13 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
    {
       auto ContentLength = strtoull(Val.c_str(), NULL, 10);
       if (ContentLength == 0)
+      {
+	 haveContent = HaveContent::TRI_FALSE;
 	 return true;
+      }
       if (Encoding == Closes)
 	 Encoding = Stream;
-      HaveContent = true;
+      haveContent = HaveContent::TRI_TRUE;
 
       unsigned long long * DownloadSizePtr = &DownloadSize;
       if (Result == 416 || (Result >= 300 && Result < 400))
@@ -167,7 +172,7 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
       if (*DownloadSizePtr >= std::numeric_limits<unsigned long long>::max())
 	 return _error->Errno("HeaderLine", _("The HTTP server sent an invalid Content-Length header"));
       else if (*DownloadSizePtr == 0)
-	 HaveContent = false;
+	 haveContent = HaveContent::TRI_FALSE;
 
       // On partial content (206) the Content-Length less than the real
       // size, so do not set it here but leave that to the Content-Range
@@ -180,7 +185,8 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
 
    if (stringcasecmp(Tag,"Content-Type:") == 0)
    {
-      HaveContent = true;
+      if (haveContent == HaveContent::TRI_UNKNOWN)
+	 haveContent = HaveContent::TRI_TRUE;
       return true;
    }
 
@@ -190,7 +196,8 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
    // for such responses.
    if ((Result == 416 || Result == 206) && stringcasecmp(Tag,"Content-Range:") == 0)
    {
-      HaveContent = true;
+      if (haveContent == HaveContent::TRI_UNKNOWN)
+	 haveContent = HaveContent::TRI_TRUE;
 
       // §14.16 says 'byte-range-resp-spec' should be a '*' in case of 416
       if (Result == 416 && sscanf(Val.c_str(), "bytes */%llu",&TotalFileSize) == 1)
@@ -207,7 +214,8 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
 
    if (stringcasecmp(Tag,"Transfer-Encoding:") == 0)
    {
-      HaveContent = true;
+      if (haveContent == HaveContent::TRI_UNKNOWN)
+	 haveContent = HaveContent::TRI_TRUE;
       if (stringcasecmp(Val,"chunked") == 0)
 	 Encoding = Chunked;
       return true;
@@ -246,11 +254,29 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
       return true;
    }
 
-   if (stringcasecmp(Tag, "Accept-Ranges:") == 0)
+   if (Server->RangesAllowed && stringcasecmp(Tag, "Accept-Ranges:") == 0)
    {
       std::string ranges = ',' + Val + ',';
       ranges.erase(std::remove(ranges.begin(), ranges.end(), ' '), ranges.end());
       if (ranges.find(",bytes,") == std::string::npos)
+	 Server->RangesAllowed = false;
+      return true;
+   }
+
+   if (Server->RangesAllowed && stringcasecmp(Tag, "Via:") == 0)
+   {
+      auto const parts = VectorizeString(Val, ' ');
+      std::string_view const varnish{"(Varnish/"};
+      if (parts.size() != 3 || parts[1] != "varnish" || parts[2].empty() ||
+	    not APT::String::Startswith(parts[2], std::string{varnish}) ||
+	    parts[2].back() != ')')
+	 return true;
+      auto const version = parts[2].substr(varnish.length(), parts[2].length() - (varnish.length() + 1));
+      if (version.empty())
+	 return true;
+      std::string_view const varnishsupport{"6.4~"};
+      if (debVersioningSystem::CmpFragment(version.data(), version.data() + version.length(),
+					   varnishsupport.begin(), varnishsupport.end()) < 0)
 	 Server->RangesAllowed = false;
       return true;
    }
@@ -276,7 +302,6 @@ void ServerState::Reset()						/*{{{*/
    Persistent = false;
    Pipeline = false;
    PipelineAllowed = true;
-   RangesAllowed = true;
    PipelineAnswersReceived = 0;
 }
 									/*}}}*/
@@ -337,7 +362,7 @@ BaseHttpMethod::DealWithHeaders(FetchResult &Res, RequestState &Req)
 	 {
 	    SetFailReason("RedirectionLoop");
 	    _error->Error("Redirection loop encountered");
-	    if (Req.HaveContent == true)
+	    if (Req.haveContent == HaveContent::TRI_TRUE)
 	       return ERROR_WITH_CONTENT_PAGE;
 	    return ERROR_UNRECOVERABLE;
 	 }
@@ -354,7 +379,7 @@ BaseHttpMethod::DealWithHeaders(FetchResult &Res, RequestState &Req)
 	 if (tmpURI.Access.find('+') != std::string::npos)
 	 {
 	    _error->Error("Server tried to trick us into using a specific implementation: %s", tmpURI.Access.c_str());
-	    if (Req.HaveContent == true)
+	    if (Req.haveContent == HaveContent::TRI_TRUE)
 	       return ERROR_WITH_CONTENT_PAGE;
 	    return ERROR_UNRECOVERABLE;
 	 }
@@ -380,7 +405,7 @@ BaseHttpMethod::DealWithHeaders(FetchResult &Res, RequestState &Req)
 	 {
 	    SetFailReason("RedirectionLoop");
 	    _error->Error("Redirection loop encountered");
-	    if (Req.HaveContent == true)
+	    if (Req.haveContent == HaveContent::TRI_TRUE)
 	       return ERROR_WITH_CONTENT_PAGE;
 	    return ERROR_UNRECOVERABLE;
 	 }
@@ -411,6 +436,13 @@ BaseHttpMethod::DealWithHeaders(FetchResult &Res, RequestState &Req)
       }
       /* else pass through for error message */
    }
+   // the server is not supporting ranges as much as we would like. Retry without ranges
+   else if (not Server->RangesAllowed && (Req.Result == 416 || Req.Result == 206))
+   {
+      RemoveFile("server", Queue->DestFile);
+      NextURI = Queue->Uri;
+      return TRY_AGAIN_OR_REDIRECT;
+   }
    // retry after an invalid range response without partial data
    else if (Req.Result == 416)
    {
@@ -433,11 +465,11 @@ BaseHttpMethod::DealWithHeaders(FetchResult &Res, RequestState &Req)
 	 if (partialHit == true)
 	 {
 	    // the file is completely downloaded, but was not moved
-	    if (Req.HaveContent == true)
+	    if (Req.haveContent == HaveContent::TRI_TRUE)
 	    {
 	       // nuke the sent error page
 	       Server->RunDataToDevNull(Req);
-	       Req.HaveContent = false;
+	       Req.haveContent = HaveContent::TRI_FALSE;
 	    }
 	    Req.StartPos = Req.TotalFileSize;
 	    Req.Result = 200;
@@ -461,7 +493,7 @@ BaseHttpMethod::DealWithHeaders(FetchResult &Res, RequestState &Req)
 	 SetFailReason(err);
 	 _error->Error("%u %s", Req.Result, Req.Code);
       }
-      if (Req.HaveContent == true)
+      if (Req.haveContent == HaveContent::TRI_TRUE)
 	 return ERROR_WITH_CONTENT_PAGE;
       return ERROR_UNRECOVERABLE;
    }
@@ -607,6 +639,7 @@ int BaseHttpMethod::Loop()
 	 setPostfixForMethodNames(::URI(Queue->Uri).Host.c_str());
 	 AllowRedirect = ConfigFindB("AllowRedirect", true);
 	 PipelineDepth = ConfigFindI("Pipeline-Depth", 10);
+	 Server->RangesAllowed = ConfigFindB("AllowRanges", true);
 	 Debug = DebugEnabled();
       }
 
@@ -699,7 +732,7 @@ int BaseHttpMethod::Loop()
 	    // so instead we use the size of the biggest item in the queue
 	    Req.MaximumSize = FindMaximumObjectSizeInQueue();
 
-	    if (Req.HaveContent)
+	    if (Req.haveContent == HaveContent::TRI_TRUE)
 	    {
 	       /* If the server provides Content-Length we can figure out with it if
 		  this satisfies any request we have made so far (in the pipeline).
@@ -861,7 +894,7 @@ int BaseHttpMethod::Loop()
 	 case TRY_AGAIN_OR_REDIRECT:
 	 {
 	    // Clear rest of response if there is content
-	    if (Req.HaveContent)
+	    if (Req.haveContent == HaveContent::TRI_TRUE)
 	       Server->RunDataToDevNull(Req);
 	    Redirect(NextURI);
 	    break;

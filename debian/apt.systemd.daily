@@ -5,6 +5,12 @@
 # Values here are the default.
 # Create /etc/apt/apt.conf.d/10periodic file to set your preference.
 #
+# All of the n-days interval options also accept the suffixes
+# s for seconds, m for minutes, h for hours, d for days or
+# the "always" value to do the action for every job run,
+# which can be used with systemd OnCalendar overrides to
+# define custom schedules for the apt update/upgrade jobs.
+#
 #  Dir "/";
 #  - RootDir for all configuration files
 #
@@ -341,7 +347,7 @@ if test -r /var/lib/apt/extended_states; then
 fi
 
 # check apt-config existence
-if ! which apt-config >/dev/null 2>&1; then
+if ! command -v apt-config >/dev/null; then
 	exit 0
 fi
 
@@ -375,7 +381,7 @@ if [ "$VERBOSE" -ge 3 ]; then
 fi
 
 # check if we can lock the cache and if the cache is clean
-if which apt-get >/dev/null 2>&1 && ! eval apt-get check $XAPTOPT $XSTDERR ; then
+if command -v apt-get >/dev/null && ! eval apt-get check $XAPTOPT $XSTDERR ; then
     debug_echo "error encountered in cron job with \"apt-get check\"."
     exit 0
 fi
@@ -470,7 +476,7 @@ if [ "$1" = "update" ] || [ -z "$1" ] ; then
 	debug_echo "download upgradable (not run)"
     fi
 
-    if which unattended-upgrade >/dev/null 2>&1 && env LC_ALL=C.UTF-8 unattended-upgrade --help | grep -q download-only && check_stamp $DOWNLOAD_UPGRADEABLE_STAMP $UnattendedUpgradeInterval; then
+    if command -v unattended-upgrade >/dev/null && env LC_ALL=C.UTF-8 unattended-upgrade --help | grep -q download-only && check_stamp $DOWNLOAD_UPGRADEABLE_STAMP $UnattendedUpgradeInterval; then
 	if unattended-upgrade --download-only $XUUPOPT; then
 	    update_stamp $DOWNLOAD_UPGRADEABLE_STAMP
 	    debug_echo "unattended-upgrade -d (success)"
@@ -485,7 +491,7 @@ fi
 if [ "$1" = "install" ] || [ -z "$1" ] ; then
     # auto upgrade all upgradeable packages
     UPGRADE_STAMP=/var/lib/apt/periodic/upgrade-stamp
-    if which unattended-upgrade >/dev/null 2>&1 && check_stamp $UPGRADE_STAMP $UnattendedUpgradeInterval; then
+    if command -v unattended-upgrade >/dev/null && check_stamp $UPGRADE_STAMP $UnattendedUpgradeInterval; then
 	if unattended-upgrade $XUUPOPT; then
 	    update_stamp $UPGRADE_STAMP
 	    debug_echo "unattended-upgrade (success)"

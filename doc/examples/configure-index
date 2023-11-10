@@ -49,6 +49,7 @@ APT
 {
   Architecture "<STRING>"; // debian architecture like amd64, i386, powerpc, armhf, mips, …
   Architectures "<LIST>"; // a list of (foreign) debian architectures, defaults to: dpkg --print-foreign-architectures
+  BarbarianArchitectures "<LIST>"; // a list of architectures considered too foreign to satisfy M-A:foreign
 
   Build-Essential "<LIST>"; // list of package names
   Build-Profiles "<STRING_OR_LIST>";
@@ -73,6 +74,7 @@ APT
      Allow-Downgrades "<BOOL>";
      Allow-Change-Held-Packages "<BOOL>";
      Allow-Remove-Essential "<BOOL>";
+     Allow-Solver-Remove-Essential "<BOOL>";
      Assume-Yes "<BOOL>"; // not as dangerous, but use with care still
      Assume-No "<BOOL>";
      Trivial-Only "<BOOL>";
@@ -101,8 +103,10 @@ APT
      Upgrade "<BOOL>";
      Only-Upgrade "<BOOL>";
      Upgrade-Allow-New "<BOOL>";
+     Upgrade-By-Source-Package "<BOOL>";
      Always-Include-Phased-Updates "<BOOL>";
      Never-Include-Phased-Updates "<BOOL>";
+     Phase-Policy "<BOOL>"; // internal
      Purge "<BOOL>";
      ReInstall "<BOOL>";
      Compile "<BOOL>";
@@ -119,7 +123,11 @@ APT
      Update
      {
         InteractiveReleaseInfoChanges "<BOOL>";
-        SourceListWarnings "<BOOL>";
+        SourceListWarnings "<BOOL>"
+        {
+           APTAuth "<BOOL>";
+           NonFreeFirmware "<BOOL>";
+        };
      };
   };
 
@@ -230,7 +238,11 @@ APT
 Acquire
 {
   Queue-Mode "<STRING>";       // host or access
-  Retries "<INT>";
+  Retries "<INT>" {
+      Delay "<BOOL>" {   // whether to backoff between retries using the delay: method
+        Maximum "<INT>"; // maximum number of seconds to delay an item per retry
+      };
+  };
   Source-Symlinks "<BOOL>";
   ForceHash "<STRING>"; // hashmethod used for expected hash: sha256, sha1 or md5sum
   Send-URI-Encoded "<BOOL>"; // false does the old encode/decode dance even if we could avoid it
@@ -277,7 +289,8 @@ Acquire
     Timeout "30";
     ConnectionAttemptDelayMsec "250";
     Pipeline-Depth "5";
-    AllowRedirect  "true";
+    AllowRanges "<BOOL>";
+    AllowRedirect "<BOOL>";
 
     // Cache Control. Note these do not work with Squid 2.0.2
     No-Cache "false";
@@ -300,11 +313,11 @@ Acquire
 	SslCert "/etc/apt/some.pem";
 	CaPath  "/etc/ssl/certs";
 	Verify-Host "true";
-	AllowRedirect  "true";
+	AllowRanges "<BOOL>";
+	AllowRedirect "<BOOL>";
 
 	Timeout "30";
 	ConnectionAttemptDelayMsec "250";
-	AllowRedirect  "true";
 
 	// Cache Control. Note these do not work with Squid 2.0.2
 	No-Cache "false";
@@ -555,6 +568,7 @@ Debug
   Acquire::cdrom "<BOOL>";   // Show cdrom debug output
   Acquire::Transaction "<BOOL>";
   Acquire::Progress "<BOOL>";
+  Acquire::Retries "<BOOL>";    // Debugging for retries, especially delays
   aptcdrom "<BOOL>";        // Show found package files
   IdentCdrom "<BOOL>";
   acquire::netrc "<BOOL>";  // netrc parser

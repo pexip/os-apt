@@ -1,4 +1,8 @@
 # Catalan translation of APT.
+#
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
 # Copyright © 2002, 2003, 2004, 2005, 2006, 2008, 2009, 2010, 2011, 2012 Software in the Public Interest, Inc.
 # Antoni Bella Perez <bella5@teleline.es>, 2002, 2003.
 # Matt Bonner <mateubonet@yahoo.com>, 2003.
@@ -9,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.4~beta1\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
 "PO-Revision-Date: 2020-08-09 22:43+0200\n"
 "Last-Translator: Aleix Vidal i Gaya <aleix@softcatala.org>\n"
 "Language-Team: Catalan <debian-l10n-catalan@lists.debian.org>\n"
@@ -204,7 +208,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Distribució conflictiva: %s (s'esperava %s però s'ha obtingut %s)"
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr "El dipòsit «%s» ha canviat el seu valor «%s» de «%s» a «%s»"
@@ -217,7 +222,7 @@ msgstr ""
 "%hi."
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -394,16 +399,6 @@ msgstr "S'ha produït un error de compilació de l'expressió regular - %s"
 
 #: apt-pkg/cacheset.cc
 #, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "No s'ha trobat el llançament «%s» per a «%s»"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "No s'ha trobat la versió «%s» per a «%s»"
-
-#: apt-pkg/cacheset.cc
-#, c-format
 msgid "Couldn't find task '%s'"
 msgstr "No s'ha trobat la tasca «%s»"
 
@@ -457,6 +452,16 @@ msgid ""
 msgstr ""
 "No es pot seleccionar la versió instal·lada ni la candidata del paquet «%s» "
 "perquè en té cap de les dues"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "No s'ha trobat el llançament «%s» per a «%s»"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "No s'ha trobat la versió «%s» per a «%s»"
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -1993,30 +1998,19 @@ msgstr "Després d'aquesta operació s'alliberaran %sB d'espai en disc.\n"
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr "S'ha especificat «Trivial Only» però aquesta operació no és trivial."
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "Sí, fes el que et dic!"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"Esteu a punt de fer quelcom potencialment nociu.\n"
-"Per continuar escriviu la frase «%s»\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "Avorta."
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Voleu continuar?"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "Avorta."
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2897,7 +2891,7 @@ msgstr "Suprimeix paquets"
 msgid "Remove packages and config files"
 msgstr "Suprimeix paquets i fitxers de configuració"
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 msgid "Remove automatically all unused packages"
 msgstr "Suprimeix automàticament tots els paquets no utilitzats"
 
@@ -3061,7 +3055,7 @@ msgstr "%s ja estava retingut.\n"
 
 #: cmdline/apt-mark.cc
 #, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "%s ja estava no retingut.\n"
 
 #: cmdline/apt-mark.cc
@@ -3205,6 +3199,12 @@ msgstr "reinstal·la paquets"
 #: cmdline/apt.cc
 msgid "remove packages"
 msgstr "elimina paquets"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "Remove automatically all unused packages"
+msgid "automatically remove all unused packages"
+msgstr "Suprimeix automàticament tots els paquets no utilitzats"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3909,6 +3909,13 @@ msgstr ""
 msgid "Unknown error executing apt-key"
 msgstr "S'ha produït un error desconegut en executar apt-key"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3961,6 +3968,19 @@ msgstr "La connexió s'ha tancat prematurament"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "Els fitxers buits no poden ser arxius vàlids"
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "Sí, fes el que et dic!"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "Esteu a punt de fer quelcom potencialment nociu.\n"
+#~ "Per continuar escriviu la frase «%s»\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

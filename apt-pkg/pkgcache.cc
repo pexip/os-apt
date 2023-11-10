@@ -130,7 +130,8 @@ pkgCache::pkgCache(MMap *Map, bool DoMap) : Map(*Map), VS(nullptr), d(NULL)
    // call getArchitectures() with cached=false to ensure that the 
    // architectures cache is re-evaluated. this is needed in cases
    // when the APT::Architecture field changes between two cache creations
-   MultiArchEnabled = APT::Configuration::getArchitectures(false).size() > 1;
+   APT::Configuration::getArchitectures(false);
+   MultiArchEnabled = true;
    if (DoMap == true)
       ReMap();
 }

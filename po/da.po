@@ -1,5 +1,9 @@
 # Danish translation apt.
 # Copyright (C) 2014 apt & nedenstående oversættere.
+#
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
 # This file is distributed under the same license as the apt package.
 # Claus Hindsgaul <claus.hindsgaul@gmail.com>, 2002, 2003, 2004, 2005, 2006, 2007.
 # Joe Hansen <joedalton2@yahoo.dk>, 2010, 2012, 2013, 2014, 2017.
@@ -12,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.4~rc2\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
 "PO-Revision-Date: 2017-03-02 23:51+0200\n"
 "Last-Translator: Joe Hansen <joedalton2@yahoo.dk>\n"
 "Language-Team: Danish <debian-l10n-danish@lists.debian.org>\n"
@@ -215,7 +219,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Konfliktdistribution: %s (forventede %s men fik %s)"
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -226,7 +231,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -396,16 +401,6 @@ msgstr "Fejl ved tolkning af regulært udtryk - %s"
 
 #: apt-pkg/cacheset.cc
 #, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "Udgaven »%s« for »%s« blev ikke fundet"
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "Versionen »%s« for »%s« blev ikke fundet"
-
-#: apt-pkg/cacheset.cc
-#, c-format
 msgid "Couldn't find task '%s'"
 msgstr "Kunne ikke finde opgaven »%s«"
 
@@ -454,6 +449,16 @@ msgid ""
 msgstr ""
 "Kan ikke vælge installeret eller kandidatversion fra pakke »%s« da den ikke "
 "har nogen af dem"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "Udgaven »%s« for »%s« blev ikke fundet"
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "Versionen »%s« for »%s« blev ikke fundet"
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -1951,30 +1956,19 @@ msgstr "Efter denne handling, vil %sB diskplads blive frigjort.\n"
 msgid "Trivial Only specified but this is not a trivial operation."
 msgstr "»Trivial Only« angivet, men dette er ikke en triviel handling."
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "Ja, gør som jeg siger!"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"Du er ved at gøre noget, der kan være skadeligt\n"
-"For at fortsætte, skal du skrive »%s«\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "Afbryder."
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Vil du fortsætte?"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "Afbryder."
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2841,7 +2835,7 @@ msgstr "Afinstaller pakker"
 msgid "Remove packages and config files"
 msgstr "Fjern pakker og konfigurationsfiler"
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 msgid "Remove automatically all unused packages"
 msgstr "Afinstaller automatisk alle ubrugte pakker"
 
@@ -3009,7 +3003,7 @@ msgstr "%s var allerede sat i bero.\n"
 
 #: cmdline/apt-mark.cc
 #, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "%s var allerede ikke i bero.\n"
 
 #: cmdline/apt-mark.cc
@@ -3155,6 +3149,12 @@ msgstr "installer pakker"
 #: cmdline/apt.cc
 msgid "remove packages"
 msgstr "fjern pakker"
+
+#: cmdline/apt.cc
+#, fuzzy
+#| msgid "Remove automatically all unused packages"
+msgid "automatically remove all unused packages"
+msgstr "Afinstaller automatisk alle ubrugte pakker"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3855,6 +3855,13 @@ msgstr ""
 msgid "Unknown error executing apt-key"
 msgstr "Ukendt fejl ved kørsel af apt-key"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -3904,6 +3911,19 @@ msgstr "Forbindelsen lukkedes for hurtigt"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "Tomme filer kan ikke være gyldige arkiver"
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "Ja, gør som jeg siger!"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "Du er ved at gøre noget, der kan være skadeligt\n"
+#~ "For at fortsætte, skal du skrive »%s«\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."

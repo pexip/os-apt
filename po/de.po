@@ -1,6 +1,10 @@
 # German messages for the apt suite.
 # Copyright (C) 1997, 1998, 1999 Jason Gunthorpe and others.
-# Helge Kreutzmann <debian@helgefjell.de>, 2020, 2021.
+#
+# Licensing is complex as the msgid come from several files, please see
+# the individual files for licensing information.
+#
+# Helge Kreutzmann <debian@helgefjell.de>, 2020-2023.
 # Holger Wansing <linux@wansing-online.de>, 2008, 2009, 2010, 2012, 2014, 2017, 2018.
 # Jens Seidel <jensseidel@users.sf.net>, 2008.
 # Michael Piefel <piefel@informatik.hu-berlin.de>, 2001, 2002, 2003, 2004, 2006.
@@ -9,10 +13,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: apt 2.1.16\n"
+"Project-Id-Version: apt 2.5.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2021-02-09 10:45+0100\n"
-"PO-Revision-Date: 2021-01-11 21:40+0100\n"
+"POT-Creation-Date: 2023-03-06 12:29+0000\n"
+"PO-Revision-Date: 2023-01-20 16:58+0100\n"
 "Last-Translator: Helge Kreutzmann <debian@helgefjell.de>\n"
 "Language-Team: German <debian-l10n-german@lists.debian.org>\n"
 "Language: de\n"
@@ -209,7 +213,8 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr "Konflikt bei Distribution: %s (%s erwartet, aber %s bekommen)"
 
-#: apt-pkg/acquire-item.cc
+#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr "Für das Depot »%s« wurde der »%s«-Wert von »%s« in »%s« geändert."
@@ -222,7 +227,7 @@ msgstr ""
 "geändert."
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc
+#: apt-pkg/acquire-item.cc apt-private/private-update.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -413,16 +418,6 @@ msgstr "Fehler beim Kompilieren eines regulären Ausdrucks - %s"
 
 #: apt-pkg/cacheset.cc
 #, c-format
-msgid "Release '%s' for '%s' was not found"
-msgstr "Veröffentlichung »%s« für »%s« konnte nicht gefunden werden."
-
-#: apt-pkg/cacheset.cc
-#, c-format
-msgid "Version '%s' for '%s' was not found"
-msgstr "Version »%s« für »%s« konnte nicht gefunden werden."
-
-#: apt-pkg/cacheset.cc
-#, c-format
 msgid "Couldn't find task '%s'"
 msgstr "Task »%s« konnte nicht gefunden werden."
 
@@ -477,6 +472,16 @@ msgid ""
 msgstr ""
 "Es kann weder eine installierte Version noch ein Installationskandidat von "
 "Paket »%s« ausgewählt werden, da beide nicht existieren."
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Release '%s' for '%s' was not found"
+msgstr "Veröffentlichung »%s« für »%s« konnte nicht gefunden werden."
+
+#: apt-pkg/cacheset.cc
+#, c-format
+msgid "Version '%s' for '%s' was not found"
+msgstr "Version »%s« für »%s« konnte nicht gefunden werden."
 
 #: apt-pkg/cdrom.cc
 msgid "Unmounting CD-ROM...\n"
@@ -2023,30 +2028,21 @@ msgid "Trivial Only specified but this is not a trivial operation."
 msgstr ""
 "»--trivial-only« wurde angegeben, aber dies ist keine triviale Operation."
 
-#. TRANSLATOR: This string needs to be typed by the user as a confirmation, so be
-#. careful with hard to type or special characters (like non-breaking spaces)
 #: apt-private/private-install.cc
-msgid "Yes, do as I say!"
-msgstr "Ja, tue was ich sage!"
-
-#: apt-private/private-install.cc
-#, c-format
 msgid ""
-"You are about to do something potentially harmful.\n"
-"To continue type in the phrase '%s'\n"
-" ?] "
+"Removing essential system-critical packages is not permitted. This might "
+"break the system."
 msgstr ""
-"Sie sind im Begriff, etwas potentiell Schädliches zu tun.\n"
-"Zum Fortfahren geben Sie bitte »%s« ein.\n"
-" ?] "
-
-#: apt-private/private-install.cc
-msgid "Abort."
-msgstr "Abbruch."
+"Das Entfernen essenzieller, system-kritischer Pakete ist nicht erlaubt. Dies "
+"kann das System beschädigen."
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
 msgid "Do you want to continue?"
 msgstr "Möchten Sie fortfahren?"
+
+#: apt-private/private-install.cc
+msgid "Abort."
+msgstr "Abbruch."
 
 #: apt-private/private-install.cc
 msgid "Some files failed to download"
@@ -2952,7 +2948,7 @@ msgstr "Pakete entfernen"
 msgid "Remove packages and config files"
 msgstr "Pakete vollständig entfernen (inkl. Konfigurationsdateien)"
 
-#: cmdline/apt-get.cc cmdline/apt.cc
+#: cmdline/apt-get.cc
 msgid "Remove automatically all unused packages"
 msgstr "alle nicht mehr verwendeten Pakete automatisch entfernen"
 
@@ -3121,7 +3117,7 @@ msgstr "%s wurde bereits auf Halten gesetzt.\n"
 
 #: cmdline/apt-mark.cc
 #, c-format
-msgid "%s was already not hold.\n"
+msgid "%s was already not on hold.\n"
 msgstr "Die Halten-Markierung für %s wurde bereits entfernt.\n"
 
 #: cmdline/apt-mark.cc
@@ -3270,6 +3266,10 @@ msgstr "Pakete erneut installieren"
 #: cmdline/apt.cc
 msgid "remove packages"
 msgstr "Pakete entfernen"
+
+#: cmdline/apt.cc
+msgid "automatically remove all unused packages"
+msgstr "alle nicht mehr verwendeten Pakete automatisch entfernen"
 
 #. system wide stuff
 #: cmdline/apt.cc
@@ -3988,6 +3988,15 @@ msgstr ""
 msgid "Unknown error executing apt-key"
 msgstr "Unbekannter Fehler beim Ausführen von apt-key"
 
+#: methods/gpgv.cc
+#, c-format
+msgid ""
+"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
+"section in apt-key(8) for details."
+msgstr ""
+"Schlüssel ist im veralteten Schlüsselbund trusted.gpg gespeichert (%s), "
+"siehe den Abschnitt MISSBILLIGUNG in apt-key(8) für Details."
+
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
@@ -4041,6 +4050,19 @@ msgstr "Verbindung vorzeitig beendet"
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "Leere Dateien können kein gültiges Archiv sein."
+
+#~ msgid "Yes, do as I say!"
+#~ msgstr "Ja, tue was ich sage!"
+
+#, c-format
+#~ msgid ""
+#~ "You are about to do something potentially harmful.\n"
+#~ "To continue type in the phrase '%s'\n"
+#~ " ?] "
+#~ msgstr ""
+#~ "Sie sind im Begriff, etwas potentiell Schädliches zu tun.\n"
+#~ "Zum Fortfahren geben Sie bitte »%s« ein.\n"
+#~ " ?] "
 
 #, c-format
 #~ msgid "Line %u too long in source list %s."
@@ -4398,7 +4420,7 @@ msgstr "Leere Dateien können kein gültiges Archiv sein."
 #~ msgstr "Fertig"
 
 #~ msgid "No keyring installed in %s."
-#~ msgstr "Kein Schlüsselring in %s installiert"
+#~ msgstr "Kein Schlüsselbund in %s installiert"
 
 #~ msgid "Is stdout a terminal?"
 #~ msgstr "Ist stdout ein Terminal?"

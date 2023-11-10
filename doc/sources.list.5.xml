@@ -14,7 +14,7 @@
    &apt-email;
    &apt-product;
    <!-- The last update date -->
-   <date>2019-04-04T00:00:00Z</date>
+   <date>2023-01-29T00:00:00Z</date>
  </refentryinfo>
  
  <refmeta>
@@ -129,8 +129,8 @@
    <literal>distribution</literal> is generally a suite name like
    <literal>stable</literal> or <literal>testing</literal> or a codename like
    <literal>&debian-stable-codename;</literal> or <literal>&debian-testing-codename;</literal>
-   while component is one of <literal>main</literal>, <literal>contrib</literal> or
-   <literal>non-free</literal>. The
+   while component is one of <literal>main</literal>, <literal>contrib</literal>,
+   <literal>non-free</literal> or <literal>non-free-firmware</literal>. The
    <literal>deb-src</literal> type references a Debian distribution's source
    code in the same form as the <literal>deb</literal> type.
    A <literal>deb-src</literal> line is required to fetch source indexes.</para>
@@ -299,7 +299,10 @@ deb-src [ option1=value1 option2=value2 ] uri suite [component1] [component2] [.
 		It is specified as a list of absolute paths to keyring files (have to be
 		accessible and readable for the <literal>_apt</literal> system user,
 		so ensure everyone has read-permissions on the file) and fingerprints
-		of keys to select from these keyrings. If no keyring files are specified
+		of keys to select from these keyrings. The recommended locations for keyrings
+		are <filename>/usr/share/keyrings</filename> for keyrings managed by packages,
+		and <filename>/etc/apt/keyrings</filename> for keyrings managed by the system operator.
+		If no keyring files are specified
 		the default is the <filename>trusted.gpg</filename> keyring and
 		all keyrings in the <filename>trusted.gpg.d/</filename> directory
 		(see <command>apt-key fingerprint</command>). If no fingerprint is
@@ -312,6 +315,23 @@ deb-src [ option1=value1 option2=value2 ] uri suite [component1] [component2] [.
 		of this repository (only fingerprints can be specified there through).
 		Otherwise all keys in the trusted keyrings are considered valid
 		signers for this repository.
+
+		The option may also be set directly to an embedded GPG public key block. Special
+		care is needed to encode the empty line with leading spaces and ".":
+   <literallayout>Types: deb
+URIs: https://deb.debian.org
+Suites: stable
+Components: main contrib non-free non-free-firmware
+Signed-By:
+ -----BEGIN PGP PUBLIC KEY BLOCK-----
+ .
+ mDMEYCQjIxYJKwYBBAHaRw8BAQdAD/P5Nvvnvk66SxBBHDbhRml9ORg1WV5CvzKY
+ CuMfoIS0BmFiY2RlZoiQBBMWCgA4FiEErCIG1VhKWMWo2yfAREZd5NfO31cFAmAk
+ IyMCGyMFCwkIBwMFFQoJCAsFFgIDAQACHgECF4AACgkQREZd5NfO31fbOwD6ArzS
+ dM0Dkd5h2Ujy1b6KcAaVW9FOa5UNfJ9FFBtjLQEBAJ7UyWD3dZzhvlaAwunsk7DG
+ 3bHcln8DMpIJVXht78sL
+ =IE0r
+ -----END PGP PUBLIC KEY BLOCK-----</literallayout>
 	  </para></listitem>
 
 	  <listitem><para><option>Check-Valid-Until</option> (<option>check-valid-until</option>)
@@ -485,26 +505,26 @@ deb-src [ option1=value1 option2=value2 ] uri suite [component1] [component2] [.
 
  <refsect1><title>Examples</title>
    <para>Uses the archive stored locally (or NFS mounted) at /home/apt/debian
-   for stable/main, stable/contrib, and stable/non-free.</para>
-   <literallayout>deb file:/home/apt/debian stable main contrib non-free</literallayout>
+   for stable/main, stable/contrib, stable/non-free and stable/non-free-firmware.</para>
+   <literallayout>deb file:/home/apt/debian stable main contrib non-free non-free-firmware</literallayout>
    <literallayout>Types: deb
 URIs: file:/home/apt/debian
 Suites: stable
-Components: main contrib non-free</literallayout>
+Components: main contrib non-free non-free-firmware</literallayout>
 
    <para>As above, except this uses the unstable (development) distribution.</para>
-   <literallayout>deb file:/home/apt/debian unstable main contrib non-free</literallayout>
+   <literallayout>deb file:/home/apt/debian unstable main contrib non-free non-free-firmware</literallayout>
    <literallayout>Types: deb
 URIs: file:/home/apt/debian
 Suites: unstable
-Components: main contrib non-free</literallayout>
+Components: main contrib non-free non-free-firmware</literallayout>
 
    <para>Sources specification for the above.</para>
-   <literallayout>deb-src file:/home/apt/debian unstable main contrib non-free</literallayout>
+   <literallayout>deb-src file:/home/apt/debian unstable main contrib non-free non-free-firmware</literallayout>
    <literallayout>Types: deb-src
 URIs: file:/home/apt/debian
 Suites: unstable
-Components: main contrib non-free</literallayout>
+Components: main contrib non-free non-free-firmware</literallayout>
 
    <para>The first line gets package information for the architectures in <literal>APT::Architectures</literal>
    while the second always retrieves <literal>amd64</literal> and <literal>armel</literal>.</para>

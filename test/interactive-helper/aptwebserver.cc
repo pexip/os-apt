@@ -21,6 +21,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <array>
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -828,7 +829,7 @@ static void * handleClient(int const client, size_t const id)		/*{{{*/
 		  ifrange = LookupTag(*m, "If-Range", "");
 	       bool validrange = (ifrange.empty() == true ||
 		     (RFC1123StrToTime(ifrange, cache) == true &&
-		      cache <= data.ModificationTime()));
+		      cache == data.ModificationTime()));
 
 	       // FIXME: support multiple byte-ranges (APT clients do not do this)
 	       if (condition.find(',') == std::string::npos)
