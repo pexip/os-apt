@@ -1,3 +1,9 @@
+apt (2.6.1pexip1) pexip-bookworm; urgency=medium
+
+  * Initial bookworm build
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Thu, 16 Nov 2023 09:51:10 +0000
+
 apt (2.6.1) unstable; urgency=medium
 
   * Restore adduser dependency for bookworm.
