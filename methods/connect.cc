@@ -1057,7 +1057,8 @@ ResultState UnwrapTLS(std::string const &Host, std::unique_ptr<MethodFd> &Fd,
 }
 #else
 ResultState UnwrapTLS(std::string const &Host, std::unique_ptr<MethodFd> &Fd,
-		      unsigned long Timeout, aptMethod *Owner)
+		      unsigned long const Timeout, aptMethod * const Owner,
+		      aptConfigWrapperForMethods const * const OwnerConf)
 {
    _error->Error("TLS support has been disabled.");
    return ResultState::FATAL_ERROR;
