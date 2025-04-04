@@ -23,19 +23,20 @@
 #include <apt-pkg/tagfile.h>
 
 #include <algorithm>
+#include <cctype>
+#include <cstddef>
 #include <cstring>
+#include <ctime>
 #include <fstream>
 #include <map>
 #include <string>
 #include <vector>
-#include <ctype.h>
-#include <stddef.h>
-#include <time.h>
 
 #include <apti18n.h>
 									/*}}}*/
 
 using namespace std;
+using namespace std::literals;
 
 // Global list of Items supported
 static pkgSourceList::Type *ItmList[10];
@@ -120,6 +121,7 @@ bool pkgSourceList::Type::ParseStanza(vector<metaIndex *> &List,	/*{{{*/
    mapping.insert(std::make_pair("Valid-Until-Max", std::make_pair("valid-until-max", false)));
    mapping.insert(std::make_pair("Check-Date", std::make_pair("check-date", false)));
    mapping.insert(std::make_pair("Date-Max-Future", std::make_pair("date-max-future", false)));
+   mapping.insert(std::make_pair("Snapshot", std::make_pair("snapshot", false)));
    mapping.insert(std::make_pair("Signed-By", std::make_pair("signed-by", false)));
    mapping.insert(std::make_pair("PDiffs", std::make_pair("pdiffs", false)));
    mapping.insert(std::make_pair("By-Hash", std::make_pair("by-hash", false)));
@@ -141,6 +143,8 @@ bool pkgSourceList::Type::ParseStanza(vector<metaIndex *> &List,	/*{{{*/
       strprintf(entry, "%s:%i", Fd.Name().c_str(), i);
       Options["sourceslist-entry"] = entry;
    }
+
+   Options["sourceslist-entry-is-deb822"] = "true";
 
    // now create one item per suite/section
    auto const list_uris = FindMultiValue(Tags, "URIs");
@@ -538,7 +542,7 @@ void pkgSourceList::AddVolatileFile(pkgIndexFile * const File)		/*{{{*/
       VolatileFiles.push_back(File);
 }
 									/*}}}*/
-static bool fileNameMatches(std::string const &filename, std::string const &idxtype)/*{{{*/
+static bool fileNameMatches(std::string_view const &filename, std::string const &idxtype)/*{{{*/
 {
    for (auto && type: APT::Configuration::getCompressionTypes())
    {
@@ -560,7 +564,7 @@ bool pkgSourceList::AddVolatileFile(std::string const &File, std::vector<std::st
    if (File.empty() || FileExists(File) == false)
       return false;
 
-   std::string const ext = flExtension(File);
+   auto const ext = flExtension(File);
    // udeb is not included as installing it is usually a mistake rather than intended
    if (ext == "deb" || ext == "ddeb")
       AddVolatileFile(new debDebPkgFileIndex(File));
@@ -587,9 +591,9 @@ bool pkgSourceList::AddVolatileFile(std::string const &File, std::vector<std::st
    else
    {
       auto const filename = flNotDir(File);
-      auto const Target = IndexTarget(File, filename, File, "file:" + File, false, true, {
+      auto const Target = IndexTarget(File, std::string{filename}, File, "file:" + File, false, true, {
 	 { "FILENAME", File },
-	 { "REPO_URI", "file:" + flAbsPath(flNotFile(File)) + '/' },
+	 { "REPO_URI", ("file:"s += flAbsPath(flNotFile(File))) += '/' },
 	 { "COMPONENT", "volatile-packages-file" },
       });
       if (fileNameMatches(filename, "Packages"))
@@ -611,7 +615,7 @@ bool pkgSourceList::AddVolatileFile(std::string const &File)
 									/*}}}*/
 void pkgSourceList::AddVolatileFiles(CommandLine &CmdL, std::vector<std::string> * const VolatileCmdL)/*{{{*/
 {
-   std::remove_if(CmdL.FileList + 1, CmdL.FileList + 1 + CmdL.FileSize(), [&](char const * const I) {
+   (void)std::remove_if(CmdL.FileList + 1, CmdL.FileList + 1 + CmdL.FileSize(), [&](char const * const I) {
       if (I != nullptr && (I[0] == '/' || (I[0] == '.' && (I[1] == '\0' || (I[1] == '.' && (I[2] == '\0' || I[2] == '/')) || I[1] == '/'))))
       {
 	 if (AddVolatileFile(I, VolatileCmdL))

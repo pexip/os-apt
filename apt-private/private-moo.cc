@@ -17,12 +17,12 @@
 #include <apt-private/private-output.h>
 #include <apt-private/private-utils.h>
 
+#include <cstddef>
+#include <cstring>
+#include <ctime>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <stddef.h>
-#include <string.h>
-#include <time.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -96,7 +96,7 @@ static bool DoMoo2(time_t const timenow)				/*{{{*/
       return printMooLine(timenow);
    std::string const moo = getMooLine(timenow);
    size_t const depth = moo.length()/4;
-   if (_config->FindB("APT::Moo::Color", false) == false)
+   if (_config->FindB("APT::Color", false) == false)
       c1out <<
 	 OutputInDepth(depth, " ") << "         (__)  \n" <<
 	 OutputInDepth(depth, " ") << " _______~(..)~ \n" <<

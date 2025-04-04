@@ -13,7 +13,7 @@
 #include <apt-pkg/macros.h>
 #include <apt-pkg/pkgcache.h>
 
-#include <stdio.h>
+#include <cstdio>
 
 #include <list>
 #include <string>
@@ -90,6 +90,22 @@ namespace EDSP								/*{{{*/
 	APT_PUBLIC bool WriteLimitedScenario(pkgDepCache &Cache, FileFd &output,
 					 std::vector<bool> const &pkgset,
 					 OpProgress *Progress = NULL);
+
+	/** \brief creates a limited scenario representing the package universe
+	 *
+	 *  This method works similar to #WriteScenario as it works in the same
+	 *  way but doesn't send the complete universe to the solver but only
+	 *  packages reachable from installed packages or packages marked for
+	 *  install.
+	 *
+	 *  \param Cache is the known package universe
+	 *  \param output is written to this "file"
+	 *  \param Progress is an instance to report progress to
+	 *
+	 *  \return true if universe was composed successfully, otherwise false
+	 */
+	APT_PUBLIC bool WriteLimitedScenario(pkgDepCache &Cache, FileFd &output,
+					     OpProgress *Progress = NULL);
 
 	/** \brief waits and acts on the information returned from the solver
 	 *

@@ -1,18 +1,18 @@
 // -*- mode: cpp; mode: fold -*-
 // Description								/*{{{*/
 /* ######################################################################
-   
+
    Package Cache - Accessor code for the cache
-   
-   Please see doc/apt-pkg/cache.sgml for a more detailed description of 
+
+   Please see doc/apt-pkg/cache.sgml for a more detailed description of
    this format. Also be sure to keep that file up-to-date!!
-   
+
    This is the general utility functions for cache management. They provide
    a complete set of accessor functions for the cache. The cacheiterators
    header contains the STL-like iterators that can be used to easially
    navigate the cache as well as seamlessly dereference the mmap'd
    indexes. Use these always.
-   
+
    The main class provides for ways to get package indexes and some
    general lookup functions to start the iterators.
 
@@ -32,11 +32,12 @@
 #include <apt-pkg/version.h>
 
 #include <algorithm>
+#include <array>
+#include <cstddef>
+#include <cstring>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <stddef.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <xxhash.h>
 
@@ -44,7 +45,7 @@
 									/*}}}*/
 
 using std::string;
-using APT::StringView;
+using std::string_view;
 
 
 // Cache::Header::Header - Constructor					/*{{{*/
@@ -66,7 +67,8 @@ pkgCache::Header::Header()
    APT_HEADER_SET(PackageSz, sizeof(pkgCache::Package));
    APT_HEADER_SET(ReleaseFileSz, sizeof(pkgCache::ReleaseFile));
    APT_HEADER_SET(PackageFileSz, sizeof(pkgCache::PackageFile));
-   APT_HEADER_SET(VersionSz, sizeof(pkgCache::Version));
+   APT_HEADER_SET(SourceVersionSz, sizeof(pkgCache::SourceVersion));
+   APT_HEADER_SET(VersionSz, sizeof(pkgCache::Version) + sizeof(pkgCache::Version::Extra));
    APT_HEADER_SET(DescriptionSz, sizeof(pkgCache::Description));
    APT_HEADER_SET(DependencySz, sizeof(pkgCache::Dependency));
    APT_HEADER_SET(DependencyDataSz, sizeof(pkgCache::DependencyData));
@@ -78,6 +80,7 @@ pkgCache::Header::Header()
    GroupCount = 0;
    PackageCount = 0;
    VersionCount = 0;
+   SourceVersionCount = 0;
    DescriptionCount = 0;
    DependsCount = 0;
    DependsDataCount = 0;
@@ -111,6 +114,7 @@ bool pkgCache::Header::CheckSizes(Header &Against) const
        ReleaseFileSz == Against.ReleaseFileSz &&
        PackageFileSz == Against.PackageFileSz &&
        VersionSz == Against.VersionSz &&
+       SourceVersionSz == Against.SourceVersionSz &&
        DescriptionSz == Against.DescriptionSz &&
        DependencySz == Against.DependencySz &&
        DependencyDataSz == Against.DependencyDataSz &&
@@ -127,7 +131,7 @@ bool pkgCache::Header::CheckSizes(Header &Against) const
 /* */
 pkgCache::pkgCache(MMap *Map, bool DoMap) : Map(*Map), VS(nullptr), d(NULL)
 {
-   // call getArchitectures() with cached=false to ensure that the 
+   // call getArchitectures() with cached=false to ensure that the
    // architectures cache is re-evaluated. this is needed in cases
    // when the APT::Architecture field changes between two cache creations
    APT::Configuration::getArchitectures(false);
@@ -150,6 +154,7 @@ bool pkgCache::ReMap(bool const &Errorchecks)
    RlsFileP = (ReleaseFile *)Map.Data();
    PkgFileP = (PackageFile *)Map.Data();
    VerP = (Version *)Map.Data();
+   SrcVerP = (SourceVersion *)Map.Data();
    DescP = (Description *)Map.Data();
    ProvideP = (Provides *)Map.Data();
    DepP = (Dependency *)Map.Data();
@@ -161,13 +166,13 @@ bool pkgCache::ReMap(bool const &Errorchecks)
 
    if (Map.Size() == 0 || HeaderP == 0)
       return _error->Error(_("Empty package cache"));
-   
+
    // Check the header
    Header DefHeader;
    if (HeaderP->Signature != DefHeader.Signature ||
        HeaderP->Dirty == true)
       return _error->Error(_("The package cache file is corrupted"));
-   
+
    if (HeaderP->MajorVersion != DefHeader.MajorVersion ||
        HeaderP->MinorVersion != DefHeader.MinorVersion ||
        HeaderP->CheckSizes(DefHeader) == false)
@@ -207,7 +212,7 @@ bool pkgCache::ReMap(bool const &Errorchecks)
 /* This is used to generate the hash entries for the HashTable. With my
    package list from bo this function gets 94% table usage on a 512 item
    table (480 used items) */
-map_id_t pkgCache::sHash(StringView Str) const
+map_id_t pkgCache::sHash(string_view Str) const
 {
    uint32_t Hash = 5381;
    auto I = Str.begin();
@@ -244,7 +249,7 @@ uint32_t pkgCache::CacheHash()
 
    XXH3_64bits_update(state,
 		      reinterpret_cast<const unsigned char *>(PACKAGE_VERSION),
-		      APT_ARRAY_SIZE(PACKAGE_VERSION));
+		      strlen(PACKAGE_VERSION));
 
    XXH3_64bits_update(state,
 		      reinterpret_cast<const unsigned char *>(&header),
@@ -264,7 +269,7 @@ uint32_t pkgCache::CacheHash()
 // Cache::FindPkg - Locate a package by name				/*{{{*/
 // ---------------------------------------------------------------------
 /* Returns 0 on error, pointer to the package otherwise */
-pkgCache::PkgIterator pkgCache::FindPkg(StringView Name) {
+pkgCache::PkgIterator pkgCache::FindPkg(string_view Name) {
 	auto const found = Name.rfind(':');
 	if (found == string::npos)
 	   return FindPkg(Name, "native");
@@ -280,7 +285,7 @@ pkgCache::PkgIterator pkgCache::FindPkg(StringView Name) {
 // Cache::FindPkg - Locate a package by name				/*{{{*/
 // ---------------------------------------------------------------------
 /* Returns 0 on error, pointer to the package otherwise */
-pkgCache::PkgIterator pkgCache::FindPkg(StringView Name, StringView Arch) {
+pkgCache::PkgIterator pkgCache::FindPkg(string_view Name, string_view Arch) {
 	/* We make a detour via the GrpIterator here as
 	   on a multi-arch environment a group is easier to
 	   find than a package (less entries in the buckets) */
@@ -294,7 +299,7 @@ pkgCache::PkgIterator pkgCache::FindPkg(StringView Name, StringView Arch) {
 // Cache::FindGrp - Locate a group by name				/*{{{*/
 // ---------------------------------------------------------------------
 /* Returns End-Pointer on error, pointer to the group otherwise */
-pkgCache::GrpIterator pkgCache::FindGrp(StringView Name) {
+pkgCache::GrpIterator pkgCache::FindGrp(string_view Name) {
 	if (unlikely(Name.empty() == true))
 		return GrpIterator(*this,0);
 
@@ -313,7 +318,7 @@ pkgCache::GrpIterator pkgCache::FindGrp(StringView Name) {
 									/*}}}*/
 // Cache::CompTypeDeb - Return a string describing the compare type	/*{{{*/
 // ---------------------------------------------------------------------
-/* This returns a string representation of the dependency compare 
+/* This returns a string representation of the dependency compare
    type in the weird debian style.. */
 const char *pkgCache::CompTypeDeb(unsigned char Comp)
 {
@@ -340,30 +345,46 @@ const char *pkgCache::CompType(unsigned char Comp)
 /* */
 const char *pkgCache::DepType(unsigned char Type)
 {
-   const char *Types[] = {"",_("Depends"),_("PreDepends"),_("Suggests"),
-                          _("Recommends"),_("Conflicts"),_("Replaces"),
-                          _("Obsoletes"),_("Breaks"), _("Enhances")};
-   if (Type < sizeof(Types)/sizeof(*Types))
+   std::array<char const *, 12> Types{nullptr, _("Depends"), _("PreDepends"), _("Suggests"),
+				      _("Recommends"), _("Conflicts"), _("Replaces"),
+				      _("Obsoletes"), _("Breaks"), _("Enhances")};
+   if (Type < Types.size())
       return Types[Type];
    return "";
 }
+std::string_view pkgCache::DepType_NoL10n(unsigned char Type)
+{
+   std::array<std::string_view, 12> Types{"", "Depends", "Pre-Depends", "Suggests",
+					  "Recommends", "Conflicts", "Replaces",
+					  "Obsoletes", "Breaks", "Enhances"};
+   if (Type < Types.size())
+      return Types[Type];
+   return {};
+}
 									/*}}}*/
 // Cache::Priority - Convert a priority value to a string		/*{{{*/
-// ---------------------------------------------------------------------
-/* */
 const char *pkgCache::Priority(unsigned char Prio)
 {
-   const char *Mapping[] = {0,_("required"),_("important"),_("standard"),
-                            _("optional"),_("extra")};
-   if (Prio < APT_ARRAY_SIZE(Mapping))
+   std::array<char const *, 6> Mapping{nullptr, _("required"), _("important"), _("standard"),
+				       _("optional"), _("extra")};
+   if (Prio < Mapping.size())
       return Mapping[Prio];
-   return 0;
+   return nullptr;
+}
+std::string_view pkgCache::Priority_NoL10n(unsigned char Prio)
+{
+   constexpr std::array<std::string_view, 6> const Mapping{
+      "", "required", "important", "standard", "optional", "extra"
+   };
+   if (Prio < Mapping.size())
+      return Mapping[Prio];
+   return {};
 }
 									/*}}}*/
 // GrpIterator::FindPkg - Locate a package by arch			/*{{{*/
 // ---------------------------------------------------------------------
 /* Returns an End-Pointer on error, pointer to the package otherwise */
-pkgCache::PkgIterator pkgCache::GrpIterator::FindPkg(StringView Arch) const {
+pkgCache::PkgIterator pkgCache::GrpIterator::FindPkg(string_view Arch) const {
 	if (unlikely(IsGood() == false || S->FirstPackage == 0))
 		return PkgIterator(*Owner, 0);
 
@@ -390,21 +411,31 @@ pkgCache::PkgIterator pkgCache::GrpIterator::FindPkg(StringView Arch) const {
 // ---------------------------------------------------------------------
 /* Returns an End-Pointer on error, pointer to the package otherwise */
 pkgCache::PkgIterator pkgCache::GrpIterator::FindPreferredPkg(bool const &PreferNonVirtual) const {
-	pkgCache::PkgIterator Pkg = FindPkg(StringView("native", 6));
+	pkgCache::PkgIterator Pkg = FindPkg(string_view("native", 6));
 	if (Pkg.end() == false && (PreferNonVirtual == false || Pkg->VersionList != 0))
 		return Pkg;
-
-	std::vector<std::string> const archs = APT::Configuration::getArchitectures();
-	for (std::vector<std::string>::const_iterator a = archs.begin();
-	     a != archs.end(); ++a) {
-		Pkg = FindPkg(*a);
+	// native and foreign
+	for (auto const &a : APT::Configuration::getArchitectures())
+	{
+		Pkg = FindPkg(a);
+		if (Pkg.end() == false && (PreferNonVirtual == false || Pkg->VersionList != 0))
+			return Pkg;
+	}
+	// very foreign/barbarian
+	for (auto const &a : _config->FindVector("APT::BarbarianArchitectures"))
+	{
+		Pkg = FindPkg(a);
 		if (Pkg.end() == false && (PreferNonVirtual == false || Pkg->VersionList != 0))
 			return Pkg;
 	}
 	// packages without an architecture
-	Pkg = FindPkg(StringView("none", 4));
+	Pkg = FindPkg(string_view("none", 4));
 	if (Pkg.end() == false && (PreferNonVirtual == false || Pkg->VersionList != 0))
 		return Pkg;
+	// the "rest" we somehow know about (+ those we tried already again as skipping is hard)
+	for (Pkg = PackageList(); not Pkg.end(); Pkg = NextPkg(Pkg))
+		if (Pkg.end() == false && (PreferNonVirtual == false || Pkg->VersionList != 0))
+			return Pkg;
 
 	if (PreferNonVirtual == true)
 		return FindPreferredPkg(false);
@@ -479,25 +510,25 @@ pkgCache::DepIterator& pkgCache::DepIterator::operator++()		/*{{{*/
 // ---------------------------------------------------------------------
 /* By this we mean if it is either cleanly installed or cleanly removed. */
 pkgCache::PkgIterator::OkState pkgCache::PkgIterator::State() const
-{  
+{
    if (S->InstState == pkgCache::State::ReInstReq ||
        S->InstState == pkgCache::State::HoldReInstReq)
       return NeedsUnpack;
-   
+
    if (S->CurrentState == pkgCache::State::UnPacked ||
        S->CurrentState == pkgCache::State::HalfConfigured)
       // we leave triggers alone completely. dpkg deals with
-      // them in a hard-to-predict manner and if they get 
-      // resolved by dpkg before apt run dpkg --configure on 
+      // them in a hard-to-predict manner and if they get
+      // resolved by dpkg before apt run dpkg --configure on
       // the TriggersPending package dpkg returns a error
       //Pkg->CurrentState == pkgCache::State::TriggersAwaited
       //Pkg->CurrentState == pkgCache::State::TriggersPending)
       return NeedsConfigure;
-   
+
    if (S->CurrentState == pkgCache::State::HalfInstalled ||
        S->InstState != pkgCache::State::Ok)
       return NeedsUnpack;
-      
+
    return NeedsNothing;
 }
 									/*}}}*/
@@ -519,8 +550,8 @@ pkgCache::PkgIterator::CurVersion() const
    Note that the characters <|>() are all literal above. Versions will be omitted
    if they provide no new information (e.g. there is no newer version than candidate)
    If no version and/or section can be found "none" is used. */
-std::ostream& 
-operator<<(std::ostream& out, pkgCache::PkgIterator Pkg) 
+std::ostream&
+operator<<(std::ostream& out, pkgCache::PkgIterator Pkg)
 {
    if (Pkg.end() == true)
       return out << "invalid package";
@@ -583,34 +614,34 @@ bool pkgCache::DepIterator::IsNegative() const
    then it returned. Otherwise the providing list is looked at to
    see if there is one unique providing package if so it is returned.
    Otherwise true is returned and the target package is set. The return
-   result indicates whether the node should be expandable 
- 
-   In Conjunction with the DepCache the value of Result may not be 
+   result indicates whether the node should be expandable
+
+   In Conjunction with the DepCache the value of Result may not be
    super-good since the policy may have made it uninstallable. Using
    AllTargets is better in this case. */
 bool pkgCache::DepIterator::SmartTargetPkg(PkgIterator &Result) const
 {
    Result = TargetPkg();
-   
+
    // No provides at all
    if (Result->ProvidesList == 0)
       return false;
-   
+
    // There is the Base package and the providing ones which is at least 2
    if (Result->VersionList != 0)
       return true;
-      
+
    /* We have to skip over indirect provisions of the package that
       owns the dependency. For instance, if libc5-dev depends on the
       virtual package libc-dev which is provided by libc5-dev and libc6-dev
-      we must ignore libc5-dev when considering the provides list. */ 
+      we must ignore libc5-dev when considering the provides list. */
    PrvIterator PStart = Result.ProvidesList();
    for (; PStart.end() != true && PStart.OwnerPkg() == ParentPkg(); ++PStart);
 
    // Nothing but indirect self provides
    if (PStart.end() == true)
       return false;
-   
+
    // Check for single packages in the provides list
    PrvIterator P = PStart;
    for (; P.end() != true; ++P)
@@ -623,11 +654,11 @@ bool pkgCache::DepIterator::SmartTargetPkg(PkgIterator &Result) const
    }
 
    Result = PStart.OwnerPkg();
-   
+
    // Check for non dups
    if (P.end() != true)
       return true;
-   
+
    return false;
 }
 									/*}}}*/
@@ -658,7 +689,7 @@ pkgCache::Version **pkgCache::DepIterator::AllTargets() const
 	 if (Res != 0)
 	    *End++ = I;
       }
-      
+
       // Follow all provides
       for (PrvIterator I = DPkg.ProvidesList(); I.end() == false; ++I)
       {
@@ -671,7 +702,7 @@ pkgCache::Version **pkgCache::DepIterator::AllTargets() const
 	 if (Res != 0)
 	    *End++ = I.OwnerVer();
       }
-      
+
       // Do it again and write it into the array
       if (Res == 0)
       {
@@ -682,9 +713,9 @@ pkgCache::Version **pkgCache::DepIterator::AllTargets() const
       {
 	 *End = 0;
 	 break;
-      }      
+      }
    }
-   
+
    return Res;
 }
 									/*}}}*/
@@ -749,6 +780,13 @@ bool pkgCache::DepIterator::IsIgnorable(PrvIterator const &Prv) const
 }
 									/*}}}*/
 // DepIterator::IsSatisfied - check if a version satisfied the dependency /*{{{*/
+bool pkgCache::DepIterator::IsSatisfied(PkgIterator const &Pkg) const
+{
+   for (auto ver = Pkg.VersionList(); not ver.end(); ++ver)
+      if (not IsSatisfied(ver))
+	 return false;
+   return not Pkg.VersionList().end();
+}
 bool pkgCache::DepIterator::IsSatisfied(VerIterator const &Ver) const
 {
    return Owner->VS->CheckDep(Ver.VerStr(),S2->CompareOp,TargetVer());
@@ -811,7 +849,7 @@ int pkgCache::VerIterator::CompareVer(const VerIterator &B) const
       return -1;
    if (B.end() == true)
       return 1;
-       
+
    /* Start at A and look for B. If B is found then A > B otherwise
       B was before A so A < B */
    VerIterator I = *this;
@@ -826,6 +864,10 @@ int pkgCache::VerIterator::CompareVer(const VerIterator &B) const
 /* */
 APT_PURE bool pkgCache::VerIterator::Downloadable() const
 {
+   // A zero size deb is not downloadable
+   if (S->Size == 0)
+      return false;
+
    VerFileIterator Files = FileList();
    for (; Files.end() == false; ++Files)
       if (Files.File().Flagged(pkgCache::Flag::NotSource) == false)
@@ -835,7 +877,7 @@ APT_PURE bool pkgCache::VerIterator::Downloadable() const
 									/*}}}*/
 // VerIterator::Automatic - Check if this version is 'automatic'	/*{{{*/
 // ---------------------------------------------------------------------
-/* This checks to see if any of the versions files are not NotAutomatic. 
+/* This checks to see if any of the versions files are not NotAutomatic.
    True if this version is selectable for automatic installation. */
 APT_PURE bool pkgCache::VerIterator::Automatic() const
 {
@@ -860,13 +902,13 @@ pkgCache::VerFileIterator pkgCache::VerIterator::NewestFile() const
       if (Owner->VS->CmpReleaseVer(Files.File().Version(),Highest.File().Version()) > 0)
 	 Highest = Files;
    }
-   
+
    return Highest;
 }
 									/*}}}*/
 // VerIterator::RelStr - Release description string			/*{{{*/
 // ---------------------------------------------------------------------
-/* This describes the version from a release-centric manner. The output is a 
+/* This describes the version from a release-centric manner. The output is a
    list of Label:Version/Archive */
 static std::string PkgFileIteratorToRelString(pkgCache::PkgFileIterator const &File)
 {
@@ -970,7 +1012,7 @@ string pkgCache::PkgFileIterator::RelStr()				/*{{{*/
 // ---------------------------------------------------------------------
 /* return a DescIter for the specified language
  */
-pkgCache::DescIterator pkgCache::VerIterator::TranslatedDescriptionForLanguage(StringView lang) const
+pkgCache::DescIterator pkgCache::VerIterator::TranslatedDescriptionForLanguage(string_view lang) const
 {
    for (pkgCache::DescIterator Desc = DescriptionList(); Desc.end() == false; ++Desc)
       if (lang == Desc.LanguageCode())
@@ -1007,5 +1049,30 @@ pkgCache::DescIterator pkgCache::VerIterator::TranslatedDescription() const
 }
 
 									/*}}}*/
+// VerIterator::IsSecurity - check if it is a security update /*{{{*/
 
+// See if this version is a security update. This also checks, for installed packages,
+// if any of the previous versions is a security update
+bool pkgCache::VerIterator::IsSecurityUpdate() const
+{
+   auto Pkg = ParentPkg();
+   auto Installed = Pkg.CurrentVer();
+
+   auto OtherVer = Pkg.VersionList();
+
+   // Advance to first version < our version
+   while (OtherVer->ID != S->ID)
+      ++OtherVer;
+
+   // Iterate over all versions < our version
+   for (; !OtherVer.end() && (Installed.end() || OtherVer->ID != Installed->ID); OtherVer++)
+   {
+      for (auto PF = OtherVer.FileList(); !PF.end(); PF++)
+	 if (PF.File() && PF.File().Archive() != nullptr && APT::String::Endswith(PF.File().Archive(), "-security"))
+	    return true;
+   }
+   return false;
+}
+
+									/*}}}*/
 pkgCache::~pkgCache() {}

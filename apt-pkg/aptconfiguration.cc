@@ -19,17 +19,17 @@
 #include <apt-pkg/strutl.h>
 
 #include <algorithm>
+#include <cctype>
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 #include <vector>
-#include <ctype.h>
 #include <dirent.h>
 #include <fcntl.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
-
 									/*}}}*/
 namespace APT {
 // setDefaultConfigurationForCompressors				/*{{{*/
@@ -368,7 +368,7 @@ const Configuration::getCompressors(bool const Cached) {
 	{ CompressorsDone.push_back(NAME); compressors.emplace_back(NAME, EXT, BINARY, ARG, DEARG, COST); }
 	APT_ADD_COMPRESSOR(".", "", "", nullptr, nullptr, 0)
 	if (_config->Exists("Dir::Bin::zstd") == false || FileExists(_config->Find("Dir::Bin::zstd")) == true)
-	   APT_ADD_COMPRESSOR("zstd", ".zst", "zstd", "-19", "-d", 60)
+	   APT_ADD_COMPRESSOR("zstd", ".zst", "zstd", "-6", "-d", 60)
 #ifdef HAVE_ZSTD
 	else
 	   APT_ADD_COMPRESSOR("zstd", ".zst", "false", nullptr, nullptr, 60)
@@ -536,6 +536,66 @@ bool Configuration::isChroot()
    } once;
 
    return once.res;
+}
+									/*}}}*/
+// isUsrMerged - whether usr is merged t			     	/*{{{*/
+// ---------------------------------------------------------------------
+/* */
+bool Configuration::checkUsrMerged()
+{
+   std::string rootDir = _config->FindDir("Dir");
+   for (auto dir : {"bin", "sbin", "lib"})
+   {
+      struct stat root;
+      struct stat usr;
+      std::string dirInRoot = rootDir + dir;
+      std::string dirInUsr = rootDir + "usr/" + dir;
+
+      // Missing directories are a boot strap scenario that needs to work
+      if (stat(dirInRoot.c_str(), &root))
+	 continue;
+      if (stat(dirInUsr.c_str(), &usr))
+	 continue;
+      if (root.st_ino != usr.st_ino)
+	 return _error->Warning("%s resolved to a different inode than %s", dirInRoot.c_str(), dirInUsr.c_str()), false;
+   }
+
+   return true;
+}
+									/*}}}*/
+// isUsrMerged - whether usr is merged t			     	/*{{{*/
+// ---------------------------------------------------------------------
+/* */
+std::string Configuration::color(std::string const &colorName, std::string const &content)
+{
+   if (not _config->FindB("APT::Color"))
+      return content;
+
+   auto colors = ::Configuration(_config->Tree("APT::Color"));
+   auto color = colors.Find(colorName);
+
+   // Resolve the color recursively. A color string has the following format
+   // <color> :=    \x1B<word>       ; fully resolved color
+   //            | \\x1B<word>       ; color escaped.
+   //            | <word>	     ; a simple color name
+   //            | <color> <color>   ; a sequence of colors
+   if (color.find(" ") != color.npos)
+   {
+      std::string res;
+      for (auto &&colorPart : VectorizeString(color, ' '))
+	 res += Configuration::color(colorPart);
+      color = res;
+   }
+   else if (not color.empty() && color[0] != '\x1B')
+   {
+      if (APT::String::Startswith(color, "\\x1B"))
+	 color = "\x1B" + color.substr(4);
+      else
+	 color = Configuration::color(color);
+   }
+   if (content.empty())
+      return color;
+   return color + content + Configuration::color("Neutral");
 }
 									/*}}}*/
 }

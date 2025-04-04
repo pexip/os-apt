@@ -23,19 +23,18 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/hashes.h>
 #include <apt-pkg/proxy.h>
-#include <apt-pkg/string_view.h>
 #include <apt-pkg/strutl.h>
 
+#include <cerrno>
 #include <chrono>
+#include <csignal>
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <sstream>
 #include <arpa/inet.h>
-#include <errno.h>
-#include <signal.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -280,14 +279,14 @@ CircleBuf::~CircleBuf()							/*{{{*/
 // UnwrapHTTPConnect - Does the HTTP CONNECT handshake			/*{{{*/
 // ---------------------------------------------------------------------
 /* Performs a TLS handshake on the socket */
-struct HttpConnectFd : public MethodFd
+struct HttpConnectFd final : public MethodFd
 {
    std::unique_ptr<MethodFd> UnderlyingFd;
    std::string Buffer;
 
-   int Fd() APT_OVERRIDE { return UnderlyingFd->Fd(); }
+   int Fd() override { return UnderlyingFd->Fd(); }
 
-   ssize_t Read(void *buf, size_t count) APT_OVERRIDE
+   ssize_t Read(void *buf, size_t count) override
    {
       if (!Buffer.empty())
       {
@@ -300,17 +299,17 @@ struct HttpConnectFd : public MethodFd
 
       return UnderlyingFd->Read(buf, count);
    }
-   ssize_t Write(void *buf, size_t count) APT_OVERRIDE
+   ssize_t Write(void *buf, size_t count) override
    {
       return UnderlyingFd->Write(buf, count);
    }
 
-   int Close() APT_OVERRIDE
+   int Close() override
    {
       return UnderlyingFd->Close();
    }
 
-   bool HasPending() APT_OVERRIDE
+   bool HasPending() override
    {
       return !Buffer.empty();
    }
@@ -962,12 +961,12 @@ void HttpMethod::SendReq(FetchItem *Itm)
 #ifdef HAVE_SYSTEMD
    if (ConfigFindB("User-Agent-Non-Interactive", false))
    {
-      using APT::operator""_sv;
+      using std::literals::operator""sv;
       char *unit = nullptr;
       sd_pid_get_unit(getpid(), &unit);
       if (unit != nullptr && *unit != '\0' && not APT::String::Startswith(unit, "user@") // user@ _is_ interactive
-	  && "packagekit.service"_sv != unit						 // packagekit likely is interactive
-	  && "dbus.service"_sv != unit)							 // aptdaemon and qapt don't have systemd services
+	  && "packagekit.service"sv != unit						 // packagekit likely is interactive
+	  && "dbus.service"sv != unit)							 // aptdaemon and qapt don't have systemd services
 	 Req << " non-interactive";
 
       free(unit);
@@ -1025,7 +1024,7 @@ BaseHttpMethod::DealWithHeadersResult HttpMethod::DealWithHeaders(FetchResult &R
 									/*}}}*/
 HttpMethod::HttpMethod(std::string &&pProg) : BaseHttpMethod(std::move(pProg), "1.2", Pipeline | SendConfig | SendURIEncoded) /*{{{*/
 {
-   SeccompFlags = aptMethod::BASE | aptMethod::NETWORK;
+   SeccompFlags = aptMethod::BASE | aptMethod::NETWORK | aptMethod::DIRECTORY;
 
    auto addName = std::inserter(methodNames, methodNames.begin());
    if (Binary != "http")
@@ -1046,7 +1045,7 @@ int main(int, const char *argv[])
    // ignore SIGPIPE, this can happen on write() if the socket
    // closes the connection (this is dealt with via ServerDie())
    signal(SIGPIPE, SIG_IGN);
-   std::string Binary = flNotDir(argv[0]);
+   std::string Binary{flNotDir(argv[0])};
    if (Binary.find('+') == std::string::npos && Binary != "https" && Binary != "http")
       Binary.append("+http");
    return HttpMethod(std::move(Binary)).Loop();

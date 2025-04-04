@@ -78,6 +78,7 @@ static std::vector<aptDispatchWithHelp> GetCommands()			/*{{{*/
 
       // misc
       {"edit-sources", &EditSources, _("edit the source information file")},
+      {"modernize-sources", &ModernizeSources, _("modernize .list files to .sources files")},
       {"moo", &DoMoo, nullptr},
       {"satisfy", &DoBuildDep, _("satisfy dependency strings")},
 
@@ -89,6 +90,8 @@ static std::vector<aptDispatchWithHelp> GetCommands()			/*{{{*/
       {"policy",&Policy, nullptr},
       {"build-dep", &DoBuildDep,nullptr},
       {"clean", &DoClean, nullptr},
+      {"distclean", &DoDistClean, nullptr},
+      {"dist-clean", &DoDistClean, nullptr},
       {"autoclean", &DoAutoClean, nullptr},
       {"auto-clean", &DoAutoClean, nullptr},
       {"source", &DoSource, nullptr},

@@ -3,13 +3,13 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/tagfile.h>
 
+#include <cstdlib>
+#include <cstring>
 #include <sstream>
 #include <string>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
-#include <gtest/gtest.h>
+#include "common.h"
 
 #include "file-helpers.h"
 

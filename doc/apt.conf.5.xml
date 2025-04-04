@@ -19,7 +19,7 @@
    &apt-email;
    &apt-product;
    <!-- The last update date -->
-   <date>2016-01-02T00:00:00Z</date>
+   <date>2025-01-05T00:00:00Z</date>
  </refentryinfo>
  
  <refmeta>
@@ -174,6 +174,45 @@ DPkg::Pre-Install-Pkgs {"/usr/sbin/dpkg-preconfigure --apt";};
      </para></listitem>
      </varlistentry>
 
+     <varlistentry><term><option>Color</option></term>
+         <listitem><para>
+         This scope defines colors and styles. The basic colors supported are
+        <option>red</option>,
+        <option>green</option>,
+        <option>yellow</option>,
+        <option>blue</option>,
+        <option>magenta</option>,
+        <option>cyan</option>, and
+        <option>white</option>.
+        </para>
+        <para>
+        The subscope <option>action</option> defines the colors for package lists
+        in <option>install</option> and similar commands. The following options may be set:
+        <option>APT::Color::Action::Upgrade</option>,
+        <option>APT::Color::Action::Install</option>,
+        <option>APT::Color::Action::Install-Dependencies</option>,
+        <option>APT::Color::Action::Downgrade</option>,
+        <option>APT::Color::Action::Remove</option>; corresponding to their
+        lists in the &apt; output.
+        </para>
+        <para>
+        Each color may reference one or more other color options by name, relative
+        to <option>APT::Color</option>. Their escape sequences will be combined.
+        </para>
+        <informalexample><programlisting>
+APT::Color::Bold "\x1B[1m";
+APT::Color::Action::Install "cyan";
+APT::Color::Action::Upgrade "bold action::install";
+        </programlisting></informalexample>
+        <para>
+        Colors may be turned on or off completely by setting <option>APT::Color</option>
+        to <option>yes</option> or <option>no</option>, by utilizing <envar>NO_COLOR</envar>
+        or <envar>APT_NO_COLOR</envar> environment variables, or using the
+        <option>--color</option>, <option>--no-color</option> command-line options.
+        </para>
+     </listitem>
+     </varlistentry>
+
      <varlistentry><term><option>Compressor</option></term>
      <listitem><para>
      This scope defines which compression formats are supported, how compression
@@ -211,6 +250,10 @@ APT::Compressor::rev {
      version is available. Contains release name, codename or release version. Examples: 'stable', 'testing',
      'unstable', '&debian-stable-codename;', '&debian-testing-codename;', '4.0', '5.0*'. See also &apt-preferences;.</para></listitem>
      </varlistentry>
+     <varlistentry><term><option>Snapshot</option></term>
+         <listitem><para>Snapshot to use for all repositories configured with <literal>Snapshot: yes</literal>. See also &sources-list;, the <option>--snapshot</option> option that sets this value, and <option>Acquire::Snapshots::URI</option> below.</para></listitem>
+     </varlistentry>
+
 
      <varlistentry><term><option>Ignore-Hold</option></term>
      <listitem><para>Ignore held packages; this global option causes the problem resolver to
@@ -307,6 +350,61 @@ APT::Compressor::rev {
      <listitem><para>The CDROM subsection controls the &apt-cdrom; tool; please see its
      documentation for more information about the options here.</para></listitem>
      </varlistentry>
+
+    <varlistentry>
+        <term>
+            <option>NeverAutoRemove</option>
+        </term>
+        <listitem>
+            <para>
+                Never autoremove packages that match the regular expression(s).
+            </para>
+        </listitem>
+    </varlistentry>
+
+    <varlistentry>
+        <term>
+            <option>Protect-Kernels</option>
+        </term>
+        <listitem>
+            <para>
+                This option tells apt autoremove that kernels are protected and
+                defaults to true. In case kernels are not protected they are
+                treated as any other package.
+            </para>
+        </listitem>
+    </varlistentry>
+
+    <varlistentry>
+        <term>
+            <option>VersionedKernelPackages</option>
+        </term>
+        <listitem>
+            <para>
+                Define the regular expression(s) for versioned kernel packages.
+                Based on these expressions a rule set is injected into apt
+                similar to APT::NeverAutoRemove regular expressions.
+            </para>
+        </listitem>
+    </varlistentry>
+
+    <varlistentry>
+        <term>
+            <option>NeverAutoRemove::KernelCount</option>
+        </term>
+        <listitem>
+            <para>
+                Keep a custom amount of kernels when autoremoving and defaults
+                to 2, meaning two kernels are kept. Apt will always keep the
+                running kernel and the latest one. If the latest kernel is the
+                same as the running kernel, the second latest kernel is kept.
+                Because of this, any value lower than 2 will be ignored. If you
+                want only the latest kernel, you should set
+                APT::Protect-Kernels to false.
+            </para>
+        </listitem>
+    </varlistentry>
+
    </variablelist>
  </refsect1>
 
@@ -435,47 +533,6 @@ APT::Compressor::rev {
      <listitem><para>The options in these scopes configure APT's acquire transports for the protocols
      HTTP and HTTPS and are documented in the &apt-transport-http; and &apt-transport-https;
      manpages respectively.</para></listitem>
-     </varlistentry>
-
-     <varlistentry><term><option>ftp</option></term>
-     <listitem><para>
-     <literal>ftp::Proxy</literal> sets the default proxy to use for FTP URIs.
-     It is in the standard form of <literal>ftp://[[user][:pass]@]host[:port]/</literal>.
-     Per host proxies can also be specified by using the form
-     <literal>ftp::Proxy::&lt;host&gt;</literal> with the special keyword <literal>DIRECT</literal> 
-	 meaning to use no proxies. If no one of the above settings is specified,
-	 <envar>ftp_proxy</envar> environment variable
-	 will be used. To use an FTP
-     proxy you will have to set the <literal>ftp::ProxyLogin</literal> script in the 
-     configuration file. This entry specifies the commands to send to tell 
-     the proxy server what to connect to. Please see 
-     &configureindex; for an example of 
-     how to do this. The substitution variables representing the corresponding
-     URI component are <literal>$(PROXY_USER)</literal>,
-     <literal>$(PROXY_PASS)</literal>, <literal>$(SITE_USER)</literal>,
-     <literal>$(SITE_PASS)</literal>, <literal>$(SITE)</literal> and
-     <literal>$(SITE_PORT)</literal>.</para>
-
-     <para>The option <literal>timeout</literal> sets the timeout timer used by the method;
-     this value applies to the connection as well as the data timeout.</para>
-
-     <para>Several settings are provided to control passive mode. Generally it is 
-     safe to leave passive mode on; it works in nearly every environment. 
-     However, some situations require that passive mode be disabled and port 
-     mode FTP used instead. This can be done globally or for connections that 
-     go through a proxy or for a specific host (see the sample config file 
-     for examples).</para>
-
-     <para>It is possible to proxy FTP over HTTP by setting the <envar>ftp_proxy</envar>
-     environment variable to an HTTP URL - see the discussion of the http method
-     above for syntax. You cannot set this in the configuration file and it is
-     not recommended to use FTP over HTTP due to its low efficiency.</para>
-
-     <para>The setting <literal>ForceExtended</literal> controls the use of RFC2428 
-     <literal>EPSV</literal> and <literal>EPRT</literal> commands. The default is false, which means
-     these commands are only used if the control connection is IPv6. Setting this
-     to true forces their use even on IPv4 connections. Note that most FTP servers
-     do not support RFC2428.</para></listitem>
      </varlistentry>
 
      <varlistentry><term><option>cdrom</option></term>
@@ -645,6 +702,26 @@ APT::Compressor::rev {
 
 	  The special value '<literal>no</literal>' is available for this option indicating that
 	  this source can't be used to acquire changelog files from. Another source will be tried
+	  if available in this case.
+	</para></listitem>
+</varlistentry>
+
+     <varlistentry><term><option>Snapshots::URI</option> scope</term>
+	<listitem><para>
+	  Like changelogs, snapshots can only be acquired if an URI is known from where to get them.
+	  Preferable the Release file indicates this in a 'Snapshots' field. If this isn't
+	  available the Label/Origin field of the Release file is used to check if a
+	  <literal>Acquire::Snapshots::URI::Label::<replaceable>LABEL</replaceable></literal> or
+	  <literal>Acquire::Snapshots::URI::Origin::<replaceable>ORIGIN</replaceable></literal> option
+	  exists and if so this value is taken. The value in the Release file can be overridden
+	  with <literal>Acquire::Snapshots::URI::Override::Label::<replaceable>LABEL</replaceable></literal>
+	  or <literal>Acquire::Snapshots::URI::Override::Origin::<replaceable>ORIGIN</replaceable></literal>.
+
+      The value should be a normal URI to a directory, except that the snapshot ID replaced with the
+      placeholder <literal>@SNAPSHOTID@</literal>.
+
+	  The special value '<literal>no</literal>' is available for this option indicating that
+	  this source cannot be used to acquire snapshots from. Another source will be tried
 	  if available in this case.
 	</para></listitem>
     </varlistentry>
@@ -939,17 +1016,6 @@ APT::Compressor::rev {
      </varlistentry>
 
      <varlistentry>
-       <term><option>Debug::Acquire::ftp</option></term>
-
-       <listitem>
-	 <para>
-	   Print information related to downloading packages using
-	   FTP.
-	 </para>
-       </listitem>
-     </varlistentry>
-
-     <varlistentry>
        <term><option>Debug::Acquire::http</option></term>
 
        <listitem>
@@ -989,16 +1055,6 @@ APT::Compressor::rev {
 	 <para>
 	   Output information about the process of accessing
 	   collections of packages stored on CD-ROMs.
-	 </para>
-       </listitem>
-     </varlistentry>
-
-     <varlistentry>
-       <term><option>Debug::BuildDeps</option></term>
-       <listitem>
-	 <para>
-	   Describes the process of resolving build-dependencies in
-	   &apt-get;.
 	 </para>
        </listitem>
      </varlistentry>

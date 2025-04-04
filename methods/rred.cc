@@ -20,17 +20,17 @@
 
 #include <apt-private/private-cmndline.h>
 
+#include <cstddef>
 #include <iostream>
 #include <list>
 #include <string>
 #include <vector>
-#include <stddef.h>
 
 #include <cassert>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <sys/stat.h>
 #include <sys/time.h>
 
@@ -598,7 +598,7 @@ class Patch {
 };
 
 #ifndef APT_EXCLUDE_RRED_METHOD_CODE
-class RredMethod : public aptMethod {
+class RredMethod final : public aptMethod {
    private:
       bool Debug;
 
@@ -624,7 +624,7 @@ class RredMethod : public aptMethod {
       }
 
    protected:
-      virtual bool URIAcquire(std::string const &Message, FetchItem *Itm) APT_OVERRIDE {
+      bool URIAcquire(std::string const &Message, FetchItem *Itm) override {
 	 Debug = DebugEnabled();
 	 URI Get(Itm->Uri);
 	 std::string Path = DecodeSendURI(Get.Host + Get.Path); // rred:/path - no host

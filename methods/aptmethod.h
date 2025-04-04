@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -26,7 +26,7 @@
 #include <apti18n.h>
 
 #ifdef HAVE_SECCOMP
-#include <signal.h>
+#include <csignal>
 
 #include <seccomp.h>
 #endif
@@ -120,7 +120,7 @@ protected:
    };
 
    public:
-   virtual bool Configuration(std::string Message) APT_OVERRIDE
+   bool Configuration(std::string Message) override
    {
       if (pkgAcqMethod::Configuration(Message) == false)
 	 return false;
@@ -448,7 +448,7 @@ protected:
       return true;
    }
 
-   void Warning(std::string &&msg)
+   void Message(std::string &&msg, std::string code)
    {
       std::unordered_map<std::string, std::string> fields;
       if (Queue != 0)
@@ -458,7 +458,15 @@ protected:
       if (not UsedMirror.empty())
 	 fields.emplace("UsedMirror", UsedMirror);
       fields.emplace("Message", std::move(msg));
-      SendMessage("104 Warning", std::move(fields));
+      SendMessage(code, std::move(fields));
+   }
+   void Warning(std::string &&msg)
+   {
+      return Message(std::move(msg), "104 Warning");
+   }
+   void Audit(std::string &&msg)
+   {
+      return Message(std::move(msg), "105 Audit");
    }
 
    bool TransferModificationTimes(char const * const From, char const * const To, time_t &LastModified) APT_NONNULL(2, 3)
@@ -506,6 +514,17 @@ protected:
       return part;
    }
 
+   static std::string CombineWithAlternatePath(std::string Path, std::string Change)
+   {
+      while (APT::String::Startswith(Change, "../"))
+      {
+	 Path.erase(Path.find_last_not_of('/'));
+	 Path = flNotFile(Path);
+	 Change.erase(0, 3);
+      }
+      return flCombine(Path, Change);
+   }
+
    aptMethod(std::string &&Binary, char const *const Ver, unsigned long const Flags) APT_NONNULL(3)
        : pkgAcqMethod(Ver, Flags), aptConfigWrapperForMethods(Binary), Binary(std::move(Binary)), SeccompFlags(0)
    {
@@ -521,7 +540,7 @@ class aptAuthConfMethod : public aptMethod
    std::vector<std::unique_ptr<FileFd>> authconfs;
 
    public:
-   virtual bool Configuration(std::string Message) APT_OVERRIDE
+   bool Configuration(std::string Message) override
    {
       if (pkgAcqMethod::Configuration(Message) == false)
 	 return false;

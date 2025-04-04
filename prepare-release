@@ -11,6 +11,7 @@ VERSION=$(dpkg-parsechangelog -S 'Version')
 DISTRIBUTION=$(dpkg-parsechangelog -S 'Distribution')
 
 LIBAPTPKGVERSION="$(awk -v ORS='.' '/^#define APT_PKG_M/ {print $3}' apt-pkg/contrib/macros.h | sed 's/\.$//')"
+LIBSUFFIX=""
 
 librarysymbolsfromfile() {
 	local MISSING="$(grep '^+#MISSING' "$1")"
@@ -29,12 +30,12 @@ if [ "$1" = 'pre-export' ]; then
 	libraryversioncheck() {
 		local LIBRARY="$1"
 		local VERSION="$2"
-		if [ ! -e "debian/${LIBRARY}${VERSION}.symbols" ]; then
+		if [ ! -e "debian/${LIBRARY}${VERSION}${LIBSUFFIX}.symbols" ]; then
 		   echo >&2 "Library ${LIBRARY} in version ${VERSION} has no symbols file! (maybe forgot to rename?)"
 		   exit 1
 		fi
-		if [ "$(head -n1 "debian/${LIBRARY}${VERSION}.symbols")" != "${LIBRARY}.so.${VERSION} ${LIBRARY}${VERSION} #MINVER#" ]; then
-		   echo >&2 "Library ${LIBRARY}${VERSION} has incorrect version in symbol header! (»$(head -n1 "debian/${LIBRARY}${VERSION}.symbols")«)"
+		if [ "$(head -n1 "debian/${LIBRARY}${VERSION}${LIBSUFFIX}.symbols")" != "${LIBRARY}.so.${VERSION} ${LIBRARY}${VERSION}${LIBSUFFIX} #MINVER#" ]; then
+		   echo >&2 "Library ${LIBRARY}${VERSION} has incorrect version in symbol header! (»$(head -n1 "debian/${LIBRARY}${VERSION}${LIBSUFFIX}.symbols")«)"
 		   exit 2
 		fi
 	}
@@ -166,7 +167,7 @@ elif [ "$1" = 'library' ]; then
 		fi
 		echo "Checking $1 in version $2 build at $(stat -L -c '%y' "$buildlib")"
 		local tmpfile=$(mktemp)
-		dpkg-gensymbols -p${1}${2} -e${buildlib} -Idebian/${1}${2}.symbols -O/dev/null 2> /dev/null > $tmpfile || true
+		dpkg-gensymbols -p${1}${2} -e${buildlib} -Idebian/${1}${2}${LIBSUFFIX}.symbols -O/dev/null 2> /dev/null > $tmpfile || true
 		librarysymbolsfromfile "$tmpfile" "$(echo "${1}" | cut -c 4- | tr -d '-' | tr 'a-z' 'A-Z')_${2}"
 		rm -f $tmpfile
 	}
@@ -178,7 +179,7 @@ elif [ "$1" = 'buildlog' ]; then
 		shift
 	done
 elif [ "$1" = 'travis-ci' ]; then
-	apt-get build-dep -qy .
+	apt-get build-dep -P pkg.apt.ci -qy .
 	apt-get install -qy --no-install-recommends dctrl-tools
 	for t in $(grep '^Tests: ' debian/tests/control | cut -d':' -f 2- | tr ',' '\n'); do
 		apt-get satisfy -qy --no-install-recommends "base-files,$(grep-dctrl -ns Depends -F Tests $t ./debian/tests/control | sed -e 's#@[^,<>()@]*@\s*,\s*##g' -e 's#@\s*,\s*##g')"
@@ -232,7 +233,6 @@ elif [ "$1" = 'spellcheckers' -o "$1" = 'lint' ]; then
 				-e '^.*apt-pkg/pkgcache\.h.*mmaped.*==>.*mapped.*$' \
 				-e '^.*apt-pkg/pkgcachegen\.cc.*mmaped.*==>.*mapped.*$' \
 				-e '^.*apt-pkg/contrib/mmap\.h.*mmaped.*==>.*mapped.*$' \
-				-e '^.*cmdline/apt-key\.in.*dashs.*==>.*dashes.*$' \
 				-e '^.*methods/aptmethod\.h.*creat.*==>.*create.*$' \
 				-e '^.*dselect/install.*ans.*==>.*and.*$' \
 				-e '^.*ftparchive/writer\.h.*Delink.*==>.*Unlink.*$' \
@@ -275,9 +275,6 @@ elif [ "$1" = 'spellcheckers' -o "$1" = 'lint' ]; then
 				-e '^./ftparchive/byhash.cc: ByHash ByHash (duplicate word) -> ByHash$' \
 				-e '^./ftparchive/writer.cc: this Packages -> these packages$' \
 				-e '^./ftparchive/byhash.h: ByHash ByHash (duplicate word) -> ByHash$' \
-				-e '^./cmdline/apt-key.in: done done (duplicate word) -> done$' \
-				-e '^./cmdline/apt-key.in: fi fi (duplicate word) -> fi$' \
-				-e '^./cmdline/apt-key.in: echo echo (duplicate word) -> echo$' \
 				-e '^./triehash/.travis.yml: perl perl (duplicate word) -> perl$' \
 				-e '^./triehash/README.md: Performance Performance (duplicate word) -> Performance$' \
 				-e '^./debian/apt.apt-compat.cron.daily: fi fi (duplicate word) -> fi$' \

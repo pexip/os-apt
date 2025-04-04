@@ -12,16 +12,15 @@
 #include <apt-pkg/strutl.h>
 
 #include <algorithm>
+#include <cstdio>
+#include <cstring>
 #include <fstream>
-#include <iostream>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <dirent.h>
 #include <dlfcn.h>
-#include <stdio.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -130,7 +129,7 @@ bool pkgCdrom::FindPackages(string CD,
 	 for (std::vector<APT::Configuration::Compressor>::const_iterator c = compressor.begin();
 	      c != compressor.end(); ++c)
 	 {
-	    string fileext = flExtension(file);
+	    string fileext{flExtension(file)};
 	    if (file == fileext)
 	       fileext.clear();
 	    else if (fileext.empty() == false)
@@ -223,8 +222,6 @@ int pkgCdrom::Score(string Path)
    if (Path.find("/non-free/") != string::npos)
       Res += 20;
    if (Path.find("/non-free-firmware/") != string::npos)
-      Res += 20;
-   if (Path.find("/non-US/") != string::npos)
       Res += 20;
    if (Path.find("/source/") != string::npos)
       Res += 10;
@@ -493,7 +490,7 @@ bool pkgCdrom::WriteSourceList(string Name,vector<string> &List,bool Source)
    while (F.ReadLine(Buffer))
    {
       ++CurLine;
-      auto const Cleaned = APT::String::Strip(SubstVar(Buffer, "\t", "        "));
+      std::string const Cleaned{APT::String::Strip(SubstVar(Buffer, "\t", "        "))};
 
       // Comment or blank
       if (Cleaned.empty() || Cleaned[0] == '#')

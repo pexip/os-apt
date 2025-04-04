@@ -18,12 +18,12 @@
 #include <apt-pkg/strutl.h>
 
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <string.h>
 
 #include <apti18n.h>
 									/*}}}*/
@@ -70,7 +70,7 @@ static bool pkgInitArchTupleMap()
       auto cpurow = split(cpuline);
       auto cpu = APT::String::Strip(cpurow.at(0));
 
-      cpus.push_back(cpu);
+      cpus.emplace_back(cpu);
    }
    if (!cputable.eof())
       return _error->Error("Error reading the CPU table");
@@ -97,14 +97,14 @@ static bool pkgInitArchTupleMap()
 
       if (tuple.find("<cpu>") == tuple.npos && arch.find("<cpu>") == arch.npos)
       {
-         APT::ArchToTupleMap.insert({arch, VectorizeString(tuple, '-')});
+         APT::ArchToTupleMap.insert({std::string{arch}, VectorizeString(tuple, '-')});
       }
       else
       {
          for (auto && cpu : cpus)
          {
-            auto mytuple = SubstVar(tuple, std::string("<cpu>"), cpu);
-            auto myarch = SubstVar(arch, std::string("<cpu>"), cpu);
+            auto mytuple = SubstVar(tuple, "<cpu>", cpu);
+            auto myarch = SubstVar(arch, "<cpu>", cpu);
 
             APT::ArchToTupleMap.insert({myarch, VectorizeString(mytuple, '-')});
          }
@@ -131,6 +131,9 @@ bool pkgInitConfig(Configuration &Cnf)
       Cnf.Set("APT::Build-Essential::", "build-essential");
    Cnf.CndSet("APT::Install-Recommends", true);
    Cnf.CndSet("APT::Install-Suggests", false);
+   Cnf.CndSet("APT::Key::Assert-Pubkey-Algo", ">=rsa2048,ed25519,ed448,nistp256,nistp384,nistp512,brainpoolP256r1,brainpoolP320r1,brainpoolP384r1,brainpoolP512r1,secp256k1");
+   Cnf.CndSet("APT::Key::Assert-Pubkey-Algo::Next", ">=rsa2048,ed25519,ed448,nistp256,nistp384,nistp512");
+   Cnf.CndSet("APT::Key::Assert-Pubkey-Algo::Future", ">=rsa3072,ed25519,ed448");
    Cnf.CndSet("Dir","/");
    
    // State
@@ -146,6 +149,8 @@ bool pkgInitConfig(Configuration &Cnf)
 
    // Configuration
    Cnf.CndSet("Dir::Etc", &CONF_DIR[1]);
+   Cnf.CndSet("Dir::Boot", "boot");
+   Cnf.CndSet("Dir::Usr", "usr");
    Cnf.CndSet("Dir::Etc::sourcelist","sources.list");
    Cnf.CndSet("Dir::Etc::sourceparts","sources.list.d");
    Cnf.CndSet("Dir::Etc::main","apt.conf");
@@ -154,7 +159,6 @@ bool pkgInitConfig(Configuration &Cnf)
    Cnf.CndSet("Dir::Etc::parts","apt.conf.d");
    Cnf.CndSet("Dir::Etc::preferences","preferences");
    Cnf.CndSet("Dir::Etc::preferencesparts","preferences.d");
-   Cnf.CndSet("Dir::Etc::trusted", "trusted.gpg");
    Cnf.CndSet("Dir::Etc::trustedparts","trusted.gpg.d");
    Cnf.CndSet("Dir::Bin::methods", LIBEXEC_DIR "/methods");
    Cnf.CndSet("Dir::Bin::solvers::",LIBEXEC_DIR  "/solvers");
@@ -209,6 +213,16 @@ bool pkgInitConfig(Configuration &Cnf)
    Cnf.CndSet("Acquire::Changelogs::URI::Origin::Ubuntu", "https://changelogs.ubuntu.com/changelogs/pool/@CHANGEPATH@/changelog");
    Cnf.CndSet("Acquire::Changelogs::AlwaysOnline::Origin::Ubuntu", true);
 
+   Cnf.CndSet("Acquire::Snapshots::URI::Origin::Debian", "https://snapshot.debian.org/archive/debian/@SNAPSHOTID@/");
+   Cnf.CndSet("Acquire::Snapshots::URI::Override::Label::Debian-Security", "https://snapshot.debian.org/archive/debian-security/@SNAPSHOTID@/");
+   Cnf.CndSet("Acquire::Snapshots::URI::Origin::Ubuntu", "https://snapshot.ubuntu.com/ubuntu/@SNAPSHOTID@/");
+   // Preseeds by host
+   Cnf.CndSet("Acquire::Snapshots::URI::Host::archive.ubuntu.com", "https://snapshot.ubuntu.com/@PATH@/@SNAPSHOTID@/");
+   Cnf.CndSet("Acquire::Snapshots::URI::Host::deb.debian.org", "https://snapshot.debian.org/archive/@PATH@/@SNAPSHOTID@/");
+   Cnf.CndSet("Acquire::Snapshots::URI::Host::.archive.ubuntu.com", "https://snapshot.ubuntu.com/@PATH@/@SNAPSHOTID@/");
+   Cnf.CndSet("Acquire::Snapshots::URI::Host::security.ubuntu.com", "https://snapshot.ubuntu.com/@PATH@/@SNAPSHOTID@/");
+   Cnf.CndSet("Acquire::Snapshots::URI::Host::ppa.launchpadcontent.net", "https://snapshot.ppa.launchpadcontent.net/@PATH@/@SNAPSHOTID@/");
+   Cnf.CndSet("Acquire::Snapshots::URI::Host::ppa.launchpad.net", "https://snapshot.ppa.launchpadcontent.net/@PATH@/@SNAPSHOTID@/");
 
    Cnf.CndSet("DPkg::Path", "/usr/sbin:/usr/bin:/sbin:/bin");
 

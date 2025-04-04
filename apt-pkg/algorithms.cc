@@ -25,13 +25,13 @@
 #include <apt-pkg/macros.h>
 #include <apt-pkg/packagemanager.h>
 #include <apt-pkg/pkgcache.h>
-#include <apt-pkg/string_view.h>
 #include <apt-pkg/strutl.h>
 #include <apt-pkg/version.h>
 
 #include <apt-pkg/prettyprinters.h>
 
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <set>
@@ -39,7 +39,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <string.h>
 #include <sys/utsname.h>
 
 #include <apti18n.h>
@@ -62,8 +61,8 @@ pkgSimulate::pkgSimulate(pkgDepCache *Cache) : pkgPackageManager(Cache),
 {
    Sim.Init(0);
    auto PackageCount = Cache->Head().PackageCount;
-   Flags = new unsigned char[PackageCount];
-   memset(Flags,0,sizeof(*Flags)*PackageCount);
+   Flags = std::make_unique<unsigned char[]>(PackageCount);
+   memset(&Flags[0],0,sizeof(Flags[0])*PackageCount);
 
    // Fake a filename so as not to activate the media swapping
    string Jnk = "SIMULATE";
@@ -74,11 +73,7 @@ pkgSimulate::pkgSimulate(pkgDepCache *Cache) : pkgPackageManager(Cache),
 }
 									/*}}}*/
 // Simulate::~Simulate - Destructor					/*{{{*/
-pkgSimulate::~pkgSimulate()
-{
-   delete[] Flags;
-   delete d;
-}
+pkgSimulate::~pkgSimulate() = default;
 									/*}}}*/
 // Simulate::Describe - Describe a package				/*{{{*/
 // ---------------------------------------------------------------------
@@ -412,9 +407,9 @@ pkgProblemResolver::pkgProblemResolver(pkgDepCache *pCache) : d(NULL), Cache(*pC
 {
    // Allocate memory
    auto const Size = Cache.Head().PackageCount;
-   Scores = new int[Size];
-   Flags = new unsigned char[Size];
-   memset(Flags,0,sizeof(*Flags)*Size);
+   Scores = std::make_unique<int[]>(Size);
+   Flags = std::make_unique<unsigned char[]>(Size);
+   memset(&Flags[0],0,sizeof(Flags[0])*Size);
    
    // Set debug to true to see its decision logic
    Debug = _config->FindB("Debug::pkgProblemResolver",false);
@@ -423,11 +418,7 @@ pkgProblemResolver::pkgProblemResolver(pkgDepCache *pCache) : d(NULL), Cache(*pC
 // ProblemResolver::~pkgProblemResolver - Destructor			/*{{{*/
 // ---------------------------------------------------------------------
 /* */
-pkgProblemResolver::~pkgProblemResolver()
-{
-   delete [] Scores;
-   delete [] Flags;
-}
+pkgProblemResolver::~pkgProblemResolver() = default;
 									/*}}}*/
 // ProblemResolver::ScoreSort - Sort the list by score			/*{{{*/
 // ---------------------------------------------------------------------
@@ -447,7 +438,7 @@ int pkgProblemResolver::ScoreSort(Package const *A,Package const *B)
 void pkgProblemResolver::MakeScores()
 {
    auto const Size = Cache.Head().PackageCount;
-   memset(Scores,0,sizeof(*Scores)*Size);
+   memset(&Scores[0],0,sizeof(Scores[0])*Size);
 
    // maps to pkgCache::State::VerPriority: 
    //    Required Important Standard Optional Extra
@@ -564,7 +555,7 @@ void pkgProblemResolver::MakeScores()
 
    // Copy the scores to advoid additive looping
    std::unique_ptr<int[]> OldScores(new int[Size]);
-   memcpy(OldScores.get(),Scores,sizeof(*Scores)*Size);
+   memcpy(&OldScores[0],&Scores[0],sizeof(Scores[0])*Size);
       
    /* Now we cause 1 level of dependency inheritance, that is we add the 
       score of the packages that depend on the target Package. This 
@@ -807,16 +798,16 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
       high score packages cause the removal of lower score packages that
       would cause the removal of even lower score packages. */
    std::unique_ptr<pkgCache::Package *[]> PList(new pkgCache::Package *[Size]);
-   pkgCache::Package **PEnd = PList.get();
+   pkgCache::Package **PEnd = &PList[0];
    for (pkgCache::PkgIterator I = Cache.PkgBegin(); I.end() == false; ++I)
       *PEnd++ = I;
 
-   std::sort(PList.get(), PEnd, [this](Package *a, Package *b) { return ScoreSort(a, b) < 0; });
+   std::sort(&PList[0], PEnd, [this](Package *a, Package *b) { return ScoreSort(a, b) < 0; });
 
    if (_config->FindB("Debug::pkgProblemResolver::ShowScores",false) == true)
    {
       clog << "Show Scores" << endl;
-      for (pkgCache::Package **K = PList.get(); K != PEnd; K++)
+      for (pkgCache::Package **K = &PList[0]; K != PEnd; K++)
          if (Scores[(*K)->ID] != 0)
          {
            pkgCache::PkgIterator Pkg(Cache,*K);
@@ -840,7 +831,7 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
    for (int Counter = 0; Counter < MaxCounter && Change; ++Counter)
    {
       Change = false;
-      for (pkgCache::Package **K = PList.get(); K != PEnd; K++)
+      for (pkgCache::Package **K = &PList[0]; K != PEnd; K++)
       {
 	 pkgCache::PkgIterator I(Cache,*K);
 
@@ -969,7 +960,7 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
 	    }
 	    
 	    bool Done = false;
-	    for (pkgCache::Version **V = VList.get(); *V != 0; V++)
+	    for (pkgCache::Version **V = &VList[0]; *V != 0; V++)
 	    {
 	       pkgCache::VerIterator Ver(Cache,*V);
 	       pkgCache::PkgIterator Pkg = Ver.ParentPkg();
@@ -1056,9 +1047,12 @@ bool pkgProblemResolver::ResolveInternal(bool const BrokenFix)
 			      clog << "  Try Installing " << APT::PrettyPkg(&Cache, Start.TargetPkg()) << " before changing " << I.FullName(false) << std::endl;
 			   auto const OldBroken = Cache.BrokenCount();
 			   Cache.MarkInstall(Start.TargetPkg(), true, 1, false);
+			   OrOp = OrKeep;
 			   // FIXME: we should undo the complete MarkInstall process here
-			   if (Cache[Start.TargetPkg()].InstBroken() == true || Cache.BrokenCount() > OldBroken)
+			   if (Cache[Start.TargetPkg()].InstBroken() == true || Cache.BrokenCount() > OldBroken) {
 			      Cache.MarkDelete(Start.TargetPkg(), false, 1, false);
+			      OrOp = OrRemove;
+			   }
 			}
 		     }
 		  }
@@ -1231,7 +1225,8 @@ bool pkgProblemResolver::InstOrNewPolicyBroken(pkgCache::PkgIterator I)
    }
 
    // a newly broken policy (recommends/suggests) is a problem
-   if (Cache[I].NowPolicyBroken() == false &&
+   if ((Flags[I->ID] & BrokenPolicyAllowed) == 0 &&
+       Cache[I].NowPolicyBroken() == false &&
        Cache[I].InstPolicyBroken() == true)
    {
       if (Debug == true)
@@ -1242,6 +1237,26 @@ bool pkgProblemResolver::InstOrNewPolicyBroken(pkgCache::PkgIterator I)
    return false;
 }
 									/*}}}*/
+// ProblemResolver::KeepPhasedUpdates - Keep back phased updates	/*{{{*/
+// ---------------------------------------------------------------------
+// Hold back upgrades to phased versions of already installed packages, unless
+// they are security updates
+bool pkgProblemResolver::KeepPhasedUpdates()
+{
+   for (pkgCache::PkgIterator I = Cache.PkgBegin(); I.end() == false; ++I)
+   {
+      if (not Cache.PhasingApplied(I))
+	 continue;
+
+      Cache.MarkKeep(I, false, false);
+      Cache.MarkProtected(I);
+      Protect(I);
+   }
+
+   return true;
+}
+
+									/*}}}*/
 // ProblemResolver::ResolveByKeep - Resolve problems using keep		/*{{{*/
 // ---------------------------------------------------------------------
 /* This is the work horse of the soft upgrade routine. It is very gentle
@@ -1250,7 +1265,7 @@ bool pkgProblemResolver::InstOrNewPolicyBroken(pkgCache::PkgIterator I)
 bool pkgProblemResolver::ResolveByKeep(OpProgress * const Progress)
 {
    std::string const solver = _config->Find("APT::Solver", "internal");
-   constexpr auto flags = EDSP::Request::UPGRADE_ALL | EDSP::Request::FORBID_NEW_INSTALL | EDSP::Request::FORBID_REMOVE;
+   constexpr auto flags = EDSP::Request::FORBID_NEW_INSTALL | EDSP::Request::FORBID_REMOVE;
    auto const ret = EDSP::ResolveExternal(solver.c_str(), Cache, flags, Progress);
    if (solver != "internal")
       return ret;
@@ -1276,18 +1291,18 @@ bool pkgProblemResolver::ResolveByKeepInternal()
       high score packages cause the removal of lower score packages that
       would cause the removal of even lower score packages. */
    auto Size = Cache.Head().PackageCount;
-   pkgCache::Package **PList = new pkgCache::Package *[Size];
-   pkgCache::Package **PEnd = PList;
+   std::unique_ptr<pkgCache::Package *[]> PList{new pkgCache::Package *[Size]};
+   pkgCache::Package **PEnd = &PList[0];
    for (pkgCache::PkgIterator I = Cache.PkgBegin(); I.end() == false; ++I)
       *PEnd++ = I;
 
-   std::sort(PList,PEnd,[this](Package *a, Package *b) { return ScoreSort(a, b) < 0; });
+   std::sort(&PList[0],PEnd,[this](Package *a, Package *b) { return ScoreSort(a, b) < 0; });
 
 
    if (_config->FindB("Debug::pkgProblemResolver::ShowScores",false) == true)
    {
       clog << "Show Scores" << endl;
-      for (pkgCache::Package **K = PList; K != PEnd; K++)
+      for (pkgCache::Package **K = &PList[0]; K != PEnd; K++)
          if (Scores[(*K)->ID] != 0)
          {
            pkgCache::PkgIterator Pkg(Cache,*K);
@@ -1300,7 +1315,8 @@ bool pkgProblemResolver::ResolveByKeepInternal()
 
    // Consider each broken package 
    pkgCache::Package **LastStop = 0;
-   for (pkgCache::Package **K = PList; K != PEnd; K++)
+restart:
+   for (pkgCache::Package **K = &PList[0]; K != PEnd; K++)
    {
       pkgCache::PkgIterator I(Cache,*K);
 
@@ -1318,10 +1334,7 @@ bool pkgProblemResolver::ResolveByKeepInternal()
 	    clog << "Keeping package " << I.FullName(false) << endl;
 	 Cache.MarkKeep(I, false, false);
 	 if (InstOrNewPolicyBroken(I) == false)
-	 {
-	    K = PList - 1;
-	    continue;
-	 }
+	    goto restart;
       }
       
       // Isolate the problem dependencies
@@ -1350,14 +1363,13 @@ bool pkgProblemResolver::ResolveByKeepInternal()
 
 	    // Look at all the possible provides on this package
 	    std::unique_ptr<pkgCache::Version *[]> VList(Start.AllTargets());
-	    for (pkgCache::Version **V = VList.get(); *V != 0; V++)
+	    for (pkgCache::Version **V = &VList[0]; *V != 0; V++)
 	    {
 	       pkgCache::VerIterator Ver(Cache,*V);
 	       pkgCache::PkgIterator Pkg = Ver.ParentPkg();
 	       
 	       // It is not keepable
-	       if (Cache[Pkg].InstallVer == 0 ||
-		   Pkg->CurrentVer == 0)
+	       if (Pkg->CurrentVer == 0)
 		  continue;
 
 	       if (not Cache[Pkg].Protect())
@@ -1391,14 +1403,14 @@ bool pkgProblemResolver::ResolveByKeepInternal()
           // I is an iterator based off our temporary package list,
           // so copy the name we need before deleting the temporary list
           std::string const LoopingPackage = I.FullName(false);
-          delete[] PList;
           return _error->Error("Internal Error, pkgProblemResolver::ResolveByKeep is looping on package %s.", LoopingPackage.c_str());
       }
       LastStop = K;
-      K = PList - 1;
+      goto restart;
    }
 
-   delete[] PList;
+   if (Cache.BrokenCount() != 0)
+      return _error->Error(_("Unable to correct problems, you have held broken packages."));
 
    if (Debug)
       Cache.CheckConsistency("keep done");
@@ -1550,11 +1562,15 @@ std::string GetProtectedKernelsRegex(pkgCache *cache, bool ReturnRemove)
    if (version2unames.size() == 0)
       return "";
 
-   auto latest = version2unames.rbegin();
-   auto previous = latest;
-   ++previous;
-
+   auto versions = version2unames.rbegin();
    std::set<std::string> keep;
+
+   auto keepKernels = (unsigned long)_config->FindI("APT::NeverAutoRemove::KernelCount", 2);
+   if (keepKernels < 2)
+      keepKernels = 2;
+
+   if (Debug)
+      std::clog << "Amount of kernels to keep " << keepKernels << std::endl;
 
    if (not bootedVersion.empty())
    {
@@ -1562,18 +1578,21 @@ std::string GetProtectedKernelsRegex(pkgCache *cache, bool ReturnRemove)
 	 std::clog << "Keeping booted kernel " << bootedVersion << std::endl;
       keep.insert(bootedVersion);
    }
-   if (latest != version2unames.rend())
+
+   while (keep.size() < keepKernels && versions != version2unames.rend())
    {
+      auto v = versions->first;
+      if (v == bootedVersion)
+      {
+	 versions++;
+	 continue;
+      }
       if (Debug)
-	 std::clog << "Keeping latest kernel " << latest->first << std::endl;
-      keep.insert(latest->first);
+	 std::clog << "Keeping previous kernel " << v << std::endl;
+      keep.insert(v);
+      versions++;
    }
-   if (keep.size() < 2 && previous != version2unames.rend())
-   {
-      if (Debug)
-	 std::clog << "Keeping previous kernel " << previous->first << std::endl;
-      keep.insert(previous->first);
-   }
+
    // Escape special characters '.' and '+' in version strings so we can build a regular expression
    auto escapeSpecial = [](std::string input) -> std::string {
       for (size_t pos = 0; (pos = input.find_first_of(".+", pos)) != input.npos; pos += 2) {
