@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 1.0.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2023-03-06 12:29+0000\n"
+"POT-Creation-Date: 2025-03-09 17:32+0000\n"
 "PO-Revision-Date: 2006-09-19 09:49+0530\n"
 "Last-Translator: Kinley Tshering <gasepkuenden2k3@hotmail.com>\n"
 "Language-Team: Dzongkha <pgeyleg@dit.gov.bt>\n"
@@ -52,8 +52,8 @@ msgstr "སྣོད་ཐོ་%s་འདི་ཁ་ཕྱོགས་སྒ�
 
 #: apt-pkg/acquire-item.cc
 msgid ""
-"This is normally not allowed, but the option Acquire::"
-"AllowDowngradeToInsecureRepositories was given to override it."
+"This is normally not allowed, but the option "
+"Acquire::AllowDowngradeToInsecureRepositories was given to override it."
 msgstr ""
 
 #: apt-pkg/acquire-item.cc
@@ -121,13 +121,14 @@ msgstr ""
 #, c-format
 msgid ""
 "An error occurred during the signature verification. The repository is not "
-"updated and the previous index files will be used. GPG error: %s: %s"
+"updated and the previous index files will be used. OpenPGP signature "
+"verification failed: %s: %s"
 msgstr ""
 
 #. Invalid signature file, reject (LP: #346386) (Closes: #627642)
 #: apt-pkg/acquire-item.cc
 #, c-format
-msgid "GPG error: %s: %s"
+msgid "OpenPGP signature verification failed: %s: %s"
 msgstr ""
 
 #: apt-pkg/acquire-item.cc
@@ -183,8 +184,7 @@ msgstr ""
 msgid "Conflicting distribution: %s (expected %s but got %s)"
 msgstr ""
 
-#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
-#: apt-pkg/acquire-item.cc apt-private/private-update.cc
+#: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -195,7 +195,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc apt-private/private-update.cc
+#: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -217,6 +217,13 @@ msgstr "%s  %s་ ལེན་ནི་ལུ་འཐུས་ཤོར་བ�
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
+"Repositories should provide a clear-signed InRelease file, but none found at "
+"%s."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
 "I wasn't able to locate a file for the %s package. This might mean you need "
 "to manually fix this package. (due to missing arch)"
 msgstr ""
@@ -233,13 +240,6 @@ msgstr ""
 #, fuzzy, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "%s (%s)་ལུ་མཐུད་དོ།"
-
-#: apt-pkg/acquire-worker.cc
-#, c-format
-msgid ""
-"The method '%s' is unsupported and disabled by default. Consider switching "
-"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
-msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -625,6 +625,30 @@ msgstr "ཚིག་སྦྱོར་འཛོལ་བ་%s:%u:བཀོད་
 msgid "Syntax error %s:%u: Extra junk at end of file"
 msgstr "ཚིག་སྦྱོར་འཛོལ་བ་%s:%u: ཡིག་སྣོད་ཀྱི་མཇུག་ལུ་མཁོ་མེད་ཐེབས།"
 
+#. TRANSLATOR: This is a warning level displayed before the message
+#: apt-pkg/contrib/error.cc
+msgid "Error:"
+msgstr ""
+
+#. TRANSLATOR: This is a warning level displayed before the message
+#: apt-pkg/contrib/error.cc
+msgid "Warning:"
+msgstr ""
+
+#. TRANSLATOR: This is a warning level displayed before the message
+#: apt-pkg/contrib/error.cc
+msgid "Notice:"
+msgstr ""
+
+#: apt-pkg/contrib/error.cc
+msgid "Audit:"
+msgstr ""
+
+#. TRANSLATOR: This is a warning level displayed before the message
+#: apt-pkg/contrib/error.cc
+msgid "Debug:"
+msgstr ""
+
 #: apt-pkg/contrib/extracttar.cc
 #, fuzzy, c-format
 msgid "Cannot find a configured compressor for '%s'"
@@ -735,11 +759,11 @@ msgstr "ཡན་ལག་ལས་སྦྱོར་%s་གིས་འཛོ�
 msgid "Sub-process %s exited unexpectedly"
 msgstr "ཡན་ལག་ལས་སྦྱོར་་%s་གིས་རེ་བ་མེད་པར་ཕྱིར་ཐོན་ཡོདཔ་ཨིན།"
 
-#: apt-pkg/contrib/fileutl.cc methods/ftp.cc methods/rsh.cc
+#: apt-pkg/contrib/fileutl.cc
 msgid "Read error"
 msgstr "འཛོལ་བ་ལྷབ།"
 
-#: apt-pkg/contrib/fileutl.cc methods/ftp.cc methods/rsh.cc
+#: apt-pkg/contrib/fileutl.cc
 msgid "Write error"
 msgstr "འཛོལ་བ་འབྲི།"
 
@@ -1047,6 +1071,12 @@ msgstr "ཐོ་བཀོད་འབད་ཡོད་པའི་སྣོད
 msgid "Not locked"
 msgstr ""
 
+#: apt-pkg/deb/debsystem.cc
+msgid ""
+"The dpkg executable set in Dir::Bin::dpkg is missing, falling back to using "
+"default dpkg."
+msgstr ""
+
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1227,6 +1257,16 @@ msgstr ""
 #: apt-pkg/edsp.cc
 msgid "External solver failed without a proper error message"
 msgstr ""
+
+#: apt-pkg/edsp.cc apt-pkg/upgrade.cc
+msgid "Calculating upgrade"
+msgstr "ཡར་བསྐྱེད་རྩིས་བཏོན་དོ་"
+
+#: apt-pkg/edsp.cc
+#, fuzzy
+#| msgid "Total dependencies: "
+msgid "Solving dependencies"
+msgstr "རྟེན་འབྲེལ་བསྡོམས:"
 
 #: apt-pkg/edsp.cc
 msgid "Execute external solver"
@@ -1531,10 +1571,6 @@ msgstr ""
 "ཟུར་ཐོ་ཡིག་སྣོད་ལ་ལུ་ཅིག་ཕབ་ལེན་འབད་ནི་ལུ་འཐུས་ཤོར་བྱུང་ནུག་  འདི་ཚུ་སྣང་མེད་སྦེ་བཞགཔ་མ་ཚད་ ཚབ་ལུ་"
 "རྙིངམ་འདི་ཚུ་ལག་ལེན་འཐབ་ནུག"
 
-#: apt-pkg/upgrade.cc
-msgid "Calculating upgrade"
-msgstr "ཡར་བསྐྱེད་རྩིས་བཏོན་དོ་"
-
 #. TRANSLATOR: Very short word to be displayed before unchanged files in 'apt-get update'
 #: apt-private/acqprogress.cc
 #, c-format
@@ -1804,6 +1840,24 @@ msgid "Broken packages"
 msgstr "ཆད་པ་ཡོད་པའི་ཐུམ་སྒྲིལ་ཚུ།"
 
 #: apt-private/private-install.cc
+#, fuzzy
+#| msgid "Write error"
+msgid "Writing error report"
+msgstr "འཛོལ་བ་འབྲི།"
+
+#: apt-private/private-install.cc
+msgid ""
+"Unmerged usr is no longer supported, use usrmerge to convert to a merged-usr "
+"system."
+msgstr ""
+
+#. TRANSLATORS: %s is a url to a page describing merged-usr (bookworm release notes)
+#: apt-private/private-install.cc
+#, c-format
+msgid "See %s for more details."
+msgstr ""
+
+#: apt-private/private-install.cc
 msgid ""
 "Unable to fetch some archives, maybe run apt-get update or try with --fix-"
 "missing?"
@@ -1849,12 +1903,23 @@ msgstr ""
 "ག་ཅི་གི་ཡ་མཚན་ཆེ་མི་ཆེ་  ཚད་འདི་གིས་ email apt@packages.debian.org་ལུ་མཐུན་སྒྲིག་མི་འབད་"
 "བས།"
 
+#: apt-private/private-install.cc
+#, fuzzy, c-format
+#| msgid "  Installed: "
+msgid "  Download size: %sB / %sB\n"
+msgstr "གཞི་བཙུགས་འབད་ཡོདཔ།"
+
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement strings, so %sB will be correctly translate in e.g. 1,5 MB
 #: apt-private/private-install.cc
 #, c-format
 msgid "Need to get %sB/%sB of archives.\n"
 msgstr "%sBལེན་ནི་ལུ་དགོཔ་པས། ཡིག་མཛོད་ཚི་གི་%sB་\n"
+
+#: apt-private/private-install.cc
+#, c-format
+msgid "  Download size: %sB\n"
+msgstr ""
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
@@ -1863,12 +1928,54 @@ msgstr "%sBལེན་ནི་ལུ་དགོཔ་པས། ཡིག་�
 msgid "Need to get %sB of archives.\n"
 msgstr "ཡིག་མཛོད་ཀྱི་%sB་འདི་ལེན་དགོ་པས།\n"
 
-#. TRANSLATOR: The required space between number and unit is already included
-#. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
 #: apt-private/private-install.cc
 #, fuzzy, c-format
 msgid "After this operation, %sB of additional disk space will be used.\n"
 msgstr "ཁ་སྐོང་གི་%sB་འདི་བཤུབ་པའི་ཤུལ་ལས་ཌིཀསི་གི་བར་སྟོང་དེ་ལག་ལེན་འཐབ་འོང་།\n"
+
+#. TRANSLATOR: The required space between number and unit is already included
+#. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
+#: apt-private/private-install.cc
+#, c-format
+msgid "Space needed: %sB / %sB available\n"
+msgstr ""
+
+#. TRANSLATOR: The required space between number and unit is already included
+#. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
+#: apt-private/private-install.cc
+#, c-format
+msgid "More space needed than available: %sB > %sB, installation may fail"
+msgstr ""
+
+#. TRANSLATOR: The required space between number and unit is already included
+#. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB -
+#. The first %s is the location of the boot directory (determined from Dir::Boot),
+#. and it tells the space being needed there.
+#. (We have two spaces to align with parent "space needed:"for /boot)
+#: apt-private/private-install.cc
+#, c-format
+msgid "in %s:  %sB / %sB available\n"
+msgstr ""
+
+#. TRANSLATOR: The required space between number and unit is already included
+#. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
+#. The first %s is the location of the boot directory (determined from Dir::Boot)
+#: apt-private/private-install.cc
+#, c-format
+msgid ""
+"More space needed in %s than available: %sB > %sB, installation may fail"
+msgstr ""
+
+#: apt-private/private-install.cc
+#, c-format
+msgid "Space needed: %sB\n"
+msgstr ""
+
+#: apt-private/private-install.cc
+#, fuzzy, c-format
+#| msgid "Stored label: %s\n"
+msgid "  Freed space: %sB\n"
+msgstr "གསོག་འཇོག་འབད་ཡོད་པའི་ཁ་ཡིག:%s \n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
@@ -1885,6 +1992,14 @@ msgstr "གལ་ཆུང་རྐྱངམ་ཅིག་ཁསལ་བཀོ
 msgid ""
 "Removing essential system-critical packages is not permitted. This might "
 "break the system."
+msgstr ""
+
+#: apt-private/private-install.cc
+msgid "Continue anyway?"
+msgstr ""
+
+#: apt-private/private-install.cc
+msgid "Continue?"
 msgstr ""
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
@@ -1946,6 +2061,13 @@ msgid "Internal Error, AutoRemover broke stuff"
 msgstr "ནང་འཁོད་འཛོལ་བ་ དཀའ་ངལ་མོས་མཐུན་འབད་མི་ཅ་ཆས་ཚུ་མེདཔ་ཐལ་ཡོད།"
 
 #: apt-private/private-install.cc
+#, c-format
+msgid "Use '%s' to remove it."
+msgid_plural "Use '%s' to remove them."
+msgstr[0] ""
+msgstr[1] ""
+
+#: apt-private/private-install.cc
 #, fuzzy
 msgid ""
 "The following package was automatically installed and is no longer required:"
@@ -1964,16 +2086,8 @@ msgstr[0] "འོག་གི་ཐུམ་སྒྲིས་གསརཔ་འ
 msgstr[1] "འོག་གི་ཐུམ་སྒྲིས་གསརཔ་འདི་ཚུ་ཁཞི་བཙུགས་འབད་འོང་:"
 
 #: apt-private/private-install.cc
-#, c-format
-msgid "Use '%s' to remove it."
-msgid_plural "Use '%s' to remove them."
-msgstr[0] ""
-msgstr[1] ""
-
-#: apt-private/private-install.cc
-#, fuzzy
-msgid "The following additional packages will be installed:"
-msgstr "འོག་གི་ཐུམ་སྒྲིལ་ཐེབས་ཚུ་གཞི་བཙུགས་འབད་འོང་:"
+msgid "Result calculated by the 3.0 solver."
+msgstr ""
 
 #: apt-private/private-install.cc
 msgid "Suggested packages:"
@@ -1982,6 +2096,11 @@ msgstr "བསམ་འཆར་བཀོད་ཡོད་པའི་ཐུམ
 #: apt-private/private-install.cc
 msgid "Recommended packages:"
 msgstr "འོས་སྦྱོར་འབད་ཡོད་པའི་ཐུམ་སྒྲིལ་ཚུ:"
+
+#: apt-private/private-install.cc
+#, fuzzy
+msgid "The following additional packages will be installed:"
+msgstr "འོག་གི་ཐུམ་སྒྲིལ་ཐེབས་ཚུ་གཞི་བཙུགས་འབད་འོང་:"
 
 #: apt-private/private-install.cc
 #, c-format
@@ -2117,12 +2236,49 @@ msgid "The following packages have unmet dependencies:"
 msgstr "འོག་གི་ཐུམ་སྒྲིལ་ཚུ་ལུ་རྟེན་འབྲེལ་མ་ཚང་པས:"
 
 #: apt-private/private-output.cc
+#, fuzzy
+#| msgid "Failed to satisfy %s dependency for %s: %s"
+msgid "Unsatisfied dependencies:"
+msgstr "%s: %s་གི་དོན་ལུ་་%s་རྟེན་འབྲེལ་འདི་ངལ་རངས་འབད་ནི་འཐུས་ཤོར་བྱུང་ནུག"
+
+#: apt-private/private-output.cc
 msgid "The following NEW packages will be installed:"
 msgstr "འོག་གི་ཐུམ་སྒྲིས་གསརཔ་འདི་ཚུ་ཁཞི་བཙུགས་འབད་འོང་:"
 
 #: apt-private/private-output.cc
+#, fuzzy
+msgid "Installing:"
+msgstr "གཞི་བཙུགས་འབད་ཡོད་པའི་%s།"
+
+#: apt-private/private-output.cc
+#, fuzzy
+#| msgid "Total dependencies: "
+msgid "Installing dependencies:"
+msgstr "རྟེན་འབྲེལ་བསྡོམས:"
+
+#: apt-private/private-output.cc
+msgid "REMOVING:"
+msgstr ""
+
+#: apt-private/private-output.cc
 msgid "The following packages will be REMOVED:"
 msgstr "འོག་གི་ཐུམ་སྒྲིལ་འདི་ཚུ་རྩ བསྐྲད་གཏང་འོང་:"
+
+#: apt-private/private-output.cc
+#, fuzzy
+#| msgid "The following packages have been kept back:"
+msgid "The following upgrades have been deferred due to phasing:"
+msgstr "འོག་གི་ཐུམ་སྒྲིལ་འདི་ཚུ་ལོག་སྟེ་རང་བཞག་ནུག:"
+
+#: apt-private/private-output.cc
+#, fuzzy
+#| msgid "The following packages have been kept back:"
+msgid "Not upgrading yet due to phasing:"
+msgstr "འོག་གི་ཐུམ་སྒྲིལ་འདི་ཚུ་ལོག་སྟེ་རང་བཞག་ནུག:"
+
+#: apt-private/private-output.cc
+msgid "Not upgrading:"
+msgstr ""
 
 #: apt-private/private-output.cc
 msgid "The following packages have been kept back:"
@@ -2133,8 +2289,22 @@ msgid "The following packages will be upgraded:"
 msgstr "འོག་གི་ཐུམ་སྒྲིལ་འདི་ཚུ་ཡར་བསྐྱེད་འབད་འོང་:"
 
 #: apt-private/private-output.cc
+msgid "Upgrading:"
+msgstr ""
+
+#: apt-private/private-output.cc
+msgid "DOWNGRADING:"
+msgstr ""
+
+#: apt-private/private-output.cc
 msgid "The following packages will be DOWNGRADED:"
 msgstr "འོག་གི་ཐུམ་སྒྲལ་འདི་ཚུ་མར་ཕབ་འབད་འོང་:"
+
+#: apt-private/private-output.cc
+#, fuzzy
+#| msgid "Pinned packages:"
+msgid "Changing held packages:"
+msgstr "ཁབ་གཟེར་བཏབ་ཡོད་པའི་ཐུམ་སྒྲིལ་ཚུ:"
 
 #: apt-private/private-output.cc
 msgid "The following held packages will be changed:"
@@ -2154,14 +2324,28 @@ msgstr ""
 "ཁྱོད་ཀྱིས་ཁྱོད་རང་ག་ཅི་འབདཝ་ཨིན་ན་ངེས་སྦེ་མ་ཤེས་ཚུན་འདི་འབད་ནི་མི་འོང་།!"
 
 #: apt-private/private-output.cc
+msgid "Summary:"
+msgstr ""
+
+#: apt-private/private-output.cc
 #, c-format
 msgid "%lu upgraded, %lu newly installed, "
 msgstr "%lu་ཡར་བསྐྱེད་འབད་ཡོད་ %lu་འདི་གསརཔ་སྦེ་གཞི་བཙུགས་འབད་ཡོད།"
 
 #: apt-private/private-output.cc
+#, fuzzy, c-format
+msgid "Upgrading: %lu, Installing: %lu, "
+msgstr "གཞི་བཙུགས་འབད་ཡོད་པའི་%s།"
+
+#: apt-private/private-output.cc
 #, c-format
 msgid "%lu reinstalled, "
 msgstr "%lu་འདི་ལོག་གཞི་བཙུགས་འབད་ཡོད།"
+
+#: apt-private/private-output.cc
+#, fuzzy, c-format
+msgid "Reinstalling: %lu, "
+msgstr "གཞི་བཙུགས་འབད་ཡོད་པའི་%s།"
 
 #: apt-private/private-output.cc
 #, c-format
@@ -2170,8 +2354,18 @@ msgstr "%lu་འདི་མར་ཕབ་འབད་ཡོད།"
 
 #: apt-private/private-output.cc
 #, c-format
+msgid "Downgrading: %lu, "
+msgstr ""
+
+#: apt-private/private-output.cc
+#, c-format
 msgid "%lu to remove and %lu not upgraded.\n"
 msgstr "རྩ་བསྐྲད་འབད་ནི་ལུ་%lu་དང་%lu་ཡར་བསྐྱེད་མ་འབད་བས།\n"
+
+#: apt-private/private-output.cc
+#, c-format
+msgid "Removing: %lu, Not Upgrading: %lu\n"
+msgstr ""
 
 #: apt-private/private-output.cc
 #, c-format
@@ -2200,7 +2394,7 @@ msgid "Y"
 msgstr "ཝའི།"
 
 #. TRANSLATOR: "No" answer printed for a yes/no question if --assume-no is set
-#: apt-private/private-output.cc
+#: apt-private/private-output.cc apt-private/private-sources.cc
 msgid "N"
 msgstr ""
 
@@ -2375,8 +2569,8 @@ msgstr "%s ལུ་བཟོ་བརྩིགས་རྟེན་འབྲེ
 #: apt-private/private-source.cc
 #, c-format
 msgid ""
-"No architecture information available for %s. See apt.conf(5) APT::"
-"Architectures for setup"
+"No architecture information available for %s. See apt.conf(5) "
+"APT::Architectures for setup"
 msgstr ""
 
 #: apt-private/private-source.cc
@@ -2413,6 +2607,11 @@ msgstr "%s་ལུ་%s་བསྐྱར་མིང་བཏགས་ནི�
 msgid "Your '%s' file changed, please run 'apt-get update'.\n"
 msgstr ""
 
+#: apt-private/private-sources.cc
+#, c-format
+msgid "Rewrite %zu sources?"
+msgstr ""
+
 #: apt-private/private-unmet.cc
 #, c-format
 msgid "Package %s version %s has an unmet dep:\n"
@@ -2428,6 +2627,37 @@ msgstr "དུས་མཐུན་བཟོ་བའི་བརྡ་བཀོ
 msgid ""
 "Usage of %s should be preferred over embedding login information directly in "
 "the %s entry for '%s'"
+msgstr ""
+
+#. TRANSLATOR: the first is manpage reference, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid "The %s entry for '%s' should be upgraded to deb822 .sources"
+msgstr ""
+
+#. TRANSLATOR: the first is manpage reference, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid "Missing Signed-By in the %s entry for '%s'"
+msgstr ""
+
+#: apt-private/private-update.cc
+msgid ""
+"Consider migrating all sources.list(5) entries to the deb822 .sources format"
+msgstr ""
+
+#: apt-private/private-update.cc
+msgid ""
+"The deb822 .sources format supports both embedded as well as external "
+"OpenPGP keys"
+msgstr ""
+
+#: apt-private/private-update.cc
+msgid "See apt-secure(8) for best practices in configuring repository signing."
+msgstr ""
+
+#: apt-private/private-update.cc
+msgid "Some sources can be modernized. Run 'apt modernize-sources' to do so."
 msgstr ""
 
 #: apt-private/private-update.cc
@@ -2475,6 +2705,12 @@ msgstr "བར་ཅུ་ཡལ་ཐུམ་སྒྲིལ་སླ་བས
 #: cmdline/apt-cache.cc
 msgid "  Missing: "
 msgstr "བརླག་སྟོར་ཞུགས་པ:"
+
+#: cmdline/apt-cache.cc
+#, fuzzy
+#| msgid "Total distinct versions: "
+msgid "Total distinct source versions: "
+msgstr "ཁྱད་རྟགས་ཅན་གྱི་ཐོན་རིམ་ཚུ་གི་བསྡོམས:"
 
 #: cmdline/apt-cache.cc
 msgid "Total distinct versions: "
@@ -2810,6 +3046,12 @@ msgid "concatenate files, with automatic decompression"
 msgstr ""
 
 #: cmdline/apt-helper.cc
+#, fuzzy
+#| msgid "Problem hashing file"
+msgid "hash file"
+msgstr "ཡིག་སྣོད་ལུ་་དྲྭ་རྟགས་བཀལ་བའི་བསྒང་དཀའ་ངལ།"
+
+#: cmdline/apt-helper.cc
 msgid "detect proxy using apt.conf"
 msgstr ""
 
@@ -3056,6 +3298,10 @@ msgid "edit the source information file"
 msgstr "འཐོབ་ཚུགས་པའི་བརྡ་དོན་མཉམ་བསྡོམས་འབད་དོ།"
 
 #: cmdline/apt.cc
+msgid "modernize .list files to .sources files"
+msgstr ""
+
+#: cmdline/apt.cc
 #, fuzzy
 #| msgid "Failed to satisfy %s dependency for %s: %s"
 msgid "satisfy dependency strings"
@@ -3267,7 +3513,7 @@ msgstr " མ་ཤེས་ཨེབ་བཙུགས་ཨཱལ་གོ་�
 msgid "Compressed output %s needs a compression set"
 msgstr "ཨེབ་བཙུགས་འབད་ཡོད་པའི་ཨའུཊི་པུཊི་%sལུ་ཨེབ་བཙུགས་ཆ་ཚན་ཅིག་དགོཔ་འདུག"
 
-#: ftparchive/multicompress.cc methods/rsh.cc
+#: ftparchive/multicompress.cc
 msgid "Failed to create IPC pipe to subprocess"
 msgstr "ཡན་ལག་ལས་སྦྱོར་ལུ་ཨའི་པི་སི་རྒྱུད་དུང་གསར་བསྐྲུན་འབད་ནི་ལུ་འཐུས་ཤོར་བྱུང་ཡོདཔ།"
 
@@ -3386,23 +3632,23 @@ msgstr "ཡིག་མཛོད་ལུ་ཐུམ་སྒྲིལ་ཅི
 
 #: ftparchive/writer.cc
 #, c-format
-msgid "  %s has no override entry\n"
-msgstr "  %sལུ་ཟུར་བཞག་ཐོ་བཀོད་མེད།\n"
+msgid "  %.*s has no override entry\n"
+msgstr "  %.*sལུ་ཟུར་བཞག་ཐོ་བཀོད་མེད།\n"
 
 #: ftparchive/writer.cc
 #, c-format
-msgid "  %s maintainer is %s not %s\n"
-msgstr "  %s ་རྒྱུན་སྐྱོང་པ་འདི་  %s ཨིན་   %s མེན།\n"
+msgid "  %.*s maintainer is %.*s not %s\n"
+msgstr "  %.*s ་རྒྱུན་སྐྱོང་པ་འདི་  %.*s ཨིན་   %s མེན།\n"
 
 #: ftparchive/writer.cc
 #, c-format
-msgid "  %s has no source override entry\n"
-msgstr "  %s ལུ་འབྱུང་ཁུངས་མེདཔ་གཏང་ནིའི་ཐོ་བཀོད་འདི་མེད།\n"
+msgid "  %.*s has no source override entry\n"
+msgstr "  %.*s ལུ་འབྱུང་ཁུངས་མེདཔ་གཏང་ནིའི་ཐོ་བཀོད་འདི་མེད།\n"
 
 #: ftparchive/writer.cc
 #, c-format
-msgid "  %s has no binary override entry either\n"
-msgstr "  %sལུ་ཟུང་ལྡན་མེདཔ་གཏང་ནིའི་་ཐོ་བཀོད་གང་རུང་ཡང་མིན་འདུག།\n"
+msgid "  %.*s has no binary override entry either\n"
+msgstr "  %.*sལུ་ཟུང་ལྡན་མེདཔ་གཏང་ནིའི་་ཐོ་བཀོད་གང་རུང་ཡང་མིན་འདུག།\n"
 
 #: methods/basehttp.cc
 msgid "Waiting for headers"
@@ -3440,7 +3686,7 @@ msgstr "མགོ་ཡིག་གནད་སྡུད་བྱང་ཉེས
 msgid "Connection failed"
 msgstr "བཐུད་ལམ་འཐུས་ཤོར་བྱུང་ཡོད།"
 
-#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#: methods/basehttp.cc methods/http.cc
 #, c-format
 msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
 msgstr ""
@@ -3483,7 +3729,7 @@ msgstr ""
 msgid "Disk not found."
 msgstr "ཌིཀསི་དེ་འཚོལ་མ་ཐོབ།"
 
-#: methods/cdrom.cc methods/file.cc methods/rsh.cc
+#: methods/cdrom.cc methods/file.cc
 msgid "File not found"
 msgstr "ཡིག་སྣོད་འཚོལ་མ་ཐོབ།"
 
@@ -3519,7 +3765,7 @@ msgstr "%s (f=%u t=%u p=%u)གི་དོན་ལུ་སོ་ཀེཊི�
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "%s:%s (%s)ལུ་མཐུད་ལམ་དེ་འགོ་འབྱེད་འབད་མ་ཚུགས།"
 
-#: methods/connect.cc methods/ftp.cc methods/rsh.cc
+#: methods/connect.cc
 msgid "Failed"
 msgstr "འཐུས་ཤོར་བྱུང་ཡོད།"
 
@@ -3533,9 +3779,7 @@ msgstr " %s:%s (%s)ལུ་མཐུད་མ་ཚུགས།"
 msgid "Could not connect to %s:%s (%s), connection timed out"
 msgstr " %s:%s (%s)ལུ་མཐུད་མ་ཚུགས་  མཐུད་ལམ་ངལ་མཚམས།"
 
-#. We say this mainly because the pause here is for the
-#. ssh connection that is still going
-#: methods/connect.cc methods/rsh.cc
+#: methods/connect.cc
 #, c-format
 msgid "Connecting to %s"
 msgstr "%s་ལུ་མཐུད་དོ།"
@@ -3573,144 +3817,15 @@ msgstr "ངོ་བཤུས་འབད་ནི་ལུ་འཐུས་ཤ
 msgid "Invalid URI, local URIS must not start with //"
 msgstr "ཡུ་ཨར་ཨེལ་ ནུས་མེད་  ཉེ་གནས་ ཡུ་ཨར་ཨེལ་ཨེསི་འདི་གིས་//་དང་གཅིག་ཁར་འགོ་བཙུགས་ནི་མི་འོང་།"
 
-#. Login must be before getpeername otherwise dante won't work.
-#: methods/ftp.cc
-msgid "Logging in"
-msgstr "ནང་བསྐྱོད་འབད་དོ།"
-
-#: methods/ftp.cc
-msgid "Unable to determine the peer name"
-msgstr "དོ་བཉམ་གི་མིང་འདི་གཏན་འབེབས་བཟོ་མ་ཚུགས།"
-
-#: methods/ftp.cc
-msgid "Unable to determine the local name"
-msgstr "ཉེ་གནས་མིང་འདི་གཏན་འབེེབས་བཟོ་མ་ཚུགས།"
-
-#: methods/ftp.cc
+#: methods/gpgv.cc
 #, c-format
-msgid "The server refused the connection and said: %s"
-msgstr "སར་བར་འདི་གིས་ མཐུད་ལམ་འདི་ངོས་ལེན་འབད་མ་བཏུབ་པར་སླབ་མས: %s"
-
-#: methods/ftp.cc
-#, c-format
-msgid "USER failed, server said: %s"
-msgstr "ལག་ལེན་པ་འཐུས་ཤོར་བྱུང་ཡོད་  སར་བར་གྱིས་སླབ་མས་: %s"
-
-#: methods/ftp.cc
-#, c-format
-msgid "PASS failed, server said: %s"
-msgstr "རྩི་སྤྲོད་འཐུས་ཤོར་བྱུང་ཡོད་  སར་བར་གྱིས་སླབ་མས་: %s"
-
-#: methods/ftp.cc
-msgid ""
-"A proxy server was specified but no login script, Acquire::ftp::ProxyLogin "
-"is empty."
+msgid "untrusted public key algorithm: %s"
 msgstr ""
-"པོརོ་སི་སར་བར་ཅིག་གསལ་བཀོད་འབད་ཡོད་འདི་འབདཝ་ད་  ནང་བསྐྱོད་ཡིག་ཚུགས་མིན་འདུག་ Acquire::ftp::"
-"ProxyLoginའདི་སྟོངམ་ཨིན་པས།"
 
-#: methods/ftp.cc
+#: methods/gpgv.cc
 #, c-format
-msgid "Login script command '%s' failed, server said: %s"
-msgstr "ནང་བསྐྱོད་ཡིག་ཚུགས་ བརྡ་བཀོད་'%s'་འདི་འཐོས་ཤོར་བྱུང་ཡོད་ སར་བར་གྱིས་སླབ་མས:%s"
-
-#: methods/ftp.cc
-#, c-format
-msgid "TYPE failed, server said: %s"
-msgstr "ཡིག་དཔར་རྐྱབ་མ་བཏུབ་སར་བར་གྱིས་སླབ་མས། %s"
-
-#: methods/ftp.cc methods/rsh.cc
-msgid "Connection timeout"
-msgstr "མཐུད་ལམ་ངལ་མཚམས"
-
-#: methods/ftp.cc
-msgid "Server closed the connection"
-msgstr "སར་བར་གྱིས་མཐུད་ལམ་འདི་ཁ་བསྡམས་ཏེ་ཡོདཔ་ཨིན།"
-
-#: methods/ftp.cc methods/rsh.cc
-msgid "A response overflowed the buffer."
-msgstr "ལན་གྱིས་ གནད་ཁོངས་གུར་ལས་ ལུད་སོང་སྟེ་ཡོདཔ་ཨིན།"
-
-#: methods/ftp.cc
-msgid "Protocol corruption"
-msgstr "གནད་སྤེལ་ལམ་ལུགས་ ངན་ཅན།"
-
-#: methods/ftp.cc
-msgid "Could not create a socket"
-msgstr "སོ་ཀེཊི་ཅིག་གསར་བསྐྲུན་འབད་མ་ཚུགས་པར་ཡོདཔ་ཨིན།"
-
-#: methods/ftp.cc
-msgid "Could not connect data socket, connection timed out"
-msgstr "གནད་སྡུད་སོ་ཀེཊི་མཐུད་མ་ཚུགས་པར་ཡོདཔ་ཨིན་  མཐུད་ལམ་ངལ་མཚམས།"
-
-#: methods/ftp.cc
-msgid "Could not connect passive socket."
-msgstr "བྱ་ཡུལ་གྱི་སོ་ཀེཊི་མཐུད་མ་ཚུགས།"
-
-#: methods/ftp.cc
-msgid "getaddrinfo was unable to get a listening socket"
-msgstr "getaddrinfo་འདི་གིས་ཉན་ནིའི་སོ་ཀེཊི་ཅིག་ལེན་མ་ཚུགས།"
-
-#: methods/ftp.cc
-msgid "Could not bind a socket"
-msgstr "སོ་ཀེཊི་ཅིག་བསྡམས་མ་ཚུགས།"
-
-#: methods/ftp.cc
-msgid "Could not listen on the socket"
-msgstr "སོ་ཀེཊི་གུར་ཉེན་མ་ཚུགས།"
-
-#: methods/ftp.cc
-msgid "Could not determine the socket's name"
-msgstr "སོ་ཀེཊི་གི་མིང་འདི་གཏན་འབེབས་བཟོ་མ་ཚུགས།"
-
-#: methods/ftp.cc
-msgid "Unable to send PORT command"
-msgstr "འདྲེན་ལམ་གྱི་བརྡ་བཀོད་འདི་བཏང་མ་ཚུགས།"
-
-#: methods/ftp.cc
-#, c-format
-msgid "Unknown address family %u (AF_*)"
-msgstr "མ་ཤེས་པའི་ཁ་བྱང་གི་རིགས་ཚན་%u (AF_*)"
-
-#: methods/ftp.cc
-#, c-format
-msgid "EPRT failed, server said: %s"
-msgstr "ཨི་པི་ཨར་ཊི་ འཐུས་ཤོར་བྱུང་ཡོད་  སར་བར་གིས་སླབ་མས:%s"
-
-#: methods/ftp.cc
-msgid "Data socket connect timed out"
-msgstr "གནད་སྡུད་སོ་ཀེཊི་ མཐུད་ནི་ངལ་མཚམས་བྱུང་ནུག"
-
-#: methods/ftp.cc
-msgid "Unable to accept connection"
-msgstr "མཐུད་ལམ་འདི་དང་ལེན་འབད་མ་ཚུགས།"
-
-#: methods/ftp.cc methods/http.cc methods/rsh.cc
-msgid "Problem hashing file"
-msgstr "ཡིག་སྣོད་ལུ་་དྲྭ་རྟགས་བཀལ་བའི་བསྒང་དཀའ་ངལ།"
-
-#: methods/ftp.cc
-#, c-format
-msgid "Unable to fetch file, server said '%s'"
-msgstr "ཡིག་སྣོད་ལེན་མ་ཚུགས་ སར་བར་'%s'གིས་སླབ་མས"
-
-#: methods/ftp.cc methods/rsh.cc
-msgid "Data socket timed out"
-msgstr "གནད་སྡུད་སོ་ཀེཊི་ངལ་མཚམས།"
-
-#: methods/ftp.cc
-#, c-format
-msgid "Data transfer failed, server said '%s'"
-msgstr "གནད་སྡུད་གནས་སོར་དེ་འཐུས་ཤོར་བྱུང་ཡོད་  སར་བར་'%s'་གིས་སླབ་མས།"
-
-#. Get the files information
-#: methods/ftp.cc
-msgid "Query"
-msgstr "འདྲི་དཔྱད།"
-
-#: methods/ftp.cc
-msgid "Unable to invoke "
-msgstr "ལས་བཀོལ་འབད་མ་ཚུགས།"
+msgid "%s will be deprecated in a future release"
+msgstr ""
 
 #. TRANSLATORS: %s is a single techy word like 'NODATA'
 #: methods/gpgv.cc
@@ -3732,26 +3847,21 @@ msgstr ""
 
 #: methods/gpgv.cc
 #, fuzzy
-msgid "Could not execute 'apt-key' to verify signature (is gnupg installed?)"
+msgid "Could not execute 'gpgv' to verify signature (is gnupg installed?)"
 msgstr ""
 "མིང་རྟགས་བདེན་སྦྱོར་འབད་ནི་ལུ་'%s'འདི་ལག་ལེན་འཐབ་མ་ཚུགས། (gnupg་དེ་ཁཞི་བཙུགས་འབད་ཡོདཔ་ཨིན་"
 "ན།?)"
 
 #: methods/gpgv.cc
-msgid "Unknown error executing apt-key"
+#, fuzzy
+#| msgid "Unknown error executing apt-key"
+msgid "Unknown error executing gpgv"
 msgstr "apt-key་ལག་ལེན་འཐབ་ནི་ལུ་མ་ཤེས་པའི་འཛོལ་བ་།"
-
-#: methods/gpgv.cc
-#, c-format
-msgid ""
-"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
-"section in apt-key(8) for details."
-msgstr ""
 
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
 #, c-format
-msgid "Signature by key %s uses weak digest algorithm (%s)"
+msgid "Signature by key %s uses weak algorithm (%s)"
 msgstr ""
 
 #: methods/gpgv.cc
@@ -3785,17 +3895,128 @@ msgstr "སེལ་འཐུ་འཐུས་ཤོར་བྱུང་ཡོ
 msgid "Connection timed out"
 msgstr "མཐུད་ལམ་ངལ་མཚམས་འབད་ཡོད།"
 
+#: methods/http.cc
+msgid "Problem hashing file"
+msgstr "ཡིག་སྣོད་ལུ་་དྲྭ་རྟགས་བཀལ་བའི་བསྒང་དཀའ་ངལ།"
+
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "ཆུ་ཚོད་ལེགས་བཅོས་གཞི་སྒྲིག་འབཐ་ནི་ལུ་འཐུས་ཤོར་བྱུང་ཡོད།"
 
-#: methods/rsh.cc
-msgid "Connection closed prematurely"
-msgstr "དུས་སུ་མ་འབབ་པ་རང་མཐུད་ལམ་འདི་ག་བསྡམས་ཡོད།"
-
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr ""
+
+#~ msgid "Logging in"
+#~ msgstr "ནང་བསྐྱོད་འབད་དོ།"
+
+#~ msgid "Unable to determine the peer name"
+#~ msgstr "དོ་བཉམ་གི་མིང་འདི་གཏན་འབེབས་བཟོ་མ་ཚུགས།"
+
+#~ msgid "Unable to determine the local name"
+#~ msgstr "ཉེ་གནས་མིང་འདི་གཏན་འབེེབས་བཟོ་མ་ཚུགས།"
+
+#, c-format
+#~ msgid "The server refused the connection and said: %s"
+#~ msgstr "སར་བར་འདི་གིས་ མཐུད་ལམ་འདི་ངོས་ལེན་འབད་མ་བཏུབ་པར་སླབ་མས: %s"
+
+#, c-format
+#~ msgid "USER failed, server said: %s"
+#~ msgstr "ལག་ལེན་པ་འཐུས་ཤོར་བྱུང་ཡོད་  སར་བར་གྱིས་སླབ་མས་: %s"
+
+#, c-format
+#~ msgid "PASS failed, server said: %s"
+#~ msgstr "རྩི་སྤྲོད་འཐུས་ཤོར་བྱུང་ཡོད་  སར་བར་གྱིས་སླབ་མས་: %s"
+
+#~ msgid ""
+#~ "A proxy server was specified but no login script, "
+#~ "Acquire::ftp::ProxyLogin is empty."
+#~ msgstr ""
+#~ "པོརོ་སི་སར་བར་ཅིག་གསལ་བཀོད་འབད་ཡོད་འདི་འབདཝ་ད་  ནང་བསྐྱོད་ཡིག་ཚུགས་མིན་འདུག་ "
+#~ "Acquire::ftp::ProxyLoginའདི་སྟོངམ་ཨིན་པས།"
+
+#, c-format
+#~ msgid "Login script command '%s' failed, server said: %s"
+#~ msgstr "ནང་བསྐྱོད་ཡིག་ཚུགས་ བརྡ་བཀོད་'%s'་འདི་འཐོས་ཤོར་བྱུང་ཡོད་ སར་བར་གྱིས་སླབ་མས:%s"
+
+#, c-format
+#~ msgid "TYPE failed, server said: %s"
+#~ msgstr "ཡིག་དཔར་རྐྱབ་མ་བཏུབ་སར་བར་གྱིས་སླབ་མས། %s"
+
+#~ msgid "Connection timeout"
+#~ msgstr "མཐུད་ལམ་ངལ་མཚམས"
+
+#~ msgid "Server closed the connection"
+#~ msgstr "སར་བར་གྱིས་མཐུད་ལམ་འདི་ཁ་བསྡམས་ཏེ་ཡོདཔ་ཨིན།"
+
+#~ msgid "A response overflowed the buffer."
+#~ msgstr "ལན་གྱིས་ གནད་ཁོངས་གུར་ལས་ ལུད་སོང་སྟེ་ཡོདཔ་ཨིན།"
+
+#~ msgid "Protocol corruption"
+#~ msgstr "གནད་སྤེལ་ལམ་ལུགས་ ངན་ཅན།"
+
+#~ msgid "Could not create a socket"
+#~ msgstr "སོ་ཀེཊི་ཅིག་གསར་བསྐྲུན་འབད་མ་ཚུགས་པར་ཡོདཔ་ཨིན།"
+
+#~ msgid "Could not connect data socket, connection timed out"
+#~ msgstr "གནད་སྡུད་སོ་ཀེཊི་མཐུད་མ་ཚུགས་པར་ཡོདཔ་ཨིན་  མཐུད་ལམ་ངལ་མཚམས།"
+
+#~ msgid "Could not connect passive socket."
+#~ msgstr "བྱ་ཡུལ་གྱི་སོ་ཀེཊི་མཐུད་མ་ཚུགས།"
+
+#~ msgid "getaddrinfo was unable to get a listening socket"
+#~ msgstr "getaddrinfo་འདི་གིས་ཉན་ནིའི་སོ་ཀེཊི་ཅིག་ལེན་མ་ཚུགས།"
+
+#~ msgid "Could not bind a socket"
+#~ msgstr "སོ་ཀེཊི་ཅིག་བསྡམས་མ་ཚུགས།"
+
+#~ msgid "Could not listen on the socket"
+#~ msgstr "སོ་ཀེཊི་གུར་ཉེན་མ་ཚུགས།"
+
+#~ msgid "Could not determine the socket's name"
+#~ msgstr "སོ་ཀེཊི་གི་མིང་འདི་གཏན་འབེབས་བཟོ་མ་ཚུགས།"
+
+#~ msgid "Unable to send PORT command"
+#~ msgstr "འདྲེན་ལམ་གྱི་བརྡ་བཀོད་འདི་བཏང་མ་ཚུགས།"
+
+#, c-format
+#~ msgid "Unknown address family %u (AF_*)"
+#~ msgstr "མ་ཤེས་པའི་ཁ་བྱང་གི་རིགས་ཚན་%u (AF_*)"
+
+#, c-format
+#~ msgid "EPRT failed, server said: %s"
+#~ msgstr "ཨི་པི་ཨར་ཊི་ འཐུས་ཤོར་བྱུང་ཡོད་  སར་བར་གིས་སླབ་མས:%s"
+
+#~ msgid "Data socket connect timed out"
+#~ msgstr "གནད་སྡུད་སོ་ཀེཊི་ མཐུད་ནི་ངལ་མཚམས་བྱུང་ནུག"
+
+#~ msgid "Unable to accept connection"
+#~ msgstr "མཐུད་ལམ་འདི་དང་ལེན་འབད་མ་ཚུགས།"
+
+#, c-format
+#~ msgid "Unable to fetch file, server said '%s'"
+#~ msgstr "ཡིག་སྣོད་ལེན་མ་ཚུགས་ སར་བར་'%s'གིས་སླབ་མས"
+
+#~ msgid "Data socket timed out"
+#~ msgstr "གནད་སྡུད་སོ་ཀེཊི་ངལ་མཚམས།"
+
+#, c-format
+#~ msgid "Data transfer failed, server said '%s'"
+#~ msgstr "གནད་སྡུད་གནས་སོར་དེ་འཐུས་ཤོར་བྱུང་ཡོད་  སར་བར་'%s'་གིས་སླབ་མས།"
+
+#~ msgid "Query"
+#~ msgstr "འདྲི་དཔྱད།"
+
+#~ msgid "Unable to invoke "
+#~ msgstr "ལས་བཀོལ་འབད་མ་ཚུགས།"
+
+#~ msgid "Connection closed prematurely"
+#~ msgstr "དུས་སུ་མ་འབབ་པ་རང་མཐུད་ལམ་འདི་ག་བསྡམས་ཡོད།"
+
+#, fuzzy
+#~| msgid "The following held packages will be changed:"
+#~ msgid "Changing held packages:Changing held packages:"
+#~ msgstr "འོག་གི་འཆང་ཡོད་པའི་ཐུམ་སྒྲིལ་ཚུ་བསྒྱུར་བཅོས་འབད་འོང་:"
 
 #~ msgid "Yes, do as I say!"
 #~ msgstr "ཨིན་ ང་གིས་སླབ་དོ་བཟུམ་སྦེ་རང་འབད!"
@@ -3997,8 +4218,8 @@ msgstr ""
 #~ "  -q   འདི་གིས་ ཡར་འཕེལ་བརྡ་སྟོན་པ་འདི་ལྕོགས་མིན་བཟོཝ་ཨིན།.\n"
 #~ "  -i  འདི་གིས་ མ་ཚང་པའི་བརྡ་བཀོད་ཚུ་གི་དོན་ལུ་ གལ་ཅན་གྱི་ཌེཔསི་རྐྱངམ་ཅིག་སྟོན།.\n"
 #~ "  -c=? འདི་གིས་ འ་ནི་རིམ་སྒྲིག་ཡིག་སྣོད་འདི་ལྷགཔ་ཨིན།.\n"
-#~ "  -o=? འདི་གིས་ མཐུན་སྒྲིག་རིམ་སྒྲིག་གི་གདམ་ཁ་འདི་གཞི་སྒྲིག་འབདཝ་ཨིན་ དཔེར་ན་ eg -o dir::"
-#~ "cache=/tmp\n"
+#~ "  -o=? འདི་གིས་ མཐུན་སྒྲིག་རིམ་སྒྲིག་གི་གདམ་ཁ་འདི་གཞི་སྒྲིག་འབདཝ་ཨིན་ དཔེར་ན་ eg -o "
+#~ "dir::cache=/tmp\n"
 #~ " ཧེང་བཀལ་བརྡ་དོན་གི་དོན་ལུ་ ཨེ་apt-cache(8)དང་apt.conf(5)ལག་ཐོག་ཤོག་ལེབ་ཚུ་བལྟ།.\n"
 
 #~ msgid ""
@@ -4027,16 +4248,16 @@ msgstr ""
 #~ msgstr ""
 #~ "ལག་ལེན: apt-sortpkgs [options] file1 [file2 ...]\n"
 #~ "\n"
-#~ "apt-sortpkgs་ འདི་ཐུམ་སྒྲིལ་གི་ཡིག་སྣོད་ཚུ་དབྱེ་སེལ་འབད་ནི་ལུ་  འཇམ་སམ་གྱི་ལག་ཆས་ཅིག་ཨིན། -"
-#~ "s  གདམ་ཁ་འདི་ ཡིག་སྣོད་ཀྱི་དབྱེ་ཁག་ག་ཅི་བཟུམ་ཅིག་ཨིན་ན\n"
+#~ "apt-sortpkgs་ འདི་ཐུམ་སྒྲིལ་གི་ཡིག་སྣོད་ཚུ་དབྱེ་སེལ་འབད་ནི་ལུ་  འཇམ་སམ་གྱི་ལག་ཆས་ཅིག་ཨིན། "
+#~ "-s  གདམ་ཁ་འདི་ ཡིག་སྣོད་ཀྱི་དབྱེ་ཁག་ག་ཅི་བཟུམ་ཅིག་ཨིན་ན\n"
 #~ "་བརྡ་སྟོན་འབད་ནིའི་དོན་ལུ་ལག་ལེན་འཐབ་སྟེ་ཡོདཔ་ཨིན།\n"
 #~ "\n"
 #~ "གདམ་ཁ་ཚུ:\n"
 #~ "  -h   འ་ནི་འདི་གིས་ཚིག་ཡིག་ལུ་གྲོགས་རམ་འབདཝ་ཨིན།\n"
 #~ "  -s  འདི་གིས་འབྱུང་ཁུངས་ ཡིག་སྣོད་གསོག་འཇོག་འབད་དོན་ལུ་ལག་ལེན་འཐབ་ཨིན།\n"
 #~ "  -c=? འདི་གིས་འ་ནི་རིམ་སྒྲིག་ཡིག་སྣོད་འདི་ལྷགཔ་ཨིན།\n"
-#~ "  -o=? འདི་གིས་ མཐུན་སྒྲིག་ རིམ་སྒྲིག་གི་གདམ་ཁ་ཚུ་ཁཞི་སྒྲིག་འབདཝ་ཨིན་   དཔེར་ན་-o dir::"
-#~ "cache=/tmp\n"
+#~ "  -o=? འདི་གིས་ མཐུན་སྒྲིག་ རིམ་སྒྲིག་གི་གདམ་ཁ་ཚུ་ཁཞི་སྒྲིག་འབདཝ་ཨིན་   དཔེར་ན་-o "
+#~ "dir::cache=/tmp\n"
 
 #~ msgid "Child process failed"
 #~ msgstr "ཆ་ལག་ལས་སྦྱོར་དེ་འཐུས་ཤོར་བྱུང་ནུག"

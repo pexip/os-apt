@@ -2,12 +2,12 @@
 
 #include <apt-pkg/error.h>
 
+#include <cerrno>
+#include <cstddef>
+#include <cstring>
 #include <string>
-#include <errno.h>
-#include <stddef.h>
-#include <string.h>
 
-#include <gtest/gtest.h>
+#include "common.h"
 
 TEST(GlobalErrorTest,BasicDiscard)
 {

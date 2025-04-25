@@ -5,7 +5,7 @@
    Acquire Item - Item to acquire
 
    Each item can download to exactly one file at a time. This means you
-   cannot create an item that fetches two uri's to two files at the same 
+   cannot create an item that fetches two uri's to two files at the same
    time. The pkgAcqIndex class creates a second class upon instantiation
    to fetch the other index files because of this.
 
@@ -32,8 +32,15 @@
 #include <apt-pkg/tagfile.h>
 
 #include <algorithm>
+#include <array>
+#include <cerrno>
 #include <ctime>
 #include <chrono>
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <iostream>
 #include <memory>
 #include <numeric>
@@ -42,11 +49,6 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
-#include <errno.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -140,10 +142,11 @@ static void ReportMirrorFailureToCentral(pkgAcquire::Item const &I, std::string 
    if(!FileExists(report))
       return;
 
+   const auto DescURI = I.DescURI();
    std::vector<char const*> const Args = {
       report.c_str(),
       I.UsedMirror.c_str(),
-      I.DescURI().c_str(),
+      DescURI.c_str(),
       FailCode.c_str(),
       Details.c_str(),
       NULL
@@ -274,6 +277,15 @@ static HashStringList GetExpectedHashesFromFor(metaIndex * const Parser, std::st
    if (R == NULL)
       return HashStringList();
    return R->Hashes;
+}
+									/*}}}*/
+static void RemoveOldLeftoverDiffIndex(IndexTarget const &Target)	/*{{{*/
+{
+   std::string const FinalFile = GetFinalFileNameFromURI(GetDiffIndexURI(Target));
+   RemoveFile("TransactionCommit", FinalFile);
+   for (auto const &ext: APT::Configuration::getCompressorExtensions())
+      if (not ext.empty() && ext != ".")
+	 RemoveFile("TransactionCommit", FinalFile + ext);
 }
 									/*}}}*/
 
@@ -414,12 +426,16 @@ bool pkgAcqTransactionItem::QueueURI(pkgAcquire::ItemDesc &Item)
 	 std::clog << "Skip " << Target.URI << " as transaction was already dealt with!" << std::endl;
       return false;
    }
-   std::string const FinalFile = GetFinalFilename();
-   if (TransactionManager->IMSHit == true && FileExists(FinalFile) == true)
+   if (TransactionManager->IMSHit)
    {
-      PartialFile = DestFile = FinalFile;
-      Status = StatDone;
-      return false;
+      std::string const FinalFile = GetFinalFilename();
+      if (FinalFile.empty() || FileExists(FinalFile))
+      {
+	 if (not FinalFile.empty())
+	    PartialFile = DestFile = FinalFile;
+	 Status = StatDone;
+	 return false;
+      }
    }
    // this ensures we rewrite only once and only the first step
    auto const OldBaseURI = Target.Option(IndexTarget::BASE_URI);
@@ -457,15 +473,16 @@ bool pkgAcqTransactionItem::QueueURI(pkgAcquire::ItemDesc &Item)
       // now add the actual by-hash uris
       auto const Expected = GetExpectedHashes();
       auto const TargetHash = Expected.find(nullptr);
-      auto const PushByHashURI = [&](std::string U) {
+      auto const PushByHashURI = [&](std::string const &U) {
 	 if (unlikely(TargetHash == nullptr))
 	    return false;
-	 auto const trailing_slash = U.find_last_of("/");
+	 ::URI uri{U};
+	 auto const trailing_slash = uri.Path.find_last_of("/");
 	 if (unlikely(trailing_slash == std::string::npos))
 	    return false;
-	 auto byhashSuffix = "/by-hash/" + TargetHash->HashType() + "/" + TargetHash->HashValue();
-	 U.replace(trailing_slash, U.length() - trailing_slash, std::move(byhashSuffix));
-	 PushAlternativeURI(std::move(U), {}, false);
+	 auto altPath = uri.Path.substr(0, trailing_slash) + "/by-hash/" + TargetHash->HashType() + "/" + TargetHash->HashValue();
+	 std::swap(uri.Path, altPath);
+	 PushAlternativeURI(uri, {{"Alternate-Paths", "../../"s += flNotDir(altPath)}}, false);
 	 return true;
       };
       PushByHashURI(Item.URI);
@@ -508,11 +525,7 @@ std::string pkgAcquire::Item::GetFinalFilename() const
 }
 std::string pkgAcqDiffIndex::GetFinalFilename() const
 {
-   std::string const FinalFile = GetFinalFileNameFromURI(GetDiffIndexURI(Target));
-   // we don't want recompress, so lets keep whatever we got
-   if (CurrentCompressionExtension == "uncompressed")
-      return FinalFile;
-   return FinalFile + "." + CurrentCompressionExtension;
+   return {};
 }
 std::string pkgAcqIndex::GetFinalFilename() const
 {
@@ -533,7 +546,7 @@ std::string pkgAcqMetaBase::GetFinalFilename() const
 }
 std::string pkgAcqArchive::GetFinalFilename() const
 {
-   return _config->FindDir("Dir::Cache::Archives") + flNotDir(StoreFilename);
+   return _config->FindDir("Dir::Cache::Archives") += flNotDir(StoreFilename);
 }
 									/*}}}*/
 // pkgAcqTransactionItem::GetMetaKey and specialisations for child classes	/*{{{*/
@@ -675,12 +688,11 @@ bool pkgAcqDiffIndex::TransactionState(TransactionStates const state)
 
    switch (state)
    {
-      case TransactionStarted: _error->Fatal("Item %s changed to invalid transaction start state!", Target.URI.c_str()); break;
+      case TransactionStarted: _error->Fatal("Item %s changed to invalid transaction start state!", GetDiffIndexURI(Target).c_str()); break;
       case TransactionCommit:
+	 RemoveOldLeftoverDiffIndex(Target);
 	 break;
       case TransactionAbort:
-	 std::string const Partial = GetPartialFileNameFromURI(Target.URI);
-	 RemoveFile("TransactionAbort", Partial);
 	 break;
    }
 
@@ -708,15 +720,15 @@ bool pkgAcqIndexDiffs::AcquireByHash() const
 }
 									/*}}}*/
 
-class APT_HIDDEN NoActionItem : public pkgAcquire::Item			/*{{{*/
+class APT_HIDDEN NoActionItem final : public pkgAcquire::Item		/*{{{*/
 /* The sole purpose of this class is having an item which does nothing to
    reach its done state to prevent cleanup deleting the mentioned file.
    Handy in cases in which we know we have the file already, like IMS-Hits. */
 {
    IndexTarget const Target;
    public:
-   virtual std::string DescURI() const APT_OVERRIDE {return Target.URI;};
-   virtual HashStringList GetExpectedHashes()  const APT_OVERRIDE {return HashStringList();};
+   [[nodiscard]] std::string DescURI() const override {return Target.URI;};
+   [[nodiscard]] HashStringList GetExpectedHashes() const override {return {};};
 
    NoActionItem(pkgAcquire * const Owner, IndexTarget const &Target) :
       pkgAcquire::Item(Owner), Target(Target)
@@ -732,15 +744,15 @@ class APT_HIDDEN NoActionItem : public pkgAcquire::Item			/*{{{*/
    }
 };
 									/*}}}*/
-class APT_HIDDEN CleanupItem : public pkgAcqTransactionItem		/*{{{*/
+class APT_HIDDEN CleanupItem final : public pkgAcqTransactionItem	/*{{{*/
 /* This class ensures that a file which was configured but isn't downloaded
    for various reasons isn't kept in an old version in the lists directory.
    In a way its the reverse of NoActionItem as it helps with removing files
    even if the lists-cleanup is deactivated. */
 {
    public:
-   virtual std::string DescURI() const APT_OVERRIDE {return Target.URI;};
-   virtual HashStringList GetExpectedHashes()  const APT_OVERRIDE {return HashStringList();};
+   [[nodiscard]] std::string DescURI() const override {return Target.URI;};
+   [[nodiscard]] HashStringList GetExpectedHashes() const override {return {};};
 
    CleanupItem(pkgAcquire * const Owner, pkgAcqMetaClearSig * const TransactionManager, IndexTarget const &Target) :
       pkgAcqTransactionItem(Owner, TransactionManager, Target)
@@ -748,7 +760,7 @@ class APT_HIDDEN CleanupItem : public pkgAcqTransactionItem		/*{{{*/
       Status = StatDone;
       DestFile = GetFinalFileNameFromURI(Target.URI);
    }
-   bool TransactionState(TransactionStates const state) APT_OVERRIDE
+   bool TransactionState(TransactionStates const state) override
    {
       switch (state)
       {
@@ -761,6 +773,7 @@ class APT_HIDDEN CleanupItem : public pkgAcqTransactionItem		/*{{{*/
 	       std::clog << "rm " << DestFile << " # " << DescURI() << std::endl;
 	    if (RemoveFile("TransItem::TransactionCommit", DestFile) == false)
 	       return false;
+	    RemoveOldLeftoverDiffIndex(Target);
 	    break;
       }
       return true;
@@ -833,8 +846,17 @@ void pkgAcquire::Item::PushAlternativeURI(std::string &&NewURI, std::unordered_m
       d->AlternativeURIs.emplace_front(std::move(NewURI), std::move(fields));
 }
 									/*}}}*/
-void pkgAcquire::Item::RemoveAlternativeSite(std::string &&OldSite) /*{{{*/
+void pkgAcquire::Item::RemoveAlternativeSite(std::string const &AltUriStr)/*{{{*/
 {
+   ::URI AltUri{AltUriStr};
+   // the hostnames for these methods are empty for absolute paths which would result
+   // in the elimination of all sites accessed via those methods. On the upside, those
+   // methods are local and fast to reply with failure, so it doesn't hurt that much to
+   // keep them in the loop – so we just exit here rather than trying to guess the site.
+   std::array const badhosts{"file", "copy", "cdrom"};
+   if (std::find(badhosts.begin(), badhosts.end(), AltUri.Access) != badhosts.end())
+      return;
+   auto const OldSite = URI::SiteOnly(AltUriStr);
    d->AlternativeURIs.erase(std::remove_if(d->AlternativeURIs.begin(), d->AlternativeURIs.end(),
 					   [&](decltype(*d->AlternativeURIs.cbegin()) AltUri) {
 					      return URI::SiteOnly(AltUri.URI) == OldSite;
@@ -929,7 +951,7 @@ void pkgAcquire::Item::FailMessage(string const &Message)
       failreason = WEAK_HASHSUMS;
    else if (FailReason == "RedirectionLoop")
       failreason = REDIRECTION_LOOP;
-   else if (Status == StatAuthError)
+   else if (Status == StatAuthError || FailReason == "HashSumMismatch")
       failreason = HASHSUM_MISMATCH;
 
    if(ErrorText.empty())
@@ -954,7 +976,7 @@ void pkgAcquire::Item::FailMessage(string const &Message)
 	    break;
       }
 
-      if (Status == StatAuthError)
+      if (Status == StatAuthError || failreason == HASHSUM_MISMATCH)
       {
 	 auto const ExpectedHashes = GetExpectedHashes();
 	 if (ExpectedHashes.empty() == false)
@@ -966,13 +988,25 @@ void pkgAcquire::Item::FailMessage(string const &Message)
 	 if (failreason == HASHSUM_MISMATCH)
 	 {
 	    out << "Hashes of received file:" << std::endl;
+	    size_t hashes = 0;
 	    for (char const * const * type = HashString::SupportedHashes(); *type != NULL; ++type)
 	    {
 	       std::string const tagname = std::string(*type) + "-Hash";
 	       std::string const hashsum = LookupTag(Message, tagname.c_str());
-	       if (hashsum.empty() == false)
+	       if (not hashsum.empty())
+	       {
 		  formatHashsum(out, HashString(*type, hashsum));
+		  ++hashes;
+	       }
 	    }
+	    if (hashes == 0)
+	       for (char const *const *type = HashString::SupportedHashes(); *type != nullptr; ++type)
+	       {
+		  std::string const tagname = std::string("Alt-") + *type + "-Hash";
+		  std::string const hashsum = LookupTag(Message, tagname.c_str());
+		  if (not hashsum.empty())
+		     formatHashsum(out, HashString(*type, hashsum));
+	       }
 	 }
 	 auto const lastmod = LookupTag(Message, "Last-Modified", "");
 	 if (lastmod.empty() == false)
@@ -1014,8 +1048,7 @@ void pkgAcquire::Item::Start(string const &/*Message*/, unsigned long long const
 bool pkgAcquire::Item::VerifyDone(std::string const &Message,
 	 pkgAcquire::MethodConfig const * const /*Cnf*/)
 {
-   std::string const FileName = LookupTag(Message,"Filename");
-   if (FileName.empty() == true)
+   if (LookupTag(Message,"Filename").empty() && LookupTag(Message, "Alt-Filename").empty())
    {
       Status = StatError;
       ErrorText = "Method gave a blank filename";
@@ -1345,20 +1378,20 @@ bool pkgAcqMetaBase::CheckStopAuthentication(pkgAcquire::Item * const I, const s
       I->Status = StatTransientNetworkError;
       _error->Warning(_("An error occurred during the signature verification. "
 	       "The repository is not updated and the previous index files will be used. "
-	       "GPG error: %s: %s"),
+	       "OpenPGP signature verification failed: %s: %s"),
 	    Desc.Description.c_str(),
 	    GPGError.c_str());
       RunScripts("APT::Update::Auth-Failure");
       return true;
    } else if (LookupTag(Message,"Message").find("NODATA") != string::npos) {
       /* Invalid signature file, reject (LP: #346386) (Closes: #627642) */
-      _error->Error(_("GPG error: %s: %s"),
+      _error->Error(_("OpenPGP signature verification failed: %s: %s"),
 	    Desc.Description.c_str(),
 	    GPGError.c_str());
       I->Status = StatAuthError;
       return true;
    } else {
-      _error->Warning(_("GPG error: %s: %s"),
+      _error->Warning(_("OpenPGP signature verification failed: %s: %s"),
 	    Desc.Description.c_str(),
 	    GPGError.c_str());
    }
@@ -1390,7 +1423,15 @@ string pkgAcqMetaBase::Custom600Headers() const
 void pkgAcqMetaBase::QueueForSignatureVerify(pkgAcqTransactionItem * const I, std::string const &File, std::string const &Signature)
 {
    AuthPass = true;
+#ifdef SQV_EXECUTABLE
+   if (not _config->Find("APT::Key::GPGVCommand").empty() || not FileExists(SQV_EXECUTABLE))
+      I->Desc.URI = "gpgv:" + pkgAcquire::URIEncode(Signature);
+   else {
+      I->Desc.URI = "sqv:" + pkgAcquire::URIEncode(Signature);
+   }
+#else
    I->Desc.URI = "gpgv:" + pkgAcquire::URIEncode(Signature);
+#endif
    I->DestFile = File;
    QueueURI(I->Desc);
    I->SetActiveSubprocess("gpgv");
@@ -1403,7 +1444,7 @@ bool pkgAcqMetaBase::CheckDownloadDone(pkgAcqTransactionItem * const I, const st
    // verified yet)
 
    // Save the final base URI we got this Release file from
-   if (I->UsedMirror.empty() == false && _config->FindB("Acquire::SameMirrorForAllIndexes", true))
+   if (not I->Local && not I->UsedMirror.empty() && _config->FindB("Acquire::SameMirrorForAllIndexes", true))
    {
       auto InReleasePath = Target.Option(IndexTarget::INRELEASE_PATH);
       if (InReleasePath.empty())
@@ -1704,9 +1745,6 @@ void pkgAcqMetaClearSig::QueueIndexes(bool const verify)			/*{{{*/
 	 if (filename.empty() == false)
 	 {
 	    new NoActionItem(Owner, Target, filename);
-	    std::string const idxfilename = GetFinalFileNameFromURI(GetDiffIndexURI(Target));
-	    if (FileExists(idxfilename))
-	       new NoActionItem(Owner, Target, idxfilename);
 	    targetsSeen.emplace(Target.Option(IndexTarget::CREATED_BY));
 	    continue;
 	 }
@@ -2006,6 +2044,8 @@ void pkgAcqMetaClearSig::Failed(string const &Message,pkgAcquire::MethodConfig c
 	 else
 	    return;
       }
+
+      _error->Audit(_("Repositories should provide a clear-signed InRelease file, but none found at %s."), Target.URI.c_str());
 
       // Queue the 'old' InRelease file for removal if we try Release.gpg
       // as otherwise the file will stay around and gives a false-auth
@@ -2380,7 +2420,7 @@ bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
 
       string hash;
       unsigned long long size;
-      std::stringstream ss(tmp.to_string());
+      std::istringstream ss(std::string{tmp});  // TODO: replace with std::string_view_stream in C++23
       ss.imbue(posix);
       ss >> hash >> size;
       if (unlikely(hash.empty() == true))
@@ -2450,7 +2490,7 @@ bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
 
       string hash, filename;
       unsigned long long size;
-      std::stringstream ss(tmp.to_string());
+      std::stringstream ss(std::string{tmp});  // TODO: replace with std::string_view_stream in C++23
       ss.imbue(posix);
 
       while (ss >> hash >> size >> filename)
@@ -2507,7 +2547,7 @@ bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
 
       string hash, filename;
       unsigned long long size;
-      std::stringstream ss(tmp.to_string());
+      std::stringstream ss(std::string{tmp});  // TODO: replace with std::string_view_stream in C++23
       ss.imbue(posix);
 
       while (ss >> hash >> size >> filename)
@@ -2545,7 +2585,7 @@ bool pkgAcqDiffIndex::ParseDiffIndex(string const &IndexDiffFile)	/*{{{*/
 
       string hash, filename;
       unsigned long long size;
-      std::stringstream ss(tmp.to_string());
+      std::stringstream ss(std::string{tmp});  // TODO: replace with std::string_view_stream in C++23
       ss.imbue(posix);
 
       // FIXME: all of pdiff supports only .gz compressed patches
@@ -2703,12 +2743,8 @@ void pkgAcqDiffIndex::Failed(string const &Message,pkgAcquire::MethodConfig cons
    new pkgAcqIndex(Owner, TransactionManager, Target);
 }
 									/*}}}*/
-bool pkgAcqDiffIndex::VerifyDone(std::string const &Message, pkgAcquire::MethodConfig const * const)/*{{{*/
+bool pkgAcqDiffIndex::VerifyDone(std::string const &/*Message*/, pkgAcquire::MethodConfig const * const)/*{{{*/
 {
-   string const FinalFile = GetFinalFilename();
-   if(StringToBool(LookupTag(Message,"IMS-Hit"),false))
-      DestFile = FinalFile;
-
    if (ParseDiffIndex(DestFile))
       return true;
 
@@ -2748,7 +2784,7 @@ void pkgAcqDiffIndex::Done(string const &Message,HashStringList const &Hashes,	/
       }
    }
 
-   TransactionManager->TransactionStageCopy(this, DestFile, GetFinalFilename());
+   TransactionManager->TransactionStageRemoval(this, DestFile);
 
    Complete = true;
    Status = StatDone;
@@ -2819,7 +2855,7 @@ void pkgAcqIndexDiffs::Failed(string const &Message,pkgAcquire::MethodConfig con
 void pkgAcqIndexDiffs::Finish(bool allDone)
 {
    if(Debug)
-      std::clog << "pkgAcqIndexDiffs::Finish(): " 
+      std::clog << "pkgAcqIndexDiffs::Finish(): "
                 << allDone << " "
                 << Desc.URI << std::endl;
 
@@ -3249,7 +3285,7 @@ void pkgAcqIndex::Done(string const &Message,
 {
    Item::Done(Message,Hashes,Cfg);
 
-   switch(Stage) 
+   switch(Stage)
    {
       case STAGE_DOWNLOAD:
          StageDownloadDone(Message);
@@ -3274,7 +3310,7 @@ void pkgAcqIndex::StageDownloadDone(string const &Message)
    if (StringToBool(LookupTag(Message, "IMS-Hit"), false))
    {
       Filename = GetExistingFilename(GetFinalFileNameFromURI(Target.URI));
-      EraseFileName = DestFile = flCombine(flNotFile(DestFile), flNotDir(Filename));
+      EraseFileName = DestFile = flCombine(flNotFile(DestFile), std::string{flNotDir(Filename)});
       if (symlink(Filename.c_str(), DestFile.c_str()) != 0)
 	 _error->WarningE("pkgAcqIndex::StageDownloadDone", "Symlinking file %s to %s failed", Filename.c_str(), DestFile.c_str());
       Stage = STAGE_DECOMPRESS_AND_VERIFY;
@@ -3462,7 +3498,7 @@ pkgAcqArchive::pkgAcqArchive(pkgAcquire *const Owner, pkgSourceList *const Sourc
 	 StoreFilename = QuoteString(Version.ParentPkg().Name(), "_:") + '_' +
 			 QuoteString(Version.VerStr(), "_:") + '_' +
 			 QuoteString(Version.Arch(), "_:.") +
-			 "." + flExtension(poolfilename);
+			 '.' += flExtension(poolfilename);
 
 	 Desc.URI = Index->ArchiveURI(poolfilename);
 	 Desc.Description = Index->ArchiveInfo(Version);
@@ -3491,7 +3527,7 @@ pkgAcqArchive::pkgAcqArchive(pkgAcquire *const Owner, pkgSourceList *const Sourc
 
    // Check if we already downloaded the file
    struct stat Buf;
-   auto FinalFile = _config->FindDir("Dir::Cache::Archives") + flNotDir(StoreFilename);
+   auto FinalFile = _config->FindDir("Dir::Cache::Archives") += flNotDir(StoreFilename);
    if (stat(FinalFile.c_str(), &Buf) == 0)
    {
       // Make sure the size matches
@@ -3510,7 +3546,7 @@ pkgAcqArchive::pkgAcqArchive(pkgAcquire *const Owner, pkgSourceList *const Sourc
    }
 
    // Check the destination file
-   DestFile = _config->FindDir("Dir::Cache::Archives") + "partial/" + flNotDir(StoreFilename);
+   DestFile = (_config->FindDir("Dir::Cache::Archives") += "partial/") += flNotDir(StoreFilename);
    if (stat(DestFile.c_str(), &Buf) == 0)
    {
       // Hmm, the partial file is too big, erase it
@@ -3917,9 +3953,9 @@ pkgAcqFile::pkgAcqFile(pkgAcquire *const Owner, string const &URI, HashStringLis
    if(!DestFilename.empty())
       DestFile = DestFilename;
    else if(!DestDir.empty())
-      DestFile = DestDir + "/" + DeQuoteString(flNotDir(url.Path));
+      DestFile = DestDir + "/" + DeQuoteString(std::string{flNotDir(url.Path)});
    else
-      DestFile = DeQuoteString(flNotDir(url.Path));
+      DestFile = DeQuoteString(std::string{flNotDir(url.Path)});
 
    // Create the item
    Desc.URI = std::string(url);
@@ -3983,7 +4019,7 @@ void pkgAcqFile::Done(string const &Message,HashStringList const &CalcHashes,
 	 _error->PushToStack();
 	 _error->Errno("pkgAcqFile::Done", "Symlinking file %s failed", DestFile.c_str());
 	 std::stringstream msg;
-	 _error->DumpErrors(msg, GlobalError::DEBUG, false);
+	 _error->DumpErrors(msg, GlobalError::NOTICE, false);
 	 _error->RevertToStack();
 	 ErrorText = msg.str();
 	 Status = StatError;
@@ -4061,7 +4097,7 @@ static std::string GetAuxFileNameFromURIInLists(std::string const &uri)
    auto const dirname = flCombine(_config->FindDir("Dir::State::lists"), "auxfiles/");
    char const * const filetag = ".apt-acquire-privs-test.XXXXXX";
    std::string const tmpfile_tpl = flCombine(dirname, filetag);
-   std::unique_ptr<char, decltype(std::free) *> tmpfile { strdup(tmpfile_tpl.c_str()), std::free };
+   std::unique_ptr<char, FreeDeleter> tmpfile { strdup(tmpfile_tpl.c_str()) };
    int const fd = mkstemp(tmpfile.get());
    if (fd == -1)
       return "";
@@ -4077,7 +4113,7 @@ static std::string GetAuxFileNameFromURI(std::string const &uri)
 
    std::string tmpdir_tpl;
    strprintf(tmpdir_tpl, "%s/apt-auxfiles-XXXXXX", GetTempDir().c_str());
-   std::unique_ptr<char, decltype(std::free) *> tmpdir { strndup(tmpdir_tpl.data(), tmpdir_tpl.length()), std::free };
+   std::unique_ptr<char, FreeDeleter> tmpdir { strndup(tmpdir_tpl.data(), tmpdir_tpl.length()) };
    if (mkdtemp(tmpdir.get()) == nullptr)
    {
       _error->Errno("GetAuxFileNameFromURI", "mkdtemp of %s failed", tmpdir.get());

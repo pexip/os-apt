@@ -46,7 +46,7 @@
 class pkgSimulatePrivate;
 class APT_PUBLIC pkgSimulate : public pkgPackageManager				/*{{{*/
 {
-   pkgSimulatePrivate * const d;
+   std::unique_ptr<pkgSimulatePrivate> const d;
    protected:
 
    class APT_PUBLIC Policy : public pkgDepCache::Policy
@@ -54,7 +54,7 @@ class APT_PUBLIC pkgSimulate : public pkgPackageManager				/*{{{*/
       pkgDepCache *Cache;
       public:
       
-      virtual VerIterator GetCandidateVer(PkgIterator const &Pkg) APT_OVERRIDE
+      VerIterator GetCandidateVer(PkgIterator const &Pkg) override
       {
 	 return (*Cache)[Pkg].CandidateVerIter(*Cache);
       }
@@ -62,18 +62,18 @@ class APT_PUBLIC pkgSimulate : public pkgPackageManager				/*{{{*/
       explicit Policy(pkgDepCache *Cache) : Cache(Cache) {};
    };
    
-   unsigned char *Flags;
+   std::unique_ptr<unsigned char[]> Flags;
    
    Policy iPolicy;
    pkgDepCache Sim;
    pkgDepCache::ActionGroup group;
 
    // The Actual installation implementation
-   virtual bool Install(PkgIterator Pkg,std::string File) APT_OVERRIDE;
-   virtual bool Configure(PkgIterator Pkg) APT_OVERRIDE;
-   virtual bool Remove(PkgIterator Pkg,bool Purge) APT_OVERRIDE;
+   bool Install(PkgIterator Pkg, std::string File) override;
+   bool Configure(PkgIterator Pkg) override;
+   bool Remove(PkgIterator Pkg, bool Purge) override;
 
-public:
+   public:
    bool Go(APT::Progress::PackageManager * progress) override;
 
 private:
@@ -102,12 +102,18 @@ class APT_PUBLIC pkgProblemResolver						/*{{{*/
    typedef pkgCache::PrvIterator PrvIterator;
    typedef pkgCache::Version Version;
    typedef pkgCache::Package Package;
-   
-   enum Flags {Protected = (1 << 0), PreInstalled = (1 << 1),
-               Upgradable = (1 << 2), ReInstateTried = (1 << 3),
-               ToRemove = (1 << 4)};
-   int *Scores;
-   unsigned char *Flags;
+
+   enum Flags
+   {
+      Protected = (1 << 0),
+      PreInstalled = (1 << 1),
+      Upgradable = (1 << 2),
+      ReInstateTried = (1 << 3),
+      ToRemove = (1 << 4),
+      BrokenPolicyAllowed = (1 << 5)
+   };
+   std::unique_ptr<int[]> Scores;
+   std::unique_ptr<unsigned char[]> Flags;
    bool Debug;
    
    // Sort stuff
@@ -129,7 +135,12 @@ class APT_PUBLIC pkgProblemResolver						/*{{{*/
    
    inline void Protect(pkgCache::PkgIterator Pkg) {Flags[Pkg->ID] |= Protected; Cache.MarkProtected(Pkg);};
    inline void Remove(pkgCache::PkgIterator Pkg) {Flags[Pkg->ID] |= ToRemove;};
-   inline void Clear(pkgCache::PkgIterator Pkg) {Flags[Pkg->ID] &= ~(Protected | ToRemove);};
+   inline void Clear(pkgCache::PkgIterator Pkg) { Flags[Pkg->ID] &= ~(Protected | ToRemove | BrokenPolicyAllowed); };
+#ifdef APT_COMPILING_APT
+   inline void AllowBrokenPolicy(pkgCache::PkgIterator Pkg) { Flags[Pkg->ID] |= BrokenPolicyAllowed; };
+#endif
+
+   bool KeepPhasedUpdates();
 
    // Try to intelligently resolve problems by installing and removing packages
    bool Resolve(bool BrokenFix = false, OpProgress * const Progress = NULL);

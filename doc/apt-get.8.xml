@@ -14,7 +14,7 @@
    &apt-email;
    &apt-product;
    <!-- The last update date -->
-   <date>2023-01-25T00:00:00Z</date>
+   <date>2024-11-18T00:00:00Z</date>
  </refentryinfo>
  
  <refmeta>
@@ -62,8 +62,10 @@
      retrieved and installed. New versions of currently installed packages that 
      cannot be upgraded without changing the install status of another package 
      will be left at their current version. An <literal>update</literal> must be 
-     performed first so that <command>apt-get</command> knows that new versions of packages are 
-     available.</para></listitem>
+     performed first so that <command>apt-get</command> knows that new versions
+     of packages are available.</para><para>When a package is supplied as an
+     argument, the package will be installed prior to the upgrade
+     action.</para></listitem>
      </varlistentry>
 
      <varlistentry><term><option>dist-upgrade</option></term>
@@ -76,7 +78,9 @@
      The <filename>/etc/apt/sources.list</filename> file contains a list of locations 
      from which to retrieve desired package files.
      See also &apt-preferences; for a mechanism for
-     overriding the general settings for individual packages.</para></listitem>
+     overriding the general settings for individual packages.</para><para>When
+     a package is supplied as an argument, the package will be installed prior
+     to the upgrade action.</para></listitem>
      </varlistentry>
 
      <varlistentry><term><option>dselect-upgrade</option></term>
@@ -250,6 +254,13 @@
      erased if it is set to off.</para></listitem>
      </varlistentry>
 
+     <varlistentry><term><option>distclean</option> (and the <option>dist-clean</option> alias)</term>
+     <listitem><para><literal>distclean</literal> removes all files under
+     <filename>&statedir;/lists</filename> except Release, Release.gpg, and InRelease.
+     It can be used for example, when finalizing images distributed to users.
+     The release files are kept for security reasons, to prevent various types of attacks.</para></listitem>
+     </varlistentry>
+
      <varlistentry><term><option>autoremove</option> (and the <option>auto-remove</option> alias since 1.1)</term>
      <listitem><para><literal>autoremove</literal> is used to remove packages that were automatically
      installed to satisfy dependencies for other packages and are now no longer needed.</para></listitem>
@@ -399,6 +410,17 @@
      Configuration Item: <literal>APT::Get::Show-Versions</literal>.</para></listitem>
      </varlistentry>
 
+     <varlistentry><term><option>--no-list-columns</option></term>
+     <listitem><para>Display package lists without arranging them in columns. By
+     default, package lists are printed in the style of the "ls" command.
+     Configuration Item: <literal>APT::Get::List-Columns</literal>.</para></listitem>
+     </varlistentry>
+
+     <varlistentry><term><option>--comment</option></term>
+         <listitem><para>Add the given value to the <literal>Comment:</literal> field in history.log
+     Configuration Item: <literal>APT::History::Comment</literal>.</para></listitem>
+     </varlistentry>
+
      <varlistentry><term><option>-a</option></term>
                    <term><option>--host-architecture</option></term>
      <listitem><para>This option controls the architecture packages are built for
@@ -526,6 +548,16 @@
      of <filename>&statedir;/lists</filename> to ensure that obsolete files are erased.
      The only reason to turn it off is if you frequently change your sources list.
      Configuration Item: <literal>APT::Get::List-Cleanup</literal>.</para></listitem>
+     </varlistentry>
+
+     <varlistentry><term><option>-S</option></term>
+                   <term><option>--snapshot</option></term>
+     <listitem><para>This option controls the snapshot chosen for archives with <literal>Snapshot: enable</literal>
+             in the source entry. For example, <option>-S 20220102T030405Z</option> selects a snapshot from January 2nd,
+             2022 at 03:04:05 UTC.
+     Configuration Item: <literal>APT::Snapshot</literal>;
+     see also the &sources-list; manual page.
+     </para></listitem>
      </varlistentry>
 
      <varlistentry><term><option>-t</option></term>
@@ -657,6 +689,20 @@
      <listitem><para>Fail the update command if any error occured, even a transient one.</para></listitem>
      </varlistentry>
 
+     <varlistentry><term><option>-U</option></term><term><option>--update</option></term>
+         <listitem><para>Run the <option>update</option> command before the specified command. This is supported for commands
+         installing, removing, or upgrading packages such as
+         <option>install</option>, <option>remove</option>, <option>safe-upgrade</option>, <option>full-upgrade</option>.
+         This can be useful to ensure a command always installs the latest versions, or, in combination with the
+         <option>--snapshot</option> option to make sure the snapshot is present when install is being run.
+        </para>
+        <para>Caveat: Due to technical limitations, locks are acquired individually for each phase, hence an install
+        may fail to acquire locks after successfully executing the update. Until this is resolved, this is merely
+        syntactic sugar for <literal>apt update &amp;&amp; apt install</literal></para>
+         </listitem>
+     </varlistentry>
+
+
      &apt-commonoptions;
      
    </variablelist>
@@ -674,7 +720,7 @@
 
  <refsect1><title>See Also</title>
    <para>&apt-cache;, &apt-cdrom;, &dpkg;, &sources-list;,
-   &apt-conf;, &apt-config;, &apt-secure;, 
+   &apt-conf;, &apt-patterns;, &apt-config;, &apt-secure;,
    The APT User's guide in &guidesdir;, &apt-preferences;, the APT Howto.</para>
  </refsect1>
 

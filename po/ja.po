@@ -14,7 +14,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apt 2.5\n"
 "Report-Msgid-Bugs-To: APT Development Team <deity@lists.debian.org>\n"
-"POT-Creation-Date: 2023-03-06 12:29+0000\n"
+"POT-Creation-Date: 2025-03-09 17:32+0000\n"
 "PO-Revision-Date: 2022-08-14 14:30+0900\n"
 "Last-Translator: Hideki Yamane <henrich@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -60,11 +60,12 @@ msgstr "リポジトリ %s には Release ファイルがなくなっていま�
 
 #: apt-pkg/acquire-item.cc
 msgid ""
-"This is normally not allowed, but the option Acquire::"
-"AllowDowngradeToInsecureRepositories was given to override it."
+"This is normally not allowed, but the option "
+"Acquire::AllowDowngradeToInsecureRepositories was given to override it."
 msgstr ""
-"通常は許可されませんが、オプション Acquire::"
-"AllowDowngradeToInsecureRepositories が上書きするために指定されました。"
+"通常は許可されませんが、オプション "
+"Acquire::AllowDowngradeToInsecureRepositories が上書きするために指定されまし"
+"た。"
 
 #: apt-pkg/acquire-item.cc
 #, c-format
@@ -127,10 +128,14 @@ msgstr ""
 "が必要?)"
 
 #: apt-pkg/acquire-item.cc
-#, c-format
+#, fuzzy, c-format
+#| msgid ""
+#| "An error occurred during the signature verification. The repository is "
+#| "not updated and the previous index files will be used. GPG error: %s: %s"
 msgid ""
 "An error occurred during the signature verification. The repository is not "
-"updated and the previous index files will be used. GPG error: %s: %s"
+"updated and the previous index files will be used. OpenPGP signature "
+"verification failed: %s: %s"
 msgstr ""
 "署名照合中にエラーが発生しました。リポジトリは更新されず、過去のインデックス"
 "ファイルが使われます。GPG エラー: %s: %s"
@@ -138,8 +143,8 @@ msgstr ""
 #. Invalid signature file, reject (LP: #346386) (Closes: #627642)
 #: apt-pkg/acquire-item.cc
 #, c-format
-msgid "GPG error: %s: %s"
-msgstr "GPG エラー: %s: %s"
+msgid "OpenPGP signature verification failed: %s: %s"
+msgstr ""
 
 #: apt-pkg/acquire-item.cc
 #, fuzzy, c-format
@@ -217,8 +222,7 @@ msgstr ""
 "ディストリビューションが競合しています: %s (%s を期待していたのに %s を取得し"
 "ました)"
 
-#. Both messages are reused from the ReleaseInfoChange feature in acquire-item.cc
-#: apt-pkg/acquire-item.cc apt-private/private-update.cc
+#: apt-pkg/acquire-item.cc
 #, c-format
 msgid "Repository '%s' changed its '%s' value from '%s' to '%s'"
 msgstr ""
@@ -229,7 +233,7 @@ msgid "Repository '%s' changed its default priority for %s from %hi to %hi."
 msgstr ""
 
 #. TRANSLATOR: the "this" refers to changes in the repository like a new release or owner change
-#: apt-pkg/acquire-item.cc apt-private/private-update.cc
+#: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
 "More information about this can be found online in the Release notes at: %s"
@@ -251,6 +255,13 @@ msgstr "%s の取得に失敗しました  %s"
 #: apt-pkg/acquire-item.cc
 #, c-format
 msgid ""
+"Repositories should provide a clear-signed InRelease file, but none found at "
+"%s."
+msgstr ""
+
+#: apt-pkg/acquire-item.cc
+#, c-format
+msgid ""
 "I wasn't able to locate a file for the %s package. This might mean you need "
 "to manually fix this package. (due to missing arch)"
 msgstr ""
@@ -267,13 +278,6 @@ msgstr "'%2$s' のバージョン '%1$s' をダウンロードするソースが
 #, c-format
 msgid "Changelog unavailable for %s=%s"
 msgstr "%s=%s のため変更履歴が利用できません"
-
-#: apt-pkg/acquire-worker.cc
-#, c-format
-msgid ""
-"The method '%s' is unsupported and disabled by default. Consider switching "
-"to http(s). Set Dir::Bin::Methods::%s to \"%s\" to enable it again."
-msgstr ""
 
 #: apt-pkg/acquire-worker.cc
 #, c-format
@@ -682,6 +686,30 @@ msgstr ""
 msgid "Syntax error %s:%u: Extra junk at end of file"
 msgstr "文法エラー %s:%u: ファイルの最後に余計なゴミがあります"
 
+#. TRANSLATOR: This is a warning level displayed before the message
+#: apt-pkg/contrib/error.cc
+msgid "Error:"
+msgstr ""
+
+#. TRANSLATOR: This is a warning level displayed before the message
+#: apt-pkg/contrib/error.cc
+msgid "Warning:"
+msgstr ""
+
+#. TRANSLATOR: This is a warning level displayed before the message
+#: apt-pkg/contrib/error.cc
+msgid "Notice:"
+msgstr ""
+
+#: apt-pkg/contrib/error.cc
+msgid "Audit:"
+msgstr ""
+
+#. TRANSLATOR: This is a warning level displayed before the message
+#: apt-pkg/contrib/error.cc
+msgid "Debug:"
+msgstr ""
+
 #: apt-pkg/contrib/extracttar.cc
 #, c-format
 msgid "Cannot find a configured compressor for '%s'"
@@ -794,11 +822,11 @@ msgstr "子プロセス %s がエラーコード (%u) を返しました"
 msgid "Sub-process %s exited unexpectedly"
 msgstr "子プロセス %s が予期せず終了しました"
 
-#: apt-pkg/contrib/fileutl.cc methods/ftp.cc methods/rsh.cc
+#: apt-pkg/contrib/fileutl.cc
 msgid "Read error"
 msgstr "読み込みエラー"
 
-#: apt-pkg/contrib/fileutl.cc methods/ftp.cc methods/rsh.cc
+#: apt-pkg/contrib/fileutl.cc
 msgid "Write error"
 msgstr "書き込みエラー"
 
@@ -1126,6 +1154,12 @@ msgstr ""
 msgid "Not locked"
 msgstr "ロックされていません"
 
+#: apt-pkg/deb/debsystem.cc
+msgid ""
+"The dpkg executable set in Dir::Bin::dpkg is missing, falling back to using "
+"default dpkg."
+msgstr ""
+
 #. we don't care for the difference
 #: apt-pkg/deb/dpkgpm.cc
 #, c-format
@@ -1316,6 +1350,16 @@ msgstr "解決を受け取る準備"
 msgid "External solver failed without a proper error message"
 msgstr "外部ソルバが適切なエラーメッセージなしに失敗しました"
 
+#: apt-pkg/edsp.cc apt-pkg/upgrade.cc
+msgid "Calculating upgrade"
+msgstr "アップグレードパッケージを検出しています"
+
+#: apt-pkg/edsp.cc
+#, fuzzy
+#| msgid "Total dependencies: "
+msgid "Solving dependencies"
+msgstr "依存関係総数: "
+
 #: apt-pkg/edsp.cc
 msgid "Execute external solver"
 msgstr "外部ソルバを実行"
@@ -1393,8 +1437,8 @@ msgid ""
 "Could not perform immediate configuration on '%s'. Please see man 5 apt.conf "
 "under APT::Immediate-Configure for details. (%d)"
 msgstr ""
-"'%s' の即時設定は動作しません。詳細については man 5 apt.conf の APT::"
-"Immediate-Configure の項を参照してください。(%d)"
+"'%s' の即時設定は動作しません。詳細については man 5 apt.conf の "
+"APT::Immediate-Configure の項を参照してください。(%d)"
 
 #: apt-pkg/packagemanager.cc
 #, c-format
@@ -1620,10 +1664,6 @@ msgid ""
 msgstr ""
 "いくつかのインデックスファイルのダウンロードに失敗しました。これらは無視され"
 "るか、古いものが代わりに使われます。"
-
-#: apt-pkg/upgrade.cc
-msgid "Calculating upgrade"
-msgstr "アップグレードパッケージを検出しています"
 
 #. TRANSLATOR: Very short word to be displayed before unchanged files in 'apt-get update'
 #: apt-private/acqprogress.cc
@@ -1903,6 +1943,25 @@ msgid "Broken packages"
 msgstr "壊れたパッケージ"
 
 #: apt-private/private-install.cc
+#, fuzzy
+#| msgid "Write error"
+msgid "Writing error report"
+msgstr "書き込みエラー"
+
+#: apt-private/private-install.cc
+msgid ""
+"Unmerged usr is no longer supported, use usrmerge to convert to a merged-usr "
+"system."
+msgstr ""
+
+#. TRANSLATORS: %s is a url to a page describing merged-usr (bookworm release notes)
+#: apt-private/private-install.cc
+#, fuzzy, c-format
+#| msgid "Selected %s for removal.\n"
+msgid "See %s for more details."
+msgstr "%s は削除で選択されました。\n"
+
+#: apt-private/private-install.cc
 msgid ""
 "Unable to fetch some archives, maybe run apt-get update or try with --fix-"
 "missing?"
@@ -1949,12 +2008,24 @@ msgid "How odd... The sizes didn't match, email apt@packages.debian.org"
 msgstr ""
 "おっと、サイズがマッチしません。apt@packages.debian.org にメールしてください"
 
+#: apt-private/private-install.cc
+#, fuzzy, c-format
+#| msgid "Download Failed"
+msgid "  Download size: %sB / %sB\n"
+msgstr "ダウンロード失敗"
+
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement strings, so %sB will be correctly translate in e.g. 1,5 MB
 #: apt-private/private-install.cc
 #, c-format
 msgid "Need to get %sB/%sB of archives.\n"
 msgstr "%2$sB 中 %1$sB のアーカイブを取得する必要があります。\n"
+
+#: apt-private/private-install.cc
+#, fuzzy, c-format
+#| msgid "Download Failed"
+msgid "  Download size: %sB\n"
+msgstr "ダウンロード失敗"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
@@ -1963,12 +2034,54 @@ msgstr "%2$sB 中 %1$sB のアーカイブを取得する必要があります�
 msgid "Need to get %sB of archives.\n"
 msgstr "%sB のアーカイブを取得する必要があります。\n"
 
-#. TRANSLATOR: The required space between number and unit is already included
-#. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
 #: apt-private/private-install.cc
 #, c-format
 msgid "After this operation, %sB of additional disk space will be used.\n"
 msgstr "この操作後に追加で %sB のディスク容量が消費されます。\n"
+
+#. TRANSLATOR: The required space between number and unit is already included
+#. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
+#: apt-private/private-install.cc
+#, c-format
+msgid "Space needed: %sB / %sB available\n"
+msgstr ""
+
+#. TRANSLATOR: The required space between number and unit is already included
+#. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
+#: apt-private/private-install.cc
+#, c-format
+msgid "More space needed than available: %sB > %sB, installation may fail"
+msgstr ""
+
+#. TRANSLATOR: The required space between number and unit is already included
+#. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB -
+#. The first %s is the location of the boot directory (determined from Dir::Boot),
+#. and it tells the space being needed there.
+#. (We have two spaces to align with parent "space needed:"for /boot)
+#: apt-private/private-install.cc
+#, c-format
+msgid "in %s:  %sB / %sB available\n"
+msgstr ""
+
+#. TRANSLATOR: The required space between number and unit is already included
+#. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
+#. The first %s is the location of the boot directory (determined from Dir::Boot)
+#: apt-private/private-install.cc
+#, c-format
+msgid ""
+"More space needed in %s than available: %sB > %sB, installation may fail"
+msgstr ""
+
+#: apt-private/private-install.cc
+#, c-format
+msgid "Space needed: %sB\n"
+msgstr ""
+
+#: apt-private/private-install.cc
+#, fuzzy, c-format
+#| msgid "Stored label: %s\n"
+msgid "  Freed space: %sB\n"
+msgstr "格納されたラベル: %s \n"
 
 #. TRANSLATOR: The required space between number and unit is already included
 #. in the replacement string, so %sB will be correctly translate in e.g. 1,5 MB
@@ -1985,6 +2098,14 @@ msgstr "Trivial Only が指定されましたが、これは簡単な操作で�
 msgid ""
 "Removing essential system-critical packages is not permitted. This might "
 "break the system."
+msgstr ""
+
+#: apt-private/private-install.cc
+msgid "Continue anyway?"
+msgstr ""
+
+#: apt-private/private-install.cc
+msgid "Continue?"
 msgstr ""
 
 #: apt-private/private-install.cc cmdline/apt-mark.cc
@@ -2048,6 +2169,12 @@ msgid "Internal Error, AutoRemover broke stuff"
 msgstr "内部エラー、AutoRemover が何かを破壊しました"
 
 #: apt-private/private-install.cc
+#, c-format
+msgid "Use '%s' to remove it."
+msgid_plural "Use '%s' to remove them."
+msgstr[0] "これを削除するには '%s' を利用してください。"
+
+#: apt-private/private-install.cc
 msgid ""
 "The following package was automatically installed and is no longer required:"
 msgid_plural ""
@@ -2066,14 +2193,8 @@ msgstr[0] ""
 "ん:\n"
 
 #: apt-private/private-install.cc
-#, c-format
-msgid "Use '%s' to remove it."
-msgid_plural "Use '%s' to remove them."
-msgstr[0] "これを削除するには '%s' を利用してください。"
-
-#: apt-private/private-install.cc
-msgid "The following additional packages will be installed:"
-msgstr "以下の追加パッケージがインストールされます:"
+msgid "Result calculated by the 3.0 solver."
+msgstr ""
 
 #: apt-private/private-install.cc
 msgid "Suggested packages:"
@@ -2082,6 +2203,10 @@ msgstr "提案パッケージ:"
 #: apt-private/private-install.cc
 msgid "Recommended packages:"
 msgstr "推奨パッケージ:"
+
+#: apt-private/private-install.cc
+msgid "The following additional packages will be installed:"
+msgstr "以下の追加パッケージがインストールされます:"
 
 #: apt-private/private-install.cc
 #, c-format
@@ -2218,12 +2343,50 @@ msgid "The following packages have unmet dependencies:"
 msgstr "以下のパッケージには満たせない依存関係があります:"
 
 #: apt-private/private-output.cc
+#, fuzzy
+#| msgid "Building dependency tree"
+msgid "Unsatisfied dependencies:"
+msgstr "依存関係ツリーを作成しています"
+
+#: apt-private/private-output.cc
 msgid "The following NEW packages will be installed:"
 msgstr "以下のパッケージが新たにインストールされます:"
 
 #: apt-private/private-output.cc
+#, fuzzy
+#| msgid "Installing %s"
+msgid "Installing:"
+msgstr "%s をインストールしています"
+
+#: apt-private/private-output.cc
+#, fuzzy
+#| msgid "Total dependencies: "
+msgid "Installing dependencies:"
+msgstr "依存関係総数: "
+
+#: apt-private/private-output.cc
+msgid "REMOVING:"
+msgstr ""
+
+#: apt-private/private-output.cc
 msgid "The following packages will be REMOVED:"
 msgstr "以下のパッケージは「削除」されます:"
+
+#: apt-private/private-output.cc
+#, fuzzy
+#| msgid "The following packages have been kept back:"
+msgid "The following upgrades have been deferred due to phasing:"
+msgstr "以下のパッケージは保留されます:"
+
+#: apt-private/private-output.cc
+#, fuzzy
+#| msgid "The following packages have been kept back:"
+msgid "Not upgrading yet due to phasing:"
+msgstr "以下のパッケージは保留されます:"
+
+#: apt-private/private-output.cc
+msgid "Not upgrading:"
+msgstr ""
 
 #: apt-private/private-output.cc
 msgid "The following packages have been kept back:"
@@ -2234,8 +2397,22 @@ msgid "The following packages will be upgraded:"
 msgstr "以下のパッケージはアップグレードされます:"
 
 #: apt-private/private-output.cc
+msgid "Upgrading:"
+msgstr ""
+
+#: apt-private/private-output.cc
+msgid "DOWNGRADING:"
+msgstr ""
+
+#: apt-private/private-output.cc
 msgid "The following packages will be DOWNGRADED:"
 msgstr "以下のパッケージは「ダウングレード」されます:"
+
+#: apt-private/private-output.cc
+#, fuzzy
+#| msgid "Pinned packages:"
+msgid "Changing held packages:"
+msgstr "Pin されたパッケージ:"
 
 #: apt-private/private-output.cc
 msgid "The following held packages will be changed:"
@@ -2255,14 +2432,30 @@ msgstr ""
 "何をしようとしているか本当にわかっていない場合は、実行してはいけません!"
 
 #: apt-private/private-output.cc
+msgid "Summary:"
+msgstr ""
+
+#: apt-private/private-output.cc
 #, c-format
 msgid "%lu upgraded, %lu newly installed, "
 msgstr "アップグレード: %lu 個、新規インストール: %lu 個、"
 
 #: apt-private/private-output.cc
+#, fuzzy, c-format
+#| msgid "Installing %s"
+msgid "Upgrading: %lu, Installing: %lu, "
+msgstr "%s をインストールしています"
+
+#: apt-private/private-output.cc
 #, c-format
 msgid "%lu reinstalled, "
 msgstr "再インストール: %lu 個、"
+
+#: apt-private/private-output.cc
+#, fuzzy, c-format
+#| msgid "Installing %s"
+msgid "Reinstalling: %lu, "
+msgstr "%s をインストールしています"
 
 #: apt-private/private-output.cc
 #, c-format
@@ -2271,8 +2464,18 @@ msgstr "ダウングレード: %lu 個、"
 
 #: apt-private/private-output.cc
 #, c-format
+msgid "Downgrading: %lu, "
+msgstr ""
+
+#: apt-private/private-output.cc
+#, c-format
 msgid "%lu to remove and %lu not upgraded.\n"
 msgstr "削除: %lu 個、保留: %lu 個。\n"
+
+#: apt-private/private-output.cc
+#, c-format
+msgid "Removing: %lu, Not Upgrading: %lu\n"
+msgstr ""
 
 #: apt-private/private-output.cc
 #, c-format
@@ -2301,7 +2504,7 @@ msgid "Y"
 msgstr "Y"
 
 #. TRANSLATOR: "No" answer printed for a yes/no question if --assume-no is set
-#: apt-private/private-output.cc
+#: apt-private/private-output.cc apt-private/private-sources.cc
 msgid "N"
 msgstr "N"
 
@@ -2483,11 +2686,11 @@ msgstr "%s にはビルド依存情報が指定されていません。\n"
 #: apt-private/private-source.cc
 #, c-format
 msgid ""
-"No architecture information available for %s. See apt.conf(5) APT::"
-"Architectures for setup"
+"No architecture information available for %s. See apt.conf(5) "
+"APT::Architectures for setup"
 msgstr ""
-"%s に利用可能なアーキテクチャ情報がありません。セットアップのために apt."
-"conf(5) の APT::Architectures を参照してください。"
+"%s に利用可能なアーキテクチャ情報がありません。セットアップのために "
+"apt.conf(5) の APT::Architectures を参照してください。"
 
 #: apt-private/private-source.cc
 msgid "Must specify at least one package to check builddeps for"
@@ -2525,6 +2728,11 @@ msgid "Your '%s' file changed, please run 'apt-get update'.\n"
 msgstr ""
 "'%s' ファイルが変更されています。「apt-get update」を実行してください。\n"
 
+#: apt-private/private-sources.cc
+#, c-format
+msgid "Rewrite %zu sources?"
+msgstr ""
+
 #: apt-private/private-unmet.cc
 #, c-format
 msgid "Package %s version %s has an unmet dep:\n"
@@ -2540,6 +2748,43 @@ msgstr "update コマンドは引数をとりません"
 msgid ""
 "Usage of %s should be preferred over embedding login information directly in "
 "the %s entry for '%s'"
+msgstr ""
+
+#. TRANSLATOR: the first is manpage reference, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid "The %s entry for '%s' should be upgraded to deb822 .sources"
+msgstr ""
+
+#. TRANSLATOR: the first is manpage reference, the last the URI from a sources.list
+#: apt-private/private-update.cc
+#, c-format
+msgid "Missing Signed-By in the %s entry for '%s'"
+msgstr ""
+
+#: apt-private/private-update.cc
+msgid ""
+"Consider migrating all sources.list(5) entries to the deb822 .sources format"
+msgstr ""
+
+#: apt-private/private-update.cc
+msgid ""
+"The deb822 .sources format supports both embedded as well as external "
+"OpenPGP keys"
+msgstr ""
+
+#: apt-private/private-update.cc
+#, fuzzy
+#| msgid ""
+#| "See apt-secure(8) manpage for repository creation and user configuration "
+#| "details."
+msgid "See apt-secure(8) for best practices in configuring repository signing."
+msgstr ""
+"リポジトリの作成とユーザ設定の詳細は、apt-secure(8) man ページを参照してくだ"
+"さい。"
+
+#: apt-private/private-update.cc
+msgid "Some sources can be modernized. Run 'apt modernize-sources' to do so."
 msgstr ""
 
 #: apt-private/private-update.cc
@@ -2587,6 +2832,12 @@ msgstr "  複合仮想パッケージ: "
 #: cmdline/apt-cache.cc
 msgid "  Missing: "
 msgstr "  欠落: "
+
+#: cmdline/apt-cache.cc
+#, fuzzy
+#| msgid "Total distinct versions: "
+msgid "Total distinct source versions: "
+msgstr "個別バージョン総数: "
 
 #: cmdline/apt-cache.cc
 msgid "Total distinct versions: "
@@ -2949,6 +3200,12 @@ msgid "concatenate files, with automatic decompression"
 msgstr "自動解凍とファイル結合"
 
 #: cmdline/apt-helper.cc
+#, fuzzy
+#| msgid "Problem hashing file"
+msgid "hash file"
+msgstr "ファイルのハッシュでの問題"
+
+#: cmdline/apt-helper.cc
 msgid "detect proxy using apt.conf"
 msgstr "apt.conf を使ってプロキシを検出する"
 
@@ -3192,6 +3449,10 @@ msgid "edit the source information file"
 msgstr "ソース情報ファイルを編集"
 
 #: cmdline/apt.cc
+msgid "modernize .list files to .sources files"
+msgstr ""
+
+#: cmdline/apt.cc
 #, fuzzy
 #| msgid "Building dependency tree"
 msgid "satisfy dependency strings"
@@ -3391,7 +3652,7 @@ msgstr "'%s' は未知の圧縮アルゴリズムです"
 msgid "Compressed output %s needs a compression set"
 msgstr "圧縮出力 %s には圧縮セットが必要です"
 
-#: ftparchive/multicompress.cc methods/rsh.cc
+#: ftparchive/multicompress.cc
 msgid "Failed to create IPC pipe to subprocess"
 msgstr "子プロセスへの IPC パイプの作成に失敗しました"
 
@@ -3510,23 +3771,23 @@ msgstr "アーカイブにパッケージフィールドがありませんでし
 
 #: ftparchive/writer.cc
 #, c-format
-msgid "  %s has no override entry\n"
-msgstr "  %s に override エントリがありません\n"
+msgid "  %.*s has no override entry\n"
+msgstr "  %.*s に override エントリがありません\n"
 
 #: ftparchive/writer.cc
 #, c-format
-msgid "  %s maintainer is %s not %s\n"
-msgstr "  %1$s メンテナは %3$s ではなく %2$s です\n"
+msgid "  %.*s maintainer is %.*s not %s\n"
+msgstr "  %1$*2$s メンテナは %5$s ではなく %3$*4$s です\n"
 
 #: ftparchive/writer.cc
 #, c-format
-msgid "  %s has no source override entry\n"
-msgstr "  %s にソース override エントリがありません\n"
+msgid "  %.*s has no source override entry\n"
+msgstr "  %.*s にソース override エントリがありません\n"
 
 #: ftparchive/writer.cc
 #, c-format
-msgid "  %s has no binary override entry either\n"
-msgstr "  %s にバイナリ override エントリがありません\n"
+msgid "  %.*s has no binary override entry either\n"
+msgstr "  %.*s にバイナリ override エントリがありません\n"
 
 #: methods/basehttp.cc
 msgid "Waiting for headers"
@@ -3564,7 +3825,7 @@ msgstr "不正なヘッダです"
 msgid "Connection failed"
 msgstr "接続失敗"
 
-#: methods/basehttp.cc methods/ftp.cc methods/http.cc
+#: methods/basehttp.cc methods/http.cc
 #, c-format
 msgid "File has unexpected size (%llu != %llu). Mirror sync in progress?"
 msgstr ""
@@ -3608,7 +3869,7 @@ msgstr "%s の CD-ROM は使用中のためアンマウントすることがで�
 msgid "Disk not found."
 msgstr "ディスクが見つかりません。"
 
-#: methods/cdrom.cc methods/file.cc methods/rsh.cc
+#: methods/cdrom.cc methods/file.cc
 msgid "File not found"
 msgstr "ファイルが見つかりません"
 
@@ -3644,7 +3905,7 @@ msgstr "%s (f=%u t=%u p=%u) に対するソケットを作成できません"
 msgid "Cannot initiate the connection to %s:%s (%s)."
 msgstr "%s:%s (%s) への接続を開始できません。"
 
-#: methods/connect.cc methods/ftp.cc methods/rsh.cc
+#: methods/connect.cc
 msgid "Failed"
 msgstr "失敗"
 
@@ -3658,9 +3919,7 @@ msgstr "%s:%s (%s) へ接続できませんでした。"
 msgid "Could not connect to %s:%s (%s), connection timed out"
 msgstr "%s:%s (%s) へ接続できませんでした。接続がタイムアウトしました"
 
-#. We say this mainly because the pause here is for the
-#. ssh connection that is still going
-#: methods/connect.cc methods/rsh.cc
+#: methods/connect.cc
 #, c-format
 msgid "Connecting to %s"
 msgstr "%s へ接続しています"
@@ -3698,144 +3957,15 @@ msgstr "状態の取得に失敗しました"
 msgid "Invalid URI, local URIS must not start with //"
 msgstr "不正な URI です。ローカルの URI は // で始まってはいけません"
 
-#. Login must be before getpeername otherwise dante won't work.
-#: methods/ftp.cc
-msgid "Logging in"
-msgstr "ログインしています"
-
-#: methods/ftp.cc
-msgid "Unable to determine the peer name"
-msgstr "ピアネームを決定することができません"
-
-#: methods/ftp.cc
-msgid "Unable to determine the local name"
-msgstr "ローカルネームを決定することができません"
-
-#: methods/ftp.cc
+#: methods/gpgv.cc
 #, c-format
-msgid "The server refused the connection and said: %s"
-msgstr "サーバから接続を拒絶されました。応答: %s"
-
-#: methods/ftp.cc
-#, c-format
-msgid "USER failed, server said: %s"
-msgstr "USER 失敗、サーバ応答: %s"
-
-#: methods/ftp.cc
-#, c-format
-msgid "PASS failed, server said: %s"
-msgstr "PASS 失敗、サーバ応答: %s"
-
-#: methods/ftp.cc
-msgid ""
-"A proxy server was specified but no login script, Acquire::ftp::ProxyLogin "
-"is empty."
+msgid "untrusted public key algorithm: %s"
 msgstr ""
-"プロキシサーバが指定されていますが、ログインスクリプトが設定されていません。"
-"Acquire::ftp::ProxyLogin が空です。"
 
-#: methods/ftp.cc
+#: methods/gpgv.cc
 #, c-format
-msgid "Login script command '%s' failed, server said: %s"
-msgstr "ログインスクリプトのコマンド '%s' 失敗、サーバ応答: %s"
-
-#: methods/ftp.cc
-#, c-format
-msgid "TYPE failed, server said: %s"
-msgstr "TYPE 失敗、サーバ応答: %s"
-
-#: methods/ftp.cc methods/rsh.cc
-msgid "Connection timeout"
-msgstr "接続タイムアウト"
-
-#: methods/ftp.cc
-msgid "Server closed the connection"
-msgstr "サーバが接続を切断しました"
-
-#: methods/ftp.cc methods/rsh.cc
-msgid "A response overflowed the buffer."
-msgstr "レスポンスがバッファをオーバフローさせました。"
-
-#: methods/ftp.cc
-msgid "Protocol corruption"
-msgstr "プロトコルが壊れています"
-
-#: methods/ftp.cc
-msgid "Could not create a socket"
-msgstr "ソケットを作成できません"
-
-#: methods/ftp.cc
-msgid "Could not connect data socket, connection timed out"
-msgstr "データソケットへ接続できませんでした。接続がタイムアウトしました"
-
-#: methods/ftp.cc
-msgid "Could not connect passive socket."
-msgstr "パッシブソケットに接続できません。"
-
-#: methods/ftp.cc
-msgid "getaddrinfo was unable to get a listening socket"
-msgstr "getaddrinfo はリスニングソケットを取得できませんでした"
-
-#: methods/ftp.cc
-msgid "Could not bind a socket"
-msgstr "ソケットをバインドできませんでした"
-
-#: methods/ftp.cc
-msgid "Could not listen on the socket"
-msgstr "ソケットをリスンできませんでした"
-
-#: methods/ftp.cc
-msgid "Could not determine the socket's name"
-msgstr "ソケットの名前を特定できませんでした"
-
-#: methods/ftp.cc
-msgid "Unable to send PORT command"
-msgstr "PORT コマンドを送信できません"
-
-#: methods/ftp.cc
-#, c-format
-msgid "Unknown address family %u (AF_*)"
-msgstr "未知のアドレスファミリ %u (AF_*)"
-
-#: methods/ftp.cc
-#, c-format
-msgid "EPRT failed, server said: %s"
-msgstr "EPRT に失敗しました。サーバ応答: %s"
-
-#: methods/ftp.cc
-msgid "Data socket connect timed out"
-msgstr "データソケット接続タイムアウト"
-
-#: methods/ftp.cc
-msgid "Unable to accept connection"
-msgstr "接続を accept できません"
-
-#: methods/ftp.cc methods/http.cc methods/rsh.cc
-msgid "Problem hashing file"
-msgstr "ファイルのハッシュでの問題"
-
-#: methods/ftp.cc
-#, c-format
-msgid "Unable to fetch file, server said '%s'"
-msgstr "ファイルを取得できません。サーバ応答 '%s'"
-
-#: methods/ftp.cc methods/rsh.cc
-msgid "Data socket timed out"
-msgstr "データソケットタイムアウト"
-
-#: methods/ftp.cc
-#, c-format
-msgid "Data transfer failed, server said '%s'"
-msgstr "データ転送に失敗しました。サーバ応答 '%s'"
-
-#. Get the files information
-#: methods/ftp.cc
-msgid "Query"
-msgstr "問い合わせ"
-
-#: methods/ftp.cc
-msgid "Unable to invoke "
-msgstr "呼び出せません"
+msgid "%s will be deprecated in a future release"
+msgstr ""
 
 #. TRANSLATORS: %s is a single techy word like 'NODATA'
 #: methods/gpgv.cc
@@ -3855,26 +3985,25 @@ msgid ""
 msgstr "内部エラー: 正しい署名ですが、鍵指紋を確定できません?!"
 
 #: methods/gpgv.cc
-msgid "Could not execute 'apt-key' to verify signature (is gnupg installed?)"
+#, fuzzy
+#| msgid ""
+#| "Could not execute 'apt-key' to verify signature (is gnupg installed?)"
+msgid "Could not execute 'gpgv' to verify signature (is gnupg installed?)"
 msgstr ""
 "署名を検証するための 'apt-key' の実行ができませんでした (gnupg はインストール"
 "されていますか?)"
 
 #: methods/gpgv.cc
-msgid "Unknown error executing apt-key"
+#, fuzzy
+#| msgid "Unknown error executing apt-key"
+msgid "Unknown error executing gpgv"
 msgstr "apt-key の実行中に未知のエラーが発生"
-
-#: methods/gpgv.cc
-#, c-format
-msgid ""
-"Key is stored in legacy trusted.gpg keyring (%s), see the DEPRECATION "
-"section in apt-key(8) for details."
-msgstr ""
 
 #. TRANSLATORS: The second %s is the reason and is untranslated for repository owners.
 #: methods/gpgv.cc
-#, c-format
-msgid "Signature by key %s uses weak digest algorithm (%s)"
+#, fuzzy, c-format
+#| msgid "Signature by key %s uses weak digest algorithm (%s)"
+msgid "Signature by key %s uses weak algorithm (%s)"
 msgstr "鍵 %s による署名は弱い digest アルゴリズム (%s) を使用しています"
 
 #: methods/gpgv.cc
@@ -3907,17 +4036,137 @@ msgstr "select に失敗しました"
 msgid "Connection timed out"
 msgstr "接続タイムアウト"
 
+#: methods/http.cc
+msgid "Problem hashing file"
+msgstr "ファイルのハッシュでの問題"
+
 #: methods/rred.cc
 msgid "Failed to set modification time"
 msgstr "変更時刻の設定に失敗しました"
 
-#: methods/rsh.cc
-msgid "Connection closed prematurely"
-msgstr "途中で接続がクローズされました"
-
 #: methods/store.cc
 msgid "Empty files can't be valid archives"
 msgstr "空のファイルは有効なアーカイブと認められません"
+
+#, c-format
+#~ msgid "GPG error: %s: %s"
+#~ msgstr "GPG エラー: %s: %s"
+
+#~ msgid "Logging in"
+#~ msgstr "ログインしています"
+
+#~ msgid "Unable to determine the peer name"
+#~ msgstr "ピアネームを決定することができません"
+
+#~ msgid "Unable to determine the local name"
+#~ msgstr "ローカルネームを決定することができません"
+
+#, c-format
+#~ msgid "The server refused the connection and said: %s"
+#~ msgstr "サーバから接続を拒絶されました。応答: %s"
+
+#, c-format
+#~ msgid "USER failed, server said: %s"
+#~ msgstr "USER 失敗、サーバ応答: %s"
+
+#, c-format
+#~ msgid "PASS failed, server said: %s"
+#~ msgstr "PASS 失敗、サーバ応答: %s"
+
+#~ msgid ""
+#~ "A proxy server was specified but no login script, "
+#~ "Acquire::ftp::ProxyLogin is empty."
+#~ msgstr ""
+#~ "プロキシサーバが指定されていますが、ログインスクリプトが設定されていませ"
+#~ "ん。Acquire::ftp::ProxyLogin が空です。"
+
+#, c-format
+#~ msgid "Login script command '%s' failed, server said: %s"
+#~ msgstr "ログインスクリプトのコマンド '%s' 失敗、サーバ応答: %s"
+
+#, c-format
+#~ msgid "TYPE failed, server said: %s"
+#~ msgstr "TYPE 失敗、サーバ応答: %s"
+
+#~ msgid "Connection timeout"
+#~ msgstr "接続タイムアウト"
+
+#~ msgid "Server closed the connection"
+#~ msgstr "サーバが接続を切断しました"
+
+#~ msgid "A response overflowed the buffer."
+#~ msgstr "レスポンスがバッファをオーバフローさせました。"
+
+#~ msgid "Protocol corruption"
+#~ msgstr "プロトコルが壊れています"
+
+#~ msgid "Could not create a socket"
+#~ msgstr "ソケットを作成できません"
+
+#~ msgid "Could not connect data socket, connection timed out"
+#~ msgstr "データソケットへ接続できませんでした。接続がタイムアウトしました"
+
+#~ msgid "Could not connect passive socket."
+#~ msgstr "パッシブソケットに接続できません。"
+
+#~ msgid "getaddrinfo was unable to get a listening socket"
+#~ msgstr "getaddrinfo はリスニングソケットを取得できませんでした"
+
+#~ msgid "Could not bind a socket"
+#~ msgstr "ソケットをバインドできませんでした"
+
+#~ msgid "Could not listen on the socket"
+#~ msgstr "ソケットをリスンできませんでした"
+
+#~ msgid "Could not determine the socket's name"
+#~ msgstr "ソケットの名前を特定できませんでした"
+
+#~ msgid "Unable to send PORT command"
+#~ msgstr "PORT コマンドを送信できません"
+
+#, c-format
+#~ msgid "Unknown address family %u (AF_*)"
+#~ msgstr "未知のアドレスファミリ %u (AF_*)"
+
+#, c-format
+#~ msgid "EPRT failed, server said: %s"
+#~ msgstr "EPRT に失敗しました。サーバ応答: %s"
+
+#~ msgid "Data socket connect timed out"
+#~ msgstr "データソケット接続タイムアウト"
+
+#~ msgid "Unable to accept connection"
+#~ msgstr "接続を accept できません"
+
+#, c-format
+#~ msgid "Unable to fetch file, server said '%s'"
+#~ msgstr "ファイルを取得できません。サーバ応答 '%s'"
+
+#~ msgid "Data socket timed out"
+#~ msgstr "データソケットタイムアウト"
+
+#, c-format
+#~ msgid "Data transfer failed, server said '%s'"
+#~ msgstr "データ転送に失敗しました。サーバ応答 '%s'"
+
+#~ msgid "Query"
+#~ msgstr "問い合わせ"
+
+#~ msgid "Unable to invoke "
+#~ msgstr "呼び出せません"
+
+#~ msgid "Connection closed prematurely"
+#~ msgstr "途中で接続がクローズされました"
+
+#, fuzzy, c-format
+#~| msgid "  Installed: "
+#~ msgid "  Installed size: %sB\n"
+#~ msgstr "  インストールされているバージョン: "
+
+#, fuzzy
+#~| msgid "The following held packages will be changed:"
+#~ msgid "Changing held packages:Changing held packages:"
+#~ msgstr "以下の変更禁止パッケージは変更されます:"
 
 #~ msgid "Yes, do as I say!"
 #~ msgstr "Yes, do as I say!"

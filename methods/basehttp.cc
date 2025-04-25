@@ -16,19 +16,19 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/strutl.h>
 
+#include <cctype>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 #include <iostream>
 #include <limits>
 #include <map>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <ctype.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "basehttp.h"
@@ -261,6 +261,21 @@ bool RequestState::HeaderLine(string const &Line)			/*{{{*/
       if (ranges.find(",bytes,") == std::string::npos)
 	 Server->RangesAllowed = false;
       return true;
+   }
+
+   if (stringcasecmp(Tag, "Retry-After:") == 0)
+   {
+      unsigned long _retry_after_s;
+      if (RFC1123StrToTime(Val, RetryAfter))
+      {
+	 return true;
+      }
+      if (StrToNum(Val.c_str(), _retry_after_s, 4, 10) == 1)
+      {
+	 RetryAfter = time(nullptr) + _retry_after_s;
+	 return true;
+      }
+      return _error->Error(_("Unknown date format"));
    }
 
    if (Server->RangesAllowed && stringcasecmp(Tag, "Via:") == 0)
@@ -884,7 +899,19 @@ int BaseHttpMethod::Loop()
 	       599, // Network Connect Timeout Error
 	    };
 	    if (std::find(std::begin(TransientCodes), std::end(TransientCodes), Req.Result) != std::end(TransientCodes))
-	       Fail(true);
+	    {
+	       if (Req.RetryAfter)
+	       {
+		  std::unordered_map<std::string, std::string> fields;
+		  fields["Retry-After"] = std::to_string(Req.RetryAfter);
+		  SetFailReason("TooManyRequests");
+		  FailWithContext(std::string("TooManyRequests"), true, fields);
+	       }
+	       else
+	       {
+		  Fail(true);
+	       }
+	    }
 	    else
 	       Fail();
 	    break;

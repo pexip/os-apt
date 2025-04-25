@@ -32,6 +32,7 @@ aptcdromlog() {
 	sed -e '/gpgv\?:\s*Signature made/ d' \
 		-e '/gpgv\?:\s*Good signature/ d' \
 		-e '/gpgv\?:\s*using RSA key/ d' \
+		-e '/gpgv\?:\s*asserted signer/d' \
 		-e '/gpgv\?:\s*issuer/ d' \
 		-e '/^Identifying/ d' \
 		-e '/Reading / d' rootdir/tmp/apt-cdrom.log
@@ -39,6 +40,7 @@ aptcdromlog() {
 	test -e rootdir/media/cdrom-unmounted || echo "Unmounted CD-ROM doesn't exist, but it should!"
 }
 aptautotest_aptcdromlog_add() { aptautotest_aptget_update "$@"; }
+
 
 CDROM_PRE="Using CD-ROM mount point $(readlink -f ./rootdir/media)/cdrom/
 Unmounting CD-ROM...

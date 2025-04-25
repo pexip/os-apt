@@ -3,12 +3,12 @@
 #include <apt-pkg/fileutl.h>
 #include <apt-pkg/sourcelist.h>
 
+#include <cstdlib>
+#include <cstring>
 #include <string>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
-#include <gtest/gtest.h>
+#include "common.h"
 
 #include "file-helpers.h"
 

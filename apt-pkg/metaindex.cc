@@ -1,6 +1,7 @@
 // Include Files                                                       /*{{{*/
 #include <config.h>
 
+#include <apt-pkg/fileutl.h>
 #include <apt-pkg/indexfile.h>
 #include <apt-pkg/metaindex.h>
 #include <apt-pkg/pkgcachegen.h>
@@ -11,8 +12,9 @@
 #include <vector>
 									/*}}}*/
 
-class metaIndexPrivate							/*{{{*/
+struct metaIndexPrivate							/*{{{*/
 {
+   int Flags;
 };
 									/*}}}*/
 
@@ -69,6 +71,8 @@ APT_PURE signed short metaIndex::GetDefaultPin() const { return DefaultPin; }
 APT_PURE bool metaIndex::GetSupportsAcquireByHash() const { return SupportsAcquireByHash; }
 APT_PURE time_t metaIndex::GetValidUntil() const { return ValidUntil; }
 APT_PURE time_t metaIndex::GetDate() const { return this->Date; }
+APT_PURE bool metaIndex::HasFlag(metaIndex::Flag Flag) const { return d->Flags & int(Flag); }
+void metaIndex::SetFlag(metaIndex::Flag Flag) { d->Flags |= int(Flag); }
 APT_PURE metaIndex::TriState metaIndex::GetLoadedSuccessfully() const { return LoadedSuccessfully; }
 APT_PURE std::string metaIndex::GetExpectedDist() const { return Dist; }
 									/*}}}*/
@@ -146,5 +150,17 @@ bool metaIndex::IsArchitectureAllSupportedFor(IndexTarget const &) const/*{{{*/
 bool metaIndex::HasSupportForComponent(std::string const &) const/*{{{*/
 {
    return true;
+}
+									/*}}}*/
+bool metaIndex::Load(std::string *ErrorText) /*{{{*/
+{
+   auto debmeta = dynamic_cast<debReleaseIndex *>(this);
+   if (not debmeta)
+      return false;
+   if (auto f = debmeta->MetaIndexFile("InRelease"); FileExists(f))
+      return Load(f, ErrorText);
+   if (auto f = debmeta->MetaIndexFile("Release"); FileExists(f))
+      return Load(f, ErrorText);
+   return false;
 }
 									/*}}}*/
