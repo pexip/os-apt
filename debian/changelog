@@ -1,3 +1,9 @@
+apt (3.0.3+pexip25u4) pexip-trixie; urgency=medium
+
+  * Force gpgv use instead of sqv
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Fri, 05 Dec 2025 19:33:27 +0000
+
 apt (3.0.3+pexip25u3) pexip-trixie; urgency=medium
 
   * Disable sqv use for now
