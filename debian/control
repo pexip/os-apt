@@ -36,7 +36,7 @@ Build-Depends-Indep: doxygen <!nodoc !pkg.apt.nodoxygen>, graphviz <!nodoc !pkg.
 Vcs-Git: https://salsa.debian.org/apt-team/apt.git
 Vcs-Browser: https://salsa.debian.org/apt-team/apt
 XS-Pexip-Upstream: http://deb.debian.org/debian/ trixie
-X-Pexip-Note: PexOS patches out use of sequoia in apt, instead using the
+XS-Pexip-Note: PexOS patches out use of sequoia in apt, instead using the
  traditional gpg-based tooling.
 
 Package: apt
