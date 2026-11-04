@@ -1,4 +1,4 @@
-apt (3.0.4+pexip25u1) trixie-security; urgency=medium
+apt (3.0.4+pexip25u1) pexip-trixie; urgency=medium
 
   * New upstream release with security fixes
 
